@@ -1,6 +1,6 @@
 name: Usulan pengembangan
 description: Ajukan peningkatan yang berkaitan dengan kebutuhan BHT-Nexus Web.
-title: "feat: "
+title: "feat(web): "
 labels:
   - enhancement
 body:

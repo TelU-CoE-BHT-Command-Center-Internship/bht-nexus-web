@@ -1,6 +1,6 @@
 name: Laporan bug
 description: Laporkan perilaku aplikasi yang tidak berjalan sebagaimana mestinya.
-title: "fix: "
+title: "fix(web): "
 labels:
   - bug
 body:
@@ -50,7 +50,7 @@ body:
     id: browser
     attributes:
       label: Browser dan perangkat
-      description: Contoh: Chrome 140 di Windows 11 atau Safari di iPhone.
+      description: "Contoh: Chrome 140 di Windows 11 atau Safari di iPhone."
     validations:
       required: false
 
