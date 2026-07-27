@@ -37,6 +37,9 @@ jobs:
       - name: Memeriksa keamanan dependency
         run: npm audit --audit-level=high
 
+      - name: Memeriksa konfigurasi repository
+        run: npm run validate:config
+
       - name: Memeriksa format dan pola kode
         run: npm run lint
 

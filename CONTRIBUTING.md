@@ -6,7 +6,7 @@ Panduan ini membantu tim menjaga perubahan tetap jelas, aman, mudah diperiksa, d
 
 1. Satu perubahan mempunyai satu tujuan utama.
 2. Pekerjaan dimulai dari issue yang jelas.
-3. Perubahan dibuat pada branch, bukan langsung di `main`.
+3. Kontributor membuat perubahan pada branch, bukan langsung di `main`.
 4. Seluruh diff dibaca sebelum commit.
 5. Pemeriksaan lokal dijalankan sebelum push.
 6. Pull request ditinjau manusia sebelum digabungkan.
@@ -145,6 +145,8 @@ Jangan menambahkan `pnpm-lock.yaml` atau `yarn.lock`. Repository ini menggunakan
 Jangan menghapus lalu membuat ulang repository, menjalankan `git init` di dalam hasil clone, melakukan force push ke `main`, atau mengganti riwayat yang sudah dibagikan.
 
 Perubahan struktur, alat, atau aturan dilakukan melalui branch dan pull request agar perbedaannya dapat diperiksa serta commit lama tetap tersedia.
+
+Pemeliharaan terbatas dapat dilakukan langsung oleh administrator setelah seluruh pemeriksaan lokal lulus. Administrator tetap wajib memantau CI sampai selesai dan tidak boleh menulis ulang riwayat yang sudah dibagikan.
 
 ## Keamanan
 

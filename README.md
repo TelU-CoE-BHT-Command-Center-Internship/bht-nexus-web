@@ -74,8 +74,10 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 ```text
 .
 ├── .github/            # template kontribusi dan pemeriksaan otomatis
+├── scripts/            # pemeriksaan konfigurasi repository
 ├── src/
 │   └── app/            # halaman dan kerangka dasar Next.js
+├── AGENTS.md            # panduan kompatibilitas resmi dari Next.js
 ├── biome.json          # aturan pemeriksaan dan format kode
 ├── next.config.ts      # pengaturan Next.js
 ├── package.json        # daftar perintah dan dependency
@@ -122,13 +124,14 @@ npm run check
 npm audit --audit-level=high
 ```
 
-`npm run check` memeriksa pola kode, TypeScript, dan proses build. `npm audit` memeriksa paket yang mempunyai peringatan keamanan tingkat tinggi.
+`npm run check` memeriksa konfigurasi repository, pola kode, TypeScript, dan proses build. `npm audit` memeriksa paket yang mempunyai peringatan keamanan tingkat tinggi.
 
 ## Perintah yang Tersedia
 
 | Perintah | Fungsi |
 |---|---|
 | `npm run dev` | Menjalankan web untuk pengembangan |
+| `npm run validate:config` | Memeriksa YAML dan struktur issue form |
 | `npm run lint` | Memeriksa format dan pola kode |
 | `npm run typecheck` | Memeriksa kesesuaian TypeScript |
 | `npm run build` | Membuat build produksi |
@@ -138,7 +141,7 @@ npm audit --audit-level=high
 
 ## Cara Berkontribusi
 
-Perubahan setelah fondasi awal dikerjakan melalui issue, branch, dan pull request. Jangan mendorong perubahan langsung ke `main`.
+Kontribusi anggota tim dikerjakan melalui issue, branch, dan pull request. Pemeliharaan langsung ke `main` hanya dilakukan oleh administrator setelah pemeriksaan lokal lulus.
 
 Panduan lengkap tersedia di [CONTRIBUTING.md](CONTRIBUTING.md).
 
