@@ -1,0 +1,52 @@
+name: Usulan pengembangan
+description: Ajukan peningkatan yang berkaitan dengan kebutuhan BHT-Nexus Web.
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Jelaskan kebutuhan yang ingin diselesaikan. Usulan akan ditinjau berdasarkan manfaat, ruang lingkup, keamanan, dan kesesuaiannya dengan arah BHT-Nexus.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah atau kebutuhan
+      description: Ceritakan kondisi yang membuat perubahan ini diperlukan.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Hasil yang diharapkan
+      description: Jelaskan kemampuan atau pengalaman pengguna yang ingin dicapai.
+    validations:
+      required: true
+
+  - type: textarea
+    id: users
+    attributes:
+      label: Pengguna yang terbantu
+      description: Sebutkan kelompok pengguna atau kegiatan yang menerima manfaat.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Referensi pendukung
+      description: Tambahkan contoh, gambar, atau dokumen yang aman dibagikan jika tersedia.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Pemeriksaan awal
+      options:
+        - label: Saya sudah memastikan usulan serupa belum tersedia.
+          required: true
+        - label: Usulan ini tidak memuat data rahasia atau data pribadi.
+          required: true

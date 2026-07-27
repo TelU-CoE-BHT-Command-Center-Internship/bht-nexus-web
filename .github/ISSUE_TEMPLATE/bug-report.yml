@@ -1,0 +1,73 @@
+name: Laporan bug
+description: Laporkan perilaku aplikasi yang tidak berjalan sebagaimana mestinya.
+title: "fix: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Terima kasih sudah melaporkan masalah. Jangan cantumkan kata sandi, token, data pribadi, atau informasi rahasia di dalam laporan.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Ringkasan masalah
+      description: Jelaskan masalah yang terjadi dengan singkat dan jelas.
+      placeholder: Saat membuka ..., aplikasi menampilkan ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Langkah untuk mengulang masalah
+      description: Tuliskan urutan tindakan hingga masalah muncul.
+      placeholder: |
+        1. Buka ...
+        2. Pilih ...
+        3. Lihat ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Hasil yang diharapkan
+      description: Jelaskan hasil yang seharusnya terjadi.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Hasil yang terjadi
+      description: Jelaskan hasil yang benar-benar terlihat.
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser dan perangkat
+      description: Contoh: Chrome 140 di Windows 11 atau Safari di iPhone.
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Bukti pendukung
+      description: Tambahkan tangkapan layar atau potongan log yang sudah dibersihkan dari data rahasia.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Pemeriksaan awal
+      options:
+        - label: Saya sudah memastikan masalah serupa belum dilaporkan.
+          required: true
+        - label: Laporan ini tidak memuat data rahasia atau data pribadi.
+          required: true
