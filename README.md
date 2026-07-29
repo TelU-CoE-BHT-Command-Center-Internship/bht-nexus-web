@@ -2,9 +2,9 @@
 
 <div align="center">
 
-**Aplikasi web untuk dashboard, pengelolaan informasi, dan layanan digital CoE BHT.**
+**Landing page dan antarmuka web untuk layanan digital CoE BHT.**
 
-[![Status](https://img.shields.io/badge/status-fondasi_awal-475569)](#status-saat-ini)
+[![Status](https://img.shields.io/badge/status-pengembangan_aktif-d7193f)](#status-saat-ini)
 [![CI](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/actions/workflows/ci.yml/badge.svg)](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2.12-111827)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933)](https://nodejs.org/)
@@ -15,27 +15,31 @@
 
 ## Gambaran Umum
 
-BHT-Nexus Web adalah antarmuka yang akan digunakan untuk melihat ringkasan kegiatan, mengelola informasi organisasi, memeriksa data, membuka dokumen, dan mengakses layanan BHT-Nexus dari browser.
+BHT-Nexus Web adalah antarmuka publik CoE Biomedical & Healthcare Technology yang dikembangkan sebagai pintu masuk menuju informasi organisasi, kegiatan, riset, kolaborasi, dan layanan BHT-Nexus.
 
 Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfokus pada halaman dan interaksi pengguna, sedangkan aturan bisnis, autentikasi, serta pengelolaan data berada di [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server).
 
 ## Status Saat Ini
 
-Repository berada pada tahap **fondasi awal**. Proyek sudah dapat dipasang, diperiksa, dibuat menjadi build produksi, dan dijalankan. Halaman yang tersedia masih berupa halaman kosong bawaan generator resmi Next.js.
+Repository berada pada tahap **pengembangan landing page**. Halaman utama berbahasa Indonesia dan Inggris sudah tersedia dengan susunan visual responsif. Isi berita, kegiatan, tautan, dan jadwal pada tahap ini masih bersifat editorial sementara agar struktur antarmuka dapat ditinjau sebelum konten resmi dan integrasi data diterapkan.
 
 | Bagian | Status |
 |---|---|
 | Fondasi Next.js | Tersedia |
-| TypeScript dan Tailwind CSS | Tersedia |
+| TypeScript dan CSS Modules | Tersedia |
 | Pemeriksaan kode dengan Biome | Tersedia |
 | Pemeriksaan otomatis di GitHub | Tersedia |
-| Struktur dashboard | Belum dibuat |
-| Identitas visual CoE BHT | Belum diterapkan |
+| Navigasi dan identitas visual CoE BHT | Tersedia |
+| Hero, riset, berita, dan kegiatan | Tersedia |
+| Halaman Indonesia dan Inggris | Tersedia |
+| Tata letak responsif | Tersedia |
+| Bagian mitra dan bagian lanjutan | Dalam pengembangan |
+| Halaman detail dan konten final | Belum dibuat |
 | Login dan hak akses | Belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
-| Deployment | Belum disiapkan |
+| Dashboard operasional BHT-Nexus | Belum dibuat |
 
-Status ini ditulis sesuai keadaan proyek. Repository belum mengklaim fitur atau kesiapan produksi yang memang belum tersedia.
+Status ini ditulis sesuai keadaan proyek. Landing page akan terus berkembang dan belum dianggap sebagai versi akhir.
 
 ## Hubungan dengan Server
 
@@ -62,9 +66,9 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 | Bagian | Teknologi |
 |---|---|
 | Kerangka web | Next.js 16.2.12 |
-| Penyusun tampilan | React 19.2.4 |
+| Pustaka antarmuka | React 19.2.4 |
 | Bahasa | TypeScript 5.9.3 |
-| Gaya tampilan | Tailwind CSS 4.3.3 |
+| Gaya tampilan | CSS Modules dan token CSS |
 | Pemeriksaan kode | Biome 2.2.0 |
 | Runtime | Node.js 24.18.0 |
 | Pengelola paket | npm 11.16.0 |
@@ -76,15 +80,33 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 ├── .github/            # template kontribusi dan pemeriksaan otomatis
 ├── scripts/            # pemeriksaan konfigurasi repository
 ├── src/
-│   └── app/            # halaman dan kerangka dasar Next.js
-├── AGENTS.md            # panduan kompatibilitas resmi dari Next.js
+│   ├── app/             # route, layout, metadata, font, dan gaya global
+│   ├── assets/          # logo serta gambar landing page
+│   └── components/      # komponen per bagian landing page
 ├── biome.json          # aturan pemeriksaan dan format kode
 ├── next.config.ts      # pengaturan Next.js
 ├── package.json        # daftar perintah dan dependency
 └── tsconfig.json       # aturan TypeScript
 ```
 
-Folder baru ditambahkan ketika benar-benar dibutuhkan. Repository tidak menyediakan susunan fitur kosong hanya untuk menggambarkan rencana.
+Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan interaksi dapat diperbarui tanpa membuat halaman utama sulit dirawat. Folder baru ditambahkan ketika benar-benar dibutuhkan.
+
+## Halaman yang Tersedia
+
+| Alamat | Bahasa | Cakupan |
+|---|---|---|
+| `/` | Indonesia | Landing page utama |
+| `/en` | Inggris | Landing page utama |
+
+Landing page saat ini mencakup:
+
+- navigasi desktop dan mobile;
+- hero dengan sorotan utama;
+- eksplorasi fokus riset;
+- berita pilihan;
+- kegiatan terbaru dengan tanggal, waktu, dan gambar yang dapat dibuka dalam ukuran asli.
+
+Bagian mitra, halaman detail, konten resmi terbaru, dan pintu masuk dashboard akan ditambahkan secara bertahap.
 
 ## Menjalankan Proyek
 
