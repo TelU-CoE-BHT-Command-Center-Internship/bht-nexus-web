@@ -1,6 +1,5 @@
 .section {
   --news-surface: #f3f4f4;
-  scroll-margin-top: 5rem;
   background: linear-gradient(
     to bottom,
     var(--color-paper) 0,

@@ -1,5 +1,4 @@
 .section {
-  scroll-margin-top: 5rem;
   background: var(--color-paper);
   color: var(--color-ink);
 }

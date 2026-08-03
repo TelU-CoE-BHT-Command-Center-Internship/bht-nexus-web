@@ -9,6 +9,10 @@ export type NavigationItem = {
   children?: NavigationItem[];
 };
 
+export function isPageSectionHref(href: string) {
+  return href.startsWith("#");
+}
+
 export type SiteNavigation = {
   brandHomeLabel: string;
   closeMenuLabel: string;
@@ -41,7 +45,7 @@ const siteNavigation = {
         label: "Telkom University",
         external: true,
       },
-      { href: "/kontak", label: "Kontak" },
+      { href: "#contact", label: "Kontak" },
     ],
     primaryLinks: [
       {
@@ -96,7 +100,7 @@ const siteNavigation = {
         label: "Telkom University",
         external: true,
       },
-      { href: "/en/contact", label: "Contact" },
+      { href: "#contact", label: "Contact" },
     ],
     primaryLinks: [
       {

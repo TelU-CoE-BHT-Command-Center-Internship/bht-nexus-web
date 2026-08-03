@@ -5,15 +5,46 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LanguageSwitcher } from "@/components/site-header/language-switcher";
 import styles from "@/components/site-header/site-header.module.css";
-import type {
-  Locale,
-  SiteNavigation,
+import {
+  isPageSectionHref,
+  type Locale,
+  type NavigationItem,
+  type SiteNavigation,
 } from "@/components/site-header/site-navigation";
 
 type MobileNavigationProps = {
   content: SiteNavigation;
   locale: Locale;
 };
+
+type MobileUtilityLinkProps = {
+  item: NavigationItem;
+  onNavigate: () => void;
+};
+
+function MobileUtilityLink({ item, onNavigate }: MobileUtilityLinkProps) {
+  if (item.external) {
+    return (
+      <a href={item.href} target="_blank" rel="noreferrer" onClick={onNavigate}>
+        {item.label}
+      </a>
+    );
+  }
+
+  if (isPageSectionHref(item.href)) {
+    return (
+      <a href={item.href} onClick={onNavigate}>
+        {item.label}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={item.href} prefetch={false} onClick={onNavigate}>
+      {item.label}
+    </Link>
+  );
+}
 
 function ChevronIcon() {
   return (
@@ -217,28 +248,13 @@ export function MobileNavigation({ content, locale }: MobileNavigationProps) {
                 className={styles.mobileUtilityLinks}
                 aria-label={content.utilityNavigationLabel}
               >
-                {content.utilityLinks.map((item) =>
-                  item.external ? (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={closeMenu}
-                    >
-                      {item.label}
-                    </a>
-                  ) : (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      prefetch={false}
-                      onClick={closeMenu}
-                    >
-                      {item.label}
-                    </Link>
-                  ),
-                )}
+                {content.utilityLinks.map((item) => (
+                  <MobileUtilityLink
+                    item={item}
+                    key={item.href}
+                    onNavigate={closeMenu}
+                  />
+                ))}
               </nav>
             </div>
 

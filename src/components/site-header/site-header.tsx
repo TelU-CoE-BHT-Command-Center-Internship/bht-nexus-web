@@ -8,6 +8,7 @@ import { MobileNavigation } from "@/components/site-header/mobile-navigation";
 import styles from "@/components/site-header/site-header.module.css";
 import {
   getSiteNavigation,
+  isPageSectionHref,
   type Locale,
   type NavigationItem,
 } from "@/components/site-header/site-navigation";
@@ -57,6 +58,10 @@ function NavigationLink({ item }: { item: NavigationItem }) {
         {item.label}
       </a>
     );
+  }
+
+  if (isPageSectionHref(item.href)) {
+    return <a href={item.href}>{item.label}</a>;
   }
 
   return (

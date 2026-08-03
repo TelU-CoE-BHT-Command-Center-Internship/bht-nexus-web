@@ -18,6 +18,7 @@
     "check": "npm run validate:config && npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
+    "maplibre-gl": "5.24.0",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4"

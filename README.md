@@ -31,6 +31,7 @@ Repository berada pada tahap **pengembangan landing page**. Halaman utama berbah
 | Pemeriksaan otomatis di GitHub | Tersedia |
 | Navigasi dan identitas visual CoE BHT | Tersedia |
 | Hero, riset, berita, dan kegiatan | Tersedia |
+| Lokasi interaktif dan kanal kontak | Tersedia |
 | Halaman Indonesia dan Inggris | Tersedia |
 | Tata letak responsif | Tersedia |
 | Bagian mitra dan bagian lanjutan | Dalam pengembangan |
@@ -69,6 +70,7 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 | Pustaka antarmuka | React 19.2.4 |
 | Bahasa | TypeScript 5.9.3 |
 | Gaya tampilan | CSS Modules dan token CSS |
+| Peta interaktif | MapLibre GL JS dan OpenFreeMap |
 | Pemeriksaan kode | Biome 2.2.0 |
 | Runtime | Node.js 24.18.0 |
 | Pengelola paket | npm 11.16.0 |
@@ -105,6 +107,7 @@ Landing page saat ini mencakup:
 - eksplorasi fokus riset;
 - berita pilihan;
 - kegiatan terbaru dengan tanggal, waktu, dan gambar yang dapat dibuka dalam ukuran asli.
+- lokasi kampus interaktif serta kanal Instagram, WhatsApp, dan email.
 
 Bagian mitra, halaman detail, konten resmi terbaru, dan pintu masuk dashboard akan ditambahkan secara bertahap.
 

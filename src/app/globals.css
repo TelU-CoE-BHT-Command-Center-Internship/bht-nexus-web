@@ -19,6 +19,7 @@
 html {
   min-width: 320px;
   background: var(--color-paper);
+  scroll-behavior: smooth;
   scroll-padding-top: 5rem;
 }
 
@@ -63,6 +64,10 @@ svg {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {

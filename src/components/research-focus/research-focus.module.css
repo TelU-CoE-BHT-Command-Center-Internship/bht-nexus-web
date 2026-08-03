@@ -1,7 +1,6 @@
 .section {
   background: var(--color-paper);
   color: var(--color-ink);
-  scroll-margin-top: 5rem;
 }
 
 .inner {
