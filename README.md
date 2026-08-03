@@ -31,10 +31,11 @@ Repository berada pada tahap **pengembangan landing page**. Halaman utama berbah
 | Pemeriksaan otomatis di GitHub | Tersedia |
 | Navigasi dan identitas visual CoE BHT | Tersedia |
 | Hero, riset, berita, dan kegiatan | Tersedia |
-| Lokasi interaktif dan kanal kontak | Tersedia |
+| Lokasi interaktif, kanal kontak, dan footer institusional | Tersedia |
 | Halaman Indonesia dan Inggris | Tersedia |
 | Tata letak responsif | Tersedia |
-| Bagian mitra dan bagian lanjutan | Dalam pengembangan |
+| Jejaring mitra nasional dan internasional | Tersedia |
+| Bagian landing page lanjutan | Dalam pengembangan |
 | Halaman detail dan konten final | Belum dibuat |
 | Login dan hak akses | Belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
@@ -84,7 +85,8 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 ├── src/
 │   ├── app/             # route, layout, metadata, font, dan gaya global
 │   ├── assets/          # logo serta gambar landing page
-│   └── components/      # komponen per bagian landing page
+│   ├── components/      # komponen per bagian landing page
+│   └── content/         # data institusi yang dipakai lintas komponen
 ├── biome.json          # aturan pemeriksaan dan format kode
 ├── next.config.ts      # pengaturan Next.js
 ├── package.json        # daftar perintah dan dependency
@@ -106,10 +108,12 @@ Landing page saat ini mencakup:
 - hero dengan sorotan utama;
 - eksplorasi fokus riset;
 - berita pilihan;
-- kegiatan terbaru dengan tanggal, waktu, dan gambar yang dapat dibuka dalam ukuran asli.
-- lokasi kampus interaktif serta kanal Instagram, WhatsApp, dan email.
+- kegiatan terbaru dengan tanggal, waktu, dan gambar yang dapat dibuka dalam ukuran asli;
+- jejaring mitra nasional dan internasional dalam dua deret bergerak;
+- lokasi kampus interaktif serta kanal Instagram, WhatsApp, dan email;
+- footer institusional dengan dua lokasi, tautan resmi, RISS, dan kebijakan privasi.
 
-Bagian mitra, halaman detail, konten resmi terbaru, dan pintu masuk dashboard akan ditambahkan secara bertahap.
+Halaman detail, konten resmi terbaru, dan pintu masuk dashboard akan ditambahkan secara bertahap.
 
 ## Menjalankan Proyek
 

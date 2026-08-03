@@ -6,7 +6,7 @@
 .inner {
   width: min(100% - 3rem, 74rem);
   margin-inline: auto;
-  padding-block: clamp(4.5rem, 7vw, 6.5rem);
+  padding-block: var(--section-space);
 }
 
 .header {
@@ -253,7 +253,7 @@
 @media (max-width: 48rem) {
   .inner {
     width: min(100% - 2rem, 40rem);
-    padding-block: clamp(4rem, 10vw, 5.5rem);
+    padding-block: var(--section-space);
   }
 
   .header {

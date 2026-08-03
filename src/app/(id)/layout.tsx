@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { inter } from "@/app/fonts";
+import { SiteFooter } from "@/components/site-footer/site-footer";
 import { SiteHeader } from "@/components/site-header/site-header";
 import "../globals.css";
 
@@ -27,6 +28,7 @@ export default function IndonesianLayout({
       <body>
         <SiteHeader locale="id" />
         {children}
+        <SiteFooter locale="id" />
       </body>
     </html>
   );

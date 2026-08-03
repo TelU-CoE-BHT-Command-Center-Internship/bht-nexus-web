@@ -1,14 +1,8 @@
 import type { Locale } from "@/components/site-header/site-navigation";
+import { COE_BHT_LINKS, COE_BHT_PRIMARY_LOCATION } from "@/content/coe-bht";
 
 export const COE_BHT_LOCATION = {
-  address:
-    "Jl. Telekomunikasi No. 1, Terusan Buahbatu–Bojongsoang, Sukapura, Kec. Dayeuhkolot, Kabupaten Bandung, Jawa Barat 40257",
-  coordinates: {
-    latitude: -6.9734163,
-    longitude: 107.630406,
-  },
-  directionsHref:
-    "https://www.google.com/maps/dir/?api=1&destination=-6.9734163%2C107.630406",
+  ...COE_BHT_PRIMARY_LOCATION,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/liberty",
 } as const;
 
@@ -35,12 +29,6 @@ export type LocationMapContent = {
   title: string;
 };
 
-const sharedContactLinks = {
-  email: "mailto:coe.bht@telkomuniversity.ac.id",
-  instagram: "https://www.instagram.com/coe.bht/",
-  whatsapp: "https://wa.me/6282295977713",
-} as const;
-
 const locationMapContent = {
   id: {
     addressLabel: "Alamat kampus CoE BHT",
@@ -56,7 +44,7 @@ const locationMapContent = {
       {
         ariaLabel: "Buka Instagram resmi CoE BHT",
         external: true,
-        href: sharedContactLinks.instagram,
+        href: COE_BHT_LINKS.instagram,
         icon: "instagram",
         label: "Instagram @coe.bht",
         prefix: "Ikuti kami di",
@@ -64,14 +52,14 @@ const locationMapContent = {
       {
         ariaLabel: "Hubungi CoE BHT melalui WhatsApp",
         external: true,
-        href: sharedContactLinks.whatsapp,
+        href: COE_BHT_LINKS.whatsapp,
         icon: "whatsapp",
         label: "WhatsApp",
         prefix: "Hubungi kami melalui",
       },
       {
         ariaLabel: "Kirim email ke CoE BHT",
-        href: sharedContactLinks.email,
+        href: COE_BHT_LINKS.email,
         icon: "email",
         label: "coe.bht@telkomuniversity.ac.id",
         prefix: "Kirim email ke",
@@ -93,7 +81,7 @@ const locationMapContent = {
       {
         ariaLabel: "Open the official CoE BHT Instagram account",
         external: true,
-        href: sharedContactLinks.instagram,
+        href: COE_BHT_LINKS.instagram,
         icon: "instagram",
         label: "Instagram @coe.bht",
         prefix: "Follow us on",
@@ -101,14 +89,14 @@ const locationMapContent = {
       {
         ariaLabel: "Contact CoE BHT through WhatsApp",
         external: true,
-        href: sharedContactLinks.whatsapp,
+        href: COE_BHT_LINKS.whatsapp,
         icon: "whatsapp",
         label: "WhatsApp",
         prefix: "Reach us on",
       },
       {
         ariaLabel: "Send an email to CoE BHT",
-        href: sharedContactLinks.email,
+        href: COE_BHT_LINKS.email,
         icon: "email",
         label: "coe.bht@telkomuniversity.ac.id",
         prefix: "Email us at",

@@ -6,7 +6,7 @@
 .inner {
   width: min(100% - 3rem, 80rem);
   margin-inline: auto;
-  padding-block: clamp(3.75rem, 7vw, 6.5rem) clamp(5rem, 8vw, 8rem);
+  padding-block: var(--section-space);
   border-top: 1px solid var(--color-brand-navy-dark);
 }
 
@@ -202,7 +202,7 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  padding-block: clamp(4.5rem, 7vw, 6.25rem);
+  padding-block: var(--section-space);
   background: var(--color-brand-navy-dark);
   color: var(--color-paper);
 }
@@ -355,7 +355,7 @@
 @media (max-width: 48rem) {
   .inner {
     width: min(100% - 2rem, 42rem);
-    padding-block: 3.75rem 5.5rem;
+    padding-block: var(--section-space);
   }
 
   .categoryTabs {
@@ -403,7 +403,7 @@
   }
 
   .metrics {
-    padding-block: 3.75rem 4.5rem;
+    padding-block: var(--section-space);
   }
 
   .metricsContent {
@@ -423,7 +423,7 @@
 @media (max-width: 30rem) {
   .inner {
     width: min(100% - 1.5rem, 28rem);
-    padding-block: 3.25rem 4.5rem;
+    padding-block: var(--section-space);
   }
 
   .title {
@@ -467,7 +467,7 @@
   }
 
   .metrics {
-    padding-block: 3.25rem 3.75rem;
+    padding-block: var(--section-space);
   }
 
   .metricsContent {
