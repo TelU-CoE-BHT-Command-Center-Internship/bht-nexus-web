@@ -18,7 +18,6 @@ export type SiteNavigation = {
   mobileMenuEyebrow: string;
   mobileMenuTitle: string;
   platformLabel: string;
-  skipLink: string;
   utilityNavigationLabel: string;
   utilityLinks: NavigationItem[];
   primaryLinks: NavigationItem[];
@@ -35,7 +34,6 @@ const siteNavigation = {
     mobileMenuEyebrow: "Telkom University",
     mobileMenuTitle: "CoE Biomedical & Healthcare Technology",
     platformLabel: "Platform digital",
-    skipLink: "Lewati navigasi",
     utilityNavigationLabel: "Tautan institusi",
     utilityLinks: [
       {
@@ -91,7 +89,6 @@ const siteNavigation = {
     mobileMenuEyebrow: "Telkom University",
     mobileMenuTitle: "CoE Biomedical & Healthcare Technology",
     platformLabel: "Digital platform",
-    skipLink: "Skip navigation",
     utilityNavigationLabel: "Institutional links",
     utilityLinks: [
       {

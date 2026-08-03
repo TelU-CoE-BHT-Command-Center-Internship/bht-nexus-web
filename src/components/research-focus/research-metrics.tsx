@@ -5,10 +5,15 @@ import type { ResearchCategory } from "@/components/research-focus/research-focu
 
 type ResearchMetricsProps = {
   title: string;
+  subtitle: string;
   categories: ResearchCategory[];
 };
 
-export function ResearchMetrics({ title, categories }: ResearchMetricsProps) {
+export function ResearchMetrics({
+  title,
+  subtitle,
+  categories,
+}: ResearchMetricsProps) {
   return (
     <aside className={styles.metrics} aria-labelledby="research-metrics-title">
       <Image
@@ -20,15 +25,23 @@ export function ResearchMetrics({ title, categories }: ResearchMetricsProps) {
       />
 
       <div className={styles.metricsContent}>
-        <p className={styles.metricsTitle} id="research-metrics-title">
-          {title}
-        </p>
+        <header className={styles.metricsHeading}>
+          <h3 className={styles.metricsTitle} id="research-metrics-title">
+            {title}
+          </h3>
+          <p className={styles.metricsSubtitle}>{subtitle}</p>
+        </header>
 
         <dl className={styles.metricsGrid}>
           {categories.map((category) => (
             <div className={styles.metric} key={category.id}>
-              <dt>{category.label}</dt>
-              <dd>{category.topics.length}</dd>
+              <dt className={styles.metricTerm}>
+                <span className={styles.metricValue}>
+                  {category.topics.length}
+                </span>
+                <span className={styles.metricLabel}>{category.label}</span>
+              </dt>
+              <dd className={styles.metricDescription}>{category.summary}</dd>
             </div>
           ))}
         </dl>

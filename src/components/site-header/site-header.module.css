@@ -1,22 +1,3 @@
-/* Keyboard navigation ----------------------------------------------------- */
-
-.skipLink {
-  position: fixed;
-  z-index: 100;
-  top: 0.75rem;
-  left: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--color-paper);
-  color: var(--color-ink);
-  font-weight: 700;
-  transform: translateY(-160%);
-  transition: transform 160ms ease;
-}
-
-.skipLink:focus {
-  transform: translateY(0);
-}
-
 /* Desktop header ---------------------------------------------------------- */
 
 .header {

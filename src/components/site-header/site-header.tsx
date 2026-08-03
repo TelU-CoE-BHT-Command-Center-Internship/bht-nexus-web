@@ -71,56 +71,50 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
   const homeHref = locale === "id" ? "/" : "/en";
 
   return (
-    <>
-      <a className={styles.skipLink} href="#main-content">
-        {content.skipLink}
-      </a>
+    <StickyHeader>
+      <div className={styles.headerInner}>
+        <Link
+          className={styles.brand}
+          href={homeHref}
+          aria-label={content.brandHomeLabel}
+        >
+          <BrandLogo />
+        </Link>
 
-      <StickyHeader>
-        <div className={styles.headerInner}>
-          <Link
-            className={styles.brand}
-            href={homeHref}
-            aria-label={content.brandHomeLabel}
-          >
-            <BrandLogo />
-          </Link>
+        <div className={styles.desktopNavigation}>
+          <div className={styles.utilityRow}>
+            <nav aria-label={content.utilityNavigationLabel}>
+              {content.utilityLinks.map((item) => (
+                <NavigationLink key={item.href} item={item} />
+              ))}
+            </nav>
 
-          <div className={styles.desktopNavigation}>
-            <div className={styles.utilityRow}>
-              <nav aria-label={content.utilityNavigationLabel}>
-                {content.utilityLinks.map((item) => (
-                  <NavigationLink key={item.href} item={item} />
-                ))}
-              </nav>
-
-              <LanguageSwitcher
-                className={styles.languageSwitcher}
-                label={content.languageLabel}
-                locale={locale}
-              />
-            </div>
-
-            <div className={styles.primaryRow}>
-              <DesktopPrimaryNavigation
-                items={content.primaryLinks}
-                label={content.mainNavigationLabel}
-              />
-
-              <Link
-                className={styles.primaryAction}
-                href={content.action.href}
-                prefetch={false}
-              >
-                {content.action.label}
-                <ArrowIcon />
-              </Link>
-            </div>
+            <LanguageSwitcher
+              className={styles.languageSwitcher}
+              label={content.languageLabel}
+              locale={locale}
+            />
           </div>
 
-          <MobileNavigation content={content} locale={locale} />
+          <div className={styles.primaryRow}>
+            <DesktopPrimaryNavigation
+              items={content.primaryLinks}
+              label={content.mainNavigationLabel}
+            />
+
+            <Link
+              className={styles.primaryAction}
+              href={content.action.href}
+              prefetch={false}
+            >
+              {content.action.label}
+              <ArrowIcon />
+            </Link>
+          </div>
         </div>
-      </StickyHeader>
-    </>
+
+        <MobileNavigation content={content} locale={locale} />
+      </div>
+    </StickyHeader>
   );
 }

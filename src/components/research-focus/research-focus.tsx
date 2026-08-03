@@ -28,6 +28,7 @@ export function ResearchFocus({ locale }: ResearchFocusProps) {
 
       <ResearchMetrics
         categories={content.categories}
+        subtitle={content.metricsSubtitle}
         title={content.metricsTitle}
       />
     </section>

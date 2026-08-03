@@ -22,12 +22,14 @@ export type ResearchTopic = {
 export type ResearchCategory = {
   id: string;
   label: string;
+  summary: string;
   topics: ResearchTopic[];
 };
 
 export type ResearchFocusContent = {
   title: string;
   metricsTitle: string;
+  metricsSubtitle: string;
   categoryNavigationLabel: string;
   topicNavigationLabel: string;
   exploreLabel: string;
@@ -38,6 +40,7 @@ const researchFocusContent = {
   id: {
     title: "Riset",
     metricsTitle: "Fakta CoE BHT",
+    metricsSubtitle: "Cakupan riset dan program saat ini",
     categoryNavigationLabel: "Kategori riset",
     topicNavigationLabel: "Topik pada kategori",
     exploreLabel: "Pelajari lebih lanjut",
@@ -45,6 +48,8 @@ const researchFocusContent = {
       {
         id: "focus-areas",
         label: "Fokus Riset",
+        summary:
+          "Arah utama yang menghubungkan rekayasa biomedis cerdas, layanan kesehatan digital, dan kesejahteraan masyarakat.",
         topics: [
           {
             id: "intelligent-biomedical-engineering",
@@ -80,6 +85,8 @@ const researchFocusContent = {
       {
         id: "expertise",
         label: "Keahlian",
+        summary:
+          "Mencakup instrumentasi, citra dan biosinyal, telemedisin, asesmen teknologi, promosi kesehatan, serta rehabilitasi.",
         topics: [
           {
             id: "biomedical-instrumentation",
@@ -145,6 +152,8 @@ const researchFocusContent = {
       {
         id: "flagship-projects",
         label: "Proyek Unggulan",
+        summary:
+          "Inisiatif terapan untuk navigasi asistif, mitigasi risiko jatuh, dan perlindungan keselamatan berbasis teknologi.",
         topics: [
           {
             id: "fall-risk-mitigation",
@@ -181,6 +190,8 @@ const researchFocusContent = {
       {
         id: "programs",
         label: "Program",
+        summary:
+          "Seminar, pelatihan ultrasonografi, dan short course telemedisin untuk memperkuat kapasitas akademisi dan praktisi.",
         topics: [
           {
             id: "biomedical-healthcare-seminar",
@@ -219,6 +230,7 @@ const researchFocusContent = {
   en: {
     title: "Research",
     metricsTitle: "CoE BHT in Numbers",
+    metricsSubtitle: "Our current research and programme portfolio",
     categoryNavigationLabel: "Research categories",
     topicNavigationLabel: "Topics in category",
     exploreLabel: "Explore this topic",
@@ -226,6 +238,8 @@ const researchFocusContent = {
       {
         id: "focus-areas",
         label: "Focus areas",
+        summary:
+          "Core directions connecting intelligent biomedical engineering, digital healthcare, and community well-being.",
         topics: [
           {
             id: "intelligent-biomedical-engineering",
@@ -262,6 +276,8 @@ const researchFocusContent = {
       {
         id: "expertise",
         label: "Expertise",
+        summary:
+          "Spanning instrumentation, imaging and biosignals, telemedicine, technology assessment, health promotion, and rehabilitation.",
         topics: [
           {
             id: "biomedical-instrumentation",
@@ -327,6 +343,8 @@ const researchFocusContent = {
       {
         id: "flagship-projects",
         label: "Flagship projects",
+        summary:
+          "Applied initiatives for assistive navigation, fall-risk mitigation, and technology-enabled safety protection.",
         topics: [
           {
             id: "fall-risk-mitigation",
@@ -362,6 +380,8 @@ const researchFocusContent = {
       {
         id: "programs",
         label: "Programs",
+        summary:
+          "Seminars, ultrasonography training, and telemedicine short courses that strengthen academic and professional capacity.",
         topics: [
           {
             id: "biomedical-healthcare-seminar",
