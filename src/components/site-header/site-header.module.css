@@ -40,11 +40,13 @@
   display: block;
   flex: 0 0 auto;
   width: min(100%, 16.5rem);
+  user-select: none;
 }
 
 .brand img {
   width: 100%;
   height: auto;
+  -webkit-user-drag: none;
 }
 
 .brand picture {

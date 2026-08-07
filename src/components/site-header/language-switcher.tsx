@@ -2,6 +2,7 @@
 
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
 import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
 import styles from "@/components/site-header/site-header.module.css";
@@ -16,7 +17,6 @@ type LanguageSwitcherProps = {
 
 type LanguageOption = {
   flag: StaticImageData;
-  href: string;
   label: string;
   locale: Locale;
 };
@@ -24,17 +24,32 @@ type LanguageOption = {
 const languageOptions: LanguageOption[] = [
   {
     flag: indonesiaFlag,
-    href: "/",
     label: "Bahasa Indonesia",
     locale: "id",
   },
   {
     flag: unitedKingdomFlag,
-    href: "/en",
     label: "English",
     locale: "en",
   },
 ];
+
+const localizedRoutes: Record<string, Record<Locale, string>> = {
+  "/": { en: "/en", id: "/" },
+  "/anggota": { en: "/en/members", id: "/anggota" },
+  "/en": { en: "/en", id: "/" },
+  "/en/members": { en: "/en/members", id: "/anggota" },
+};
+
+function getLocalizedHref(pathname: string, targetLocale: Locale) {
+  const route = localizedRoutes[pathname];
+
+  if (route) {
+    return route[targetLocale];
+  }
+
+  return targetLocale === "id" ? "/" : "/en";
+}
 
 export function LanguageSwitcher({
   className,
@@ -42,6 +57,8 @@ export function LanguageSwitcher({
   locale,
   onNavigate,
 }: LanguageSwitcherProps) {
+  const pathname = usePathname();
+
   return (
     <nav className={className} aria-label={label}>
       {languageOptions.map((option) => {
@@ -52,7 +69,7 @@ export function LanguageSwitcher({
             aria-current={isActive ? "page" : undefined}
             aria-label={option.label}
             data-active={isActive}
-            href={option.href}
+            href={getLocalizedHref(pathname, option.locale)}
             key={option.locale}
             prefetch={false}
             title={option.label}

@@ -17,11 +17,11 @@
 
 BHT-Nexus Web adalah antarmuka publik CoE Biomedical & Healthcare Technology yang dikembangkan sebagai pintu masuk menuju informasi organisasi, kegiatan, riset, kolaborasi, dan layanan BHT-Nexus.
 
-Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfokus pada halaman dan interaksi pengguna, sedangkan aturan bisnis, autentikasi, serta pengelolaan data berada di [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server).
+Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfokus pada halaman dan interaksi pengguna, sedangkan aturan bisnis, autentikasi, serta pengelolaan data berada di [`bht-nexus-api`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-api).
 
 ## Status Saat Ini
 
-Repository berada pada tahap **pengembangan landing page**. Halaman utama berbahasa Indonesia dan Inggris sudah tersedia dengan susunan visual responsif. Isi berita, kegiatan, tautan, dan jadwal pada tahap ini masih bersifat editorial sementara agar struktur antarmuka dapat ditinjau sebelum konten resmi dan integrasi data diterapkan.
+Repository berada pada tahap **pengembangan landing page**. Halaman utama dan halaman anggota berbahasa Indonesia serta Inggris sudah tersedia dengan susunan visual responsif. Isi berita, kegiatan, mitra, tautan, dan jadwal pada tahap ini masih bersifat editorial sementara agar struktur antarmuka dapat ditinjau sebelum konten resmi dan integrasi data diterapkan.
 
 | Bagian | Status |
 |---|---|
@@ -34,9 +34,10 @@ Repository berada pada tahap **pengembangan landing page**. Halaman utama berbah
 | Lokasi interaktif, kanal kontak, dan footer institusional | Tersedia |
 | Halaman Indonesia dan Inggris | Tersedia |
 | Tata letak responsif | Tersedia |
-| Jejaring mitra nasional dan internasional | Tersedia |
+| Profil ketua dan tim pengurus CoE BHT | Tersedia |
+| Kerangka jejaring mitra nasional dan internasional | Tersedia; daftar resmi masih dikurasi |
 | Bagian landing page lanjutan | Dalam pengembangan |
-| Halaman detail dan konten final | Belum dibuat |
+| Halaman institusional lanjutan dan konten final | Dalam pengembangan |
 | Login dan hak akses | Belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
 | Dashboard operasional BHT-Nexus | Belum dibuat |
@@ -54,7 +55,7 @@ halaman yang dibuka melalui browser
    │
    │ nanti meminta atau mengirim data
    ▼
-bht-nexus-server
+bht-nexus-api
 login, aturan, proses, dan pengelolaan data
    │
    ▼
@@ -101,6 +102,8 @@ Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan inte
 |---|---|---|
 | `/` | Indonesia | Landing page utama |
 | `/en` | Inggris | Landing page utama |
+| `/anggota` | Indonesia | Profil ketua dan tim pengurus CoE BHT |
+| `/en/members` | Inggris | Profil ketua dan tim pengurus CoE BHT |
 
 Landing page saat ini mencakup:
 
@@ -109,11 +112,11 @@ Landing page saat ini mencakup:
 - eksplorasi fokus riset;
 - berita pilihan;
 - kegiatan terbaru dengan tanggal, waktu, dan gambar yang dapat dibuka dalam ukuran asli;
-- jejaring mitra nasional dan internasional dalam dua deret bergerak;
+- kerangka jejaring mitra nasional dan internasional dengan daftar editorial sementara;
 - lokasi kampus interaktif serta kanal Instagram, WhatsApp, dan email;
 - footer institusional dengan dua lokasi, tautan resmi, RISS, dan kebijakan privasi.
 
-Halaman detail, konten resmi terbaru, dan pintu masuk dashboard akan ditambahkan secara bertahap.
+Bagian landing page lanjutan, halaman institusional lain, konten resmi terbaru, dan pintu masuk dashboard akan ditambahkan secara bertahap.
 
 ## Menjalankan Proyek
 

@@ -69,7 +69,15 @@ export function DesktopPrimaryNavigation({
     href: string,
   ) {
     event.preventDefault();
-    setOpenMenuHref((currentHref) => (currentHref === href ? null : href));
+    const isKeyboardActivation = event.detail === 0;
+
+    setOpenMenuHref((currentHref) => {
+      if (isKeyboardActivation && currentHref === href) {
+        return null;
+      }
+
+      return href;
+    });
   }
 
   return (
@@ -78,7 +86,6 @@ export function DesktopPrimaryNavigation({
       aria-label={label}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      onMouseLeave={closeAllMenus}
     >
       {items.map((item) => {
         if (!item.children?.length) {
@@ -112,6 +119,7 @@ export function DesktopPrimaryNavigation({
             data-open={isOpen}
             key={item.href}
             onMouseEnter={() => setOpenMenuHref(item.href)}
+            onMouseLeave={closeAllMenus}
           >
             <button
               className={styles.navigationTrigger}
@@ -119,7 +127,6 @@ export function DesktopPrimaryNavigation({
               aria-controls={menuId}
               aria-expanded={isOpen}
               onClick={(event) => handleTriggerClick(event, item.href)}
-              onFocus={() => setOpenMenuHref(item.href)}
             >
               {item.label}
               <ChevronIcon />

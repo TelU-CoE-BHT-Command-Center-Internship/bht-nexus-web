@@ -37,7 +37,7 @@ export function SiteFooter({ locale }: SiteFooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className={styles.footer}>
+    <footer className={styles.footer} id="contact">
       <div className={styles.main}>
         <div className={styles.brandColumn}>
           <Link
@@ -48,7 +48,7 @@ export function SiteFooter({ locale }: SiteFooterProps) {
           >
             <Image alt="" src={footerLogo} />
           </Link>
-          <a className={styles.contactButton} href="#contact">
+          <a className={styles.contactButton} href={COE_BHT_LINKS.email}>
             {content.contactLabel}
           </a>
         </div>

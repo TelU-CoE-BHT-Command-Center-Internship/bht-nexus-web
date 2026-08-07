@@ -29,6 +29,8 @@ function ArrowIcon() {
 function BrandLogo() {
   const commonProperties = {
     alt: "",
+    fetchPriority: "high" as const,
+    loading: "eager" as const,
     sizes: "(max-width: 480px) 188px, (max-width: 1120px) 204px, 264px",
   };
   const {
@@ -39,14 +41,13 @@ function BrandLogo() {
   });
   const { props: mobileProperties } = getImageProps({
     ...commonProperties,
-    fetchPriority: "high",
     src: whiteLogo,
   });
 
   return (
     <picture>
       <source media="(min-width: 70.0625rem)" srcSet={desktopSourceSet} />
-      <img {...mobileProperties} alt="" aria-hidden="true" />
+      <img {...mobileProperties} alt="" aria-hidden="true" draggable={false} />
     </picture>
   );
 }
