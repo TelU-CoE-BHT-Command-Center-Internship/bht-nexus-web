@@ -21,7 +21,7 @@ Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfo
 
 ## Status Saat Ini
 
-Repository sedang mengembangkan landing page sekaligus menyiapkan tahap awal antarmuka dashboard BHT-Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif.
+Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk dan pratinjau dashboard juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
 
 Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi berita, kegiatan, dan mitra masih akan dilengkapi atau disesuaikan setelah tim mengonfirmasi data resminya.
 
@@ -40,8 +40,9 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Kerangka jejaring mitra nasional dan internasional | Tersedia; daftar mitra masih dilengkapi dan dikonfirmasi bersama tim |
 | Bagian landing page lanjutan | Dalam pengembangan |
 | Halaman institusional lanjutan dan konten final | Dalam pengembangan |
-| Antarmuka dashboard BHT-Nexus | Menjadi fokus pengembangan berikutnya |
-| Login dan hak akses | Belum dihubungkan |
+| Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
+| Pratinjau dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data pratinjau |
+| Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
 | Deployment | Belum menjadi cakupan saat ini |
 
@@ -88,8 +89,8 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 ├── scripts/            # pemeriksaan konfigurasi repository
 ├── src/
 │   ├── app/             # route, layout, metadata, font, dan gaya global
-│   ├── assets/          # logo serta gambar landing page
-│   ├── components/      # komponen per bagian landing page
+│   ├── assets/          # logo serta gambar landing page dan ruang kerja
+│   ├── components/      # komponen landing page, halaman masuk, dan dashboard
 │   └── content/         # data institusi yang dipakai lintas komponen
 ├── biome.json          # aturan pemeriksaan dan format kode
 ├── next.config.ts      # pengaturan Next.js
@@ -107,6 +108,11 @@ Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan inte
 | `/en` | Inggris | Landing page utama |
 | `/anggota` | Indonesia | Profil ketua dan tim pengurus CoE BHT |
 | `/en/members` | Inggris | Profil ketua dan tim pengurus CoE BHT |
+| `/nexus` | Indonesia | Pengarah menuju halaman masuk BHT Nexus |
+| `/en/nexus` | Inggris | Pengarah menuju halaman masuk BHT Nexus |
+| `/nexus/masuk` | Indonesia | Antarmuka masuk BHT Nexus |
+| `/en/nexus/sign-in` | Inggris | Antarmuka masuk BHT Nexus |
+| `/nexus/dashboard` | Indonesia | Pratinjau dashboard ruang kerja BHT Nexus |
 
 Landing page saat ini mencakup:
 
@@ -119,7 +125,20 @@ Landing page saat ini mencakup:
 - lokasi kampus interaktif serta kanal Instagram, WhatsApp, dan email;
 - footer institusional dengan dua lokasi, tautan resmi, RISS, dan kebijakan privasi.
 
-Landing page akan terus dilengkapi secara bertahap. Prioritas pengembangan berikutnya adalah antarmuka dashboard BHT-Nexus yang tetap berfokus pada sisi frontend dan pengalaman pengguna. Pekerjaan tahap awalnya dilacak melalui [issue #1](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/issues/1).
+Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan informasi mitra dan bagian lanjutan setelah data resmi dikonfirmasi. Pengembangan ruang kerja BHT Nexus juga berlanjut melalui penyempurnaan antarmuka per fitur, penyesuaian berbasis peran, serta integrasi autentikasi dan data server. Pekerjaan tahap awalnya dilacak melalui [issue #1](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/issues/1).
+
+### Pratinjau Ruang Kerja BHT Nexus
+
+Fondasi ruang kerja saat ini mencakup:
+
+- shell dashboard responsif dengan navigasi desktop dan mobile;
+- identitas pengguna, notifikasi, pencarian, bantuan, dan menu profil;
+- ringkasan empat metrik utama;
+- grafik aktivitas riset yang tetap dapat dibaca melalui tabel aksesibel;
+- daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
+- struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
+
+Data pada dashboard masih diberi penanda sebagai data pratinjau dan tidak mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial karena autentikasi server belum tersedia pada tahap ini.
 
 ## Menjalankan Proyek
 
