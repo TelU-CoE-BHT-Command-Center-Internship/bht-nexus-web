@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/status-pengembangan_aktif-d7193f)](#status-saat-ini)
 [![CI](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/actions/workflows/ci.yml/badge.svg)](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/actions/workflows/ci.yml)
-[![Next.js](https://img.shields.io/badge/Next.js-16.2.12-111827)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.3.0-111827)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933)](https://nodejs.org/)
 
 [Status](#status-saat-ini) · [Menjalankan proyek](#menjalankan-proyek) · [Kontribusi](CONTRIBUTING.md) · [Keamanan](SECURITY.md)
@@ -21,7 +21,9 @@ Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfo
 
 ## Status Saat Ini
 
-Repository berada pada tahap **pengembangan landing page**. Halaman utama dan halaman anggota berbahasa Indonesia serta Inggris sudah tersedia dengan susunan visual responsif. Isi berita, kegiatan, mitra, tautan, dan jadwal pada tahap ini masih bersifat editorial sementara agar struktur antarmuka dapat ditinjau sebelum konten resmi dan integrasi data diterapkan.
+Repository sedang mengembangkan landing page sekaligus menyiapkan tahap awal antarmuka dashboard BHT-Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif.
+
+Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi berita, kegiatan, dan mitra masih akan dilengkapi atau disesuaikan setelah tim mengonfirmasi data resminya.
 
 | Bagian | Status |
 |---|---|
@@ -35,12 +37,13 @@ Repository berada pada tahap **pengembangan landing page**. Halaman utama dan ha
 | Halaman Indonesia dan Inggris | Tersedia |
 | Tata letak responsif | Tersedia |
 | Profil ketua dan tim pengurus CoE BHT | Tersedia |
-| Kerangka jejaring mitra nasional dan internasional | Tersedia; daftar resmi masih dikurasi |
+| Kerangka jejaring mitra nasional dan internasional | Tersedia; daftar mitra masih dilengkapi dan dikonfirmasi bersama tim |
 | Bagian landing page lanjutan | Dalam pengembangan |
 | Halaman institusional lanjutan dan konten final | Dalam pengembangan |
+| Antarmuka dashboard BHT-Nexus | Menjadi fokus pengembangan berikutnya |
 | Login dan hak akses | Belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
-| Dashboard operasional BHT-Nexus | Belum dibuat |
+| Deployment | Belum menjadi cakupan saat ini |
 
 Status ini ditulis sesuai keadaan proyek. Landing page akan terus berkembang dan belum dianggap sebagai versi akhir.
 
@@ -68,7 +71,7 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 
 | Bagian | Teknologi |
 |---|---|
-| Kerangka web | Next.js 16.2.12 |
+| Kerangka web | Next.js 16.3.0 |
 | Pustaka antarmuka | React 19.2.4 |
 | Bahasa | TypeScript 5.9.3 |
 | Gaya tampilan | CSS Modules dan token CSS |
@@ -112,11 +115,11 @@ Landing page saat ini mencakup:
 - eksplorasi fokus riset;
 - berita pilihan;
 - kegiatan terbaru dengan tanggal, waktu, dan gambar yang dapat dibuka dalam ukuran asli;
-- kerangka jejaring mitra nasional dan internasional dengan daftar editorial sementara;
+- kerangka jejaring mitra nasional dan internasional dengan daftar yang masih dilengkapi dan dikonfirmasi bersama tim;
 - lokasi kampus interaktif serta kanal Instagram, WhatsApp, dan email;
 - footer institusional dengan dua lokasi, tautan resmi, RISS, dan kebijakan privasi.
 
-Bagian landing page lanjutan, halaman institusional lain, konten resmi terbaru, dan pintu masuk dashboard akan ditambahkan secara bertahap.
+Landing page akan terus dilengkapi secara bertahap. Prioritas pengembangan berikutnya adalah antarmuka dashboard BHT-Nexus yang tetap berfokus pada sisi frontend dan pengalaman pengguna. Pekerjaan tahap awalnya dilacak melalui [issue #1](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/issues/1).
 
 ## Menjalankan Proyek
 
