@@ -4,6 +4,7 @@
   --header-height: 5.5rem;
 
   display: grid;
+  height: 100svh;
   min-width: 320px;
   min-height: 100svh;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);

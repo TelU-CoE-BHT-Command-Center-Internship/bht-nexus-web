@@ -2,10 +2,12 @@ import type { DashboardMetricIconName } from "@/components/nexus-dashboard-overv
 
 type OverviewIconName =
   | DashboardMetricIconName
+  | "arrow-down"
   | "arrow-right"
   | "arrow-up"
   | "calendar"
-  | "chevron-down";
+  | "chevron-down"
+  | "steady";
 
 type OverviewIconProps = {
   name: OverviewIconName;
@@ -52,6 +54,10 @@ function IconPaths({ name }: OverviewIconProps) {
       );
     case "arrow-up":
       return <path d="m6.5 11.5 5.5-5.5 5.5 5.5M12 6v12" />;
+    case "arrow-down":
+      return <path d="m6.5 12.5 5.5 5.5 5.5-5.5M12 18V6" />;
+    case "steady":
+      return <path d="M6 12h12" />;
     case "arrow-right":
       return <path d="M5 12h14M14 7l5 5-5 5" />;
     case "chevron-down":

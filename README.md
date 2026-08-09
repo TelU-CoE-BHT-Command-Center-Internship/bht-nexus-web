@@ -17,7 +17,7 @@
 
 BHT-Nexus Web adalah antarmuka publik CoE Biomedical & Healthcare Technology yang dikembangkan sebagai pintu masuk menuju informasi organisasi, kegiatan, riset, kolaborasi, dan layanan BHT-Nexus.
 
-Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfokus pada halaman dan interaksi pengguna, sedangkan aturan bisnis, autentikasi, serta pengelolaan data berada di [`bht-nexus-api`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-api).
+Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfokus pada halaman dan interaksi pengguna, sedangkan aturan bisnis, autentikasi, serta pengelolaan data berada di [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server).
 
 ## Status Saat Ini
 
@@ -59,7 +59,7 @@ halaman yang dibuka melalui browser
    │
    │ nanti meminta atau mengirim data
    ▼
-bht-nexus-api
+bht-nexus-server
 login, aturan, proses, dan pengelolaan data
    │
    ▼
@@ -131,14 +131,14 @@ Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan infor
 
 Fondasi ruang kerja saat ini mencakup:
 
-- shell dashboard responsif dengan navigasi desktop dan mobile;
+- shell dashboard responsif dengan navigasi desktop dan mobile, area menu yang dapat digulir, serta akses bantuan yang tetap tersedia;
 - identitas pengguna, notifikasi, pencarian, bantuan, dan menu profil;
-- ringkasan empat metrik utama;
+- ringkasan empat metrik utama dengan kondisi naik, tetap, turun, dan periode pembanding;
 - grafik aktivitas riset yang tetap dapat dibaca melalui tabel aksesibel;
 - daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
 
-Data pada dashboard masih diberi penanda sebagai data pratinjau dan tidak mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial karena autentikasi server belum tersedia pada tahap ini.
+Metrik dashboard saat ini masih menggunakan data contoh terpusat untuk memvalidasi presentasi antarmuka dan belum mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial karena autentikasi server belum tersedia pada tahap ini.
 
 ## Menjalankan Proyek
 

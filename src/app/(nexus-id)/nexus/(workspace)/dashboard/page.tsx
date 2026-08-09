@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { NexusDashboardOverview } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview";
-import { getNexusDashboardOverviewPreviewContent } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview-content";
+import { getNexusDashboardOverviewContent } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview-content";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default function NexusDashboardPage() {
-  const content = getNexusDashboardOverviewPreviewContent();
+  const content = getNexusDashboardOverviewContent();
 
   return <NexusDashboardOverview content={content} />;
 }

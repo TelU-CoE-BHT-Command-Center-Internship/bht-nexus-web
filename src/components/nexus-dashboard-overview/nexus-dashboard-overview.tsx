@@ -1,5 +1,5 @@
 import Image from "next/image";
-import biomedicalLabImage from "@/assets/biomedical-lab-hero.jpg";
+import biomedicalLabImage from "@/assets/nexus-dashboard-microscope-hero.webp";
 import styles from "@/components/nexus-dashboard-overview/nexus-dashboard-overview.module.css";
 import type {
   NexusDashboardOverviewContent,
@@ -227,7 +227,6 @@ export function NexusDashboardOverview({
           </div>
 
           <div className={styles.dateBlock}>
-            <span className={styles.previewBadge}>{content.previewLabel}</span>
             <span className={styles.dateValue}>
               <NexusDashboardOverviewIcon name="calendar" />
               <time dateTime={content.dateIso}>{content.dateLabel}</time>
@@ -246,12 +245,31 @@ export function NexusDashboardOverview({
                 <p>{metric.label}</p>
                 <div className={styles.metricValueRow}>
                   <strong>{metric.value}</strong>
-                  <span className={styles.metricChange}>
-                    <NexusDashboardOverviewIcon name="arrow-up" />
+                  <span
+                    aria-hidden="true"
+                    className={styles.metricChange}
+                    data-direction={metric.changeDirection}
+                    title={metric.changeDescription}
+                  >
+                    <NexusDashboardOverviewIcon
+                      name={
+                        metric.changeDirection === "up"
+                          ? "arrow-up"
+                          : metric.changeDirection === "down"
+                            ? "arrow-down"
+                            : "steady"
+                      }
+                    />
                     {metric.changeLabel}
+                  </span>
+                  <span className={styles.visuallyHidden}>
+                    {metric.changeDescription}
                   </span>
                 </div>
                 <span className={styles.metricDetail}>{metric.detail}</span>
+                <span className={styles.metricComparison}>
+                  {metric.comparisonLabel}
+                </span>
               </div>
               <span className={styles.metricIcon}>
                 <NexusDashboardOverviewIcon name={metric.icon} />

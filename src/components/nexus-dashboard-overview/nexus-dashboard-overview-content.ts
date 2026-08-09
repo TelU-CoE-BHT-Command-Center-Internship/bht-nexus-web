@@ -8,6 +8,9 @@ export type DashboardMetricIconName =
 
 export type DashboardMetric = {
   changeLabel: string;
+  changeDescription: string;
+  changeDirection: "down" | "steady" | "up";
+  comparisonLabel: string;
   detail: string;
   icon: DashboardMetricIconName;
   id: string;
@@ -42,7 +45,6 @@ export type NexusDashboardOverviewContent = {
   greeting: string;
   intro: string;
   metrics: DashboardMetric[];
-  previewLabel: string;
   recentProjects: RecentProject[];
   recentProjectsActionLabel: string;
   recentProjectsColumns: {
@@ -56,7 +58,10 @@ export type NexusDashboardOverviewContent = {
 
 const metrics: DashboardMetric[] = [
   {
-    changeLabel: "naik 14%",
+    changeDescription: "Meningkat 14 persen dibanding Juli 2026",
+    changeDirection: "up",
+    changeLabel: "14%",
+    comparisonLabel: "dibanding Juli 2026",
     detail: "8 berjalan · 4 tahap awal",
     icon: "projects",
     id: "active-projects",
@@ -65,8 +70,11 @@ const metrics: DashboardMetric[] = [
     value: "12",
   },
   {
-    changeLabel: "naik 18%",
-    detail: "112 publik · 16 terbatas",
+    changeDescription: "Tetap dibanding Juli 2026",
+    changeDirection: "steady",
+    changeLabel: "0%",
+    comparisonLabel: "dibanding Juli 2026",
+    detail: "112 terkurasi · 16 terbatas",
     icon: "datasets",
     id: "datasets",
     label: "Dataset",
@@ -74,7 +82,10 @@ const metrics: DashboardMetric[] = [
     value: "128",
   },
   {
-    changeLabel: "naik 22%",
+    changeDescription: "Menurun 3 persen dibanding Juli 2026",
+    changeDirection: "down",
+    changeLabel: "3%",
+    comparisonLabel: "dibanding Juli 2026",
     detail: "Tahun berjalan",
     icon: "publications",
     id: "publications",
@@ -83,7 +94,10 @@ const metrics: DashboardMetric[] = [
     value: "96",
   },
   {
-    changeLabel: "naik 9%",
+    changeDescription: "Meningkat 9 persen dibanding Juli 2026",
+    changeDirection: "up",
+    changeLabel: "9%",
+    comparisonLabel: "dibanding Juli 2026",
     detail: "Anggota aktif",
     icon: "researchers",
     id: "researchers",
@@ -162,7 +176,24 @@ function formatDashboardDate(now: Date) {
   }).format(now);
 }
 
-export function getNexusDashboardOverviewPreviewContent(
+function formatDashboardIsoDate(now: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+  }).formatToParts(now);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+/**
+ * Presentation-ready dashboard snapshot. The server adapter can replace the
+ * values supplied here without changing the component contract or layout.
+ */
+export function getNexusDashboardOverviewContent(
   now = new Date(),
 ): NexusDashboardOverviewContent {
   return {
@@ -171,12 +202,12 @@ export function getNexusDashboardOverviewPreviewContent(
     activitySubtitle: "Perkembangan data yang telah lolos peninjauan",
     activityTitle: "Aktivitas Riset",
     activityXAxis: ["Mar", "Apr", "Mei", "Jun", "Jul", "Agu"],
-    dateIso: now.toISOString().slice(0, 10),
+    dateIso: formatDashboardIsoDate(now),
     dateLabel: formatDashboardDate(now),
     greeting: `Selamat datang kembali, ${nexusDashboardPreviewViewer.name}`,
-    intro: "Berikut perkembangan utama di BHT Nexus hari ini.",
+    intro:
+      "Memajukan riset dan inovasi biomedis serta teknologi kesehatan bersama.",
     metrics,
-    previewLabel: "Data pratinjau UI",
     recentProjects,
     recentProjectsActionLabel: "Lihat semua proyek",
     recentProjectsColumns: {
