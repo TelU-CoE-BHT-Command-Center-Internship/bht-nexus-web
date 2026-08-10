@@ -8,7 +8,7 @@ import medicalTrainingImage from "@/assets/research/medical-training.webp";
 import researchCollaborationImage from "@/assets/research/research-collaboration.webp";
 import telemedicineImage from "@/assets/research/telemedicine.webp";
 import ultrasoundImage from "@/assets/research/ultrasound.webp";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 export type ResearchTopic = {
   id: string;

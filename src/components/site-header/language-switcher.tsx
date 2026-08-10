@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
 import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
 import styles from "@/components/site-header/site-header.module.css";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type LanguageSwitcherProps = {
   className: string;

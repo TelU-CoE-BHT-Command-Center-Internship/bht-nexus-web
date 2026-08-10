@@ -2,7 +2,7 @@ import type { StaticImageData } from "next/image";
 import biomedicalLab from "@/assets/biomedical-lab-hero.jpg";
 import bandungTechnoPark from "@/assets/hero-gallery/bandung-techno-park.jpg";
 import openLibrary from "@/assets/hero-gallery/open-library-telkom.jpg";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 export type HeroSlide = {
   id: "biomedical-innovation" | "knowledge" | "collaboration";

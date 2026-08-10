@@ -6,7 +6,7 @@ import {
   internationalPartners,
   type PartnerLogo,
 } from "@/components/partners/partners-content";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type PartnersProps = {
   locale: Locale;

@@ -91,7 +91,8 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 │   ├── app/             # route, layout, metadata, font, dan gaya global
 │   ├── assets/          # logo serta gambar landing page dan ruang kerja
 │   ├── components/      # komponen landing page, halaman masuk, dan dashboard
-│   └── content/         # data institusi yang dipakai lintas komponen
+│   ├── content/         # data institusi yang dipakai lintas komponen
+│   └── i18n/            # tipe bahasa yang dipakai lintas fitur
 ├── biome.json          # aturan pemeriksaan dan format kode
 ├── next.config.ts      # pengaturan Next.js
 ├── package.json        # daftar perintah dan dependency
@@ -134,6 +135,8 @@ Fondasi ruang kerja saat ini mencakup:
 - shell dashboard responsif dengan navigasi desktop dan mobile, area menu yang dapat digulir, serta akses bantuan yang tetap tersedia;
 - identitas pengguna, notifikasi, pencarian, bantuan, dan menu profil;
 - ringkasan empat metrik utama dengan kondisi naik, tetap, turun, dan periode pembanding;
+- antrean pengumuman berdasarkan tenggat yang dapat ditutup dan tidak muncul kembali selama sesi aktif;
+- aktivitas terbaru serta program unggulan dengan carousel dan pratinjau poster penuh;
 - grafik aktivitas riset yang tetap dapat dibaca melalui tabel aksesibel;
 - daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.

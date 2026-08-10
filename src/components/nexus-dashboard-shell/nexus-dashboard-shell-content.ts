@@ -1,3 +1,4 @@
+import type { ImageProps } from "next/image";
 import muhammadAmmarAsyrafPhoto from "@/assets/members/muhammad-ammar-asyraf.webp";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
 
@@ -30,7 +31,7 @@ export type DashboardNotification = {
 };
 
 export type DashboardViewer = {
-  avatarSrc?: string;
+  avatarSrc?: ImageProps["src"];
   initials: string;
   name: string;
   roleLabel: string;
@@ -119,7 +120,7 @@ const navigationDefinitions: NavigationDefinition[] = [
 ];
 
 export const nexusDashboardPreviewViewer = {
-  avatarSrc: muhammadAmmarAsyrafPhoto.src,
+  avatarSrc: muhammadAmmarAsyrafPhoto,
   initials: "MA",
   name: "Muhammad Ammar Asyraf",
   roleLabel: "Admin / Pimpinan",

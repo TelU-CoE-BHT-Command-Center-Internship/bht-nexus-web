@@ -1,4 +1,4 @@
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 export type MemberPortrait =
   | "ammar"

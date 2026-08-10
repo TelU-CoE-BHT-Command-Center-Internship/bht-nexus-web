@@ -1,7 +1,7 @@
 import Image from "next/image";
 import styles from "@/components/news-highlights/news-highlights.module.css";
 import { getNewsHighlightsContent } from "@/components/news-highlights/news-highlights-content";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type NewsHighlightsProps = {
   locale: Locale;

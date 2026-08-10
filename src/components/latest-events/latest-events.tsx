@@ -1,7 +1,7 @@
 import Image from "next/image";
 import styles from "@/components/latest-events/latest-events.module.css";
 import { getLatestEventsContent } from "@/components/latest-events/latest-events-content";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type LatestEventsProps = {
   locale: Locale;

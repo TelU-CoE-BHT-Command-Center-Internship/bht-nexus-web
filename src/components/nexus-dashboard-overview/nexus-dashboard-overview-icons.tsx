@@ -1,4 +1,4 @@
-import type { DashboardMetricIconName } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview-content";
+import type { DashboardMetricIconName } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview-types";
 
 type OverviewIconName =
   | DashboardMetricIconName

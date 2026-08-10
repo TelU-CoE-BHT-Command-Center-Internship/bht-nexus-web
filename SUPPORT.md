@@ -20,6 +20,6 @@ Dugaan kerentanan mengikuti [SECURITY.md](SECURITY.md). Jangan mencantumkan rinc
 
 ## Batas Dukungan Saat Ini
 
-Landing page dan halaman anggota sudah tersedia dalam tahap pengembangan, tetapi belum menjadi versi akhir. Dashboard, login, integrasi server, dan deployment belum tersedia sehingga aplikasi belum dapat digunakan untuk kegiatan operasional.
+Landing page, halaman anggota, login, dan pratinjau dashboard sudah tersedia dalam tahap pengembangan, tetapi belum menjadi versi akhir. Autentikasi, integrasi dengan `bht-nexus-server`, pengelolaan konten, dan deployment operasional belum tersedia.
 
-Dukungan saat ini mencakup cara menjalankan proyek, pemeriksaan lokal, serta laporan pada halaman yang sudah tersedia. Kebutuhan antarmuka dashboard dikembangkan bertahap dan dilacak melalui [issue #1](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/issues/1).
+Dukungan saat ini mencakup cara menjalankan proyek, pemeriksaan lokal, serta laporan pada halaman yang sudah tersedia. Pengembangan dashboard dan integrasi server dilakukan bertahap; status implementasi yang paling mutakhir dicatat di [README.md](README.md).

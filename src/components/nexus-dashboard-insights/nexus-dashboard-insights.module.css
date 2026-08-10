@@ -1,0 +1,634 @@
+.grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(19rem, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(1rem, 1.6vw, 1.5rem);
+  margin-top: clamp(1rem, 1.45vw, 1.35rem);
+}
+
+.panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dce4ee;
+  border-radius: 0.8rem;
+  background: var(--color-paper);
+  box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
+}
+
+.activityPanel,
+.programPanel {
+  padding: clamp(1.1rem, 1.35vw, 1.35rem);
+}
+
+.panelHeader {
+  display: flex;
+  min-width: 0;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  color: #071c41;
+  font-size: 1rem;
+  font-weight: 760;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+}
+
+.textButton {
+  flex: 0 0 auto;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.2rem;
+  border: 0;
+  background: transparent;
+  color: #1557aa;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 710;
+  line-height: 1;
+}
+
+.activityList {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activityItem {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.82rem 0;
+  border-bottom: 1px solid #e4e9f0;
+}
+
+.activityItem:last-child {
+  border-bottom: 0;
+}
+
+.activityIcon {
+  --activity-color: #1765c1;
+  --activity-soft: #e8f2ff;
+
+  display: grid;
+  width: 2.55rem;
+  height: 2.55rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(29 103 188 / 7%);
+  border-radius: 0.72rem;
+  background: var(--activity-soft);
+  color: var(--activity-color);
+}
+
+.activityIcon[data-tone="green"] {
+  --activity-color: #118a50;
+  --activity-soft: #e6f6ed;
+}
+
+.activityIcon[data-tone="violet"] {
+  --activity-color: #6c43c7;
+  --activity-soft: #f0eafb;
+}
+
+.activityIcon[data-tone="gold"] {
+  --activity-color: #c98205;
+  --activity-soft: #fff2d9;
+}
+
+.activityIcon[data-tone="teal"] {
+  --activity-color: #168489;
+  --activity-soft: #e2f5f4;
+}
+
+.activityIcon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.activityCopy {
+  min-width: 0;
+}
+
+.activityHeadline,
+.activityDetail {
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.activityHeadline {
+  color: #30435d;
+  font-size: clamp(0.72rem, 0.8vw, 0.79rem);
+  line-height: 1.42;
+  -webkit-line-clamp: 2;
+}
+
+.activityHeadline strong {
+  color: #102d57;
+  font-weight: 690;
+}
+
+.activityDetail {
+  margin-top: 0.18rem;
+  color: #768397;
+  font-size: clamp(0.66rem, 0.72vw, 0.71rem);
+  line-height: 1.38;
+  -webkit-line-clamp: 1;
+}
+
+.activityItem time {
+  align-self: center;
+  color: #8390a2;
+  font-size: 0.65rem;
+  font-weight: 560;
+  white-space: nowrap;
+}
+
+.carouselControls {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.carouselControls button,
+.dialogHeader button {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  border: 1px solid #d7e1ec;
+  border-radius: 50%;
+  background: #fbfdff;
+  color: #173f72;
+  cursor: pointer;
+  place-items: center;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.carouselControls button:hover,
+.dialogHeader button:hover {
+  border-color: #aabed5;
+  background: #f0f6fc;
+  color: #0a2d5d;
+}
+
+.carouselControls button svg,
+.dialogHeader button svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.carouselControls > span {
+  min-width: 2.3rem;
+  color: #708096;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 680;
+  text-align: center;
+}
+
+.programContent {
+  margin-top: 0.65rem;
+}
+
+.programBanner {
+  position: relative;
+  min-height: clamp(16.5rem, 18vw, 18rem);
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgb(15 50 94 / 18%);
+  border-radius: 0.72rem;
+  background: #062651;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%);
+}
+
+.programBanner::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(3 28 65 / 98%) 0%,
+      rgb(4 35 77 / 92%) 36%,
+      rgb(5 38 81 / 48%) 67%,
+      rgb(5 38 81 / 9%) 100%
+    ), linear-gradient(180deg, rgb(2 23 55 / 6%) 46%, rgb(2 24 57 / 46%) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.programImageButton {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.programImageButton img {
+  object-fit: cover;
+  filter: saturate(0.88) contrast(1.04);
+}
+
+.programCopy {
+  position: relative;
+  z-index: 2;
+  width: min(62%, 27rem);
+  padding: clamp(1.2rem, 1.65vw, 1.55rem);
+  color: #fff;
+  pointer-events: none;
+}
+
+.programBadge {
+  display: inline-flex;
+  min-height: 1.6rem;
+  align-items: center;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid rgb(155 205 255 / 18%);
+  border-radius: 999px;
+  background: #1a5aa5;
+  box-shadow: 0 0.35rem 0.8rem rgb(0 0 0 / 10%);
+  color: #eef7ff;
+  font-size: 0.59rem;
+  font-weight: 730;
+  letter-spacing: 0.035em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.programCopy h3 {
+  margin: 0.8rem 0 0;
+  color: #fff;
+  font-size: clamp(1.1rem, 1.45vw, 1.38rem);
+  font-weight: 735;
+  letter-spacing: -0.032em;
+  line-height: 1.18;
+  text-wrap: balance;
+}
+
+.programCopy p {
+  max-width: 25rem;
+  margin: 0.5rem 0 0;
+  color: rgb(232 240 250 / 91%);
+  font-size: clamp(0.69rem, 0.76vw, 0.76rem);
+  line-height: 1.5;
+}
+
+.programLink {
+  display: inline-flex;
+  min-height: 2.55rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding: 0.58rem 0.8rem;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 0.52rem;
+  background: #fff;
+  box-shadow: 0 0.4rem 0.95rem rgb(0 12 36 / 16%);
+  color: #0b315f;
+  font-size: 0.7rem;
+  font-weight: 720;
+  line-height: 1;
+  pointer-events: auto;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.programLink:hover {
+  background: #f2f8ff;
+  box-shadow: 0 0.55rem 1.1rem rgb(0 12 36 / 22%);
+  transform: translateY(-1px);
+}
+
+.programLink svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.expandHint {
+  position: absolute;
+  z-index: 2;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  width: 2.3rem;
+  height: 2.3rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 38%);
+  border-radius: 50%;
+  background: rgb(5 30 66 / 58%);
+  color: #fff;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
+.expandHint svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.programDetails {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0.75rem 0 0;
+  padding: 0.72rem 0.35rem;
+  border: 1px solid #e4e9f0;
+  border-radius: 0.68rem;
+  background: #f8fafc;
+}
+
+.programDetails > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.2rem clamp(0.55rem, 1vw, 0.95rem);
+  border-right: 1px solid #e0e6ee;
+}
+
+.programDetails > div:last-child {
+  border-right: 0;
+}
+
+.detailIcon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.55rem;
+  background: #eef4fb;
+  color: #174d8c;
+}
+
+.detailIcon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.programDetails dt,
+.programDetails dd {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.programDetails dt {
+  color: #718096;
+  font-size: 0.61rem;
+  line-height: 1.3;
+}
+
+.programDetails dd {
+  margin-top: 0.15rem;
+  color: #173052;
+  font-size: clamp(0.66rem, 0.74vw, 0.72rem);
+  font-weight: 690;
+  line-height: 1.35;
+}
+
+.posterDialog {
+  width: min(46rem, calc(100vw - 2rem));
+  max-width: none;
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgb(180 196 215 / 82%);
+  border-radius: 0.9rem;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(2 18 44 / 28%);
+  color: #0a234a;
+}
+
+.posterDialog::backdrop {
+  background: rgb(2 15 36 / 68%);
+  backdrop-filter: blur(6px);
+}
+
+.dialogHeader {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dialogHeader > div {
+  min-width: 0;
+}
+
+.dialogHeader span {
+  color: #738197;
+  font-size: 0.61rem;
+  font-weight: 670;
+  letter-spacing: 0.045em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.dialogHeader h3 {
+  overflow: hidden;
+  margin: 0.2rem 0 0;
+  color: #0a234a;
+  font-size: 0.94rem;
+  font-weight: 720;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.posterViewport {
+  display: grid;
+  max-height: calc(100dvh - 7rem);
+  overflow: auto;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  background: #edf2f7;
+  place-items: center;
+}
+
+.posterViewport img {
+  width: min(100%, 27rem);
+  height: auto;
+  max-height: calc(100dvh - 9.5rem);
+  object-fit: contain;
+  border-radius: 0.38rem;
+  box-shadow: 0 0.8rem 2rem rgb(3 23 52 / 18%);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+  margin: -1px;
+  white-space: nowrap;
+}
+
+.textButton:focus-visible,
+.carouselControls button:focus-visible,
+.programImageButton:focus-visible,
+.programLink:focus-visible,
+.dialogHeader button:focus-visible {
+  outline: 3px solid rgb(43 128 207 / 30%);
+  outline-offset: 2px;
+}
+
+.programImageButton:focus-visible {
+  outline-offset: -4px;
+}
+
+@media (max-width: 72rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .programBanner {
+    min-height: 14.5rem;
+  }
+}
+
+@media (max-width: 46rem) {
+  .programCopy {
+    width: min(76%, 26rem);
+  }
+
+  .programDetails {
+    grid-template-columns: minmax(0, 1fr);
+    padding-block: 0.3rem;
+  }
+
+  .programDetails > div {
+    min-height: 3.5rem;
+    padding: 0.6rem 0.75rem;
+    border-right: 0;
+    border-bottom: 1px solid #e0e6ee;
+  }
+
+  .programDetails > div:last-child {
+    border-bottom: 0;
+  }
+
+  .programDetails dt,
+  .programDetails dd {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 34rem) {
+  .grid {
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .activityPanel,
+  .programPanel {
+    padding: 1rem;
+  }
+
+  .activityItem {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.65rem 0.75rem;
+  }
+
+  .activityIcon {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .activityItem time {
+    grid-column: 2;
+    margin-top: -0.4rem;
+  }
+
+  .programBanner {
+    min-height: 15.5rem;
+  }
+
+  .programBanner::after {
+    background:
+      linear-gradient(
+        90deg,
+        rgb(3 28 65 / 98%) 0%,
+        rgb(4 35 77 / 88%) 56%,
+        rgb(5 38 81 / 28%) 100%
+      ), linear-gradient(180deg, rgb(2 23 55 / 5%) 35%, rgb(2 24 57 / 58%) 100%);
+  }
+
+  .programCopy {
+    width: 84%;
+    padding: 1.15rem;
+  }
+
+  .programCopy p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .expandHint {
+    top: 0.6rem;
+    right: 0.6rem;
+  }
+
+  .posterDialog {
+    width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carouselControls button,
+  .dialogHeader button,
+  .programLink {
+    transition: none;
+  }
+}

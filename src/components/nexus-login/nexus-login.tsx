@@ -8,7 +8,7 @@ import whatsappIcon from "@/assets/whatsapp-svgrepo-com.svg";
 import styles from "@/components/nexus-login/nexus-login.module.css";
 import { getNexusLoginContent } from "@/components/nexus-login/nexus-login-content";
 import { NexusLoginForm } from "@/components/nexus-login/nexus-login-form";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type NexusLoginProps = {
   locale: Locale;

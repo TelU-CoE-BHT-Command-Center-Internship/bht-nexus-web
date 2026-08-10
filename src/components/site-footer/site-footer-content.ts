@@ -1,9 +1,9 @@
-import type { Locale } from "@/components/site-header/site-navigation";
 import {
   COE_BHT_LINKS,
   COE_BHT_PRIMARY_LOCATION,
   COE_BHT_RESEARCH_SPACE,
 } from "@/content/coe-bht";
+import type { Locale } from "@/i18n/locales";
 
 type FooterLink = {
   href: string;

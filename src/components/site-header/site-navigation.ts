@@ -1,6 +1,4 @@
-export const locales = ["id", "en"] as const;
-
-export type Locale = (typeof locales)[number];
+import type { Locale } from "@/i18n/locales";
 
 export type NavigationItem = {
   href: string;
@@ -11,6 +9,10 @@ export type NavigationItem = {
 
 export function isPageSectionHref(href: string) {
   return href.startsWith("#");
+}
+
+export function isPathActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export type SiteNavigation = {

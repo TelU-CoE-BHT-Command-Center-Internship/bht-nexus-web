@@ -3,7 +3,7 @@ import type { StaticImageData } from "next/image";
 import seminarImage from "@/assets/news-highlights/seminar-nasional-bht.webp";
 import telemedicineImage from "@/assets/news-highlights/telemedicine-course.webp";
 import ultrasonographyImage from "@/assets/news-highlights/ultrasonography-training.webp";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type EventItem = {
   alt: string;

@@ -1,5 +1,5 @@
-import type { Locale } from "@/components/site-header/site-navigation";
 import { COE_BHT_LINKS, COE_BHT_PRIMARY_LOCATION } from "@/content/coe-bht";
+import type { Locale } from "@/i18n/locales";
 
 export const COE_BHT_LOCATION = {
   ...COE_BHT_PRIMARY_LOCATION,

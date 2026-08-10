@@ -7,7 +7,7 @@ import rshsLogo from "@/assets/partners/domestic/rshs.png";
 import utmLogo from "@/assets/partners/international/LOGO UTM.png";
 import umpsaLogo from "@/assets/partners/international/umpsa.png";
 import uowLogo from "@/assets/partners/international/uow.svg";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 export type PartnerLogo = {
   image: StaticImageData;

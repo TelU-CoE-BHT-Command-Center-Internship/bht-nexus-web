@@ -2,7 +2,7 @@ import { ResearchExplorer } from "@/components/research-focus/research-explorer"
 import styles from "@/components/research-focus/research-focus.module.css";
 import { getResearchFocusContent } from "@/components/research-focus/research-focus-content";
 import { ResearchMetrics } from "@/components/research-focus/research-metrics";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type ResearchFocusProps = {
   locale: Locale;

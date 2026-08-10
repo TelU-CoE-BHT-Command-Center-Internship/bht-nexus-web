@@ -9,7 +9,10 @@ import {
   useState,
 } from "react";
 import styles from "@/components/site-header/site-header.module.css";
-import type { NavigationItem } from "@/components/site-header/site-navigation";
+import {
+  isPathActive,
+  type NavigationItem,
+} from "@/components/site-header/site-navigation";
 
 type DesktopPrimaryNavigationProps = {
   items: NavigationItem[];
@@ -35,10 +38,6 @@ function DirectionIcon() {
 function createMenuId(href: string) {
   const pathName = href.split("/").filter(Boolean).pop() ?? "menu";
   return `desktop-navigation-${pathName}`;
-}
-
-function isPathActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function DesktopPrimaryNavigation({
@@ -121,6 +120,7 @@ export function DesktopPrimaryNavigation({
             onMouseEnter={() => setOpenMenuHref(item.href)}
             onMouseLeave={closeAllMenus}
           >
+            <legend className={styles.visuallyHidden}>{item.label}</legend>
             <button
               className={styles.navigationTrigger}
               type="button"

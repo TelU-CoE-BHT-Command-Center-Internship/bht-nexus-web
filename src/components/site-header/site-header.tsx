@@ -9,10 +9,10 @@ import styles from "@/components/site-header/site-header.module.css";
 import {
   getSiteNavigation,
   isPageSectionHref,
-  type Locale,
   type NavigationItem,
 } from "@/components/site-header/site-navigation";
 import { StickyHeader } from "@/components/site-header/sticky-header";
+import type { Locale } from "@/i18n/locales";
 
 type SiteHeaderProps = {
   locale: Locale;

@@ -1,0 +1,268 @@
+.announcement {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 6.25rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(1rem, 1.55vw, 1.5rem);
+  margin-top: clamp(0.85rem, 1.25vw, 1.15rem);
+  padding: clamp(0.82rem, 1.1vw, 1rem) clamp(3.2rem, 4vw, 3.8rem)
+    clamp(0.82rem, 1.1vw, 1rem) clamp(1rem, 1.4vw, 1.35rem);
+  overflow: hidden;
+  border: 1px solid rgb(84 181 185 / 31%);
+  border-radius: 0.78rem;
+  background:
+    radial-gradient(circle at 14% 0%, rgb(255 255 255 / 72%), transparent 34%),
+    linear-gradient(105deg, #effbfa 0%, #f6fcfc 48%, #edf9f8 100%);
+  box-shadow: 0 0.45rem 1.4rem rgb(8 40 92 / 4%);
+  color: #09234a;
+}
+
+.announcement::after {
+  position: absolute;
+  width: 12rem;
+  height: 12rem;
+  border: 1px solid rgb(52 160 166 / 8%);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+  right: -4.5rem;
+  bottom: -8.5rem;
+}
+
+.iconBadge {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: clamp(3.8rem, 4.35vw, 4.25rem);
+  height: clamp(3.8rem, 4.35vw, 4.25rem);
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 58%);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #61bec1, #369da3);
+  box-shadow:
+    0 0.55rem 1.2rem rgb(35 135 141 / 17%),
+    inset 0 1px 0 rgb(255 255 255 / 36%);
+}
+
+.icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  filter: brightness(0) invert(1);
+}
+
+.copy {
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.positionLabel {
+  flex: 0 0 auto;
+  padding: 0.17rem 0.4rem;
+  border-radius: 999px;
+  background: rgb(59 157 162 / 10%);
+  color: #438086;
+  font-size: 0.62rem;
+  font-weight: 730;
+  letter-spacing: 0.035em;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.copy h2 {
+  margin: 0;
+  color: #0a234a;
+  font-size: clamp(0.95rem, 1.08vw, 1.08rem);
+  font-weight: 720;
+  letter-spacing: -0.02em;
+  line-height: 1.32;
+}
+
+.summary {
+  max-width: 54rem;
+  margin: 0.28rem 0 0;
+  color: #496178;
+  font-size: clamp(0.74rem, 0.82vw, 0.82rem);
+  line-height: 1.45;
+}
+
+.deadline {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin: 0.28rem 0 0;
+  color: #295d68;
+  font-size: clamp(0.7rem, 0.76vw, 0.76rem);
+  font-weight: 680;
+  line-height: 1.4;
+}
+
+.deadline > span {
+  width: 0.36rem;
+  height: 0.36rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #37a56f;
+  box-shadow: 0 0 0 0.18rem rgb(55 165 111 / 10%);
+}
+
+.action {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 2.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.48rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid rgb(37 139 145 / 54%);
+  border-radius: 0.52rem;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 0.2rem 0.7rem rgb(22 108 114 / 5%);
+  color: #0c5c65;
+  font-size: 0.74rem;
+  font-weight: 720;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.action svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+  margin: -1px;
+  white-space: nowrap;
+}
+
+.action:hover {
+  border-color: #278e94;
+  box-shadow: 0 0.35rem 0.9rem rgb(22 108 114 / 10%);
+  color: #084a52;
+  transform: translateY(-1px);
+}
+
+.action:focus-visible,
+.closeButton:focus-visible {
+  outline: 3px solid rgb(43 128 207 / 24%);
+  outline-offset: 2px;
+}
+
+.closeButton {
+  position: absolute;
+  z-index: 2;
+  top: 0.38rem;
+  right: 0.42rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #6a7c8c;
+  cursor: pointer;
+  place-items: center;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.closeButton svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-width: 1.75;
+}
+
+.closeButton:hover {
+  background: rgb(31 117 123 / 8%);
+  color: #254e5b;
+}
+
+@media (max-width: 56rem) {
+  .announcement {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .action {
+    width: fit-content;
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 34rem) {
+  .announcement {
+    min-height: 0;
+    align-items: start;
+    gap: 0.75rem 0.85rem;
+    padding: 1rem 2.9rem 1rem 1rem;
+  }
+
+  .iconBadge {
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+
+  .icon {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .copy h2 {
+    font-size: 0.94rem;
+  }
+
+  .titleRow {
+    align-items: flex-start;
+    flex-direction: column-reverse;
+    gap: 0.28rem;
+  }
+
+  .summary,
+  .deadline {
+    font-size: 0.72rem;
+  }
+
+  .action {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action,
+  .closeButton {
+    transition: none;
+  }
+}

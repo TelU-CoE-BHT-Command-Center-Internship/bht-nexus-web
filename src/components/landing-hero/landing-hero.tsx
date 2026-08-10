@@ -8,7 +8,7 @@ import {
   type HeroSlide,
 } from "@/components/landing-hero/hero-content";
 import styles from "@/components/landing-hero/landing-hero.module.css";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type LandingHeroProps = {
   locale: Locale;

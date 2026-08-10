@@ -9,8 +9,8 @@ import {
   type FooterSocialIcon,
   getSiteFooterContent,
 } from "@/components/site-footer/site-footer-content";
-import type { Locale } from "@/components/site-header/site-navigation";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
+import type { Locale } from "@/i18n/locales";
 
 type SiteFooterProps = {
   locale: Locale;

@@ -5,7 +5,7 @@ import seminarImage from "@/assets/news-highlights/seminar-nasional-bht.webp";
 import telemedicineImage from "@/assets/news-highlights/telemedicine-course.webp";
 import tideEyeImage from "@/assets/news-highlights/tide-eye-flood-monitoring.webp";
 import ultrasonographyImage from "@/assets/news-highlights/ultrasonography-training.webp";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type NewsItem = {
   alt: string;

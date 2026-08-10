@@ -14,8 +14,8 @@ import {
   type MemberValueIcon,
 } from "@/components/members/members-content";
 import styles from "@/components/members/members-page.module.css";
-import type { Locale } from "@/components/site-header/site-navigation";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
+import type { Locale } from "@/i18n/locales";
 
 type MembersPageProps = {
   locale: Locale;

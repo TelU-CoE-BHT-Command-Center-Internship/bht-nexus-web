@@ -9,7 +9,7 @@ import {
   type ContactChannelIcon,
   getLocationMapContent,
 } from "@/components/location-map/location-map-content";
-import type { Locale } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type LocationMapProps = {
   locale: Locale;

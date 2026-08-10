@@ -7,10 +7,11 @@ import { LanguageSwitcher } from "@/components/site-header/language-switcher";
 import styles from "@/components/site-header/site-header.module.css";
 import {
   isPageSectionHref,
-  type Locale,
+  isPathActive,
   type NavigationItem,
   type SiteNavigation,
 } from "@/components/site-header/site-navigation";
+import type { Locale } from "@/i18n/locales";
 
 type MobileNavigationProps = {
   content: SiteNavigation;
@@ -60,10 +61,6 @@ function ArrowIcon() {
       <path d="M5 12h13M14 7l5 5-5 5" />
     </svg>
   );
-}
-
-function isPathActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function MobileNavigation({ content, locale }: MobileNavigationProps) {
