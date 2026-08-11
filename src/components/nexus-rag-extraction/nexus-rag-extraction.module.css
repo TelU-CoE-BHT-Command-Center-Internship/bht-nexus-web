@@ -1,0 +1,152 @@
+.documentCard {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid #dce4ee;
+  border-radius: 0.8rem;
+  background: var(--color-paper);
+  box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
+}
+
+.documentCopy {
+  display: grid;
+  min-width: 0;
+  gap: 0.3rem;
+}
+
+.documentCopy strong {
+  color: #071c41;
+  font-size: 0.95rem;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+.documentCopy span {
+  color: #8a95a4;
+  font-size: 0.68rem;
+}
+
+.fieldList {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.field {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid #e6ebf2;
+  border-radius: 0.6rem;
+  background: #fcfdff;
+}
+
+.fieldHeader {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.fieldCopy {
+  min-width: 0;
+}
+
+.fieldLabel {
+  margin: 0;
+  color: #7288a5;
+  font-size: 0.64rem;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fieldValue {
+  margin: 0.35rem 0 0;
+  color: #102d57;
+  font-size: 0.88rem;
+  font-weight: 660;
+  line-height: 1.45;
+}
+
+.fieldValue[data-empty="true"] {
+  color: #98a3b3;
+  font-style: italic;
+  font-weight: 560;
+}
+
+.fieldDecision {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  gap: 0.5rem;
+}
+
+.decisionBadge {
+  --decision-color: #657187;
+  --decision-bg: #edf0f4;
+
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: var(--decision-bg);
+  color: var(--decision-color);
+  font-size: 0.63rem;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.decisionBadge[data-decision="accepted"] {
+  --decision-color: #128344;
+  --decision-bg: #e1f5e8;
+}
+
+.decisionBadge[data-decision="rejected"] {
+  --decision-color: #bd3434;
+  --decision-bg: #fde9e9;
+}
+
+.decisionButtons {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.source {
+  padding: 0.7rem 0.85rem;
+  border-left: 3px solid #cddced;
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: #f5f8fc;
+}
+
+.sourceMeta {
+  margin: 0;
+  color: #7288a5;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.source blockquote {
+  margin: 0.4rem 0 0;
+  color: #5a6b81;
+  font-size: 0.74rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+@media (max-width: 48rem) {
+  .fieldHeader {
+    display: grid;
+  }
+
+  .fieldDecision {
+    justify-items: start;
+  }
+}

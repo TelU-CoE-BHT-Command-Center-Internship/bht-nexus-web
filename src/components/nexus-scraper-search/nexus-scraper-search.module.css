@@ -1,0 +1,58 @@
+.submitCard {
+  min-width: 0;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid #dce4ee;
+  border-radius: 0.8rem;
+  background: var(--color-paper);
+  box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
+}
+
+.normalizationNote {
+  margin: 0.9rem 0 0;
+  color: #78849a;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.hostList {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.host {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #e6ebf2;
+  border-radius: 0.55rem;
+  background: #fcfdff;
+}
+
+.host code {
+  color: #102d57;
+  font-size: 0.76rem;
+  font-weight: 680;
+  word-break: break-all;
+}
+
+.host span {
+  color: #6b7a90;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.rawInput {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.submissionMeta {
+  display: block;
+  margin-top: 0.3rem;
+  color: #8a95a4;
+  font-size: 0.66rem;
+  font-weight: 520;
+}

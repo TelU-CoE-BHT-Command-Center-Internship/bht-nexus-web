@@ -1,0 +1,50 @@
+.badge {
+  --status-color: #155fb7;
+  --status-bg: #e5f0ff;
+
+  display: inline-flex;
+  min-height: 1.55rem;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: var(--status-bg);
+  color: var(--status-color);
+  font-size: 0.63rem;
+  font-weight: 720;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.badge::before {
+  width: 0.37rem;
+  height: 0.37rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background: currentcolor;
+  content: "";
+}
+
+.badge[data-status="queued"] {
+  --status-color: #657187;
+  --status-bg: #edf0f4;
+}
+
+.badge[data-status="retrying"] {
+  --status-color: #b16906;
+  --status-bg: #fff1d8;
+}
+
+.badge[data-status="succeeded"] {
+  --status-color: #128344;
+  --status-bg: #e1f5e8;
+}
+
+.badge[data-status="failed"] {
+  --status-color: #bd3434;
+  --status-bg: #fde9e9;
+}
+
+.badge[data-status="failed_permanently"] {
+  --status-color: #8f1f1f;
+  --status-bg: #f7dada;
+}

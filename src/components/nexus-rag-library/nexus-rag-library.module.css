@@ -1,0 +1,86 @@
+.uploadNote {
+  color: #8a95a4;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.summaryGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summaryCard {
+  --summary-color: #155fb7;
+  --summary-bg: #f4f8fd;
+
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #e2e9f2;
+  border-radius: 0.6rem;
+  background: var(--summary-bg);
+}
+
+.summaryCard strong {
+  color: var(--summary-color);
+  font-size: 1.5rem;
+  font-weight: 730;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.summaryCard span {
+  color: #5b6b81;
+  font-size: 0.72rem;
+  font-weight: 620;
+}
+
+.summaryCard[data-status="queued"] {
+  --summary-color: #566274;
+  --summary-bg: #f4f6f9;
+}
+
+.summaryCard[data-status="retrying"] {
+  --summary-color: #b16906;
+  --summary-bg: #fdf6e9;
+}
+
+.summaryCard[data-status="succeeded"] {
+  --summary-color: #128344;
+  --summary-bg: #f1faf4;
+}
+
+.summaryCard[data-status="failed"],
+.summaryCard[data-status="failed_permanently"] {
+  --summary-color: #bd3434;
+  --summary-bg: #fdf3f3;
+}
+
+.documentMeta {
+  display: block;
+  margin-top: 0.3rem;
+  color: #8a95a4;
+  font-size: 0.66rem;
+  font-weight: 520;
+}
+
+.statusDetail {
+  display: block;
+  max-width: 18rem;
+  margin-top: 0.35rem;
+  color: #78849a;
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 48rem) {
+  .documentMeta,
+  .statusDetail {
+    max-width: none;
+  }
+}

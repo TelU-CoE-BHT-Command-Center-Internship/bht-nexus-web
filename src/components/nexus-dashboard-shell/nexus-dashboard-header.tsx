@@ -139,7 +139,7 @@ export function NexusDashboardHeader({
                 </span>
               </div>
               <Link
-                href="/nexus/masuk"
+                href={content.signOutHref}
                 onClick={resetDismissedAnnouncementsForSession}
                 prefetch={false}
               >

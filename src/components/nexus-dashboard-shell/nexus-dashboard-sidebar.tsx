@@ -29,7 +29,7 @@ export function NexusDashboardSidebar({
         <Link
           aria-label={content.brandLabel}
           className={styles.brandLink}
-          href="/nexus/dashboard"
+          href={content.homeHref}
           prefetch={false}
         >
           <Image

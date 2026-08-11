@@ -1,0 +1,82 @@
+.lookupCard {
+  min-width: 0;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid #dce4ee;
+  border-radius: 0.8rem;
+  background: var(--color-paper);
+  box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
+}
+
+.summaryGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.summaryEntry {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.summaryEntry dt {
+  color: #7288a5;
+  font-size: 0.62rem;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.summaryEntry dd {
+  margin: 0;
+  color: #102d57;
+  font-size: 0.8rem;
+  font-weight: 660;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.requestUrl {
+  display: block;
+  max-width: 22rem;
+  color: #4a5c74;
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+.attemptOutcome {
+  --outcome-color: #128344;
+  --outcome-bg: #e1f5e8;
+
+  display: inline-block;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  background: var(--outcome-bg);
+  color: var(--outcome-color);
+  font-size: 0.62rem;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.attemptOutcome[data-outcome="failed"] {
+  --outcome-color: #bd3434;
+  --outcome-bg: #fde9e9;
+}
+
+.attemptMessage {
+  display: block;
+  max-width: 20rem;
+  margin-top: 0.35rem;
+  color: #78849a;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 48rem) {
+  .requestUrl,
+  .attemptMessage {
+    max-width: none;
+  }
+}
