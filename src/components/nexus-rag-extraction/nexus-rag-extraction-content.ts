@@ -25,7 +25,6 @@ export type ExtractionField = {
 
 export type NexusRagExtractionContent = {
   acceptLabel: string;
-  candidateNote: string;
   description: string;
   documentMeta: string;
   documentTitle: string;
@@ -45,7 +44,6 @@ export type NexusRagExtractionContent = {
 const extractionCopy = {
   id: {
     acceptLabel: "Terima",
-    candidateNote: "Data resmi berubah hanya setelah kandidat diterima.",
     description: "Kandidat isian dari satu dokumen.",
     documentMeta: "PDF · 12 halaman · diproses 09:12 08-08-26",
     documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
@@ -145,7 +143,6 @@ const extractionCopy = {
   },
   en: {
     acceptLabel: "Accept",
-    candidateNote: "Official data changes only after a candidate is accepted.",
     description: "Field candidates from one document.",
     documentMeta: "PDF · 12 pages · processed 09:12 08-08-26",
     documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",

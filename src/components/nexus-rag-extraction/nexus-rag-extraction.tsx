@@ -1,7 +1,6 @@
 import styles from "@/components/nexus-rag-extraction/nexus-rag-extraction.module.css";
 import type { NexusRagExtractionContent } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
 import {
-  WorkspaceFootnote,
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
@@ -91,8 +90,6 @@ export function NexusRagExtraction({ content }: NexusRagExtractionProps) {
           ))}
         </ul>
       </WorkspacePanel>
-
-      <WorkspaceFootnote>{content.candidateNote}</WorkspaceFootnote>
     </WorkspacePage>
   );
 }
