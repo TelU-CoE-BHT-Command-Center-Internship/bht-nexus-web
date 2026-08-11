@@ -68,7 +68,7 @@
 
 .welcomeCopy h2 {
   margin: 0;
-  color: #071c41;
+  color: var(--color-ink-900);
   font-family: var(--font-serif);
   font-size: clamp(1.9rem, 2.6vw, 2.65rem);
   font-weight: 700;
@@ -86,7 +86,7 @@
 
 .welcomeCopy p {
   margin: 0.6rem 0 0;
-  color: #53647b;
+  color: var(--color-ink-400);
   font-size: clamp(0.9rem, 1vw, 1rem);
   line-height: 1.55;
 }
@@ -107,7 +107,7 @@
   border-radius: 999px;
   background: rgb(255 255 255 / 76%);
   box-shadow: 0 0.25rem 0.85rem rgb(8 40 92 / 4%);
-  color: #445a74;
+  color: var(--color-ink-500);
   font-size: 0.76rem;
   font-weight: 650;
   white-space: nowrap;
@@ -173,7 +173,7 @@
 
 .metricCopy > p {
   margin: 0;
-  color: #4e5f75;
+  color: var(--color-ink-500);
   font-size: 0.88rem;
   font-weight: 650;
   line-height: 1.25;
@@ -188,7 +188,7 @@
 }
 
 .metricValueRow strong {
-  color: #071c41;
+  color: var(--color-ink-900);
   font-size: clamp(2rem, 2.55vw, 2.55rem);
   font-weight: 730;
   letter-spacing: -0.055em;
@@ -202,8 +202,8 @@
   gap: 0.2rem;
   padding: 0.3rem 0.55rem;
   border-radius: 999px;
-  background: #e2f4e8;
-  color: #158042;
+  background: var(--color-status-succeeded-surface);
+  color: var(--color-status-succeeded-ink);
   font-size: 0.7rem;
   font-weight: 720;
   line-height: 1;
@@ -211,13 +211,13 @@
 }
 
 .metricChange[data-direction="down"] {
-  background: #fde9e9;
-  color: #bd3434;
+  background: var(--color-status-failed-surface);
+  color: var(--color-status-failed-ink);
 }
 
 .metricChange[data-direction="steady"] {
-  background: #edf1f5;
-  color: #5c6a7b;
+  background: var(--color-status-queued-surface);
+  color: var(--color-status-queued-ink);
 }
 
 .metricChange svg {
@@ -232,7 +232,7 @@
 .metricDetail {
   display: block;
   margin-top: 0.75rem;
-  color: #69788d;
+  color: var(--color-ink-300);
   font-size: 0.77rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -241,7 +241,7 @@
 .metricComparison {
   display: block;
   margin-top: 0.2rem;
-  color: #8a95a4;
+  color: var(--color-ink-300);
   font-size: 0.64rem;
   font-weight: 560;
   line-height: 1.35;
@@ -291,7 +291,7 @@
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #dce4ee;
+  border: 1px solid var(--color-line-soft);
   border-radius: 0.8rem;
   background: var(--color-paper);
   box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
@@ -313,7 +313,7 @@
 .panelHeader h2,
 .projectsHeader h2 {
   margin: 0;
-  color: #071c41;
+  color: var(--color-ink-900);
   font-size: 1rem;
   font-weight: 760;
   letter-spacing: -0.025em;
@@ -322,7 +322,7 @@
 
 .panelHeader p {
   margin: 0.3rem 0 0;
-  color: #728096;
+  color: var(--color-ink-300);
   font-size: 0.74rem;
   line-height: 1.45;
 }
@@ -334,10 +334,10 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.5rem 0.72rem;
-  border: 1px solid #d6dee9;
+  border: 1px solid var(--color-line-soft);
   border-radius: 0.45rem;
-  background: #fbfcfe;
-  color: #43536a;
+  background: var(--color-surface-muted);
+  color: var(--color-ink-500);
   font-size: 0.72rem;
   font-weight: 620;
   white-space: nowrap;
@@ -359,14 +359,14 @@
   gap: 0.85rem 1.4rem;
   margin: 1.1rem 1.35rem 0;
   padding: 0;
-  color: #526177;
+  color: var(--color-ink-400);
   font-size: 0.7rem;
   font-weight: 610;
   list-style: none;
 }
 
 .chartLegend li {
-  --series-color: #08285c;
+  --series-color: var(--color-brand-navy);
 
   display: inline-flex;
   align-items: center;
@@ -398,20 +398,20 @@
 }
 
 .chartGridLine {
-  stroke: #e1e7ef;
+  stroke: var(--color-line-faint);
   stroke-dasharray: 3 4;
   stroke-width: 1;
 }
 
 .chartAxisLabel {
-  fill: #7c899b;
+  fill: var(--color-ink-300);
   font-family: var(--font-sans);
   font-size: 10px;
   font-weight: 520;
 }
 
 .chartSeries {
-  --series-color: #08285c;
+  --series-color: var(--color-brand-navy);
 }
 
 .chartSeries[data-tone="blue"] {
@@ -459,7 +459,7 @@
   min-height: 4.4rem;
   align-items: center;
   padding: 1rem 1.2rem;
-  border-bottom: 1px solid #e0e6ef;
+  border-bottom: 1px solid var(--color-line-faint);
 }
 
 .projectsAction {
@@ -467,7 +467,7 @@
   flex: 0 0 auto;
   align-items: center;
   gap: 0.42rem;
-  color: #1557aa;
+  color: var(--color-link);
   font-size: 0.7rem;
   font-weight: 700;
   white-space: nowrap;
@@ -497,8 +497,8 @@
 .projectsTable th,
 .projectsTable td {
   padding: 0.82rem 0.62rem;
-  border-bottom: 1px solid #e3e8ef;
-  color: #3f4f65;
+  border-bottom: 1px solid var(--color-line-faint);
+  color: var(--color-ink-500);
   font-size: 0.7rem;
   font-weight: 520;
   line-height: 1.4;
@@ -508,8 +508,8 @@
 
 .projectsTable thead th {
   padding-block: 0.72rem;
-  background: #fbfcfe;
-  color: #647287;
+  background: var(--color-surface-muted);
+  color: var(--color-ink-300);
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.025em;
@@ -533,7 +533,7 @@
 }
 
 .projectsTable tbody th {
-  color: #102d57;
+  color: var(--color-ink-700);
   font-weight: 680;
 }
 
@@ -543,8 +543,8 @@
 }
 
 .projectStatus {
-  --status-color: #155fb7;
-  --status-bg: #e5f0ff;
+  --status-color: var(--color-status-running-ink);
+  --status-bg: var(--color-status-running-surface);
 
   display: inline-flex;
   min-height: 1.55rem;
@@ -569,18 +569,18 @@
 }
 
 .projectStatus[data-status="Ditinjau"] {
-  --status-color: #b16906;
-  --status-bg: #fff1d8;
+  --status-color: var(--color-status-retrying-ink);
+  --status-bg: var(--color-status-retrying-surface);
 }
 
 .projectStatus[data-status="Selesai"] {
-  --status-color: #128344;
-  --status-bg: #e1f5e8;
+  --status-color: var(--color-status-succeeded-ink);
+  --status-bg: var(--color-status-succeeded-surface);
 }
 
 .projectStatus[data-status="Perencanaan"] {
-  --status-color: #657187;
-  --status-bg: #edf0f4;
+  --status-color: var(--color-status-queued-ink);
+  --status-bg: var(--color-status-queued-surface);
 }
 
 @media (min-width: 72.0625rem) {
@@ -682,7 +682,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.8rem 1rem;
     padding: 1rem;
-    border-bottom: 1px solid #e3e8ef;
+    border-bottom: 1px solid var(--color-line-faint);
   }
 
   .projectsTable tbody tr:last-child {
@@ -707,7 +707,7 @@
   }
 
   .projectsTable tbody td::before {
-    color: #718096;
+    color: var(--color-ink-300);
     content: attr(data-label);
     font-size: 0.58rem;
     font-weight: 720;

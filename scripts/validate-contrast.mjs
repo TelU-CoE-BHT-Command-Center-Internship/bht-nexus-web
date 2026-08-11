@@ -30,7 +30,14 @@ const textPairs = [
   ["--color-paper", "--color-brand-navy"],
 ];
 
+/**
+ * Token pairs that render a non-text part of an interactive control, such as
+ * an input border. WCAG 2.2 criterion 1.4.11 sets these at 3:1.
+ */
+const uiPairs = [["--color-line-field", "--color-paper"]];
+
 const minimumTextRatio = 4.5;
+const minimumUiRatio = 3;
 
 function relativeLuminance(hex) {
   const channels = hex
@@ -64,23 +71,30 @@ for (const [, name, value] of globals.matchAll(
 
 const failures = [];
 
-for (const [foreground, background] of textPairs) {
-  const foregroundValue = tokens.get(foreground);
-  const backgroundValue = tokens.get(background);
+function checkPairs(pairs, minimum) {
+  for (const [foreground, background] of pairs) {
+    const foregroundValue = tokens.get(foreground);
+    const backgroundValue = tokens.get(background);
 
-  if (!foregroundValue || !backgroundValue) {
-    failures.push(`${foreground} atau ${background} tidak ada di globals.css`);
-    continue;
-  }
+    if (!foregroundValue || !backgroundValue) {
+      failures.push(
+        `${foreground} atau ${background} tidak ada di globals.css`,
+      );
+      continue;
+    }
 
-  const ratio = contrastRatio(foregroundValue, backgroundValue);
+    const ratio = contrastRatio(foregroundValue, backgroundValue);
 
-  if (ratio < minimumTextRatio) {
-    failures.push(
-      `${foreground} di atas ${background} hanya ${ratio.toFixed(2)}:1, minimum ${minimumTextRatio}:1`,
-    );
+    if (ratio < minimum) {
+      failures.push(
+        `${foreground} di atas ${background} hanya ${ratio.toFixed(2)}:1, minimum ${minimum}:1`,
+      );
+    }
   }
 }
+
+checkPairs(textPairs, minimumTextRatio);
+checkPairs(uiPairs, minimumUiRatio);
 
 if (failures.length > 0) {
   console.error("Kontras token warna belum memenuhi WCAG 2.2 AA:");
@@ -91,5 +105,7 @@ if (failures.length > 0) {
 
   process.exitCode = 1;
 } else {
-  console.log(`${textPairs.length} pasangan warna teks memenuhi WCAG 2.2 AA.`);
+  console.log(
+    `${textPairs.length} pasangan warna teks dan ${uiPairs.length} pasangan komponen memenuhi WCAG 2.2 AA.`,
+  );
 }

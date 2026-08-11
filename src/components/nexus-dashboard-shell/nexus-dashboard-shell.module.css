@@ -501,10 +501,10 @@
   align-items: center;
   gap: 0.75rem;
   padding-inline: 0.95rem;
-  border: 1px solid #cfd7e3;
+  border: 1px solid var(--color-line-field);
   border-radius: 0.45rem;
   background: var(--color-paper);
-  color: #5f6d80;
+  color: var(--color-ink-400);
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
@@ -536,7 +536,7 @@
 }
 
 .searchField input::placeholder {
-  color: #8490a2;
+  color: var(--color-ink-300);
   opacity: 1;
 }
 
@@ -669,7 +669,7 @@
 }
 
 .profileRole {
-  color: #718096;
+  color: var(--color-ink-300);
   font-size: 0.74rem;
   font-weight: 500;
   line-height: 1.2;
@@ -749,13 +749,13 @@
 .notificationItem time {
   display: block;
   margin: 0.25rem 0 0;
-  color: #667386;
+  color: var(--color-ink-400);
   font-size: 0.76rem;
   line-height: 1.4;
 }
 
 .notificationItem time {
-  color: #8993a1;
+  color: var(--color-ink-300);
 }
 
 .profilePanel {
@@ -778,7 +778,7 @@
 }
 
 .profilePanelRole {
-  color: #718096;
+  color: var(--color-ink-300);
   font-size: 0.76rem;
 }
 
@@ -801,7 +801,7 @@
   min-height: 0;
   grid-column: 2;
   overflow: auto;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   outline: none;
 }
 

@@ -49,10 +49,14 @@ ini.
 | `--color-surface-raised` | `#fcfdff` | Kartu di dalam panel |
 | `--color-surface-muted` | `#fbfcfe` | Kepala tabel, tombol sekunder |
 | `--color-surface-sunken` | `#f7fafd` | Chip, blok kutipan sumber |
-| `--color-line-soft` | `#dce4ee` | Batas panel |
+| `--color-line-soft` | `#dce4ee` | Batas panel dan kontrol dekoratif |
 | `--color-line-faint` | `#e6ebf2` | Pembatas baris dan kartu |
-| `--color-line-field` | `#d6dee9` | Batas bidang isian |
+| `--color-line-field` | `#8f959c` | Batas kontrol interaktif: bidang isian, select, tombol sekunder |
 | `--color-link` | `#1557aa` | Tautan dalam konten |
+
+`--color-line-field` lebih gelap daripada dua token garis lainnya karena
+kriteria 1.4.11 WCAG 2.2 meminta 3:1 untuk bagian non-teks pada komponen
+interaktif. Garis yang hanya membentuk tampilan memakai `--color-line-soft`.
 
 ### Status job
 
@@ -76,10 +80,10 @@ masing-masing terdiri dari ink, surface, dan edge.
 ### Pemeriksaan
 
 `npm run validate:contrast` membaca token dari `globals.css` dan menghitung
-rasio setiap pasangan teks. Perintah ini termasuk dalam `npm run check`,
-sehingga pasangan warna yang gagal menghentikan CI. Menambah pasangan baru
-berarti menambah satu baris pada `textPairs` di
-`scripts/validate-contrast.mjs`.
+rasio setiap pasangan. Perintah ini termasuk dalam `npm run check`, sehingga
+pasangan warna yang gagal menghentikan CI. Menambah pasangan baru berarti
+menambah satu baris pada `textPairs` (ambang 4.5:1) atau `uiPairs` (ambang
+3:1) di `scripts/validate-contrast.mjs`.
 
 ## Tipografi
 
@@ -140,21 +144,32 @@ Satu label tidak ditampilkan dua kali pada satu layar. Bila judul panel sudah
 menjelaskan bidang isian di dalamnya, label bidang tersebut disembunyikan
 secara visual dan tetap tersedia untuk pembaca layar.
 
+## Cakupan token
+
+Seluruh komponen ruang kerja, dashboard, dan halaman masuk memakai token.
+Warna teks, garis, permukaan, status, radius, dan bayangan pada berkas berikut
+tidak lagi menulis nilai heksadesimal untuk peran tersebut:
+
+- `components/nexus-workspace-page/`, `components/nexus-automation-status/`
+- `components/nexus-rag-*/`, `components/nexus-scraper-*/`
+- `components/nexus-dashboard-overview/`, `components/nexus-dashboard-insights/`
+- `components/nexus-dashboard-shell/`, `components/nexus-dashboard-announcement/`
+- `components/nexus-login/`
+
+Dua hal sengaja tetap berupa nilai langsung.
+
+1. **Warna aksen sekali pakai.** Nada ungu, teal, hijau, dan biru pada ikon,
+   grafik, serta kartu program hanya dipakai satu tempat. Membuat token untuk
+   masing-masing akan menghasilkan palet besar yang tidak dipakai ulang.
+2. **Halaman publik.** `landing-hero`, `research-focus`, `news-highlights`,
+   `latest-events`, `partners`, `members`, `location-map`, `site-header`, dan
+   `site-footer` memakai palet pemasaran sendiri dengan gradien dan lapisan
+   foto. Seluruhnya sudah lolos audit kontras, sehingga migrasi ke token
+   menjadi perapian tanpa manfaat aksesibilitas.
+
 ## Yang belum selesai
 
-Tiga hal berikut diketahui belum memenuhi panduan ini dan menunggu keputusan
-tim.
-
-1. **Halaman lama belum memakai token.** Dashboard, halaman masuk, dan halaman
-   publik masih menulis nilai heksadesimal langsung. Sebagian di antaranya
-   gagal 4.5:1, termasuk `#8a95a4` pada `.metricComparison`, `#728096` pada
-   `.panelHeader p`, dan empat nada `.projectStatus` di
-   `components/nexus-dashboard-overview/`. Migrasi ke token akan mengubah
-   tampilan halaman tersebut.
-2. **Batas bidang isian belum 3:1.** `--color-line-field` berada pada 1.36:1
-   terhadap `--color-paper`, sedangkan WCAG 2.2 kriteria 1.4.11 meminta 3:1.
-   Nilai `#8f959c` memenuhi ambang tersebut dan mengubah tampilan seluruh
-   formulir yang ada.
-3. **Keadaan memuat, kosong, dan tanpa izin belum ada komponennya.** Tiga
-   keadaan ini disebut REQ-UI-001 tetapi belum tersedia di mana pun, termasuk
-   pada halaman yang sudah dibuat.
+**Keadaan memuat, kosong, dan tanpa izin belum ada komponennya.** Tiga keadaan
+ini disebut REQ-UI-001 tetapi belum tersedia di mana pun. Halaman yang ada
+menampilkan keadaan berhasil dan gagal melalui lencana status, serta keadaan
+tanpa bukti pada halaman tanya jawab.
