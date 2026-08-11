@@ -144,7 +144,8 @@ belakang layar tidak ditulis pada layar.
 
 Halaman yang isinya masih data contoh memakai `previewLabel` pada
 `WorkspacePageHeader`. Lencana itu dihapus ketika adapter server sudah mengisi
-halaman dengan data sebenarnya.
+halaman dengan data sebenarnya. Daftar data contoh beserta endpoint
+penggantinya ada di [docs/preview-data.md](preview-data.md).
 
 Satu label tidak ditampilkan dua kali pada satu layar. Bila judul panel sudah
 menjelaskan bidang isian di dalamnya, label bidang tersebut disembunyikan
