@@ -132,6 +132,13 @@ Halaman baru memakai komponen yang ada sebelum membuat yang baru.
 Tabel memakai kelas `.table` dari `nexus-workspace-page.module.css`. Setiap
 `<td>` memakai atribut `data-label`, yang menjadi label baris di bawah `42rem`.
 
+Sel tabel berisi nilai yang berulang dan dapat dibandingkan antarbaris: nama,
+tautan, status, angka, dan waktu. Kalimat bebas per baris tidak dipakai, karena
+tidak ada kolom di basis data yang menghasilkannya.
+
+Waktu ditulis `HH:MM DD-MM-YY` lewat `formatTimestamp`, dengan nilai ISO pada
+atribut `dateTime`.
+
 ## Isi teks
 
 Komponen tidak menulis teks tampilan. Setiap fitur memiliki berkas

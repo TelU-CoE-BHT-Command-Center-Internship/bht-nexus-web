@@ -1,3 +1,4 @@
+import { formatTimestamp } from "@/components/nexus-workspace-page/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
 export type RagCitation = {
@@ -11,6 +12,7 @@ export type RagCitation = {
 
 export type RagExchange = {
   answer: string;
+  askedAt: string;
   askedAtLabel: string;
   citations: RagCitation[];
   id: string;
@@ -43,7 +45,7 @@ const qaCopy = {
       {
         answer:
           "Besar dana yang diterima untuk skema Penelitian Terapan Unggulan 2026 adalah Rp 185.000.000, dicairkan dalam dua termin.",
-        askedAtLabel: "2026-08-11 09:41",
+        askedAt: "2026-08-11T09:41",
         citations: [
           {
             chunkLabel: "chunk 37",
@@ -73,7 +75,7 @@ const qaCopy = {
       {
         answer:
           "Artikel telemedisin layanan primer terbit di Journal of Medical Internet Research dengan DOI 10.2196/48213.",
-        askedAtLabel: "2026-08-11 09:35",
+        askedAt: "2026-08-11T09:35",
         citations: [
           {
             chunkLabel: "chunk 12",
@@ -94,7 +96,7 @@ const qaCopy = {
       {
         answer:
           "Tidak ditemukan pada dokumen yang tersedia. Jumlah pasien uji klinis tidak tercantum pada dokumen mana pun.",
-        askedAtLabel: "2026-08-11 09:28",
+        askedAt: "2026-08-11T09:28",
         citations: [],
         id: "clinical-trial-question",
         question:
@@ -120,7 +122,7 @@ const qaCopy = {
       {
         answer:
           "The grant received under the 2026 Applied Research scheme is Rp 185,000,000, disbursed in two instalments.",
-        askedAtLabel: "2026-08-11 09:41",
+        askedAt: "2026-08-11T09:41",
         citations: [
           {
             chunkLabel: "chunk 37",
@@ -150,7 +152,7 @@ const qaCopy = {
       {
         answer:
           "The primary care telemedicine paper appeared in the Journal of Medical Internet Research, DOI 10.2196/48213.",
-        askedAtLabel: "2026-08-11 09:35",
+        askedAt: "2026-08-11T09:35",
         citations: [
           {
             chunkLabel: "chunk 12",
@@ -171,7 +173,7 @@ const qaCopy = {
       {
         answer:
           "Not found in the available documents. No document states the clinical trial patient count.",
-        askedAtLabel: "2026-08-11 09:28",
+        askedAt: "2026-08-11T09:28",
         citations: [],
         id: "clinical-trial-question",
         question:
@@ -188,12 +190,25 @@ const qaCopy = {
     title: "Ask Documents",
     unsupportedLabel: "Not found",
   },
-} satisfies Record<Locale, NexusRagQaContent>;
+} satisfies Record<
+  Locale,
+  Omit<NexusRagQaContent, "exchanges"> & {
+    exchanges: Omit<RagExchange, "askedAtLabel">[];
+  }
+>;
 
 /**
  * Presentation-ready question history. A server adapter can replace the seeded
  * exchanges without changing the component contract.
  */
 export function getNexusRagQaContent(locale: Locale): NexusRagQaContent {
-  return qaCopy[locale];
+  const copy = qaCopy[locale];
+
+  return {
+    ...copy,
+    exchanges: copy.exchanges.map((exchange) => ({
+      ...exchange,
+      askedAtLabel: formatTimestamp(exchange.askedAt),
+    })),
+  };
 }

@@ -1,5 +1,6 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import { formatTimestamp } from "@/components/nexus-workspace-page/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
 export type ScraperSourceOption = {
@@ -15,11 +16,11 @@ export type ScraperProfileLink = {
 export type ScraperSubmission = {
   fullName: string;
   id: string;
-  jobId: string;
   scholar: ScraperProfileLink | null;
   sinta: ScraperProfileLink | null;
   status: AutomationJobStatus;
   statusLabel: string;
+  submittedAt: string;
   submittedAtLabel: string;
 };
 
@@ -44,7 +45,10 @@ export type NexusScraperSearchContent = {
   title: string;
 };
 
-type SubmissionSeed = Omit<ScraperSubmission, "statusLabel">;
+type SubmissionSeed = Omit<
+  ScraperSubmission,
+  "statusLabel" | "submittedAtLabel"
+>;
 
 const sintaProfile = (id: string): ScraperProfileLink => ({
   id,
@@ -60,38 +64,34 @@ const submissionSeeds: SubmissionSeed[] = [
   {
     fullName: "Suksmandhira Harimurti",
     id: "harimurti",
-    jobId: "job_01J9D1A4",
     scholar: scholarProfile("8kQ2vRUAAAAJ"),
     sinta: sintaProfile("6712043"),
     status: "running",
-    submittedAtLabel: "2026-08-11 08:52",
+    submittedAt: "2026-08-11T08:52",
   },
   {
     fullName: "Hesty Susanti",
     id: "susanti",
-    jobId: "job_01J9CZ7B",
     scholar: scholarProfile("3xVn7QsAAAAJ"),
     sinta: null,
     status: "retrying",
-    submittedAtLabel: "2026-08-11 08:31",
+    submittedAt: "2026-08-11T08:31",
   },
   {
     fullName: "Dita Puspitasari",
     id: "puspitasari",
-    jobId: "job_01J9BF2K",
     scholar: null,
     sinta: sintaProfile("6698215"),
     status: "succeeded",
-    submittedAtLabel: "2026-08-10 16:09",
+    submittedAt: "2026-08-10T16:09",
   },
   {
     fullName: "Fathur Rahman",
     id: "rahman",
-    jobId: "job_01J9A8X3",
     scholar: null,
     sinta: sintaProfile("6710884"),
     status: "failed",
-    submittedAtLabel: "2026-08-10 14:22",
+    submittedAt: "2026-08-10T14:22",
   },
 ];
 
@@ -156,6 +156,7 @@ export function getNexusScraperSearchContent(
     submissions: submissionSeeds.map((seed) => ({
       ...seed,
       statusLabel: getAutomationStatusLabel(locale, seed.status),
+      submittedAtLabel: formatTimestamp(seed.submittedAt),
     })),
   };
 }

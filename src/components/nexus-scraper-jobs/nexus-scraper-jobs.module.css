@@ -58,18 +58,8 @@
   color: var(--color-status-failed-ink);
 }
 
-.attemptMessage {
-  display: block;
-  max-width: 20rem;
-  margin-top: 0.35rem;
-  color: var(--color-ink-300);
-  font-size: 0.68rem;
-  line-height: 1.45;
-}
-
 @media (max-width: 48rem) {
-  .requestUrl,
-  .attemptMessage {
+  .requestUrl {
     max-width: none;
   }
 }

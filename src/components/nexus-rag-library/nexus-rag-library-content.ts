@@ -1,15 +1,15 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import { formatTimestamp } from "@/components/nexus-workspace-page/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
 export type RagDocument = {
   fileLabel: string;
   id: string;
+  indexedAt: string;
   indexedLabel: string;
-  jobId: string;
   ownerUnit: string;
   status: AutomationJobStatus;
-  statusDetail: string;
   statusLabel: string;
   title: string;
 };
@@ -30,84 +30,59 @@ export type NexusRagLibraryContent = {
 
 type DocumentSeed = Omit<
   RagDocument,
-  "fileLabel" | "ownerUnit" | "statusDetail" | "statusLabel"
+  "fileLabel" | "indexedLabel" | "ownerUnit" | "statusLabel"
 > & {
   fileLabel: Record<Locale, string>;
   ownerUnit: Record<Locale, string>;
-  statusDetail: Record<Locale, string>;
 };
 
 const documentSeeds: DocumentSeed[] = [
   {
     fileLabel: { en: "PDF · 12 pages", id: "PDF · 12 halaman" },
     id: "perjanjian-hibah-penelitian-2026",
-    indexedLabel: "2026-08-08 09:12",
-    jobId: "job_01J8K2R4",
+    indexedAt: "2026-08-08T09:12",
     ownerUnit: { en: "Research & Grants", id: "Riset & Hibah" },
     status: "succeeded",
-    statusDetail: { en: "", id: "" },
     title: "Perjanjian Penugasan Hibah Penelitian 2026",
   },
   {
     fileLabel: { en: "PDF · 6 pages", id: "PDF · 6 halaman" },
     id: "pengumuman-kelulusan-proposal-pkm-2026",
-    indexedLabel: "2026-08-07 15:40",
-    jobId: "job_01J8H9M1",
+    indexedAt: "2026-08-07T15:40",
     ownerUnit: { en: "Community Service", id: "Pengabdian Masyarakat" },
     status: "succeeded",
-    statusDetail: { en: "", id: "" },
     title: "Pengumuman Kelulusan Proposal PkM 2026",
   },
   {
     fileLabel: { en: "PDF · 38 pages", id: "PDF · 38 halaman" },
     id: "laporan-akhir-telemedisin-2026",
-    indexedLabel: "2026-08-11 08:05",
-    jobId: "job_01J9C3T7",
+    indexedAt: "2026-08-11T08:05",
     ownerUnit: { en: "Research & Grants", id: "Riset & Hibah" },
     status: "running",
-    statusDetail: {
-      en: "Page 21 of 38",
-      id: "Halaman 21 dari 38",
-    },
     title: "Laporan Akhir Telemedisin Layanan Primer",
   },
   {
     fileLabel: { en: "DOCX · 9 pages", id: "DOCX · 9 halaman" },
     id: "kontrak-kerja-sama-rshs-2026",
-    indexedLabel: "2026-08-11 08:03",
-    jobId: "job_01J9C3T9",
+    indexedAt: "2026-08-11T08:03",
     ownerUnit: { en: "Partnerships", id: "Kerja Sama" },
     status: "queued",
-    statusDetail: {
-      en: "Waiting to be processed",
-      id: "Menunggu diproses",
-    },
     title: "Kontrak Kerja Sama RSHS 2026",
   },
   {
     fileLabel: { en: "PDF · 54 pages", id: "PDF · 54 halaman" },
     id: "rekap-publikasi-2025",
-    indexedLabel: "2026-08-10 19:22",
-    jobId: "job_01J92B8D",
+    indexedAt: "2026-08-10T19:22",
     ownerUnit: { en: "Data & Analytics", id: "Data & Analytics" },
     status: "retrying",
-    statusDetail: {
-      en: "Attempt 2 of 3 · OCR timeout",
-      id: "Percobaan 2 dari 3 · OCR melewati batas waktu",
-    },
     title: "Rekap Publikasi CoE BHT 2025",
   },
   {
     fileLabel: { en: "PDF · 17 pages", id: "PDF · 17 halaman" },
     id: "notulensi-audit-mutu-2026",
-    indexedLabel: "2026-08-09 11:48",
-    jobId: "job_01J8Y5W2",
+    indexedAt: "2026-08-09T11:48",
     ownerUnit: { en: "Administration", id: "Administrasi" },
     status: "failed_permanently",
-    statusDetail: {
-      en: "Scanned file unreadable after 3 attempts",
-      id: "Berkas hasil pindai tidak terbaca setelah 3 percobaan",
-    },
     title: "Notulensi Audit Mutu Internal 2026",
   },
 ];
@@ -151,11 +126,10 @@ export function getNexusRagLibraryContent(
     documents: documentSeeds.map((seed) => ({
       fileLabel: seed.fileLabel[locale],
       id: seed.id,
-      indexedLabel: seed.indexedLabel,
-      jobId: seed.jobId,
+      indexedAt: seed.indexedAt,
+      indexedLabel: formatTimestamp(seed.indexedAt),
       ownerUnit: seed.ownerUnit[locale],
       status: seed.status,
-      statusDetail: seed.statusDetail[locale],
       statusLabel: getAutomationStatusLabel(locale, seed.status),
       title: seed.title,
     })),

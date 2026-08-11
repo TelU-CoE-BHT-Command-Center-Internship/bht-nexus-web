@@ -47,7 +47,7 @@ const extractionCopy = {
     acceptLabel: "Terima",
     candidateNote: "Data resmi berubah hanya setelah kandidat diterima.",
     description: "Kandidat isian dari satu dokumen.",
-    documentMeta: "PDF · 12 halaman · job_01J8K2R4 · diproses 2026-08-08 09:12",
+    documentMeta: "PDF · 12 halaman · diproses 09:12 08-08-26",
     documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
     fields: [
       {
@@ -147,7 +147,7 @@ const extractionCopy = {
     acceptLabel: "Accept",
     candidateNote: "Official data changes only after a candidate is accepted.",
     description: "Field candidates from one document.",
-    documentMeta: "PDF · 12 pages · job_01J8K2R4 · processed 2026-08-08 09:12",
+    documentMeta: "PDF · 12 pages · processed 09:12 08-08-26",
     documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
     fields: [
       {

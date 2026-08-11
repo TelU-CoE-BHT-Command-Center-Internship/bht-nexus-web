@@ -4,6 +4,9 @@ Daftar seluruh data contoh yang dipakai antarmuka, berkas tempat data itu
 berada, dan endpoint yang akan menggantikannya. Satu baris dihapus ketika
 endpointnya sudah tersedia.
 
+Seluruh waktu disimpan sebagai ISO lokal (`2026-08-11T08:52`) dan ditampilkan
+lewat `formatTimestamp` sebagai `HH:MM DD-MM-YY`.
+
 ## Yang termasuk data contoh
 
 Setiap berkas `*-content.ts` memuat dua hal berbeda.

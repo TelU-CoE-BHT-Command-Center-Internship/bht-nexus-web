@@ -11,19 +11,3 @@
   font-size: 0.66rem;
   font-weight: 520;
 }
-
-.statusDetail {
-  display: block;
-  max-width: 18rem;
-  margin-top: 0.35rem;
-  color: var(--color-ink-300);
-  font-size: 0.66rem;
-  line-height: 1.4;
-}
-
-@media (max-width: 48rem) {
-  .documentMeta,
-  .statusDetail {
-    max-width: none;
-  }
-}

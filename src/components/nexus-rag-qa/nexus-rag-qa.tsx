@@ -47,7 +47,10 @@ export function NexusRagQa({ content }: NexusRagQaProps) {
               <div className={styles.questionRow}>
                 <p className={styles.question}>{exchange.question}</p>
                 <span className={styles.questionMeta}>
-                  {exchange.questionLanguageLabel} · {exchange.askedAtLabel}
+                  {exchange.questionLanguageLabel} ·{" "}
+                  <time dateTime={exchange.askedAt}>
+                    {exchange.askedAtLabel}
+                  </time>
                 </span>
               </div>
 

@@ -33,7 +33,9 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
                   <p className={styles.candidateTitle}>{candidate.title}</p>
                   <p className={styles.candidateMeta}>
                     {candidate.typeLabel} · {candidate.sourceLabel} ·{" "}
-                    {candidate.jobId} · {candidate.retrievedAtLabel}
+                    <time dateTime={candidate.retrievedAt}>
+                      {candidate.retrievedAtLabel}
+                    </time>
                   </p>
                 </div>
               </div>

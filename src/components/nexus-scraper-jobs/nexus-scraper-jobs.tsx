@@ -25,7 +25,7 @@ function readAttempt(attempt: ScraperJobAttempt, key: SortKey) {
   }
 
   if (key === "time") {
-    return attempt.finishedAtLabel;
+    return attempt.finishedAt;
   }
 
   return attempt.sourceLabel;
@@ -81,7 +81,6 @@ export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
           <AutomationStatusBadge label={job.statusLabel} status={job.status} />
         }
         id="scraper-job-summary"
-        subtitle={job.id}
         title={content.jobTitle}
       >
         <dl className={styles.summaryGrid}>
@@ -144,12 +143,11 @@ export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
                     >
                       {attempt.outcomeLabel}
                     </span>
-                    <span className={styles.attemptMessage}>
-                      {attempt.message}
-                    </span>
                   </td>
                   <td data-label={content.attemptColumns.time}>
-                    <time>{attempt.finishedAtLabel}</time>
+                    <time dateTime={attempt.finishedAt}>
+                      {attempt.finishedAtLabel}
+                    </time>
                   </td>
                 </tr>
               ))}

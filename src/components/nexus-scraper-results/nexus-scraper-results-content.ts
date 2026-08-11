@@ -1,3 +1,4 @@
+import { formatTimestamp } from "@/components/nexus-workspace-page/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
 export type CandidateDetail = {
@@ -9,7 +10,7 @@ export type CandidateDetail = {
 export type StagedCandidate = {
   details: CandidateDetail[];
   id: string;
-  jobId: string;
+  retrievedAt: string;
   retrievedAtLabel: string;
   sourceLabel: string;
   sourceUrl: string;
@@ -45,8 +46,7 @@ const resultsCopy = {
           { id: "parser", label: "Versi parser", value: "sinta-2026.07" },
         ],
         id: "candidate-profile-6712043",
-        jobId: "job_01J9BF2K",
-        retrievedAtLabel: "2026-08-11 08:53",
+        retrievedAt: "2026-08-11T08:53",
         sourceLabel: "SINTA",
         sourceUrl:
           "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043",
@@ -71,8 +71,7 @@ const resultsCopy = {
           { id: "citations", label: "Sitasi", value: "14" },
         ],
         id: "candidate-paper-jmir-2026",
-        jobId: "job_01J9BF2K",
-        retrievedAtLabel: "2026-08-11 08:54",
+        retrievedAt: "2026-08-11T08:54",
         sourceLabel: "SINTA",
         sourceUrl: "https://doi.org/10.2196/48213",
         title:
@@ -97,8 +96,7 @@ const resultsCopy = {
           { id: "citations", label: "Sitasi", value: "Tidak tersedia" },
         ],
         id: "candidate-paper-semnas-2025",
-        jobId: "job_01J9BF2K",
-        retrievedAtLabel: "2026-08-11 08:55",
+        retrievedAt: "2026-08-11T08:55",
         sourceLabel: "SINTA",
         sourceUrl:
           "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043/?view=googlescholar",
@@ -129,8 +127,7 @@ const resultsCopy = {
           { id: "parser", label: "Parser version", value: "sinta-2026.07" },
         ],
         id: "candidate-profile-6712043",
-        jobId: "job_01J9BF2K",
-        retrievedAtLabel: "2026-08-11 08:53",
+        retrievedAt: "2026-08-11T08:53",
         sourceLabel: "SINTA",
         sourceUrl:
           "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043",
@@ -155,8 +152,7 @@ const resultsCopy = {
           { id: "citations", label: "Citations", value: "14" },
         ],
         id: "candidate-paper-jmir-2026",
-        jobId: "job_01J9BF2K",
-        retrievedAtLabel: "2026-08-11 08:54",
+        retrievedAt: "2026-08-11T08:54",
         sourceLabel: "SINTA",
         sourceUrl: "https://doi.org/10.2196/48213",
         title:
@@ -181,8 +177,7 @@ const resultsCopy = {
           { id: "citations", label: "Citations", value: "Unavailable" },
         ],
         id: "candidate-paper-semnas-2025",
-        jobId: "job_01J9BF2K",
-        retrievedAtLabel: "2026-08-11 08:55",
+        retrievedAt: "2026-08-11T08:55",
         sourceLabel: "SINTA",
         sourceUrl:
           "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043/?view=googlescholar",
@@ -198,7 +193,12 @@ const resultsCopy = {
     sourceUrlLabel: "Source URL",
     title: "Collection Results",
   },
-} satisfies Record<Locale, Omit<NexusScraperResultsContent, "previewLabel">>;
+} satisfies Record<
+  Locale,
+  Omit<NexusScraperResultsContent, "candidates"> & {
+    candidates: Omit<StagedCandidate, "retrievedAtLabel">[];
+  }
+>;
 
 /**
  * Presentation-ready staged candidates. A server adapter can replace the
@@ -207,7 +207,13 @@ const resultsCopy = {
 export function getNexusScraperResultsContent(
   locale: Locale,
 ): NexusScraperResultsContent {
+  const copy = resultsCopy[locale];
+
   return {
-    ...resultsCopy[locale],
+    ...copy,
+    candidates: copy.candidates.map((candidate) => ({
+      ...candidate,
+      retrievedAtLabel: formatTimestamp(candidate.retrievedAt),
+    })),
   };
 }

@@ -11,11 +11,3 @@
   display: block;
   overflow-wrap: anywhere;
 }
-
-.submissionMeta {
-  display: block;
-  margin-top: 0.3rem;
-  color: var(--color-ink-300);
-  font-size: 0.66rem;
-  font-weight: 520;
-}

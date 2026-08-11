@@ -1,11 +1,12 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import { formatTimestamp } from "@/components/nexus-workspace-page/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
 export type ScraperJobAttempt = {
+  finishedAt: string;
   finishedAtLabel: string;
   id: string;
-  message: string;
   outcome: "failed" | "succeeded";
   outcomeLabel: string;
   requestUrl: string;
@@ -14,12 +15,13 @@ export type ScraperJobAttempt = {
 
 export type ScraperJobSummary = {
   candidateCount: string;
+  createdAt: string;
   createdAtLabel: string;
   fullName: string;
-  id: string;
   progressLabel: string;
   status: AutomationJobStatus;
   statusLabel: string;
+  updatedAt: string;
   updatedAtLabel: string;
 };
 
@@ -61,9 +63,8 @@ const jobsCopy = {
     },
     attempts: [
       {
-        finishedAtLabel: "2026-08-11 08:53",
+        finishedAt: "2026-08-11T08:53",
         id: "attempt-sinta-profile",
-        message: "Identitas cocok tepat, institusi terkonfirmasi.",
         outcome: "succeeded",
         outcomeLabel: "Berhasil",
         requestUrl:
@@ -71,31 +72,27 @@ const jobsCopy = {
         sourceLabel: "SINTA",
       },
       {
-        finishedAtLabel: "2026-08-11 08:54",
+        finishedAt: "2026-08-11T08:54",
         id: "attempt-sinta-works-1",
-        message: "24 karya terambil.",
         outcome: "succeeded",
         outcomeLabel: "Berhasil",
         requestUrl: "…/authors/profile/6712043/?view=scopus&page=1",
         sourceLabel: "SINTA",
       },
       {
-        finishedAtLabel: "2026-08-11 08:55",
+        finishedAt: "2026-08-11T08:55",
         id: "attempt-sinta-works-2",
-        message: "9 karya terambil, halaman terakhir.",
         outcome: "succeeded",
         outcomeLabel: "Berhasil",
         requestUrl: "…/authors/profile/6712043/?view=scopus&page=2",
         sourceLabel: "SINTA",
       },
       {
-        finishedAtLabel: "2026-08-11 08:56",
+        finishedAt: "2026-08-11T08:56",
         id: "attempt-scholar",
-        message:
-          "Sumber meminta verifikasi CAPTCHA atau sign-in. Hasil SINTA tetap disimpan.",
         outcome: "failed",
         outcomeLabel: "Gagal",
-        requestUrl: "SerpApi google_scholar_author?user=8kQ2vRUAAAAJ",
+        requestUrl: "https://scholar.google.com/citations?user=8kQ2vRUAAAAJ",
         sourceLabel: "Google Scholar",
       },
     ],
@@ -104,13 +101,12 @@ const jobsCopy = {
     description: "Status pengumpulan data satu peneliti dan log percobaannya.",
     job: {
       candidateCount: "33",
-      createdAtLabel: "2026-08-11 08:52",
-      id: "job_01J9BF2K",
+      createdAt: "2026-08-11T08:52",
       fullName: "Suksmandhira Harimurti",
       progressLabel: "100%",
       status: jobStatus,
       statusLabel: getAutomationStatusLabel("id", jobStatus),
-      updatedAtLabel: "2026-08-11 08:56",
+      updatedAt: "2026-08-11T08:56",
     },
     jobTitle: "Ringkasan Job",
     lookupButtonLabel: "Tampilkan",
@@ -134,9 +130,8 @@ const jobsCopy = {
     },
     attempts: [
       {
-        finishedAtLabel: "2026-08-11 08:53",
+        finishedAt: "2026-08-11T08:53",
         id: "attempt-sinta-profile",
-        message: "Exact identity match, institution confirmed.",
         outcome: "succeeded",
         outcomeLabel: "Succeeded",
         requestUrl:
@@ -144,31 +139,27 @@ const jobsCopy = {
         sourceLabel: "SINTA",
       },
       {
-        finishedAtLabel: "2026-08-11 08:54",
+        finishedAt: "2026-08-11T08:54",
         id: "attempt-sinta-works-1",
-        message: "24 works collected.",
         outcome: "succeeded",
         outcomeLabel: "Succeeded",
         requestUrl: "…/authors/profile/6712043/?view=scopus&page=1",
         sourceLabel: "SINTA",
       },
       {
-        finishedAtLabel: "2026-08-11 08:55",
+        finishedAt: "2026-08-11T08:55",
         id: "attempt-sinta-works-2",
-        message: "9 works collected, final page.",
         outcome: "succeeded",
         outcomeLabel: "Succeeded",
         requestUrl: "…/authors/profile/6712043/?view=scopus&page=2",
         sourceLabel: "SINTA",
       },
       {
-        finishedAtLabel: "2026-08-11 08:56",
+        finishedAt: "2026-08-11T08:56",
         id: "attempt-scholar",
-        message:
-          "The source asked for CAPTCHA or sign-in verification. SINTA results were kept.",
         outcome: "failed",
         outcomeLabel: "Failed",
-        requestUrl: "SerpApi google_scholar_author?user=8kQ2vRUAAAAJ",
+        requestUrl: "https://scholar.google.com/citations?user=8kQ2vRUAAAAJ",
         sourceLabel: "Google Scholar",
       },
     ],
@@ -177,13 +168,12 @@ const jobsCopy = {
     description: "Collection status for one researcher and its attempt log.",
     job: {
       candidateCount: "33",
-      createdAtLabel: "2026-08-11 08:52",
-      id: "job_01J9BF2K",
+      createdAt: "2026-08-11T08:52",
       fullName: "Suksmandhira Harimurti",
       progressLabel: "100%",
       status: jobStatus,
       statusLabel: getAutomationStatusLabel("en", jobStatus),
-      updatedAtLabel: "2026-08-11 08:56",
+      updatedAt: "2026-08-11T08:56",
     },
     jobTitle: "Job Summary",
     lookupButtonLabel: "Show",
@@ -198,7 +188,13 @@ const jobsCopy = {
     },
     title: "Job Status",
   },
-} satisfies Record<Locale, Omit<NexusScraperJobsContent, "previewLabel">>;
+} satisfies Record<
+  Locale,
+  Omit<NexusScraperJobsContent, "attempts" | "job"> & {
+    attempts: Omit<ScraperJobAttempt, "finishedAtLabel">[];
+    job: Omit<ScraperJobSummary, "createdAtLabel" | "updatedAtLabel">;
+  }
+>;
 
 /**
  * Presentation-ready job detail. A server adapter can replace the seeded job
@@ -207,7 +203,18 @@ const jobsCopy = {
 export function getNexusScraperJobsContent(
   locale: Locale,
 ): NexusScraperJobsContent {
+  const copy = jobsCopy[locale];
+
   return {
-    ...jobsCopy[locale],
+    ...copy,
+    attempts: copy.attempts.map((attempt) => ({
+      ...attempt,
+      finishedAtLabel: formatTimestamp(attempt.finishedAt),
+    })),
+    job: {
+      ...copy.job,
+      createdAtLabel: formatTimestamp(copy.job.createdAt),
+      updatedAtLabel: formatTimestamp(copy.job.updatedAt),
+    },
   };
 }

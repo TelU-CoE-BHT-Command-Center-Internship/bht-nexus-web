@@ -114,12 +114,7 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
             <tbody>
               {submissions.map((submission) => (
                 <tr key={submission.id}>
-                  <th scope="row">
-                    {submission.fullName}
-                    <span className={styles.submissionMeta}>
-                      {submission.jobId}
-                    </span>
-                  </th>
+                  <th scope="row">{submission.fullName}</th>
                   <td data-label={content.columns.sinta}>
                     {submission.sinta ? (
                       <a
@@ -159,7 +154,9 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
                     />
                   </td>
                   <td data-label={content.columns.submittedAt}>
-                    <time>{submission.submittedAtLabel}</time>
+                    <time dateTime={submission.submittedAt}>
+                      {submission.submittedAtLabel}
+                    </time>
                   </td>
                 </tr>
               ))}

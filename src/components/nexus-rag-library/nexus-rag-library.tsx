@@ -99,7 +99,7 @@ export function NexusRagLibrary({ content }: NexusRagLibraryProps) {
                   <th scope="row">
                     {document.title}
                     <span className={styles.documentMeta}>
-                      {document.fileLabel} · {document.jobId}
+                      {document.fileLabel}
                     </span>
                   </th>
                   <td data-label={content.columns.owner}>
@@ -110,14 +110,11 @@ export function NexusRagLibrary({ content }: NexusRagLibraryProps) {
                       label={document.statusLabel}
                       status={document.status}
                     />
-                    {document.statusDetail ? (
-                      <span className={styles.statusDetail}>
-                        {document.statusDetail}
-                      </span>
-                    ) : null}
                   </td>
                   <td data-label={content.columns.indexedAt}>
-                    <time>{document.indexedLabel}</time>
+                    <time dateTime={document.indexedAt}>
+                      {document.indexedLabel}
+                    </time>
                   </td>
                 </tr>
               ))}
