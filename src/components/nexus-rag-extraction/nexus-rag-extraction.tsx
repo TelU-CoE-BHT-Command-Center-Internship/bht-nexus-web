@@ -41,11 +41,7 @@ export function NexusRagExtraction({ content }: NexusRagExtractionProps) {
         </label>
       </div>
 
-      <WorkspacePanel
-        id="rag-extraction-fields"
-        subtitle={content.fieldsSubtitle}
-        title={content.fieldsTitle}
-      >
+      <WorkspacePanel id="rag-extraction-fields" title={content.fieldsTitle}>
         <ul className={styles.fieldList}>
           {content.fields.map((field) => (
             <li className={styles.field} key={field.id}>

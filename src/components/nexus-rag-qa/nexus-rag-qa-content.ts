@@ -29,7 +29,6 @@ export type NexusRagQaContent = {
   citationsTitle: string;
   description: string;
   exchanges: RagExchange[];
-  historySubtitle: string;
   historyTitle: string;
   pageLabel: string;
   queryLabel: string;
@@ -111,7 +110,6 @@ const qaCopy = {
         supported: false,
       },
     ],
-    historySubtitle: "Tiga pertanyaan terakhir",
     historyTitle: "Riwayat Pertanyaan",
     pageLabel: "Halaman",
     queryLabel: "Pertanyaan",
@@ -191,7 +189,6 @@ const qaCopy = {
         supported: false,
       },
     ],
-    historySubtitle: "Three most recent questions",
     historyTitle: "Question History",
     pageLabel: "Page",
     queryLabel: "Question",

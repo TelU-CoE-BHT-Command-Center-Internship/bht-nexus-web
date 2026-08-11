@@ -132,6 +132,12 @@ Halaman baru memakai komponen yang ada sebelum membuat yang baru.
 Tabel memakai kelas `.table` dari `nexus-workspace-page.module.css`. Setiap
 `<td>` memakai atribut `data-label`, yang menjadi label baris di bawah `42rem`.
 
+**Panel tidak memiliki subjudul.** `WorkspacePanel` hanya menerima `title`.
+Kalimat seperti `Tiga pertanyaan terakhir` atau `Enam isian` menghitung baris
+yang sudah terlihat, dan menjadi salah begitu endpoint mengembalikan jumlah
+yang berbeda. Jumlah baris ditampilkan lewat baris itu sendiri; nilai yang
+berubah seperti nama peneliti terpilih masuk ke daftar data di dalam panel.
+
 **Satu hal mendominasi tiap layar.** Jawaban, nilai isian, dan judul kandidat
 dibaca lebih dulu, sehingga ukurannya paling besar. Bukti pendukung berupa
 kutipan sumber, rincian kandidat, dan potongan dokumen ditutup di balik

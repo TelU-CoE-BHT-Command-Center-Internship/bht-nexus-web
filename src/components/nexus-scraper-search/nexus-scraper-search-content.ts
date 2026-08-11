@@ -61,11 +61,11 @@ export type NexusScraperSearchContent = {
   sourceLabel: string;
   sourceOptions: ScraperSourceOption[];
   submissions: ScraperSubmission[];
-  submissionsSubtitle: string;
   submissionsTitle: string;
   submitLabel: string;
   summaryLabels: {
     candidates: string;
+    name: string;
     updated: string;
   };
   title: string;
@@ -234,11 +234,11 @@ const searchCopy = {
       { id: "sinta", label: "SINTA" },
       { id: "google_scholar", label: "Google Scholar" },
     ],
-    submissionsSubtitle: "Empat pencarian terakhir",
     submissionsTitle: "Pencarian Terkini",
     submitLabel: "Cari",
     summaryLabels: {
       candidates: "Kandidat",
+      name: "Nama",
       updated: "Diperbarui",
     },
     title: "Pencarian Peneliti",
@@ -269,11 +269,11 @@ const searchCopy = {
       { id: "sinta", label: "SINTA" },
       { id: "google_scholar", label: "Google Scholar" },
     ],
-    submissionsSubtitle: "Four most recent searches",
     submissionsTitle: "Recent Searches",
     submitLabel: "Search",
     summaryLabels: {
       candidates: "Candidates",
+      name: "Name",
       updated: "Updated",
     },
     title: "Researcher Search",

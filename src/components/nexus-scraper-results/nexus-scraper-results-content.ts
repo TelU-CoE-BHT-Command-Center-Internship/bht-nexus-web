@@ -40,7 +40,6 @@ export type CandidateGroup = {
 
 export type NexusScraperResultsContent = {
   acceptLabel: string;
-  candidatesSubtitle: string;
   candidatesTitle: string;
   description: string;
   detailsLabel: string;
@@ -240,7 +239,6 @@ const groupSeeds: GroupSeed[] = [
 const resultsCopy = {
   id: {
     acceptLabel: "Terima",
-    candidatesSubtitle: "Enam kandidat dari dua peneliti",
     candidatesTitle: "Menunggu Tinjauan",
     description:
       "Kandidat hasil pengumpulan data yang menunggu tinjauan. Setiap kandidat ditinjau terpisah.",
@@ -252,7 +250,6 @@ const resultsCopy = {
   },
   en: {
     acceptLabel: "Accept",
-    candidatesSubtitle: "Six candidates from two researchers",
     candidatesTitle: "Awaiting Review",
     description:
       "Collected candidates awaiting review. Each candidate is reviewed on its own.",

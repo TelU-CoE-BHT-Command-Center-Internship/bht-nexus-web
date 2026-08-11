@@ -36,11 +36,7 @@ export function NexusRagQa({ content }: NexusRagQaProps) {
         </div>
       </div>
 
-      <WorkspacePanel
-        id="rag-qa-history"
-        subtitle={content.historySubtitle}
-        title={content.historyTitle}
-      >
+      <WorkspacePanel id="rag-qa-history" title={content.historyTitle}>
         <ol className={styles.exchangeList}>
           {content.exchanges.map((exchange) => (
             <li className={styles.exchange} key={exchange.id}>

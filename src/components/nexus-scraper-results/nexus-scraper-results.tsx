@@ -22,7 +22,6 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
 
       <WorkspacePanel
         id="scraper-results-candidates"
-        subtitle={content.candidatesSubtitle}
         title={content.candidatesTitle}
       >
         <div className={styles.groupList}>

@@ -107,7 +107,6 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
       <WorkspacePanel
         flush
         id="scraper-submissions"
-        subtitle={content.submissionsSubtitle}
         title={content.submissionsTitle}
       >
         <div className={shell.tableWrap}>
@@ -190,10 +189,13 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
         <WorkspacePanel
           flush
           id="scraper-attempts"
-          subtitle={selected.fullName}
           title={content.attemptsTitle}
         >
           <dl className={styles.summaryRow}>
+            <div>
+              <dt>{content.summaryLabels.name}</dt>
+              <dd>{selected.fullName}</dd>
+            </div>
             <div>
               <dt>{content.summaryLabels.candidates}</dt>
               <dd>{selected.candidateCount}</dd>

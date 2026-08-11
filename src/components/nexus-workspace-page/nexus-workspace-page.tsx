@@ -37,7 +37,6 @@ type WorkspacePanelProps = {
   flush?: boolean;
   id: string;
   label?: string;
-  subtitle?: string;
   title?: string;
 };
 
@@ -47,7 +46,6 @@ export function WorkspacePanel({
   flush = false,
   id,
   label,
-  subtitle,
   title,
 }: WorkspacePanelProps) {
   return (
@@ -58,10 +56,9 @@ export function WorkspacePanel({
     >
       {title ? (
         <div className={styles.panelHeader}>
-          <div className={styles.panelHeading}>
-            <h3 id={`${id}-title`}>{title}</h3>
-            {subtitle ? <p>{subtitle}</p> : null}
-          </div>
+          <h3 className={styles.panelHeading} id={`${id}-title`}>
+            {title}
+          </h3>
           {action}
         </div>
       ) : null}

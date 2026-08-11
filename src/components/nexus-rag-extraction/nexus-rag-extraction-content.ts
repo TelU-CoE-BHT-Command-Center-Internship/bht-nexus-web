@@ -28,7 +28,6 @@ export type NexusRagExtractionContent = {
   documentMeta: string;
   documentTitle: string;
   fields: ExtractionField[];
-  fieldsSubtitle: string;
   fieldsTitle: string;
   notFoundLabel: string;
   pageLabel: string;
@@ -115,7 +114,6 @@ const extractionCopy = {
         value: "-",
       },
     ],
-    fieldsSubtitle: "Enam isian",
     fieldsTitle: "Kandidat Isian",
     notFoundLabel: "Tidak ditemukan pada dokumen",
     pageLabel: "Halaman",
@@ -209,7 +207,6 @@ const extractionCopy = {
         value: "-",
       },
     ],
-    fieldsSubtitle: "Six fields",
     fieldsTitle: "Field Candidates",
     notFoundLabel: "Not found in the document",
     pageLabel: "Page",
