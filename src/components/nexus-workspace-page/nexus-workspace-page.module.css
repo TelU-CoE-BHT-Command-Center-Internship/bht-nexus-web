@@ -21,7 +21,7 @@
 
 .pageEyebrow {
   margin: 0;
-  color: #7288a5;
+  color: #60728b;
   font-size: 0.66rem;
   font-weight: 720;
   letter-spacing: 0.08em;
@@ -91,7 +91,7 @@
 
 .panelHeading p {
   margin: 0.3rem 0 0;
-  color: #728096;
+  color: #657286;
   font-size: 0.74rem;
   line-height: 1.45;
 }
@@ -184,7 +184,7 @@
 }
 
 .field input::placeholder {
-  color: #98a3b3;
+  color: #6a727d;
 }
 
 .tableWrap {

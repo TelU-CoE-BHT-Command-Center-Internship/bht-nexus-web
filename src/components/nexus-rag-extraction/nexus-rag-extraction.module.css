@@ -26,7 +26,7 @@
 }
 
 .documentCopy span {
-  color: #8a95a4;
+  color: #6a737e;
   font-size: 0.68rem;
 }
 
@@ -61,7 +61,7 @@
 
 .fieldLabel {
   margin: 0;
-  color: #7288a5;
+  color: #60728b;
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -77,7 +77,7 @@
 }
 
 .fieldValue[data-empty="true"] {
-  color: #98a3b3;
+  color: #6a727d;
   font-style: italic;
   font-weight: 560;
 }
@@ -90,7 +90,7 @@
 }
 
 .decisionBadge {
-  --decision-color: #657187;
+  --decision-color: #626e83;
   --decision-bg: #edf0f4;
 
   padding: 0.25rem 0.55rem;
@@ -103,7 +103,7 @@
 }
 
 .decisionBadge[data-decision="accepted"] {
-  --decision-color: #128344;
+  --decision-color: #117e41;
   --decision-bg: #e1f5e8;
 }
 
@@ -126,7 +126,7 @@
 
 .sourceMeta {
   margin: 0;
-  color: #7288a5;
+  color: #60728b;
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.04em;

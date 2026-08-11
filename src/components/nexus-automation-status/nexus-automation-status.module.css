@@ -25,17 +25,17 @@
 }
 
 .badge[data-status="queued"] {
-  --status-color: #657187;
+  --status-color: #626e83;
   --status-bg: #edf0f4;
 }
 
 .badge[data-status="retrying"] {
-  --status-color: #b16906;
+  --status-color: #9f5f05;
   --status-bg: #fff1d8;
 }
 
 .badge[data-status="succeeded"] {
-  --status-color: #128344;
+  --status-color: #117e41;
   --status-bg: #e1f5e8;
 }
 

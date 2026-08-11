@@ -9,7 +9,7 @@
 
 .normalizationNote {
   margin: 0.9rem 0 0;
-  color: #78849a;
+  color: #677284;
   font-size: 0.72rem;
   line-height: 1.55;
 }
@@ -39,7 +39,7 @@
 }
 
 .host span {
-  color: #6b7a90;
+  color: #647186;
   font-size: 0.72rem;
   line-height: 1.5;
 }
@@ -52,7 +52,7 @@
 .submissionMeta {
   display: block;
   margin-top: 0.3rem;
-  color: #8a95a4;
+  color: #6a737e;
   font-size: 0.66rem;
   font-weight: 520;
 }

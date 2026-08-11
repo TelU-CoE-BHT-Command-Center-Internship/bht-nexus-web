@@ -1,5 +1,5 @@
 .uploadNote {
-  color: #8a95a4;
+  color: #6a737e;
   font-size: 0.68rem;
   line-height: 1.35;
 }
@@ -46,12 +46,12 @@
 }
 
 .summaryCard[data-status="retrying"] {
-  --summary-color: #b16906;
+  --summary-color: #9f5f05;
   --summary-bg: #fdf6e9;
 }
 
 .summaryCard[data-status="succeeded"] {
-  --summary-color: #128344;
+  --summary-color: #117e41;
   --summary-bg: #f1faf4;
 }
 
@@ -64,7 +64,7 @@
 .documentMeta {
   display: block;
   margin-top: 0.3rem;
-  color: #8a95a4;
+  color: #6a737e;
   font-size: 0.66rem;
   font-weight: 520;
 }
@@ -73,7 +73,7 @@
   display: block;
   max-width: 18rem;
   margin-top: 0.35rem;
-  color: #78849a;
+  color: #677284;
   font-size: 0.66rem;
   line-height: 1.4;
 }

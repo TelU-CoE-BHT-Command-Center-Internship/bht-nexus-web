@@ -21,7 +21,7 @@
 
 .scopeTitle {
   margin: 1.1rem 0 0.5rem;
-  color: #7288a5;
+  color: #60728b;
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -86,7 +86,7 @@
 
 .questionMeta {
   flex: 0 0 auto;
-  color: #8a95a4;
+  color: #6a737e;
   font-size: 0.66rem;
   white-space: nowrap;
 }
@@ -124,7 +124,7 @@
 
 .citationsTitle {
   margin: 0 0 0.45rem;
-  color: #7288a5;
+  color: #60728b;
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -159,7 +159,7 @@
 }
 
 .citationSource span {
-  color: #8a95a4;
+  color: #6a737e;
   font-size: 0.66rem;
   font-weight: 560;
   white-space: nowrap;

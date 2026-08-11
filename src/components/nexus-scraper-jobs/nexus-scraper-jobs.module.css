@@ -22,7 +22,7 @@
 }
 
 .summaryEntry dt {
-  color: #7288a5;
+  color: #60728b;
   font-size: 0.62rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -47,7 +47,7 @@
 }
 
 .attemptOutcome {
-  --outcome-color: #128344;
+  --outcome-color: #117e41;
   --outcome-bg: #e1f5e8;
 
   display: inline-block;
@@ -69,7 +69,7 @@
   display: block;
   max-width: 20rem;
   margin-top: 0.35rem;
-  color: #78849a;
+  color: #677284;
   font-size: 0.68rem;
   line-height: 1.45;
 }
