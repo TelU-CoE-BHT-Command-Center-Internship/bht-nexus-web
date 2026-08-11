@@ -24,6 +24,7 @@ export type NexusScraperResultsContent = {
   candidatesSubtitle: string;
   candidatesTitle: string;
   description: string;
+  detailsLabel: string;
   promoteNote: string;
   rejectLabel: string;
   sourceUrlLabel: string;
@@ -107,6 +108,7 @@ const resultsCopy = {
     candidatesSubtitle: "Tiga menunggu tinjauan",
     candidatesTitle: "Kandidat",
     description: "Kandidat hasil pengumpulan data yang menunggu tinjauan.",
+    detailsLabel: "Rincian",
     promoteNote: "Data resmi berubah hanya setelah kandidat diterima.",
     rejectLabel: "Tolak",
     sourceUrlLabel: "URL sumber",
@@ -188,6 +190,7 @@ const resultsCopy = {
     candidatesSubtitle: "Three awaiting review",
     candidatesTitle: "Candidates",
     description: "Collected candidates awaiting review.",
+    detailsLabel: "Details",
     promoteNote: "Official data changes only after a candidate is accepted.",
     rejectLabel: "Reject",
     sourceUrlLabel: "Source URL",

@@ -49,42 +49,44 @@ export function NexusRagExtraction({ content }: NexusRagExtractionProps) {
         <ul className={styles.fieldList}>
           {content.fields.map((field) => (
             <li className={styles.field} key={field.id}>
-              <div className={styles.fieldHeader}>
-                <div className={styles.fieldCopy}>
-                  <p className={styles.fieldLabel}>{field.label}</p>
-                  <p className={styles.fieldValue} data-empty={!field.source}>
-                    {field.source ? field.value : content.notFoundLabel}
-                  </p>
-                </div>
+              <div className={styles.fieldMain}>
+                <p className={styles.fieldLabel}>{field.label}</p>
+                <p className={styles.fieldValue} data-empty={!field.source}>
+                  {field.source ? field.value : content.notFoundLabel}
+                </p>
+              </div>
 
-                <div className={styles.fieldDecision}>
-                  {field.decision === "pending" ? null : (
-                    <span
-                      className={styles.decisionBadge}
-                      data-decision={field.decision}
-                    >
-                      {field.decisionLabel}
-                    </span>
-                  )}
-                  <div className={styles.decisionButtons}>
-                    <button className={shell.ghostButton} type="button">
-                      {content.acceptLabel}
-                    </button>
-                    <button className={shell.ghostButton} type="button">
-                      {content.rejectLabel}
-                    </button>
-                  </div>
+              <div className={styles.fieldDecision}>
+                {field.decision === "pending" ? null : (
+                  <span
+                    className={styles.decisionBadge}
+                    data-decision={field.decision}
+                  >
+                    {field.decisionLabel}
+                  </span>
+                )}
+                <div className={styles.decisionButtons}>
+                  <button className={shell.ghostButton} type="button">
+                    {content.acceptLabel}
+                  </button>
+                  <button className={shell.ghostButton} type="button">
+                    {content.rejectLabel}
+                  </button>
                 </div>
               </div>
 
               {field.source ? (
-                <div className={styles.source}>
-                  <p className={styles.sourceMeta}>
+                <details
+                  className={`${shell.disclosure} ${styles.fieldSource}`}
+                >
+                  <summary>
                     {content.sourceLabel} · {content.pageLabel}{" "}
-                    {field.source.page} · {field.source.chunkLabel}
-                  </p>
-                  <blockquote>{field.source.quote}</blockquote>
-                </div>
+                    {field.source.page}
+                  </summary>
+                  <blockquote className={shell.disclosureBody}>
+                    {field.source.quote}
+                  </blockquote>
+                </details>
               ) : null}
             </li>
           ))}

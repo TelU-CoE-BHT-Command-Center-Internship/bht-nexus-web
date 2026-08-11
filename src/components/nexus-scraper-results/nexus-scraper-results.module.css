@@ -1,6 +1,5 @@
 .candidateList {
   display: grid;
-  gap: 0.9rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -8,39 +7,53 @@
 
 .candidate {
   display: grid;
-  gap: 0.85rem;
-  padding: 1rem 1.05rem;
-  border: 1px solid var(--color-line-faint);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
-}
-
-.candidateHeader {
-  display: flex;
   min-width: 0;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-line-faint);
 }
 
-.candidateCopy {
+.candidate:first-child {
+  padding-top: 0;
+}
+
+.candidate:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.candidateMain {
   min-width: 0;
 }
 
 .candidateTitle {
+  max-width: 62ch;
   margin: 0;
-  color: var(--color-ink-900);
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.4;
+  color: var(--color-ink-700);
+  font-size: 0.95rem;
+  font-weight: 660;
+  line-height: 1.45;
 }
 
 .candidateMeta {
-  margin: 0.35rem 0 0;
+  margin: 0.3rem 0 0;
   color: var(--color-ink-300);
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   line-height: 1.45;
-  overflow-wrap: anywhere;
+}
+
+.decisionButtons {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.candidateData {
+  grid-column: 1 / -1;
+  margin-top: 0.15rem;
 }
 
 .detailGrid {
@@ -49,6 +62,9 @@
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   gap: 0.75rem;
   margin: 0;
+  padding: 0.85rem;
+  border-left: 2px solid var(--color-line-soft);
+  background: var(--color-surface-sunken);
 }
 
 .detailEntry {
@@ -74,31 +90,17 @@
   overflow-wrap: anywhere;
 }
 
-.candidateFooter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-line-faint);
-}
-
 .sourceLink {
+  display: inline-block;
+  margin-top: 0.6rem;
   color: var(--color-link);
   font-size: 0.72rem;
   font-weight: 700;
   text-decoration: underline;
 }
 
-.decisionButtons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-@media (max-width: 42rem) {
-  .candidateHeader {
-    display: grid;
+@media (max-width: 48rem) {
+  .candidate {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

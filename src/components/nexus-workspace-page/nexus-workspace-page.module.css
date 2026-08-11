@@ -315,3 +315,43 @@
     padding-inline: 1rem;
   }
 }
+
+.disclosure {
+  margin-top: 0.5rem;
+}
+
+.disclosure > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--color-link);
+  font-size: 0.72rem;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure > summary::before {
+  width: 0.55rem;
+  content: "▸";
+  font-size: 0.6rem;
+  transition: transform 120ms ease;
+}
+
+.disclosure[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.disclosureBody {
+  margin-top: 0.6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure > summary::before {
+    transition: none;
+  }
+}

@@ -1,23 +1,26 @@
 import { formatTimestamp } from "@/components/nexus-workspace-page/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
-export type RagCitation = {
-  chunkLabel: string;
-  documentTitle: string;
+export type RagPassage = {
   id: string;
   page: number;
   quote: string;
-  versionLabel: string;
+};
+
+export type RagSource = {
+  documentTitle: string;
+  id: string;
+  passages: RagPassage[];
 };
 
 export type RagExchange = {
   answer: string;
   askedAt: string;
   askedAtLabel: string;
-  citations: RagCitation[];
   id: string;
   question: string;
   questionLanguageLabel: string;
+  sources: RagSource[];
   supported: boolean;
 };
 
@@ -46,24 +49,24 @@ const qaCopy = {
         answer:
           "Besar dana yang diterima untuk skema Penelitian Terapan Unggulan 2026 adalah Rp 185.000.000, dicairkan dalam dua termin.",
         askedAt: "2026-08-11T09:41",
-        citations: [
+        sources: [
           {
-            chunkLabel: "chunk 37",
             documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
-            id: "hibah-2026-p4",
-            page: 4,
-            quote:
-              "PIHAK PERTAMA memberikan dana penelitian kepada PIHAK KEDUA sebesar Rp 185.000.000,00 (seratus delapan puluh lima juta rupiah).",
-            versionLabel: "v1",
-          },
-          {
-            chunkLabel: "chunk 41",
-            documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
-            id: "hibah-2026-p5",
-            page: 5,
-            quote:
-              "Pencairan dilakukan dalam 2 (dua) termin, yaitu 70% pada tahap pertama dan 30% setelah laporan akhir diterima.",
-            versionLabel: "v1",
+            id: "hibah-2026",
+            passages: [
+              {
+                id: "hibah-2026-p4",
+                page: 4,
+                quote:
+                  "PIHAK PERTAMA memberikan dana penelitian kepada PIHAK KEDUA sebesar Rp 185.000.000,00 (seratus delapan puluh lima juta rupiah).",
+              },
+              {
+                id: "hibah-2026-p5",
+                page: 5,
+                quote:
+                  "Pencairan dilakukan dalam 2 (dua) termin, yaitu 70% pada tahap pertama dan 30% setelah laporan akhir diterima.",
+              },
+            ],
           },
         ],
         id: "funding-amount-question",
@@ -76,15 +79,18 @@ const qaCopy = {
         answer:
           "Artikel telemedisin layanan primer terbit di Journal of Medical Internet Research dengan DOI 10.2196/48213.",
         askedAt: "2026-08-11T09:35",
-        citations: [
+        sources: [
           {
-            chunkLabel: "chunk 12",
             documentTitle: "Laporan Akhir Telemedisin Layanan Primer",
-            id: "telemedicine-report-p31",
-            page: 31,
-            quote:
-              "Luaran utama berupa artikel pada Journal of Medical Internet Research, DOI 10.2196/48213, terbit Maret 2026.",
-            versionLabel: "v2",
+            id: "telemedicine-report",
+            passages: [
+              {
+                id: "telemedicine-report-p31",
+                page: 31,
+                quote:
+                  "Luaran utama berupa artikel pada Journal of Medical Internet Research, DOI 10.2196/48213, terbit Maret 2026.",
+              },
+            ],
           },
         ],
         id: "publication-doi-question",
@@ -97,7 +103,7 @@ const qaCopy = {
         answer:
           "Tidak ditemukan pada dokumen yang tersedia. Jumlah pasien uji klinis tidak tercantum pada dokumen mana pun.",
         askedAt: "2026-08-11T09:28",
-        citations: [],
+        sources: [],
         id: "clinical-trial-question",
         question:
           "Berapa jumlah pasien yang mengikuti uji klinis perangkat pemantauan biosinyal?",
@@ -110,7 +116,7 @@ const qaCopy = {
     pageLabel: "Halaman",
     queryLabel: "Pertanyaan",
     queryPlaceholder: "Contoh: Siapa ketua kegiatan hibah PkM 2026?",
-    title: "Tanya Dokumen",
+    title: "Tanya Jawab",
     unsupportedLabel: "Tidak ditemukan",
   },
   en: {
@@ -123,24 +129,24 @@ const qaCopy = {
         answer:
           "The grant received under the 2026 Applied Research scheme is Rp 185,000,000, disbursed in two instalments.",
         askedAt: "2026-08-11T09:41",
-        citations: [
+        sources: [
           {
-            chunkLabel: "chunk 37",
             documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
-            id: "hibah-2026-p4",
-            page: 4,
-            quote:
-              "PIHAK PERTAMA memberikan dana penelitian kepada PIHAK KEDUA sebesar Rp 185.000.000,00 (seratus delapan puluh lima juta rupiah).",
-            versionLabel: "v1",
-          },
-          {
-            chunkLabel: "chunk 41",
-            documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
-            id: "hibah-2026-p5",
-            page: 5,
-            quote:
-              "Pencairan dilakukan dalam 2 (dua) termin, yaitu 70% pada tahap pertama dan 30% setelah laporan akhir diterima.",
-            versionLabel: "v1",
+            id: "hibah-2026",
+            passages: [
+              {
+                id: "hibah-2026-p4",
+                page: 4,
+                quote:
+                  "PIHAK PERTAMA memberikan dana penelitian kepada PIHAK KEDUA sebesar Rp 185.000.000,00 (seratus delapan puluh lima juta rupiah).",
+              },
+              {
+                id: "hibah-2026-p5",
+                page: 5,
+                quote:
+                  "Pencairan dilakukan dalam 2 (dua) termin, yaitu 70% pada tahap pertama dan 30% setelah laporan akhir diterima.",
+              },
+            ],
           },
         ],
         id: "funding-amount-question",
@@ -153,15 +159,18 @@ const qaCopy = {
         answer:
           "The primary care telemedicine paper appeared in the Journal of Medical Internet Research, DOI 10.2196/48213.",
         askedAt: "2026-08-11T09:35",
-        citations: [
+        sources: [
           {
-            chunkLabel: "chunk 12",
             documentTitle: "Laporan Akhir Telemedisin Layanan Primer",
-            id: "telemedicine-report-p31",
-            page: 31,
-            quote:
-              "Luaran utama berupa artikel pada Journal of Medical Internet Research, DOI 10.2196/48213, terbit Maret 2026.",
-            versionLabel: "v2",
+            id: "telemedicine-report",
+            passages: [
+              {
+                id: "telemedicine-report-p31",
+                page: 31,
+                quote:
+                  "Luaran utama berupa artikel pada Journal of Medical Internet Research, DOI 10.2196/48213, terbit Maret 2026.",
+              },
+            ],
           },
         ],
         id: "publication-doi-question",
@@ -174,7 +183,7 @@ const qaCopy = {
         answer:
           "Not found in the available documents. No document states the clinical trial patient count.",
         askedAt: "2026-08-11T09:28",
-        citations: [],
+        sources: [],
         id: "clinical-trial-question",
         question:
           "Berapa jumlah pasien yang mengikuti uji klinis perangkat pemantauan biosinyal?",
@@ -187,7 +196,7 @@ const qaCopy = {
     pageLabel: "Page",
     queryLabel: "Question",
     queryPlaceholder: "Example: Who leads the 2026 community service grant?",
-    title: "Ask Documents",
+    title: "Q&A",
     unsupportedLabel: "Not found",
   },
 } satisfies Record<

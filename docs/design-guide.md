@@ -132,6 +132,14 @@ Halaman baru memakai komponen yang ada sebelum membuat yang baru.
 Tabel memakai kelas `.table` dari `nexus-workspace-page.module.css`. Setiap
 `<td>` memakai atribut `data-label`, yang menjadi label baris di bawah `42rem`.
 
+**Satu hal mendominasi tiap layar.** Jawaban, nilai isian, dan judul kandidat
+dibaca lebih dulu, sehingga ukurannya paling besar. Bukti pendukung berupa
+kutipan sumber, rincian kandidat, dan potongan dokumen ditutup di balik
+elemen `details` memakai kelas `.disclosure`, terbuka atas permintaan pembaca.
+
+Sitasi dikelompokkan per dokumen, sehingga judul dokumen muncul sekali
+meskipun jawaban memakai beberapa halaman dari dokumen yang sama.
+
 Sel tabel berisi nilai yang berulang dan dapat dibandingkan antarbaris: nama,
 tautan, status, angka, dan waktu. Kalimat bebas per baris tidak dipakai, karena
 tidak ada kolom di basis data yang menghasilkannya.

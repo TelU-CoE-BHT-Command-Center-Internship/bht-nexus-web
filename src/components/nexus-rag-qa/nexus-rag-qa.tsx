@@ -44,48 +44,46 @@ export function NexusRagQa({ content }: NexusRagQaProps) {
         <ol className={styles.exchangeList}>
           {content.exchanges.map((exchange) => (
             <li className={styles.exchange} key={exchange.id}>
-              <div className={styles.questionRow}>
-                <p className={styles.question}>{exchange.question}</p>
-                <span className={styles.questionMeta}>
-                  {exchange.questionLanguageLabel} ·{" "}
-                  <time dateTime={exchange.askedAt}>
-                    {exchange.askedAtLabel}
-                  </time>
-                </span>
-              </div>
+              <p className={styles.question}>{exchange.question}</p>
 
-              <div
-                className={styles.answer}
-                data-supported={exchange.supported}
-              >
-                {exchange.supported ? null : (
-                  <span className={styles.unsupportedFlag}>
-                    {content.unsupportedLabel}
-                  </span>
-                )}
-                <p>{exchange.answer}</p>
-              </div>
+              {exchange.supported ? null : (
+                <p className={styles.unsupportedFlag}>
+                  {content.unsupportedLabel}
+                </p>
+              )}
 
-              {exchange.citations.length > 0 ? (
-                <div className={styles.citations}>
-                  <p className={styles.citationsTitle}>
-                    {content.citationsTitle}
-                  </p>
-                  <ul>
-                    {exchange.citations.map((citation) => (
-                      <li className={styles.citation} key={citation.id}>
-                        <p className={styles.citationSource}>
-                          {citation.documentTitle}
-                          <span>
-                            {content.pageLabel} {citation.page} ·{" "}
-                            {citation.versionLabel} · {citation.chunkLabel}
-                          </span>
+              <p className={styles.answer}>{exchange.answer}</p>
+
+              <p className={styles.exchangeMeta}>
+                {exchange.questionLanguageLabel} ·{" "}
+                <time dateTime={exchange.askedAt}>{exchange.askedAtLabel}</time>
+              </p>
+
+              {exchange.sources.length > 0 ? (
+                <details className={shell.disclosure}>
+                  <summary>
+                    {content.citationsTitle} ({exchange.sources.length})
+                  </summary>
+                  <ul className={`${shell.disclosureBody} ${styles.sources}`}>
+                    {exchange.sources.map((source) => (
+                      <li key={source.id}>
+                        <p className={styles.sourceTitle}>
+                          {source.documentTitle}
                         </p>
-                        <blockquote>{citation.quote}</blockquote>
+                        <ul className={styles.passages}>
+                          {source.passages.map((passage) => (
+                            <li className={styles.passage} key={passage.id}>
+                              <span className={styles.passagePage}>
+                                {content.pageLabel} {passage.page}
+                              </span>
+                              <blockquote>{passage.quote}</blockquote>
+                            </li>
+                          ))}
+                        </ul>
                       </li>
                     ))}
                   </ul>
-                </div>
+                </details>
               ) : null}
             </li>
           ))}

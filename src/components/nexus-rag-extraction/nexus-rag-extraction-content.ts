@@ -7,7 +7,6 @@ export type ExtractionProfileOption = {
 };
 
 export type ExtractionFieldSource = {
-  chunkLabel: string;
   page: number;
   quote: string;
 };
@@ -54,7 +53,6 @@ const extractionCopy = {
         id: "activity_title",
         label: "Judul Kegiatan",
         source: {
-          chunkLabel: "chunk 8",
           page: 1,
           quote:
             "Pelaksanaan penelitian dengan judul Sistem Pemantauan Biosinyal Terintegrasi untuk Layanan Primer.",
@@ -67,7 +65,6 @@ const extractionCopy = {
         id: "leader_name",
         label: "Nama Ketua",
         source: {
-          chunkLabel: "chunk 14",
           page: 2,
           quote:
             "PIHAK KEDUA: Suksmandhira Harimurti, selaku ketua pelaksana penelitian.",
@@ -80,7 +77,6 @@ const extractionCopy = {
         id: "funding_amount",
         label: "Besar Dana yang Diterima",
         source: {
-          chunkLabel: "chunk 37",
           page: 4,
           quote:
             "PIHAK PERTAMA memberikan dana penelitian kepada PIHAK KEDUA sebesar Rp 185.000.000,00.",
@@ -93,7 +89,6 @@ const extractionCopy = {
         id: "implementation_period",
         label: "Periode Pelaksanaan",
         source: {
-          chunkLabel: "chunk 22",
           page: 3,
           quote:
             "Jangka waktu pelaksanaan terhitung sejak 1 Maret 2026 sampai dengan 30 November 2026.",
@@ -106,7 +101,6 @@ const extractionCopy = {
         id: "grant_scheme",
         label: "Nama Skema Hibah",
         source: {
-          chunkLabel: "chunk 6",
           page: 1,
           quote: "Skema Penelitian Terapan Unggulan Tahun Anggaran 2026.",
         },
@@ -153,7 +147,6 @@ const extractionCopy = {
         id: "activity_title",
         label: "Activity Title",
         source: {
-          chunkLabel: "chunk 8",
           page: 1,
           quote:
             "Pelaksanaan penelitian dengan judul Sistem Pemantauan Biosinyal Terintegrasi untuk Layanan Primer.",
@@ -166,7 +159,6 @@ const extractionCopy = {
         id: "leader_name",
         label: "Leader Name",
         source: {
-          chunkLabel: "chunk 14",
           page: 2,
           quote:
             "PIHAK KEDUA: Suksmandhira Harimurti, selaku ketua pelaksana penelitian.",
@@ -179,7 +171,6 @@ const extractionCopy = {
         id: "funding_amount",
         label: "Grant Amount Received",
         source: {
-          chunkLabel: "chunk 37",
           page: 4,
           quote:
             "PIHAK PERTAMA memberikan dana penelitian kepada PIHAK KEDUA sebesar Rp 185.000.000,00.",
@@ -192,7 +183,6 @@ const extractionCopy = {
         id: "implementation_period",
         label: "Implementation Period",
         source: {
-          chunkLabel: "chunk 22",
           page: 3,
           quote:
             "Jangka waktu pelaksanaan terhitung sejak 1 Maret 2026 sampai dengan 30 November 2026.",
@@ -205,7 +195,6 @@ const extractionCopy = {
         id: "grant_scheme",
         label: "Grant Scheme Name",
         source: {
-          chunkLabel: "chunk 6",
           page: 1,
           quote: "Skema Penelitian Terapan Unggulan Tahun Anggaran 2026.",
         },
