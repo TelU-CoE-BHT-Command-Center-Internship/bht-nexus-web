@@ -1,8 +1,6 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
-import type {
-  AutomationJobStatus,
-  AutomationStatusSummary,
-} from "@/components/nexus-automation-status/nexus-automation-status-types";
+import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type RagDocument = {
@@ -27,9 +25,7 @@ export type NexusRagLibraryContent = {
   description: string;
   documents: RagDocument[];
   eyebrow: string;
-  indexNote: string;
-  statusSummary: AutomationStatusSummary[];
-  summaryTitle: string;
+  previewLabel: string;
   tableSubtitle: string;
   tableTitle: string;
   title: string;
@@ -54,10 +50,7 @@ const documentSeeds: DocumentSeed[] = [
     jobId: "job_01J8K2R4",
     ownerUnit: { en: "Research & Grants", id: "Riset & Hibah" },
     status: "succeeded",
-    statusDetail: {
-      en: "48 chunks indexed",
-      id: "48 potongan terindeks",
-    },
+    statusDetail: { en: "", id: "" },
     title: "Perjanjian Penugasan Hibah Penelitian 2026",
   },
   {
@@ -67,10 +60,7 @@ const documentSeeds: DocumentSeed[] = [
     jobId: "job_01J8H9M1",
     ownerUnit: { en: "Community Service", id: "Pengabdian Masyarakat" },
     status: "succeeded",
-    statusDetail: {
-      en: "23 chunks indexed",
-      id: "23 potongan terindeks",
-    },
+    statusDetail: { en: "", id: "" },
     title: "Pengumuman Kelulusan Proposal PkM 2026",
   },
   {
@@ -94,8 +84,8 @@ const documentSeeds: DocumentSeed[] = [
     ownerUnit: { en: "Partnerships", id: "Kerja Sama" },
     status: "queued",
     statusDetail: {
-      en: "Waiting for a worker",
-      id: "Menunggu worker",
+      en: "Waiting to be processed",
+      id: "Menunggu diproses",
     },
     title: "Kontrak Kerja Sama RSHS 2026",
   },
@@ -133,16 +123,12 @@ const libraryCopy = {
       document: "Dokumen",
       indexedAt: "Diproses",
       owner: "Unit Pemilik",
-      status: "Status Indeks",
+      status: "Status",
     },
-    description:
-      "Dokumen yang diizinkan untuk diindeks beserta status job pengindeksannya.",
+    description: "Dokumen internal CoE BHT dan status pemrosesannya.",
     eyebrow: "Tanya Jawab Dokumen",
-    indexNote:
-      "Pengindeksan berjalan sebagai job asinkron. Dokumen baru masuk karantina lebih dulu dan belum dapat dijawab oleh RAG sampai jobnya berhasil.",
-    summaryTitle: "Status Job Pengindeksan",
-    tableSubtitle: "Enam dokumen terbaru",
-    tableTitle: "Dokumen Terindeks",
+    tableSubtitle: "Enam terbaru",
+    tableTitle: "Dokumen",
     title: "Pustaka Dokumen",
     uploadLabel: "Unggah dokumen",
     uploadNote: "PDF atau DOCX, maksimal 25 MB",
@@ -152,38 +138,20 @@ const libraryCopy = {
       document: "Document",
       indexedAt: "Processed",
       owner: "Owning Unit",
-      status: "Index Status",
+      status: "Status",
     },
-    description:
-      "Documents authorised for indexing, with the status of each indexing job.",
+    description: "Internal CoE BHT documents and their processing status.",
     eyebrow: "Document Q&A",
-    indexNote:
-      "Indexing runs as an asynchronous job. A new document is quarantined first and stays outside RAG answers until its job succeeds.",
-    summaryTitle: "Indexing Job Status",
-    tableSubtitle: "Six most recent documents",
-    tableTitle: "Indexed Documents",
+    tableSubtitle: "Six most recent",
+    tableTitle: "Documents",
     title: "Document Library",
     uploadLabel: "Upload document",
     uploadNote: "PDF or DOCX, up to 25 MB",
   },
 } satisfies Record<
   Locale,
-  Omit<NexusRagLibraryContent, "documents" | "statusSummary">
+  Omit<NexusRagLibraryContent, "documents" | "previewLabel">
 >;
-
-function summariseStatuses(locale: Locale): AutomationStatusSummary[] {
-  const counted = new Map<AutomationJobStatus, number>();
-
-  for (const seed of documentSeeds) {
-    counted.set(seed.status, (counted.get(seed.status) ?? 0) + 1);
-  }
-
-  return [...counted.entries()].map(([status, count]) => ({
-    count,
-    label: getAutomationStatusLabel(locale, status),
-    status,
-  }));
-}
 
 /**
  * Presentation-ready document library. A server adapter can replace the seeded
@@ -205,6 +173,6 @@ export function getNexusRagLibraryContent(
       statusLabel: getAutomationStatusLabel(locale, seed.status),
       title: seed.title,
     })),
-    statusSummary: summariseStatuses(locale),
+    previewLabel: getWorkspacePreviewLabel(locale),
   };
 }

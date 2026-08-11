@@ -1,14 +1,9 @@
 # Panduan Desain BHT-Nexus Web
 
 Dokumen ini adalah "dokumen desain antarmuka" yang dirujuk REQ-UI-001 pada
-`srs/bht-nexus-srs.md`. Isinya empat hal: warna, tipografi, jarak, dan komponen
-inti. Perubahan pada salah satunya dilakukan lewat pull request seperti
-perubahan kode lainnya.
+`srs/bht-nexus-srs.md`.
 
 ## Aturan yang mengikat
-
-Empat aturan berikut berasal langsung dari REQ-UI-001 dan berlaku pada setiap
-layar baru.
 
 1. Seluruh alur utama dapat digunakan mulai lebar layar 360 piksel.
 2. Setiap bidang formulir memiliki label yang terlihat. Pesan kesalahan
@@ -23,8 +18,15 @@ komponen non-teks seperti batas bidang isian serta cincin fokus 3:1.
 
 ## Warna
 
-Seluruh warna didefinisikan sebagai token pada `src/app/globals.css`. Komponen
-memakai `var(--nama-token)` dan tidak menulis nilai heksadesimal sendiri.
+Warna teks, garis, permukaan, dan status didefinisikan sebagai token pada
+`src/app/globals.css`. Komponen memakai `var(--nama-token)` untuk peran
+tersebut. Warna aksen sekali pakai dikecualikan, lihat Cakupan token.
+
+**Warna menandai pengecualian.** Baris yang berhasil, kandidat yang menunggu
+tinjauan, dan keadaan lain yang berlaku pada seluruh baris ditulis sebagai teks
+biasa. Nada berwarna dipakai untuk keadaan yang berbeda dari sekitarnya:
+kegagalan, penolakan, atau percobaan ulang. Setiap penanda tetap membawa teks,
+sesuai aturan 4 di atas.
 
 ### Ramp teks
 
@@ -54,14 +56,11 @@ ini.
 | `--color-line-field` | `#8f959c` | Batas kontrol interaktif: bidang isian, select, tombol sekunder |
 | `--color-link` | `#1557aa` | Tautan dalam konten |
 
-`--color-line-field` lebih gelap daripada dua token garis lainnya karena
-kriteria 1.4.11 WCAG 2.2 meminta 3:1 untuk bagian non-teks pada komponen
-interaktif. Garis yang hanya membentuk tampilan memakai `--color-line-soft`.
+Garis yang hanya membentuk tampilan memakai `--color-line-soft`.
 
 ### Status job
 
-Enam status pada REQ-FUNC-013-1 memakai satu pasang token per status. Pasangan
-ini dipakai lencana status, ringkasan hitungan, dan keputusan tinjauan.
+Enam status pada REQ-FUNC-013-1 memakai satu pasang token per status.
 
 | Status | Ink | Surface |
 |---|---|---|
@@ -72,10 +71,10 @@ ini dipakai lencana status, ringkasan hitungan, dan keputusan tinjauan.
 | `failed` | `--color-status-failed-ink` | `--color-status-failed-surface` |
 | `failed_permanently` | `--color-status-stopped-ink` | `--color-status-stopped-surface` |
 
-### Catatan sebaris
+### Blok jawaban
 
-`--color-note-*` untuk informasi dan `--color-note-warning-*` untuk peringatan,
-masing-masing terdiri dari ink, surface, dan edge.
+`--color-note-ink`, `--color-note-surface`, dan `--color-note-edge` dipakai blok
+jawaban pada halaman tanya jawab.
 
 ### Pemeriksaan
 
@@ -119,8 +118,7 @@ yang berubah menjadi kartu, `34rem` untuk padding sempit.
 
 ## Komponen inti
 
-Empat komponen ini menjadi dasar setiap halaman ruang kerja. Halaman baru
-memakai komponen yang ada sebelum membuat yang baru.
+Halaman baru memakai komponen yang ada sebelum membuat yang baru.
 
 | Komponen | Berkas | Catatan |
 |---|---|---|
@@ -128,10 +126,10 @@ memakai komponen yang ada sebelum membuat yang baru.
 | `WorkspacePageHeader` | `components/nexus-workspace-page/` | Eyebrow, judul, deskripsi, dan area aksi |
 | `WorkspacePanel` | `components/nexus-workspace-page/` | Panel bertajuk. `flush` menghapus padding badan untuk tabel |
 | `AutomationStatusBadge` | `components/nexus-automation-status/` | Lencana status job. Selalu membawa teks status |
+| `WorkspaceFootnote` | `components/nexus-workspace-page/` | Satu kalimat penutup di bawah panel |
 
 Tabel memakai kelas `.table` dari `nexus-workspace-page.module.css`. Setiap
-`<td>` wajib memiliki atribut `data-label` karena di bawah `42rem` nilai itu
-menjadi label baris saat tabel berubah menjadi kartu.
+`<td>` memakai atribut `data-label`, yang menjadi label baris di bawah `42rem`.
 
 ## Isi teks
 
@@ -140,15 +138,22 @@ Komponen tidak menulis teks tampilan. Setiap fitur memiliki berkas
 adapter server dapat menggantinya tanpa mengubah kontrak komponen. Pola ini
 berlaku pada seluruh komponen `nexus-*`.
 
+Teks antarmuka menyebutkan apa yang dilihat dan apa yang dapat dilakukan
+pengguna. Nama komponen internal, nilai enum mentah, dan urutan pemrosesan di
+belakang layar tidak ditulis pada layar.
+
+Halaman yang isinya masih data contoh memakai `previewLabel` pada
+`WorkspacePageHeader`. Lencana itu dihapus ketika adapter server sudah mengisi
+halaman dengan data sebenarnya.
+
 Satu label tidak ditampilkan dua kali pada satu layar. Bila judul panel sudah
 menjelaskan bidang isian di dalamnya, label bidang tersebut disembunyikan
 secara visual dan tetap tersedia untuk pembaca layar.
 
 ## Cakupan token
 
-Seluruh komponen ruang kerja, dashboard, dan halaman masuk memakai token.
 Warna teks, garis, permukaan, status, radius, dan bayangan pada berkas berikut
-tidak lagi menulis nilai heksadesimal untuk peran tersebut:
+memakai token:
 
 - `components/nexus-workspace-page/`, `components/nexus-automation-status/`
 - `components/nexus-rag-*/`, `components/nexus-scraper-*/`
@@ -159,13 +164,11 @@ tidak lagi menulis nilai heksadesimal untuk peran tersebut:
 Dua hal sengaja tetap berupa nilai langsung.
 
 1. **Warna aksen sekali pakai.** Nada ungu, teal, hijau, dan biru pada ikon,
-   grafik, serta kartu program hanya dipakai satu tempat. Membuat token untuk
-   masing-masing akan menghasilkan palet besar yang tidak dipakai ulang.
+   grafik, serta kartu program hanya dipakai satu tempat.
 2. **Halaman publik.** `landing-hero`, `research-focus`, `news-highlights`,
    `latest-events`, `partners`, `members`, `location-map`, `site-header`, dan
    `site-footer` memakai palet pemasaran sendiri dengan gradien dan lapisan
-   foto. Seluruhnya sudah lolos audit kontras, sehingga migrasi ke token
-   menjadi perapian tanpa manfaat aksesibilitas.
+   foto. Seluruhnya sudah lolos audit kontras.
 
 ## Yang belum selesai
 

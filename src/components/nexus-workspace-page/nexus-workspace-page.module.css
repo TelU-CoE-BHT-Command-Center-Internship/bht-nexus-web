@@ -19,6 +19,13 @@
   min-width: 0;
 }
 
+.pageEyebrowRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .pageEyebrow {
   margin: 0;
   color: var(--color-ink-300);
@@ -26,6 +33,17 @@
   font-weight: 720;
   letter-spacing: 0.08em;
   line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.pageBadge {
+  padding: 0.16rem 0.45rem;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-pill);
+  color: var(--color-ink-300);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -105,22 +123,11 @@
   padding: 0;
 }
 
-.note {
-  display: block;
+.footnote {
   margin: 0;
-  padding: 0.75rem 0.9rem;
-  border-left: 3px solid var(--color-note-edge);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--color-note-surface);
-  color: var(--color-note-ink);
-  font-size: 0.76rem;
+  color: var(--color-ink-400);
+  font-size: 0.74rem;
   line-height: 1.55;
-}
-
-.note[data-tone="warning"] {
-  border-left-color: var(--color-note-warning-edge);
-  background: var(--color-note-warning-surface);
-  color: var(--color-note-warning-ink);
 }
 
 .primaryButton,

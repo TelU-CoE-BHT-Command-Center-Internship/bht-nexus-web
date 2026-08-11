@@ -1,5 +1,6 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type ScraperJobAttempt = {
@@ -43,7 +44,7 @@ export type NexusScraperJobsContent = {
   lookupButtonLabel: string;
   lookupLabel: string;
   lookupPlaceholder: string;
-  partialSuccessNote: string;
+  previewLabel: string;
   summaryLabels: {
     candidates: string;
     created: string;
@@ -108,15 +109,14 @@ const jobsCopy = {
     ],
     attemptsSubtitle: "Empat percobaan pada dua sumber",
     attemptsTitle: "Log Percobaan",
-    description:
-      "Telusuri satu job pengumpulan data berdasarkan job_id, termasuk log percobaan setiap sumber.",
+    description: "Status satu pengumpulan data dan log percobaannya.",
     eyebrow: "Pengumpulan Data",
     job: {
       candidateCount: "33",
       createdAtLabel: "2026-08-11 08:52",
       id: "job_01J9BF2K",
       normalizedValue: "suksmandhira harimurti",
-      outcomeLabel: "partial_success",
+      outcomeLabel: "Sebagian berhasil",
       progressLabel: "100%",
       rawInput: "Dr. Suksmandhira Harimurti, S.T., M.T.",
       retryLabel: "0 dari 3",
@@ -128,8 +128,6 @@ const jobsCopy = {
     lookupButtonLabel: "Tampilkan",
     lookupLabel: "job_id",
     lookupPlaceholder: "job_01J9BF2K",
-    partialSuccessNote:
-      "Kegagalan Google Scholar tidak membatalkan hasil SINTA. Job berakhir sebagai partial_success dan kandidat dari sumber yang berhasil tetap masuk ke tahap tinjauan.",
     summaryLabels: {
       candidates: "Kandidat",
       created: "Dibuat",
@@ -190,15 +188,14 @@ const jobsCopy = {
     ],
     attemptsSubtitle: "Four attempts across two sources",
     attemptsTitle: "Attempt Log",
-    description:
-      "Look up one collection job by job_id, including the attempt log for each source.",
+    description: "Status of one data collection and its attempt log.",
     eyebrow: "Data Collection",
     job: {
       candidateCount: "33",
       createdAtLabel: "2026-08-11 08:52",
       id: "job_01J9BF2K",
       normalizedValue: "suksmandhira harimurti",
-      outcomeLabel: "partial_success",
+      outcomeLabel: "Partially succeeded",
       progressLabel: "100%",
       rawInput: "Dr. Suksmandhira Harimurti, S.T., M.T.",
       retryLabel: "0 of 3",
@@ -210,8 +207,6 @@ const jobsCopy = {
     lookupButtonLabel: "Show",
     lookupLabel: "job_id",
     lookupPlaceholder: "job_01J9BF2K",
-    partialSuccessNote:
-      "A Google Scholar failure does not cancel SINTA results. The job ends as partial_success and candidates from the source that worked still reach review.",
     summaryLabels: {
       candidates: "Candidates",
       created: "Created",
@@ -223,7 +218,7 @@ const jobsCopy = {
     },
     title: "Job Status",
   },
-} satisfies Record<Locale, NexusScraperJobsContent>;
+} satisfies Record<Locale, Omit<NexusScraperJobsContent, "previewLabel">>;
 
 /**
  * Presentation-ready job detail. A server adapter can replace the seeded job
@@ -232,5 +227,8 @@ const jobsCopy = {
 export function getNexusScraperJobsContent(
   locale: Locale,
 ): NexusScraperJobsContent {
-  return jobsCopy[locale];
+  return {
+    ...jobsCopy[locale],
+    previewLabel: getWorkspacePreviewLabel(locale),
+  };
 }

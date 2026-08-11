@@ -1,3 +1,4 @@
+import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type RagCitation = {
@@ -27,12 +28,10 @@ export type NexusRagQaContent = {
   eyebrow: string;
   historySubtitle: string;
   historyTitle: string;
-  languageNote: string;
   pageLabel: string;
+  previewLabel: string;
   queryLabel: string;
   queryPlaceholder: string;
-  scopeItems: string[];
-  scopeTitle: string;
   title: string;
   unsupportedLabel: string;
 };
@@ -42,7 +41,7 @@ const qaCopy = {
     askLabel: "Ajukan pertanyaan",
     citationsTitle: "Sumber",
     description:
-      "Pertanyaan bahasa Indonesia maupun Inggris dijawab dari dokumen yang sudah terindeks, dengan sitasi dokumen dan halaman.",
+      "Pertanyaan bahasa Indonesia atau Inggris atas dokumen internal CoE BHT.",
     exchanges: [
       {
         answer:
@@ -97,7 +96,7 @@ const qaCopy = {
       },
       {
         answer:
-          "Tidak ditemukan pada dokumen yang terindeks. Jumlah pasien uji klinis tidak tercantum pada dokumen mana pun yang saat ini diizinkan untuk diindeks.",
+          "Tidak ditemukan pada dokumen yang tersedia. Jumlah pasien uji klinis tidak tercantum pada dokumen mana pun.",
         askedAtLabel: "2026-08-11 09:28",
         citations: [],
         id: "clinical-trial-question",
@@ -110,30 +109,17 @@ const qaCopy = {
     eyebrow: "Tanya Jawab Dokumen",
     historySubtitle: "Tiga pertanyaan terakhir",
     historyTitle: "Riwayat Pertanyaan",
-    languageNote:
-      "Jawaban hanya disusun dari potongan dokumen yang terambil. Bila bukti tidak cukup, sistem menyatakan tidak menemukan jawaban dan tidak menyusun jawaban sendiri.",
     pageLabel: "Halaman",
     queryLabel: "Pertanyaan",
     queryPlaceholder: "Contoh: Siapa ketua kegiatan hibah PkM 2026?",
-    scopeItems: [
-      "Pendanaan dan skema hibah",
-      "Judul proyek dan penelitian",
-      "Keterlibatan anggota",
-      "Tanggal pelaksanaan",
-      "Luaran kegiatan",
-      "Judul paper dan nama jurnal",
-      "DOI",
-      "Ringkasan dokumen",
-    ],
-    scopeTitle: "Cakupan Pertanyaan",
     title: "Tanya Dokumen",
-    unsupportedLabel: "Tanpa dukungan dokumen",
+    unsupportedLabel: "Tidak ditemukan",
   },
   en: {
     askLabel: "Ask question",
     citationsTitle: "Sources",
     description:
-      "Questions in Indonesian or English are answered from indexed documents, with a document and page citation.",
+      "Questions in Indonesian or English about internal CoE BHT documents.",
     exchanges: [
       {
         answer:
@@ -188,7 +174,7 @@ const qaCopy = {
       },
       {
         answer:
-          "Not found in indexed sources. No document currently authorised for indexing states the clinical trial patient count.",
+          "Not found in the available documents. No document states the clinical trial patient count.",
         askedAtLabel: "2026-08-11 09:28",
         citations: [],
         id: "clinical-trial-question",
@@ -201,31 +187,18 @@ const qaCopy = {
     eyebrow: "Document Q&A",
     historySubtitle: "Three most recent questions",
     historyTitle: "Question History",
-    languageNote:
-      "Answers are built only from retrieved document chunks. When the evidence is insufficient the system says it found no answer instead of composing one.",
     pageLabel: "Page",
     queryLabel: "Question",
     queryPlaceholder: "Example: Who leads the 2026 community service grant?",
-    scopeItems: [
-      "Funding and grant schemes",
-      "Project and research titles",
-      "Member involvement",
-      "Activity dates",
-      "Activity outputs",
-      "Paper titles and journal names",
-      "DOI",
-      "Document summaries",
-    ],
-    scopeTitle: "Question Coverage",
     title: "Ask Documents",
-    unsupportedLabel: "No document support",
+    unsupportedLabel: "Not found",
   },
-} satisfies Record<Locale, NexusRagQaContent>;
+} satisfies Record<Locale, Omit<NexusRagQaContent, "previewLabel">>;
 
 /**
  * Presentation-ready question history. A server adapter can replace the seeded
  * exchanges without changing the component contract.
  */
 export function getNexusRagQaContent(locale: Locale): NexusRagQaContent {
-  return qaCopy[locale];
+  return { ...qaCopy[locale], previewLabel: getWorkspacePreviewLabel(locale) };
 }

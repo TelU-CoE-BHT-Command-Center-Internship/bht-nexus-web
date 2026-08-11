@@ -1,7 +1,7 @@
 import styles from "@/components/nexus-scraper-results/nexus-scraper-results.module.css";
 import type { NexusScraperResultsContent } from "@/components/nexus-scraper-results/nexus-scraper-results-content";
 import {
-  WorkspaceNote,
+  WorkspaceFootnote,
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
@@ -18,10 +18,9 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
       <WorkspacePageHeader
         description={content.description}
         eyebrow={content.eyebrow}
+        previewLabel={content.previewLabel}
         title={content.title}
       />
-
-      <WorkspaceNote>{content.promoteNote}</WorkspaceNote>
 
       <WorkspacePanel
         id="scraper-results-candidates"
@@ -39,9 +38,6 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
                     {candidate.jobId} · {candidate.retrievedAtLabel}
                   </p>
                 </div>
-                <span className={styles.candidateStatus}>
-                  {candidate.statusLabel}
-                </span>
               </div>
 
               <dl className={styles.detailGrid}>
@@ -76,7 +72,7 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
         </ul>
       </WorkspacePanel>
 
-      <WorkspaceNote tone="warning">{content.selfApprovalNote}</WorkspaceNote>
+      <WorkspaceFootnote>{content.promoteNote}</WorkspaceFootnote>
     </WorkspacePage>
   );
 }

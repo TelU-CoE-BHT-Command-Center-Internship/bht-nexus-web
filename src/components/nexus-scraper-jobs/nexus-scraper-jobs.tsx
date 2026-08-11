@@ -2,7 +2,6 @@ import { AutomationStatusBadge } from "@/components/nexus-automation-status/nexu
 import styles from "@/components/nexus-scraper-jobs/nexus-scraper-jobs.module.css";
 import type { NexusScraperJobsContent } from "@/components/nexus-scraper-jobs/nexus-scraper-jobs-content";
 import {
-  WorkspaceNote,
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
@@ -34,6 +33,7 @@ export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
       <WorkspacePageHeader
         description={content.description}
         eyebrow={content.eyebrow}
+        previewLabel={content.previewLabel}
         title={content.title}
       />
 
@@ -118,8 +118,6 @@ export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
           </table>
         </div>
       </WorkspacePanel>
-
-      <WorkspaceNote tone="warning">{content.partialSuccessNote}</WorkspaceNote>
     </WorkspacePage>
   );
 }

@@ -1,3 +1,4 @@
+import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type ExtractionProfileOption = {
@@ -35,8 +36,8 @@ export type NexusRagExtractionContent = {
   fieldsTitle: string;
   notFoundLabel: string;
   pageLabel: string;
+  previewLabel: string;
   profileLabel: string;
-  profileNote: string;
   profileOptions: ExtractionProfileOption[];
   rejectLabel: string;
   selectedProfileId: string;
@@ -47,10 +48,8 @@ export type NexusRagExtractionContent = {
 const extractionCopy = {
   id: {
     acceptLabel: "Terima",
-    candidateNote:
-      "Hasil ekstraksi disimpan sebagai kandidat perubahan. Data resmi baru berubah setelah reviewer menerima kandidat.",
-    description:
-      "Kandidat isian dari satu dokumen beserta potongan sumber yang mendasarinya.",
+    candidateNote: "Data resmi berubah hanya setelah kandidat diterima.",
+    description: "Kandidat isian dari satu dokumen.",
     documentMeta: "PDF · 12 halaman · job_01J8K2R4 · diproses 2026-08-08 09:12",
     documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
     eyebrow: "Tanya Jawab Dokumen",
@@ -128,13 +127,11 @@ const extractionCopy = {
         value: "-",
       },
     ],
-    fieldsSubtitle: "Enam isian pada profil hibah v1",
+    fieldsSubtitle: "Enam isian",
     fieldsTitle: "Kandidat Isian",
     notFoundLabel: "Tidak ditemukan pada dokumen",
     pageLabel: "Halaman",
     profileLabel: "Profil ekstraksi",
-    profileNote:
-      "Profil dipilih dari daftar terkelola dan berversi. Instruksi profil tidak dapat diganti saat eksekusi.",
     profileOptions: [
       { id: "hibah", label: "Hibah", version: "v1" },
       { id: "funding", label: "Pendanaan", version: "v1" },
@@ -152,10 +149,8 @@ const extractionCopy = {
   },
   en: {
     acceptLabel: "Accept",
-    candidateNote:
-      "Extraction results are stored as change candidates. Official data changes only after a reviewer accepts a candidate.",
-    description:
-      "Field candidates from one document, each with the source chunk behind it.",
+    candidateNote: "Official data changes only after a candidate is accepted.",
+    description: "Field candidates from one document.",
     documentMeta: "PDF · 12 pages · job_01J8K2R4 · processed 2026-08-08 09:12",
     documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
     eyebrow: "Document Q&A",
@@ -233,13 +228,11 @@ const extractionCopy = {
         value: "-",
       },
     ],
-    fieldsSubtitle: "Six fields on the hibah v1 profile",
+    fieldsSubtitle: "Six fields",
     fieldsTitle: "Field Candidates",
     notFoundLabel: "Not found in the document",
     pageLabel: "Page",
     profileLabel: "Extraction profile",
-    profileNote:
-      "The profile comes from a managed, versioned list. Its instructions cannot be replaced at run time.",
     profileOptions: [
       { id: "hibah", label: "Grant agreement", version: "v1" },
       { id: "funding", label: "Funding", version: "v1" },
@@ -251,7 +244,7 @@ const extractionCopy = {
     sourceLabel: "Source chunk",
     title: "Extraction Review",
   },
-} satisfies Record<Locale, NexusRagExtractionContent>;
+} satisfies Record<Locale, Omit<NexusRagExtractionContent, "previewLabel">>;
 
 /**
  * Presentation-ready extraction candidates. A server adapter can replace the
@@ -260,5 +253,8 @@ const extractionCopy = {
 export function getNexusRagExtractionContent(
   locale: Locale,
 ): NexusRagExtractionContent {
-  return extractionCopy[locale];
+  return {
+    ...extractionCopy[locale],
+    previewLabel: getWorkspacePreviewLabel(locale),
+  };
 }

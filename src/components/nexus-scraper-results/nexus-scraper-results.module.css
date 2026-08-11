@@ -43,17 +43,6 @@
   overflow-wrap: anywhere;
 }
 
-.candidateStatus {
-  flex: 0 0 auto;
-  padding: 0.25rem 0.55rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-status-retrying-surface);
-  color: var(--color-status-retrying-ink);
-  font-size: 0.62rem;
-  font-weight: 720;
-  white-space: nowrap;
-}
-
 .detailGrid {
   display: grid;
   min-width: 0;

@@ -37,13 +37,10 @@
   --color-status-stopped-ink: #8f1f1f;
   --color-status-stopped-surface: #f7dada;
 
-  /* Inline notes */
+  /* Quoted answer block */
   --color-note-ink: #40536c;
   --color-note-surface: #f4f8fd;
   --color-note-edge: #a9c9f5;
-  --color-note-warning-ink: #6b5220;
-  --color-note-warning-surface: #fdf6e9;
-  --color-note-warning-edge: #edb95a;
 
   --radius-sm: 0.5rem;
   --radius-md: 0.6rem;

@@ -47,22 +47,20 @@
 }
 
 .attemptOutcome {
-  --outcome-color: var(--color-status-succeeded-ink);
-  --outcome-bg: var(--color-status-succeeded-surface);
-
   display: inline-block;
-  padding: 0.22rem 0.5rem;
-  border-radius: var(--radius-pill);
-  background: var(--outcome-bg);
-  color: var(--outcome-color);
-  font-size: 0.62rem;
-  font-weight: 720;
+  color: var(--color-ink-500);
+  font-size: 0.7rem;
+  font-weight: 660;
   white-space: nowrap;
 }
 
 .attemptOutcome[data-outcome="failed"] {
-  --outcome-color: var(--color-status-failed-ink);
-  --outcome-bg: var(--color-status-failed-surface);
+  padding: 0.22rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-status-failed-surface);
+  color: var(--color-status-failed-ink);
+  font-size: 0.62rem;
+  font-weight: 720;
 }
 
 .attemptMessage {

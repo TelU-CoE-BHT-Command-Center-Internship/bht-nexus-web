@@ -1,7 +1,6 @@
 import styles from "@/components/nexus-rag-qa/nexus-rag-qa.module.css";
 import type { NexusRagQaContent } from "@/components/nexus-rag-qa/nexus-rag-qa-content";
 import {
-  WorkspaceNote,
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
@@ -18,6 +17,7 @@ export function NexusRagQa({ content }: NexusRagQaProps) {
       <WorkspacePageHeader
         description={content.description}
         eyebrow={content.eyebrow}
+        previewLabel={content.previewLabel}
         title={content.title}
       />
 
@@ -36,18 +36,7 @@ export function NexusRagQa({ content }: NexusRagQaProps) {
             {content.askLabel}
           </button>
         </div>
-
-        <p className={styles.scopeTitle}>{content.scopeTitle}</p>
-        <ul className={styles.scopeList}>
-          {content.scopeItems.map((item) => (
-            <li className={styles.scopeItem} key={item}>
-              {item}
-            </li>
-          ))}
-        </ul>
       </div>
-
-      <WorkspaceNote>{content.languageNote}</WorkspaceNote>
 
       <WorkspacePanel
         id="rag-qa-history"

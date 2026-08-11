@@ -19,34 +19,6 @@
   box-shadow: var(--shadow-panel);
 }
 
-.scopeTitle {
-  margin: 1.1rem 0 0.5rem;
-  color: var(--color-ink-300);
-  font-size: 0.64rem;
-  font-weight: 720;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.scopeList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.scopeItem {
-  padding: 0.28rem 0.6rem;
-  border: 1px solid var(--color-line-faint);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface-sunken);
-  color: var(--color-ink-400);
-  font-size: 0.68rem;
-  font-weight: 600;
-}
-
 .exchangeList {
   display: grid;
   gap: 1.1rem;
@@ -100,7 +72,6 @@
 
 .answer[data-supported="false"] {
   border-left-color: var(--color-status-failed-ink);
-  background: var(--color-status-failed-surface);
 }
 
 .answer p {

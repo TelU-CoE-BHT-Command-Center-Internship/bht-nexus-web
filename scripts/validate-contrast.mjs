@@ -20,7 +20,6 @@ const textPairs = [
   ["--color-ink-700", "--color-surface-raised"],
   ["--color-link", "--color-paper"],
   ["--color-note-ink", "--color-note-surface"],
-  ["--color-note-warning-ink", "--color-note-warning-surface"],
   ["--color-status-queued-ink", "--color-status-queued-surface"],
   ["--color-status-running-ink", "--color-status-running-surface"],
   ["--color-status-retrying-ink", "--color-status-retrying-surface"],

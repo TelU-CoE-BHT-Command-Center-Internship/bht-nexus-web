@@ -1,16 +1,6 @@
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
 import type { Locale } from "@/i18n/locales";
 
-/** Lifecycle order used whenever every status is listed at once. */
-export const automationJobStatusOrder: AutomationJobStatus[] = [
-  "queued",
-  "running",
-  "retrying",
-  "succeeded",
-  "failed",
-  "failed_permanently",
-];
-
 const automationStatusLabels = {
   id: {
     failed: "Gagal",

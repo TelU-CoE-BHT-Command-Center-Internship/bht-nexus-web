@@ -13,6 +13,7 @@ type WorkspacePageHeaderProps = {
   actions?: ReactNode;
   description: string;
   eyebrow: string;
+  previewLabel?: string;
   title: string;
 };
 
@@ -20,12 +21,18 @@ export function WorkspacePageHeader({
   actions,
   description,
   eyebrow,
+  previewLabel,
   title,
 }: WorkspacePageHeaderProps) {
   return (
     <header className={styles.pageHeader}>
       <div className={styles.pageHeaderCopy}>
-        <p className={styles.pageEyebrow}>{eyebrow}</p>
+        <div className={styles.pageEyebrowRow}>
+          <p className={styles.pageEyebrow}>{eyebrow}</p>
+          {previewLabel ? (
+            <span className={styles.pageBadge}>{previewLabel}</span>
+          ) : null}
+        </div>
         <h2 className={styles.pageTitle}>{title}</h2>
         <p className={styles.pageDescription}>{description}</p>
       </div>
@@ -67,15 +74,10 @@ export function WorkspacePanel({
   );
 }
 
-type WorkspaceNoteProps = {
+type WorkspaceFootnoteProps = {
   children: ReactNode;
-  tone?: "info" | "warning";
 };
 
-export function WorkspaceNote({ children, tone = "info" }: WorkspaceNoteProps) {
-  return (
-    <p className={styles.note} data-tone={tone}>
-      {children}
-    </p>
-  );
+export function WorkspaceFootnote({ children }: WorkspaceFootnoteProps) {
+  return <p className={styles.footnote}>{children}</p>;
 }

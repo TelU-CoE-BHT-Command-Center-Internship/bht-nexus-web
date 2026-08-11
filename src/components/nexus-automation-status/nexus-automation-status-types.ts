@@ -9,9 +9,3 @@ export type AutomationJobStatus =
   | "retrying"
   | "running"
   | "succeeded";
-
-export type AutomationStatusSummary = {
-  count: number;
-  label: string;
-  status: AutomationJobStatus;
-};

@@ -1,16 +1,15 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type ScraperSourceOption = {
   id: string;
   label: string;
-  note: string;
 };
 
 export type ApprovedHost = {
   host: string;
-  note: string;
 };
 
 export type ScraperSubmission = {
@@ -40,8 +39,7 @@ export type NexusScraperSearchContent = {
   eyebrow: string;
   inputLabel: string;
   inputPlaceholder: string;
-  normalizationNote: string;
-  proxyNote: string;
+  previewLabel: string;
   sourceLabel: string;
   sourceOptions: ScraperSourceOption[];
   submissions: ScraperSubmission[];
@@ -107,14 +105,12 @@ const searchCopy = {
     approvedHosts: [
       {
         host: "sinta.kemdiktisaintek.go.id",
-        note: "Profil dan daftar karya diambil langsung dari SINTA.",
       },
       {
         host: "scholar.google.com",
-        note: "URL profil dibaca untuk mengambil ID penulis. Pengambilan data dilakukan lewat SerpApi.",
       },
     ],
-    approvedHostsSubtitle: "URL di luar daftar ini ditolak",
+    approvedHostsSubtitle: "Hanya URL dari host berikut",
     approvedHostsTitle: "Host yang Disetujui",
     columns: {
       input: "Masukan",
@@ -123,42 +119,34 @@ const searchCopy = {
       status: "Status",
       submittedAt: "Dikirim",
     },
-    description:
-      "Kirim nama peneliti atau URL profil ber-HTTPS pada host yang disetujui untuk membuat job pengumpulan data.",
+    description: "Cari peneliti berdasarkan nama atau URL profil.",
     eyebrow: "Pengumpulan Data",
     inputLabel: "Nama atau URL profil",
     inputPlaceholder:
       "Nama peneliti atau https://sinta.kemdiktisaintek.go.id/authors/profile/…",
-    normalizationNote:
-      "Gelar dan sufiks akademik dihapus, spasi dan huruf besar-kecil diseragamkan. Masukan mentah dan nilai ternormalisasi tersimpan pada job.",
-    proxyNote:
-      "Google Scholar diambil melalui SerpApi sebagai perantara, bukan pengambilan langsung ke scholar.google.com.",
     sourceLabel: "Sumber data",
     sourceOptions: [
-      { id: "sinta", label: "SINTA", note: "Pengambilan langsung" },
+      { id: "sinta", label: "SINTA" },
       {
         id: "google_scholar",
         label: "Google Scholar",
-        note: "Melalui SerpApi",
       },
     ],
     submissionsSubtitle: "Empat pengiriman terakhir",
     submissionsTitle: "Pengiriman Terkini",
-    submitLabel: "Buat job",
+    submitLabel: "Cari",
     title: "Pencarian Peneliti",
   },
   en: {
     approvedHosts: [
       {
         host: "sinta.kemdiktisaintek.go.id",
-        note: "Profiles and work lists are fetched from SINTA directly.",
       },
       {
         host: "scholar.google.com",
-        note: "The profile URL is read for its author ID. Collection itself runs through SerpApi.",
       },
     ],
-    approvedHostsSubtitle: "URLs outside this list are rejected",
+    approvedHostsSubtitle: "Only URLs from these hosts",
     approvedHostsTitle: "Approved Hosts",
     columns: {
       input: "Input",
@@ -167,27 +155,25 @@ const searchCopy = {
       status: "Status",
       submittedAt: "Submitted",
     },
-    description:
-      "Submit a researcher name or an HTTPS profile URL on an approved host to create a collection job.",
+    description: "Find a researcher by name or profile URL.",
     eyebrow: "Data Collection",
     inputLabel: "Name or profile URL",
     inputPlaceholder:
       "Researcher name or https://sinta.kemdiktisaintek.go.id/authors/profile/…",
-    normalizationNote:
-      "Academic titles and suffixes are stripped, spacing and case are normalised. Both the raw input and the normalised value are stored on the job.",
-    proxyNote:
-      "Google Scholar is collected through SerpApi as a proxy rather than fetched from scholar.google.com directly.",
     sourceLabel: "Data source",
     sourceOptions: [
-      { id: "sinta", label: "SINTA", note: "Direct fetch" },
-      { id: "google_scholar", label: "Google Scholar", note: "Via SerpApi" },
+      { id: "sinta", label: "SINTA" },
+      { id: "google_scholar", label: "Google Scholar" },
     ],
     submissionsSubtitle: "Four most recent submissions",
     submissionsTitle: "Recent Submissions",
-    submitLabel: "Create job",
+    submitLabel: "Search",
     title: "Researcher Search",
   },
-} satisfies Record<Locale, Omit<NexusScraperSearchContent, "submissions">>;
+} satisfies Record<
+  Locale,
+  Omit<NexusScraperSearchContent, "previewLabel" | "submissions">
+>;
 
 /**
  * Presentation-ready submission list. A server adapter can replace the seeded
@@ -198,6 +184,7 @@ export function getNexusScraperSearchContent(
 ): NexusScraperSearchContent {
   return {
     ...searchCopy[locale],
+    previewLabel: getWorkspacePreviewLabel(locale),
     submissions: submissionSeeds.map((seed) => ({
       id: seed.id,
       inputKindLabel: seed.inputKindLabel[locale],

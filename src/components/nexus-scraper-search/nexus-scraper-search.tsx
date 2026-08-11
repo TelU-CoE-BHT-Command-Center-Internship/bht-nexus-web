@@ -2,7 +2,6 @@ import { AutomationStatusBadge } from "@/components/nexus-automation-status/nexu
 import styles from "@/components/nexus-scraper-search/nexus-scraper-search.module.css";
 import type { NexusScraperSearchContent } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import {
-  WorkspaceNote,
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
@@ -19,6 +18,7 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
       <WorkspacePageHeader
         description={content.description}
         eyebrow={content.eyebrow}
+        previewLabel={content.previewLabel}
         title={content.title}
       />
 
@@ -40,7 +40,7 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
             <select defaultValue="sinta" id="scraper-source" name="source">
               {content.sourceOptions.map((option) => (
                 <option key={option.id} value={option.id}>
-                  {option.label} · {option.note}
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -50,8 +50,6 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
             {content.submitLabel}
           </button>
         </div>
-
-        <p className={styles.normalizationNote}>{content.normalizationNote}</p>
       </div>
 
       <WorkspacePanel
@@ -63,13 +61,10 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
           {content.approvedHosts.map((host) => (
             <li className={styles.host} key={host.host}>
               <code>{host.host}</code>
-              <span>{host.note}</span>
             </li>
           ))}
         </ul>
       </WorkspacePanel>
-
-      <WorkspaceNote>{content.proxyNote}</WorkspaceNote>
 
       <WorkspacePanel
         flush

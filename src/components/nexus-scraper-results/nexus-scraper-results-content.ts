@@ -1,3 +1,4 @@
+import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type CandidateDetail = {
@@ -13,7 +14,6 @@ export type StagedCandidate = {
   retrievedAtLabel: string;
   sourceLabel: string;
   sourceUrl: string;
-  statusLabel: string;
   title: string;
   typeLabel: string;
 };
@@ -25,9 +25,9 @@ export type NexusScraperResultsContent = {
   candidatesTitle: string;
   description: string;
   eyebrow: string;
+  previewLabel: string;
   promoteNote: string;
   rejectLabel: string;
-  selfApprovalNote: string;
   sourceUrlLabel: string;
   title: string;
 };
@@ -53,9 +53,8 @@ const resultsCopy = {
         sourceLabel: "SINTA",
         sourceUrl:
           "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043",
-        statusLabel: "pending_review",
         title: "Suksmandhira Harimurti",
-        typeLabel: "profile",
+        typeLabel: "Profil",
       },
       {
         details: [
@@ -79,10 +78,9 @@ const resultsCopy = {
         retrievedAtLabel: "2026-08-11 08:54",
         sourceLabel: "SINTA",
         sourceUrl: "https://doi.org/10.2196/48213",
-        statusLabel: "pending_review",
         title:
           "Primary Care Telemedicine Adoption in Indonesian District Clinics",
-        typeLabel: "paper",
+        typeLabel: "Publikasi",
       },
       {
         details: [
@@ -107,21 +105,16 @@ const resultsCopy = {
         sourceLabel: "SINTA",
         sourceUrl:
           "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043/?view=googlescholar",
-        statusLabel: "pending_review",
         title: "Rancang Bangun Perangkat Pemantauan Biosinyal untuk Puskesmas",
-        typeLabel: "paper",
+        typeLabel: "Publikasi",
       },
     ],
-    candidatesSubtitle: "Tiga kandidat menunggu tinjauan",
-    candidatesTitle: "Kandidat Staging",
-    description:
-      "Kandidat hasil pengumpulan data tersimpan di staging sampai reviewer menerimanya.",
+    candidatesSubtitle: "Tiga menunggu tinjauan",
+    candidatesTitle: "Kandidat",
+    description: "Kandidat hasil pengumpulan data yang menunggu tinjauan.",
     eyebrow: "Pengumpulan Data",
-    promoteNote:
-      "Worker tidak menulis ke tabel bisnis resmi. Promosi ke data resmi hanya terjadi melalui keputusan reviewer di halaman ini.",
+    promoteNote: "Data resmi berubah hanya setelah kandidat diterima.",
     rejectLabel: "Tolak",
-    selfApprovalNote:
-      "Pengirim job tidak dapat menyetujui kandidat yang berasal dari jobnya sendiri.",
     sourceUrlLabel: "URL sumber",
     title: "Hasil Pengumpulan",
   },
@@ -145,9 +138,8 @@ const resultsCopy = {
         sourceLabel: "SINTA",
         sourceUrl:
           "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043",
-        statusLabel: "pending_review",
         title: "Suksmandhira Harimurti",
-        typeLabel: "profile",
+        typeLabel: "Profile",
       },
       {
         details: [
@@ -171,10 +163,9 @@ const resultsCopy = {
         retrievedAtLabel: "2026-08-11 08:54",
         sourceLabel: "SINTA",
         sourceUrl: "https://doi.org/10.2196/48213",
-        statusLabel: "pending_review",
         title:
           "Primary Care Telemedicine Adoption in Indonesian District Clinics",
-        typeLabel: "paper",
+        typeLabel: "Publication",
       },
       {
         details: [
@@ -199,25 +190,20 @@ const resultsCopy = {
         sourceLabel: "SINTA",
         sourceUrl:
           "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043/?view=googlescholar",
-        statusLabel: "pending_review",
         title: "Rancang Bangun Perangkat Pemantauan Biosinyal untuk Puskesmas",
-        typeLabel: "paper",
+        typeLabel: "Publication",
       },
     ],
-    candidatesSubtitle: "Three candidates awaiting review",
-    candidatesTitle: "Staged Candidates",
-    description:
-      "Collected candidates stay in staging until a reviewer accepts them.",
+    candidatesSubtitle: "Three awaiting review",
+    candidatesTitle: "Candidates",
+    description: "Collected candidates awaiting review.",
     eyebrow: "Data Collection",
-    promoteNote:
-      "The worker never writes to official business tables. Promotion into official data happens only through a reviewer decision on this page.",
+    promoteNote: "Official data changes only after a candidate is accepted.",
     rejectLabel: "Reject",
-    selfApprovalNote:
-      "Whoever submitted the job cannot approve candidates produced by that same job.",
     sourceUrlLabel: "Source URL",
     title: "Collection Results",
   },
-} satisfies Record<Locale, NexusScraperResultsContent>;
+} satisfies Record<Locale, Omit<NexusScraperResultsContent, "previewLabel">>;
 
 /**
  * Presentation-ready staged candidates. A server adapter can replace the
@@ -226,5 +212,8 @@ const resultsCopy = {
 export function getNexusScraperResultsContent(
   locale: Locale,
 ): NexusScraperResultsContent {
-  return resultsCopy[locale];
+  return {
+    ...resultsCopy[locale],
+    previewLabel: getWorkspacePreviewLabel(locale),
+  };
 }

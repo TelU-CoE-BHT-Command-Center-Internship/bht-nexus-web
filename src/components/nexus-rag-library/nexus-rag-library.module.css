@@ -4,63 +4,6 @@
   line-height: 1.35;
 }
 
-.summaryGrid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.summaryCard {
-  --summary-color: var(--color-status-running-ink);
-  --summary-bg: var(--color-note-surface);
-
-  display: grid;
-  gap: 0.2rem;
-  padding: 0.85rem 0.95rem;
-  border: 1px solid var(--color-line-faint);
-  border-radius: var(--radius-md);
-  background: var(--summary-bg);
-}
-
-.summaryCard strong {
-  color: var(--summary-color);
-  font-size: 1.5rem;
-  font-weight: 730;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.summaryCard span {
-  color: var(--color-ink-400);
-  font-size: 0.72rem;
-  font-weight: 620;
-}
-
-.summaryCard[data-status="queued"] {
-  --summary-color: var(--color-ink-400);
-  --summary-bg: var(--color-status-queued-surface);
-}
-
-.summaryCard[data-status="retrying"] {
-  --summary-color: var(--color-status-retrying-ink);
-  --summary-bg: var(--color-note-warning-surface);
-}
-
-.summaryCard[data-status="succeeded"] {
-  --summary-color: var(--color-status-succeeded-ink);
-  --summary-bg: var(--color-status-succeeded-surface);
-}
-
-.summaryCard[data-status="failed"],
-.summaryCard[data-status="failed_permanently"] {
-  --summary-color: var(--color-status-failed-ink);
-  --summary-bg: var(--color-status-failed-surface);
-}
-
 .documentMeta {
   display: block;
   margin-top: 0.3rem;

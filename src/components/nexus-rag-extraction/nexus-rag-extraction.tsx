@@ -1,7 +1,7 @@
 import styles from "@/components/nexus-rag-extraction/nexus-rag-extraction.module.css";
 import type { NexusRagExtractionContent } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
 import {
-  WorkspaceNote,
+  WorkspaceFootnote,
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
@@ -18,6 +18,7 @@ export function NexusRagExtraction({ content }: NexusRagExtractionProps) {
       <WorkspacePageHeader
         description={content.description}
         eyebrow={content.eyebrow}
+        previewLabel={content.previewLabel}
         title={content.title}
       />
 
@@ -43,8 +44,6 @@ export function NexusRagExtraction({ content }: NexusRagExtractionProps) {
         </label>
       </div>
 
-      <WorkspaceNote>{content.profileNote}</WorkspaceNote>
-
       <WorkspacePanel
         id="rag-extraction-fields"
         subtitle={content.fieldsSubtitle}
@@ -62,12 +61,14 @@ export function NexusRagExtraction({ content }: NexusRagExtractionProps) {
                 </div>
 
                 <div className={styles.fieldDecision}>
-                  <span
-                    className={styles.decisionBadge}
-                    data-decision={field.decision}
-                  >
-                    {field.decisionLabel}
-                  </span>
+                  {field.decision === "pending" ? null : (
+                    <span
+                      className={styles.decisionBadge}
+                      data-decision={field.decision}
+                    >
+                      {field.decisionLabel}
+                    </span>
+                  )}
                   <div className={styles.decisionButtons}>
                     <button className={shell.ghostButton} type="button">
                       {content.acceptLabel}
@@ -93,7 +94,7 @@ export function NexusRagExtraction({ content }: NexusRagExtractionProps) {
         </ul>
       </WorkspacePanel>
 
-      <WorkspaceNote tone="warning">{content.candidateNote}</WorkspaceNote>
+      <WorkspaceFootnote>{content.candidateNote}</WorkspaceFootnote>
     </WorkspacePage>
   );
 }
