@@ -110,7 +110,7 @@ const resultsCopy = {
     promoteNote: "Data resmi berubah hanya setelah kandidat diterima.",
     rejectLabel: "Tolak",
     sourceUrlLabel: "URL sumber",
-    title: "Hasil Pengumpulan",
+    title: "Kandidat Peneliti",
   },
   en: {
     acceptLabel: "Accept and promote",
@@ -191,7 +191,7 @@ const resultsCopy = {
     promoteNote: "Official data changes only after a candidate is accepted.",
     rejectLabel: "Reject",
     sourceUrlLabel: "Source URL",
-    title: "Collection Results",
+    title: "Researcher Candidates",
   },
 } satisfies Record<
   Locale,

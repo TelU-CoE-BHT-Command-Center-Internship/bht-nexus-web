@@ -108,7 +108,7 @@ const jobsCopy = {
       statusLabel: getAutomationStatusLabel("id", jobStatus),
       updatedAt: "2026-08-11T08:56",
     },
-    jobTitle: "Ringkasan Job",
+    jobTitle: "Ringkasan",
     lookupButtonLabel: "Tampilkan",
     lookupLabel: "Nama peneliti",
     lookupPlaceholder: "Suksmandhira Harimurti",
@@ -119,7 +119,7 @@ const jobsCopy = {
       progress: "Progres",
       updated: "Diperbarui",
     },
-    title: "Status Job",
+    title: "Proses Pencarian",
   },
   en: {
     attemptColumns: {
@@ -175,7 +175,7 @@ const jobsCopy = {
       statusLabel: getAutomationStatusLabel("en", jobStatus),
       updatedAt: "2026-08-11T08:56",
     },
-    jobTitle: "Job Summary",
+    jobTitle: "Summary",
     lookupButtonLabel: "Show",
     lookupLabel: "Researcher name",
     lookupPlaceholder: "Suksmandhira Harimurti",
@@ -186,7 +186,7 @@ const jobsCopy = {
       progress: "Progress",
       updated: "Updated",
     },
-    title: "Job Status",
+    title: "Search Progress",
   },
 } satisfies Record<
   Locale,

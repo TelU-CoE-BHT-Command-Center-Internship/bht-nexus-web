@@ -3,14 +3,14 @@ import { NexusScraperResults } from "@/components/nexus-scraper-results/nexus-sc
 import { getNexusScraperResultsContent } from "@/components/nexus-scraper-results/nexus-scraper-results-content";
 
 export const metadata: Metadata = {
-  title: "Hasil Pengumpulan",
-  description: "Tinjauan kandidat staging hasil pengumpulan data BHT Nexus.",
+  title: "Candidates",
+  description: "Researcher candidates awaiting review.",
   robots: {
     follow: false,
     index: false,
   },
 };
 
-export default function IndonesianNexusCollectionResultsPage() {
-  return <NexusScraperResults content={getNexusScraperResultsContent("id")} />;
+export default function EnglishNexusCollectionResultsPage() {
+  return <NexusScraperResults content={getNexusScraperResultsContent("en")} />;
 }

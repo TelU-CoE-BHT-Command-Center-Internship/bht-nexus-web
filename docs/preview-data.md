@@ -35,10 +35,10 @@ contoh, dan tidak termasuk daftar ini.
 
 | Rekaman | Berkas | Simbol | Jumlah | Halaman |
 |---|---|---|---|---|
-| Pencarian terkini (nama, tautan SINTA, tautan Scholar) | `nexus-scraper-search/nexus-scraper-search-content.ts` | `submissionSeeds` | 4 | `/nexus/pencarian-peneliti` |
-| Ringkasan job | `nexus-scraper-jobs/nexus-scraper-jobs-content.ts` | `job` | 1 per bahasa | `/nexus/status-job` |
-| Log percobaan | `nexus-scraper-jobs/nexus-scraper-jobs-content.ts` | `attempts` | 4 per bahasa | `/nexus/status-job` |
-| Kandidat hasil | `nexus-scraper-results/nexus-scraper-results-content.ts` | `candidates` | 3 per bahasa | `/nexus/hasil-pengumpulan` |
+| Pencarian terkini (nama, tautan SINTA, tautan Scholar) | `nexus-scraper-search/nexus-scraper-search-content.ts` | `submissionSeeds` | 4 | `/nexus/pencarian` |
+| Ringkasan job | `nexus-scraper-jobs/nexus-scraper-jobs-content.ts` | `job` | 1 per bahasa | `/nexus/proses` |
+| Log percobaan | `nexus-scraper-jobs/nexus-scraper-jobs-content.ts` | `attempts` | 4 per bahasa | `/nexus/proses` |
+| Kandidat hasil | `nexus-scraper-results/nexus-scraper-results-content.ts` | `candidates` | 3 per bahasa | `/nexus/kandidat` |
 
 ## Dashboard dan kerangka ruang kerja
 

@@ -3,14 +3,14 @@ import { NexusScraperJobs } from "@/components/nexus-scraper-jobs/nexus-scraper-
 import { getNexusScraperJobsContent } from "@/components/nexus-scraper-jobs/nexus-scraper-jobs-content";
 
 export const metadata: Metadata = {
-  title: "Job Status",
-  description: "Status and attempt log for BHT Nexus collection jobs.",
+  title: "Proses",
+  description: "Proses pencarian peneliti dan log percobaannya.",
   robots: {
     follow: false,
     index: false,
   },
 };
 
-export default function EnglishNexusJobStatusPage() {
-  return <NexusScraperJobs content={getNexusScraperJobsContent("en")} />;
+export default function IndonesianNexusJobStatusPage() {
+  return <NexusScraperJobs content={getNexusScraperJobsContent("id")} />;
 }

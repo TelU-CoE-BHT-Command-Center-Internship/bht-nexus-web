@@ -3,7 +3,7 @@ import { NexusScraperSearch } from "@/components/nexus-scraper-search/nexus-scra
 import { getNexusScraperSearchContent } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 
 export const metadata: Metadata = {
-  title: "Pencarian Peneliti",
+  title: "Pencarian",
   description:
     "Pengiriman job pengumpulan data peneliti dari SINTA dan Google Scholar.",
   robots: {

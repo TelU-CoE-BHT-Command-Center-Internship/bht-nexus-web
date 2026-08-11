@@ -3,7 +3,7 @@ import { NexusRagLibrary } from "@/components/nexus-rag-library/nexus-rag-librar
 import { getNexusRagLibraryContent } from "@/components/nexus-rag-library/nexus-rag-library-content";
 
 export const metadata: Metadata = {
-  title: "Documents",
+  title: "Library",
   description: "The BHT Nexus indexed document library.",
   robots: {
     follow: false,
