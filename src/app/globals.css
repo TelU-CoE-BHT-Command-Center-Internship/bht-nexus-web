@@ -56,6 +56,14 @@
 
 * {
   box-sizing: border-box;
+
+  /* Scrollbars stay hidden; wheel, keyboard, and touch scrolling are unchanged. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
 }
 
 html {
