@@ -1,10 +1,10 @@
 .lookupCard {
   min-width: 0;
   padding: 1.15rem 1.2rem;
-  border: 1px solid #dce4ee;
-  border-radius: 0.8rem;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
   background: var(--color-paper);
-  box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
+  box-shadow: var(--shadow-panel);
 }
 
 .summaryGrid {
@@ -22,7 +22,7 @@
 }
 
 .summaryEntry dt {
-  color: #60728b;
+  color: var(--color-ink-300);
   font-size: 0.62rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -31,7 +31,7 @@
 
 .summaryEntry dd {
   margin: 0;
-  color: #102d57;
+  color: var(--color-ink-700);
   font-size: 0.8rem;
   font-weight: 660;
   line-height: 1.4;
@@ -41,18 +41,18 @@
 .requestUrl {
   display: block;
   max-width: 22rem;
-  color: #4a5c74;
+  color: var(--color-ink-500);
   font-size: 0.68rem;
   overflow-wrap: anywhere;
 }
 
 .attemptOutcome {
-  --outcome-color: #117e41;
-  --outcome-bg: #e1f5e8;
+  --outcome-color: var(--color-status-succeeded-ink);
+  --outcome-bg: var(--color-status-succeeded-surface);
 
   display: inline-block;
   padding: 0.22rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--outcome-bg);
   color: var(--outcome-color);
   font-size: 0.62rem;
@@ -61,15 +61,15 @@
 }
 
 .attemptOutcome[data-outcome="failed"] {
-  --outcome-color: #bd3434;
-  --outcome-bg: #fde9e9;
+  --outcome-color: var(--color-status-failed-ink);
+  --outcome-bg: var(--color-status-failed-surface);
 }
 
 .attemptMessage {
   display: block;
   max-width: 20rem;
   margin-top: 0.35rem;
-  color: #677284;
+  color: var(--color-ink-300);
   font-size: 0.68rem;
   line-height: 1.45;
 }

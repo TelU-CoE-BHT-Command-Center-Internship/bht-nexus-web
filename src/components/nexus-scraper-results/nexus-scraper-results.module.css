@@ -10,9 +10,9 @@
   display: grid;
   gap: 0.85rem;
   padding: 1rem 1.05rem;
-  border: 1px solid #e6ebf2;
-  border-radius: 0.6rem;
-  background: #fcfdff;
+  border: 1px solid var(--color-line-faint);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
 }
 
 .candidateHeader {
@@ -29,7 +29,7 @@
 
 .candidateTitle {
   margin: 0;
-  color: #071c41;
+  color: var(--color-ink-900);
   font-size: 0.9rem;
   font-weight: 700;
   line-height: 1.4;
@@ -37,7 +37,7 @@
 
 .candidateMeta {
   margin: 0.35rem 0 0;
-  color: #6a737e;
+  color: var(--color-ink-300);
   font-size: 0.66rem;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -46,9 +46,9 @@
 .candidateStatus {
   flex: 0 0 auto;
   padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  background: #fff1d8;
-  color: #9f5f05;
+  border-radius: var(--radius-pill);
+  background: var(--color-status-retrying-surface);
+  color: var(--color-status-retrying-ink);
   font-size: 0.62rem;
   font-weight: 720;
   white-space: nowrap;
@@ -69,7 +69,7 @@
 }
 
 .detailEntry dt {
-  color: #60728b;
+  color: var(--color-ink-300);
   font-size: 0.61rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -78,7 +78,7 @@
 
 .detailEntry dd {
   margin: 0;
-  color: #102d57;
+  color: var(--color-ink-700);
   font-size: 0.77rem;
   font-weight: 620;
   line-height: 1.4;
@@ -92,11 +92,11 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #eaeff5;
+  border-top: 1px solid var(--color-line-faint);
 }
 
 .sourceLink {
-  color: #1557aa;
+  color: var(--color-link);
   font-size: 0.72rem;
   font-weight: 700;
   text-decoration: underline;

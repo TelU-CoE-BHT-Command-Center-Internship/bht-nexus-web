@@ -6,10 +6,10 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1.15rem 1.2rem;
-  border: 1px solid #dce4ee;
-  border-radius: 0.8rem;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
   background: var(--color-paper);
-  box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
+  box-shadow: var(--shadow-panel);
 }
 
 .documentCopy {
@@ -19,14 +19,14 @@
 }
 
 .documentCopy strong {
-  color: #071c41;
+  color: var(--color-ink-900);
   font-size: 0.95rem;
   font-weight: 720;
   line-height: 1.35;
 }
 
 .documentCopy span {
-  color: #6a737e;
+  color: var(--color-ink-300);
   font-size: 0.68rem;
 }
 
@@ -42,9 +42,9 @@
   display: grid;
   gap: 0.7rem;
   padding: 0.95rem 1rem;
-  border: 1px solid #e6ebf2;
-  border-radius: 0.6rem;
-  background: #fcfdff;
+  border: 1px solid var(--color-line-faint);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
 }
 
 .fieldHeader {
@@ -61,7 +61,7 @@
 
 .fieldLabel {
   margin: 0;
-  color: #60728b;
+  color: var(--color-ink-300);
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -70,14 +70,14 @@
 
 .fieldValue {
   margin: 0.35rem 0 0;
-  color: #102d57;
+  color: var(--color-ink-700);
   font-size: 0.88rem;
   font-weight: 660;
   line-height: 1.45;
 }
 
 .fieldValue[data-empty="true"] {
-  color: #6a727d;
+  color: var(--color-ink-300);
   font-style: italic;
   font-weight: 560;
 }
@@ -90,11 +90,11 @@
 }
 
 .decisionBadge {
-  --decision-color: #626e83;
-  --decision-bg: #edf0f4;
+  --decision-color: var(--color-status-queued-ink);
+  --decision-bg: var(--color-status-queued-surface);
 
   padding: 0.25rem 0.55rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--decision-bg);
   color: var(--decision-color);
   font-size: 0.63rem;
@@ -103,13 +103,13 @@
 }
 
 .decisionBadge[data-decision="accepted"] {
-  --decision-color: #117e41;
-  --decision-bg: #e1f5e8;
+  --decision-color: var(--color-status-succeeded-ink);
+  --decision-bg: var(--color-status-succeeded-surface);
 }
 
 .decisionBadge[data-decision="rejected"] {
-  --decision-color: #bd3434;
-  --decision-bg: #fde9e9;
+  --decision-color: var(--color-status-failed-ink);
+  --decision-bg: var(--color-status-failed-surface);
 }
 
 .decisionButtons {
@@ -119,14 +119,14 @@
 
 .source {
   padding: 0.7rem 0.85rem;
-  border-left: 3px solid #cddced;
-  border-radius: 0 0.5rem 0.5rem 0;
-  background: #f5f8fc;
+  border-left: 3px solid var(--color-line-soft);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-surface-sunken);
 }
 
 .sourceMeta {
   margin: 0;
-  color: #60728b;
+  color: var(--color-ink-300);
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -135,7 +135,7 @@
 
 .source blockquote {
   margin: 0.4rem 0 0;
-  color: #5a6b81;
+  color: var(--color-ink-400);
   font-size: 0.74rem;
   font-style: italic;
   line-height: 1.55;

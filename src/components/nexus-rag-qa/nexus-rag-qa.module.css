@@ -13,15 +13,15 @@
 .askCard {
   min-width: 0;
   padding: 1.15rem 1.2rem;
-  border: 1px solid #dce4ee;
-  border-radius: 0.8rem;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
   background: var(--color-paper);
-  box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
+  box-shadow: var(--shadow-panel);
 }
 
 .scopeTitle {
   margin: 1.1rem 0 0.5rem;
-  color: #60728b;
+  color: var(--color-ink-300);
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -39,10 +39,10 @@
 
 .scopeItem {
   padding: 0.28rem 0.6rem;
-  border: 1px solid #e2e9f2;
-  border-radius: 999px;
-  background: #f7fafd;
-  color: #56677e;
+  border: 1px solid var(--color-line-faint);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-400);
   font-size: 0.68rem;
   font-weight: 600;
 }
@@ -59,7 +59,7 @@
   display: grid;
   gap: 0.7rem;
   padding-bottom: 1.1rem;
-  border-bottom: 1px solid #eaeff5;
+  border-bottom: 1px solid var(--color-line-faint);
 }
 
 .exchange:last-child {
@@ -78,7 +78,7 @@
 .question {
   min-width: 0;
   margin: 0;
-  color: #071c41;
+  color: var(--color-ink-900);
   font-size: 0.92rem;
   font-weight: 700;
   line-height: 1.45;
@@ -86,26 +86,26 @@
 
 .questionMeta {
   flex: 0 0 auto;
-  color: #6a737e;
+  color: var(--color-ink-300);
   font-size: 0.66rem;
   white-space: nowrap;
 }
 
 .answer {
   padding: 0.85rem 1rem;
-  border-left: 3px solid #a9c9f5;
-  border-radius: 0 0.5rem 0.5rem 0;
-  background: #f7fafd;
+  border-left: 3px solid var(--color-note-edge);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-surface-sunken);
 }
 
 .answer[data-supported="false"] {
-  border-left-color: #e2a1a1;
-  background: #fdf5f5;
+  border-left-color: var(--color-status-failed-ink);
+  background: var(--color-status-failed-surface);
 }
 
 .answer p {
   margin: 0;
-  color: #33455c;
+  color: var(--color-ink-500);
   font-size: 0.84rem;
   line-height: 1.6;
 }
@@ -114,9 +114,9 @@
   display: inline-block;
   margin-bottom: 0.5rem;
   padding: 0.24rem 0.5rem;
-  border-radius: 999px;
-  background: #fbe3e3;
-  color: #a32c2c;
+  border-radius: var(--radius-pill);
+  background: var(--color-status-failed-surface);
+  color: var(--color-status-failed-ink);
   font-size: 0.62rem;
   font-weight: 720;
   letter-spacing: 0.02em;
@@ -124,7 +124,7 @@
 
 .citationsTitle {
   margin: 0 0 0.45rem;
-  color: #60728b;
+  color: var(--color-ink-300);
   font-size: 0.64rem;
   font-weight: 720;
   letter-spacing: 0.06em;
@@ -141,8 +141,8 @@
 
 .citation {
   padding: 0.7rem 0.85rem;
-  border: 1px solid #e6ebf2;
-  border-radius: 0.55rem;
+  border: 1px solid var(--color-line-faint);
+  border-radius: var(--radius-md);
   background: var(--color-paper);
 }
 
@@ -153,13 +153,13 @@
   justify-content: space-between;
   gap: 0.5rem;
   margin: 0;
-  color: #102d57;
+  color: var(--color-ink-700);
   font-size: 0.75rem;
   font-weight: 680;
 }
 
 .citationSource span {
-  color: #6a737e;
+  color: var(--color-ink-300);
   font-size: 0.66rem;
   font-weight: 560;
   white-space: nowrap;
@@ -167,7 +167,7 @@
 
 .citation blockquote {
   margin: 0.45rem 0 0;
-  color: #5a6b81;
+  color: var(--color-ink-400);
   font-size: 0.74rem;
   font-style: italic;
   line-height: 1.55;

@@ -6,6 +6,50 @@
   --color-brand-navy-dark: #051c43;
   --color-brand-gold: #f3bd25;
   --color-line: #e3e5e9;
+
+  /* Workspace ink ramp. Every step clears 4.5:1 on --color-paper. */
+  --color-ink-900: #071c41;
+  --color-ink-700: #102d57;
+  --color-ink-500: #3f4f65;
+  --color-ink-400: #53647b;
+  --color-ink-300: #60728b;
+
+  /* Workspace surfaces and lines */
+  --color-surface-raised: #fcfdff;
+  --color-surface-muted: #fbfcfe;
+  --color-surface-sunken: #f7fafd;
+  --color-line-soft: #dce4ee;
+  --color-line-faint: #e6ebf2;
+  --color-line-field: #d6dee9;
+  --color-link: #1557aa;
+
+  /* Job status pairs, one ink and one surface per state */
+  --color-status-queued-ink: #626e83;
+  --color-status-queued-surface: #edf0f4;
+  --color-status-running-ink: #155fb7;
+  --color-status-running-surface: #e5f0ff;
+  --color-status-retrying-ink: #9f5f05;
+  --color-status-retrying-surface: #fff1d8;
+  --color-status-succeeded-ink: #117e41;
+  --color-status-succeeded-surface: #e1f5e8;
+  --color-status-failed-ink: #bd3434;
+  --color-status-failed-surface: #fde9e9;
+  --color-status-stopped-ink: #8f1f1f;
+  --color-status-stopped-surface: #f7dada;
+
+  /* Inline notes */
+  --color-note-ink: #40536c;
+  --color-note-surface: #f4f8fd;
+  --color-note-edge: #a9c9f5;
+  --color-note-warning-ink: #6b5220;
+  --color-note-warning-surface: #fdf6e9;
+  --color-note-warning-edge: #edb95a;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.6rem;
+  --radius-lg: 0.8rem;
+  --radius-pill: 999px;
+  --shadow-panel: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
   --section-space: clamp(3.75rem, 5vw, 5rem);
   --font-sans:
     var(--font-inter), Inter, ui-sans-serif, system-ui, -apple-system,

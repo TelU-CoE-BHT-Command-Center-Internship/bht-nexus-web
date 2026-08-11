@@ -21,7 +21,7 @@
 
 .pageEyebrow {
   margin: 0;
-  color: #60728b;
+  color: var(--color-ink-300);
   font-size: 0.66rem;
   font-weight: 720;
   letter-spacing: 0.08em;
@@ -31,7 +31,7 @@
 
 .pageTitle {
   margin: 0.45rem 0 0;
-  color: #071c41;
+  color: var(--color-ink-900);
   font-family: var(--font-serif);
   font-size: clamp(1.55rem, 2.1vw, 2rem);
   font-weight: 700;
@@ -43,7 +43,7 @@
 .pageDescription {
   max-width: 62ch;
   margin: 0.5rem 0 0;
-  color: #53647b;
+  color: var(--color-ink-400);
   font-size: 0.86rem;
   line-height: 1.55;
 }
@@ -60,10 +60,10 @@
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #dce4ee;
-  border-radius: 0.8rem;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
   background: var(--color-paper);
-  box-shadow: 0 0.55rem 1.65rem rgb(8 40 92 / 4%);
+  box-shadow: var(--shadow-panel);
 }
 
 .panelHeader {
@@ -73,7 +73,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.2rem;
-  border-bottom: 1px solid #e0e6ef;
+  border-bottom: 1px solid var(--color-line-faint);
 }
 
 .panelHeading {
@@ -82,7 +82,7 @@
 
 .panelHeading h3 {
   margin: 0;
-  color: #071c41;
+  color: var(--color-ink-900);
   font-size: 1rem;
   font-weight: 760;
   letter-spacing: -0.025em;
@@ -91,7 +91,7 @@
 
 .panelHeading p {
   margin: 0.3rem 0 0;
-  color: #657286;
+  color: var(--color-ink-300);
   font-size: 0.74rem;
   line-height: 1.45;
 }
@@ -109,18 +109,18 @@
   display: block;
   margin: 0;
   padding: 0.75rem 0.9rem;
-  border-left: 3px solid #a9c9f5;
-  border-radius: 0 0.5rem 0.5rem 0;
-  background: #f4f8fd;
-  color: #40536c;
+  border-left: 3px solid var(--color-note-edge);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-note-surface);
+  color: var(--color-note-ink);
   font-size: 0.76rem;
   line-height: 1.55;
 }
 
 .note[data-tone="warning"] {
-  border-left-color: #edb95a;
-  background: #fdf6e9;
-  color: #6b5220;
+  border-left-color: var(--color-note-warning-edge);
+  background: var(--color-note-warning-surface);
+  color: var(--color-note-warning-ink);
 }
 
 .primaryButton,
@@ -131,7 +131,7 @@
   gap: 0.45rem;
   padding: 0.6rem 1rem;
   border: 1px solid transparent;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-sm);
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
@@ -139,14 +139,14 @@
 }
 
 .primaryButton {
-  background: #08285c;
+  background: var(--color-brand-navy);
   color: var(--color-paper);
 }
 
 .ghostButton {
-  border-color: #d6dee9;
-  background: #fbfcfe;
-  color: #2c4059;
+  border-color: var(--color-line-field);
+  background: var(--color-surface-muted);
+  color: var(--color-ink-500);
 }
 
 .toolbar {
@@ -165,7 +165,7 @@
 }
 
 .field > span {
-  color: #4e5f75;
+  color: var(--color-ink-500);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -175,8 +175,8 @@
   width: 100%;
   min-height: 2.5rem;
   padding: 0.55rem 0.7rem;
-  border: 1px solid #d6dee9;
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-line-field);
+  border-radius: var(--radius-sm);
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: inherit;
@@ -184,7 +184,7 @@
 }
 
 .field input::placeholder {
-  color: #6a727d;
+  color: var(--color-ink-300);
 }
 
 .tableWrap {
@@ -201,8 +201,8 @@
 .table th,
 .table td {
   padding: 0.82rem 0.62rem;
-  border-bottom: 1px solid #e3e8ef;
-  color: #3f4f65;
+  border-bottom: 1px solid var(--color-line-faint);
+  color: var(--color-ink-500);
   font-size: 0.72rem;
   font-weight: 520;
   line-height: 1.4;
@@ -212,8 +212,8 @@
 
 .table thead th {
   padding-block: 0.72rem;
-  background: #fbfcfe;
-  color: #647287;
+  background: var(--color-surface-muted);
+  color: var(--color-ink-300);
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.025em;
@@ -221,7 +221,7 @@
 }
 
 .table tbody th {
-  color: #102d57;
+  color: var(--color-ink-700);
   font-weight: 680;
 }
 
@@ -265,7 +265,7 @@
     display: grid;
     gap: 0.55rem;
     padding: 1rem;
-    border-bottom: 1px solid #e3e8ef;
+    border-bottom: 1px solid var(--color-line-faint);
   }
 
   .table tbody tr:last-child {
@@ -285,7 +285,7 @@
   }
 
   .table tbody td::before {
-    color: #5c6a7d;
+    color: var(--color-ink-400);
     content: attr(data-label);
     font-size: 0.58rem;
     font-weight: 720;

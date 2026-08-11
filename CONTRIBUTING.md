@@ -124,7 +124,7 @@ Pull request harus menjelaskan:
 - dampak terhadap tampilan, data, dan keamanan;
 - issue yang berkaitan.
 
-Perubahan antarmuka perlu menyertakan tangkapan layar yang tidak memuat data sensitif.
+Perubahan antarmuka perlu menyertakan tangkapan layar yang tidak memuat data sensitif dan mengikuti [docs/design-guide.md](docs/design-guide.md).
 
 Satu persetujuan dan pemeriksaan otomatis yang lulus diperlukan sebelum perubahan dapat masuk ke `main`. Persetujuan lama dibatalkan jika terdapat perubahan baru setelah review.
 
