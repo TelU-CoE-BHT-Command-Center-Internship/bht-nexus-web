@@ -76,13 +76,6 @@ function IconPaths({ name }: DashboardShellIconProps) {
           <path d="M15.5 14.5 19 18l-3.5 3.5M22 18h-6.5" />
         </>
       );
-    case "jobs":
-      return (
-        <>
-          <circle cx="12" cy="12" r="8.5" />
-          <path d="M12 7v5.2l3.3 2" />
-        </>
-      );
     case "candidates":
       return (
         <>

@@ -35,9 +35,7 @@ contoh, dan tidak termasuk daftar ini.
 
 | Rekaman | Berkas | Simbol | Jumlah | Halaman |
 |---|---|---|---|---|
-| Pencarian terkini (nama, tautan SINTA, tautan Scholar) | `nexus-scraper-search/nexus-scraper-search-content.ts` | `submissionSeeds` | 4 | `/nexus/pencarian` |
-| Ringkasan job | `nexus-scraper-jobs/nexus-scraper-jobs-content.ts` | `job` | 1 per bahasa | `/nexus/proses` |
-| Log percobaan | `nexus-scraper-jobs/nexus-scraper-jobs-content.ts` | `attempts` | 4 per bahasa | `/nexus/proses` |
+| Pencarian terkini beserta log percobaannya | `nexus-scraper-search/nexus-scraper-search-content.ts` | `submissionSeeds` | 4 pencarian, 7 percobaan | `/nexus/pencarian` |
 | Kandidat hasil | `nexus-scraper-results/nexus-scraper-results-content.ts` | `candidates` | 3 per bahasa | `/nexus/kandidat` |
 
 ## Dashboard dan kerangka ruang kerja
@@ -82,8 +80,7 @@ modul yang sudah ada di `nexus-server/src/modules/`. Bentuk rute mengikuti
 | Daftar profil ekstraksi | `GET /api/v1/extraction-profiles` | `GET /profiles` pada `rag-api` |
 | Kandidat isian | `GET /api/v1/reviews/candidates` | `POST /autofill` pada `rag-api` |
 | Pencarian terkini | `GET /api/v1/jobs` | `POST /scraper-jobs` pada `scraper/backend` |
-| Ringkasan job | `GET /api/v1/jobs/:id` | `GET /scraper-jobs/:id` |
-| Log percobaan | `GET /api/v1/jobs/:id/attempts` | `GET /scraper-jobs/:id/attempts` |
+| Log percobaan satu pencarian | `GET /api/v1/jobs/:id/attempts` | `GET /scraper-jobs/:id/attempts` |
 | Kandidat hasil | `GET /api/v1/jobs/:id/candidates` | `GET /scraper-jobs/:id/candidates` |
 | Keputusan tinjauan | `POST /api/v1/jobs/:id/candidates/:candidateId/decision` | rute yang sama pada `scraper/backend` |
 | Metrik dan grafik aktivitas | `GET /api/v1/kpis` | belum |

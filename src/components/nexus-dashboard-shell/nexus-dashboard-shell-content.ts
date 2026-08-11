@@ -9,7 +9,6 @@ export type DashboardShellIconName =
   | "dashboard"
   | "documents"
   | "extraction"
-  | "jobs"
   | "members"
   | "publications"
   | "questions"
@@ -79,7 +78,6 @@ type DashboardPermission =
   | "dashboard:read"
   | "documents:read"
   | "extraction:read"
-  | "jobs:read"
   | "members:read"
   | "publications:read"
   | "queries:read"
@@ -142,14 +140,6 @@ const navigationDefinitions: NavigationDefinition[] = [
     id: "researcher-search",
     label: { en: "Search", id: "Pencarian" },
     permission: "scraper:read",
-  },
-  {
-    group: "scraper",
-    href: { en: "/en/nexus/progress", id: "/nexus/proses" },
-    icon: "jobs",
-    id: "job-status",
-    label: { en: "Progress", id: "Proses" },
-    permission: "jobs:read",
   },
   {
     group: "scraper",
@@ -232,13 +222,11 @@ const previewSession = {
     "/nexus/ekstraksi",
     "/nexus/kandidat",
     "/nexus/pencarian",
-    "/nexus/proses",
     "/nexus/tanya-dokumen",
     "/en/nexus/ask-documents",
     "/en/nexus/candidates",
     "/en/nexus/documents",
     "/en/nexus/extraction",
-    "/en/nexus/progress",
     "/en/nexus/search",
   ]),
   permissions: new Set<DashboardPermission>([
@@ -247,7 +235,6 @@ const previewSession = {
     "dashboard:read",
     "documents:read",
     "extraction:read",
-    "jobs:read",
     "members:read",
     "publications:read",
     "queries:read",
