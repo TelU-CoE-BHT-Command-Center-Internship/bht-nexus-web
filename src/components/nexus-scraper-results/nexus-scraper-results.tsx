@@ -25,56 +25,67 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
         subtitle={content.candidatesSubtitle}
         title={content.candidatesTitle}
       >
-        <ul className={styles.candidateList}>
-          {content.candidates.map((candidate) => (
-            <li className={styles.candidate} key={candidate.id}>
-              <div className={styles.candidateMain}>
-                <p className={styles.candidateTitle}>{candidate.title}</p>
-                <p className={styles.candidateMeta}>
-                  {candidate.typeLabel} · {candidate.sourceLabel} ·{" "}
-                  <time dateTime={candidate.retrievedAt}>
-                    {candidate.retrievedAtLabel}
-                  </time>
-                </p>
-              </div>
+        <div className={styles.groupList}>
+          {content.groups.map((group) => (
+            <section className={styles.group} key={group.id}>
+              <h4 className={styles.groupName}>{group.fullName}</h4>
 
-              <div className={styles.decisionButtons}>
-                <button className={shell.ghostButton} type="button">
-                  {content.rejectLabel}
-                </button>
-                <button className={shell.primaryButton} type="button">
-                  {content.acceptLabel}
-                </button>
-              </div>
+              <ul className={styles.candidateList}>
+                {group.candidates.map((candidate) => (
+                  <li className={styles.candidate} key={candidate.id}>
+                    <div className={styles.candidateMain}>
+                      <p className={styles.candidateType}>
+                        {candidate.typeLabel}
+                      </p>
+                      <p className={styles.candidateTitle}>{candidate.title}</p>
+                    </div>
 
-              <details
-                className={`${shell.disclosure} ${styles.candidateData}`}
-              >
-                <summary>
-                  {content.detailsLabel} ({candidate.details.length})
-                </summary>
-                <div className={shell.disclosureBody}>
-                  <dl className={styles.detailGrid}>
-                    {candidate.details.map((detail) => (
-                      <div className={styles.detailEntry} key={detail.id}>
-                        <dt>{detail.label}</dt>
-                        <dd>{detail.value}</dd>
+                    <div className={styles.decisionButtons}>
+                      <button className={shell.ghostButton} type="button">
+                        {content.rejectLabel}
+                      </button>
+                      <button className={shell.primaryButton} type="button">
+                        {content.acceptLabel}
+                      </button>
+                    </div>
+
+                    <details
+                      className={`${shell.disclosure} ${styles.candidateData}`}
+                    >
+                      <summary>{content.detailsLabel}</summary>
+                      <div className={shell.disclosureBody}>
+                        <dl className={styles.detailGrid}>
+                          {candidate.details.map((detail) => (
+                            <div className={styles.detailEntry} key={detail.id}>
+                              <dt>{detail.label}</dt>
+                              <dd>{detail.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                        <p className={styles.candidateFooter}>
+                          <a
+                            className={styles.sourceLink}
+                            href={candidate.sourceUrl}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {content.sourceUrlLabel}
+                          </a>
+                          <span>
+                            {candidate.sourceLabel} ·{" "}
+                            <time dateTime={candidate.retrievedAt}>
+                              {candidate.retrievedAtLabel}
+                            </time>
+                          </span>
+                        </p>
                       </div>
-                    ))}
-                  </dl>
-                  <a
-                    className={styles.sourceLink}
-                    href={candidate.sourceUrl}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    {content.sourceUrlLabel}
-                  </a>
-                </div>
-              </details>
-            </li>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       </WorkspacePanel>
 
       <WorkspaceFootnote>{content.promoteNote}</WorkspaceFootnote>

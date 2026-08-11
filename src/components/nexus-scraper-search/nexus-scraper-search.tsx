@@ -142,6 +142,7 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
             <tbody>
               {submissions.map((submission) => (
                 <tr
+                  className={styles.row}
                   data-selected={submission.id === selected?.id}
                   key={submission.id}
                 >

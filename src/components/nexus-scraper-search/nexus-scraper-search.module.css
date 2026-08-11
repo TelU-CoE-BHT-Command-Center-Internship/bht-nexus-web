@@ -22,9 +22,18 @@
   cursor: pointer;
 }
 
-tr[data-selected="true"] .rowButton {
+.rowButton:hover,
+.rowButton:focus-visible {
   text-decoration: underline;
   text-underline-offset: 0.2rem;
+}
+
+.row[data-selected="true"] {
+  background: var(--color-surface-sunken);
+}
+
+.row[data-selected="true"] th:first-child {
+  box-shadow: inset 0.18rem 0 0 var(--color-brand-navy);
 }
 
 .summaryRow {
@@ -60,20 +69,28 @@ tr[data-selected="true"] .rowButton {
 }
 
 .attemptOutcome {
-  display: inline-block;
-  color: var(--color-ink-500);
+  --outcome-color: var(--color-status-succeeded-ink);
+
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-ink-700);
   font-size: 0.7rem;
-  font-weight: 660;
+  font-weight: 700;
   white-space: nowrap;
 }
 
+.attemptOutcome::before {
+  width: 0.44rem;
+  height: 0.44rem;
+  flex: 0 0 auto;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--outcome-color);
+  content: "";
+}
+
 .attemptOutcome[data-outcome="failed"] {
-  padding: 0.22rem 0.5rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-status-failed-surface);
-  color: var(--color-status-failed-ink);
-  font-size: 0.62rem;
-  font-weight: 720;
+  --outcome-color: var(--color-status-failed-ink);
 }
 
 @media (max-width: 48rem) {
