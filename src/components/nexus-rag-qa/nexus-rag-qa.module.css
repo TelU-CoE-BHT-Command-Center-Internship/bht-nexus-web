@@ -83,12 +83,9 @@
 
 .unsupportedFlag {
   display: inline-block;
-  margin-bottom: 0.5rem;
-  padding: 0.24rem 0.5rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-status-failed-surface);
+  margin-bottom: 0.4rem;
   color: var(--color-status-failed-ink);
-  font-size: 0.62rem;
+  font-size: 0.66rem;
   font-weight: 720;
   letter-spacing: 0.02em;
 }

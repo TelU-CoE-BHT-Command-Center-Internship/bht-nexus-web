@@ -101,8 +101,15 @@ svg {
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-brand-gold);
-  outline-offset: 4px;
+  outline: 2px solid var(--color-brand-navy);
+  outline-offset: 1px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
+  box-shadow: 0 0 0 0.2rem rgb(8 40 92 / 11%);
 }
 
 @media (prefers-reduced-motion: reduce) {

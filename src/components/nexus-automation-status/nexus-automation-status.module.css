@@ -1,50 +1,41 @@
 .badge {
   --status-color: var(--color-status-running-ink);
-  --status-bg: var(--color-status-running-surface);
 
   display: inline-flex;
-  min-height: 1.55rem;
   align-items: center;
-  padding: 0.25rem 0.55rem;
-  border-radius: var(--radius-pill);
-  background: var(--status-bg);
-  color: var(--status-color);
-  font-size: 0.63rem;
-  font-weight: 720;
-  line-height: 1;
+  color: var(--color-ink-700);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
 .badge::before {
-  width: 0.37rem;
-  height: 0.37rem;
-  margin-right: 0.35rem;
+  width: 0.44rem;
+  height: 0.44rem;
+  flex: 0 0 auto;
+  margin-right: 0.4rem;
   border-radius: 50%;
-  background: currentcolor;
+  background: var(--status-color);
   content: "";
 }
 
 .badge[data-status="queued"] {
   --status-color: var(--color-status-queued-ink);
-  --status-bg: var(--color-status-queued-surface);
 }
 
 .badge[data-status="retrying"] {
   --status-color: var(--color-status-retrying-ink);
-  --status-bg: var(--color-status-retrying-surface);
 }
 
 .badge[data-status="succeeded"] {
   --status-color: var(--color-status-succeeded-ink);
-  --status-bg: var(--color-status-succeeded-surface);
 }
 
 .badge[data-status="failed"] {
   --status-color: var(--color-status-failed-ink);
-  --status-bg: var(--color-status-failed-surface);
 }
 
 .badge[data-status="failed_permanently"] {
   --status-color: var(--color-status-stopped-ink);
-  --status-bg: var(--color-status-stopped-surface);
 }

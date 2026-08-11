@@ -12,27 +12,17 @@ export function WorkspacePage({ children }: WorkspacePageProps) {
 type WorkspacePageHeaderProps = {
   actions?: ReactNode;
   description: string;
-  eyebrow: string;
-  previewLabel?: string;
   title: string;
 };
 
 export function WorkspacePageHeader({
   actions,
   description,
-  eyebrow,
-  previewLabel,
   title,
 }: WorkspacePageHeaderProps) {
   return (
     <header className={styles.pageHeader}>
       <div className={styles.pageHeaderCopy}>
-        <div className={styles.pageEyebrowRow}>
-          <p className={styles.pageEyebrow}>{eyebrow}</p>
-          {previewLabel ? (
-            <span className={styles.pageBadge}>{previewLabel}</span>
-          ) : null}
-        </div>
         <h2 className={styles.pageTitle}>{title}</h2>
         <p className={styles.pageDescription}>{description}</p>
       </div>
@@ -46,8 +36,9 @@ type WorkspacePanelProps = {
   children: ReactNode;
   flush?: boolean;
   id: string;
+  label?: string;
   subtitle?: string;
-  title: string;
+  title?: string;
 };
 
 export function WorkspacePanel({
@@ -55,18 +46,25 @@ export function WorkspacePanel({
   children,
   flush = false,
   id,
+  label,
   subtitle,
   title,
 }: WorkspacePanelProps) {
   return (
-    <section aria-labelledby={`${id}-title`} className={styles.panel}>
-      <div className={styles.panelHeader}>
-        <div className={styles.panelHeading}>
-          <h3 id={`${id}-title`}>{title}</h3>
-          {subtitle ? <p>{subtitle}</p> : null}
+    <section
+      aria-label={title ? undefined : label}
+      aria-labelledby={title ? `${id}-title` : undefined}
+      className={styles.panel}
+    >
+      {title ? (
+        <div className={styles.panelHeader}>
+          <div className={styles.panelHeading}>
+            <h3 id={`${id}-title`}>{title}</h3>
+            {subtitle ? <p>{subtitle}</p> : null}
+          </div>
+          {action}
         </div>
-        {action}
-      </div>
+      ) : null}
       <div className={styles.panelBody} data-flush={flush}>
         {children}
       </div>

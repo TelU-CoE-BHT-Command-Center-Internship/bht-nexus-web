@@ -17,8 +17,6 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
     <WorkspacePage>
       <WorkspacePageHeader
         description={content.description}
-        eyebrow={content.eyebrow}
-        previewLabel={content.previewLabel}
         title={content.title}
       />
 

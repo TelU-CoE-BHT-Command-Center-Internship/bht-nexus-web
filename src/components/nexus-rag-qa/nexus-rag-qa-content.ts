@@ -1,4 +1,3 @@
-import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type RagCitation = {
@@ -25,11 +24,9 @@ export type NexusRagQaContent = {
   citationsTitle: string;
   description: string;
   exchanges: RagExchange[];
-  eyebrow: string;
   historySubtitle: string;
   historyTitle: string;
   pageLabel: string;
-  previewLabel: string;
   queryLabel: string;
   queryPlaceholder: string;
   title: string;
@@ -106,7 +103,6 @@ const qaCopy = {
         supported: false,
       },
     ],
-    eyebrow: "Tanya Jawab Dokumen",
     historySubtitle: "Tiga pertanyaan terakhir",
     historyTitle: "Riwayat Pertanyaan",
     pageLabel: "Halaman",
@@ -184,7 +180,6 @@ const qaCopy = {
         supported: false,
       },
     ],
-    eyebrow: "Document Q&A",
     historySubtitle: "Three most recent questions",
     historyTitle: "Question History",
     pageLabel: "Page",
@@ -193,12 +188,12 @@ const qaCopy = {
     title: "Ask Documents",
     unsupportedLabel: "Not found",
   },
-} satisfies Record<Locale, Omit<NexusRagQaContent, "previewLabel">>;
+} satisfies Record<Locale, NexusRagQaContent>;
 
 /**
  * Presentation-ready question history. A server adapter can replace the seeded
  * exchanges without changing the component contract.
  */
 export function getNexusRagQaContent(locale: Locale): NexusRagQaContent {
-  return { ...qaCopy[locale], previewLabel: getWorkspacePreviewLabel(locale) };
+  return qaCopy[locale];
 }

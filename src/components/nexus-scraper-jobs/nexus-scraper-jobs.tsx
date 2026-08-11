@@ -1,12 +1,35 @@
+"use client";
+
 import { AutomationStatusBadge } from "@/components/nexus-automation-status/nexus-automation-status";
 import styles from "@/components/nexus-scraper-jobs/nexus-scraper-jobs.module.css";
-import type { NexusScraperJobsContent } from "@/components/nexus-scraper-jobs/nexus-scraper-jobs-content";
+import type {
+  NexusScraperJobsContent,
+  ScraperJobAttempt,
+} from "@/components/nexus-scraper-jobs/nexus-scraper-jobs-content";
 import {
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
 } from "@/components/nexus-workspace-page/nexus-workspace-page";
 import shell from "@/components/nexus-workspace-page/nexus-workspace-page.module.css";
+import {
+  SortableColumn,
+  useTableSort,
+} from "@/components/nexus-workspace-page/nexus-workspace-sort";
+
+type SortKey = "outcome" | "source" | "time";
+
+function readAttempt(attempt: ScraperJobAttempt, key: SortKey) {
+  if (key === "outcome") {
+    return attempt.outcomeLabel;
+  }
+
+  if (key === "time") {
+    return attempt.finishedAtLabel;
+  }
+
+  return attempt.sourceLabel;
+}
 
 type NexusScraperJobsProps = {
   content: NexusScraperJobsContent;
@@ -14,16 +37,16 @@ type NexusScraperJobsProps = {
 
 export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
   const { job, summaryLabels } = content;
+  const { sort, sortRows, toggle } = useTableSort<SortKey>("time");
+  const attempts = sortRows(content.attempts, readAttempt);
   const summaryEntries = [
-    { id: "input", label: summaryLabels.input, value: job.rawInput },
-    { id: "outcome", label: summaryLabels.outcome, value: job.outcomeLabel },
+    { id: "name", label: summaryLabels.name, value: job.fullName },
     {
       id: "candidates",
       label: summaryLabels.candidates,
       value: job.candidateCount,
     },
     { id: "progress", label: summaryLabels.progress, value: job.progressLabel },
-    { id: "retries", label: summaryLabels.retries, value: job.retryLabel },
     { id: "created", label: summaryLabels.created, value: job.createdAtLabel },
     { id: "updated", label: summaryLabels.updated, value: job.updatedAtLabel },
   ];
@@ -32,8 +55,6 @@ export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
     <WorkspacePage>
       <WorkspacePageHeader
         description={content.description}
-        eyebrow={content.eyebrow}
-        previewLabel={content.previewLabel}
         title={content.title}
       />
 
@@ -43,7 +64,7 @@ export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
             <span>{content.lookupLabel}</span>
             <input
               id="job-lookup"
-              name="jobId"
+              name="researcher"
               placeholder={content.lookupPlaceholder}
               spellCheck={false}
               type="text"
@@ -60,7 +81,7 @@ export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
           <AutomationStatusBadge label={job.statusLabel} status={job.status} />
         }
         id="scraper-job-summary"
-        subtitle={`${job.id} · ${job.normalizedValue}`}
+        subtitle={job.id}
         title={content.jobTitle}
       >
         <dl className={styles.summaryGrid}>
@@ -83,14 +104,32 @@ export function NexusScraperJobs({ content }: NexusScraperJobsProps) {
           <table className={shell.table}>
             <thead>
               <tr>
-                <th scope="col">{content.attemptColumns.source}</th>
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.attemptColumns.source}
+                  onSort={toggle}
+                  sortKey="source"
+                />
                 <th scope="col">{content.attemptColumns.request}</th>
-                <th scope="col">{content.attemptColumns.outcome}</th>
-                <th scope="col">{content.attemptColumns.time}</th>
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.attemptColumns.outcome}
+                  onSort={toggle}
+                  sortKey="outcome"
+                />
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.attemptColumns.time}
+                  onSort={toggle}
+                  sortKey="time"
+                />
               </tr>
             </thead>
             <tbody>
-              {content.attempts.map((attempt) => (
+              {attempts.map((attempt) => (
                 <tr key={attempt.id}>
                   <th scope="row">{attempt.sourceLabel}</th>
                   <td data-label={content.attemptColumns.request}>

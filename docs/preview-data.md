@@ -32,7 +32,7 @@ contoh, dan tidak termasuk daftar ini.
 
 | Rekaman | Berkas | Simbol | Jumlah | Halaman |
 |---|---|---|---|---|
-| Pengiriman terkini | `nexus-scraper-search/nexus-scraper-search-content.ts` | `submissionSeeds` | 4 | `/nexus/pencarian-peneliti` |
+| Pencarian terkini (nama, tautan SINTA, tautan Scholar) | `nexus-scraper-search/nexus-scraper-search-content.ts` | `submissionSeeds` | 4 | `/nexus/pencarian-peneliti` |
 | Ringkasan job | `nexus-scraper-jobs/nexus-scraper-jobs-content.ts` | `job` | 1 per bahasa | `/nexus/status-job` |
 | Log percobaan | `nexus-scraper-jobs/nexus-scraper-jobs-content.ts` | `attempts` | 4 per bahasa | `/nexus/status-job` |
 | Kandidat hasil | `nexus-scraper-results/nexus-scraper-results-content.ts` | `candidates` | 3 per bahasa | `/nexus/hasil-pengumpulan` |
@@ -60,7 +60,6 @@ endpoint, tidak dihapus begitu saja.
 
 | Nilai | Berkas | Isi |
 |---|---|---|
-| `approvedHosts` | `nexus-scraper-search-content.ts` | `sinta.kemdiktisaintek.go.id`, `scholar.google.com` |
 | `sourceOptions` | `nexus-scraper-search-content.ts` | SINTA, Google Scholar |
 | `navigationDefinitions` | `nexus-dashboard-shell-content.ts` | 11 butir navigasi beserta izinnya |
 
@@ -79,7 +78,7 @@ modul yang sudah ada di `nexus-server/src/modules/`. Bentuk rute mengikuti
 | Riwayat pertanyaan dan sitasi | belum diputuskan | `POST /ask` pada `rag-api` |
 | Daftar profil ekstraksi | `GET /api/v1/extraction-profiles` | `GET /profiles` pada `rag-api` |
 | Kandidat isian | `GET /api/v1/reviews/candidates` | `POST /autofill` pada `rag-api` |
-| Pengiriman terkini | `GET /api/v1/jobs` | `POST /scraper-jobs` pada `scraper/backend` |
+| Pencarian terkini | `GET /api/v1/jobs` | `POST /scraper-jobs` pada `scraper/backend` |
 | Ringkasan job | `GET /api/v1/jobs/:id` | `GET /scraper-jobs/:id` |
 | Log percobaan | `GET /api/v1/jobs/:id/attempts` | `GET /scraper-jobs/:id/attempts` |
 | Kandidat hasil | `GET /api/v1/jobs/:id/candidates` | `GET /scraper-jobs/:id/candidates` |
@@ -101,6 +100,5 @@ endpoint sinkron, dengan latensi terukur 3m40.7s dingin dan 20.0s hangat.
    endpointnya, sisakan bagian teks antarmuka apa adanya.
 2. Hapus larik seed dan tipe `*Seed` yang menyertainya.
 3. Hapus baris rekaman tersebut dari dokumen ini.
-4. Hapus `previewLabel` dari `WorkspacePageHeader` pada halaman yang seluruh
-   rekamannya sudah terhubung, lalu hapus `getWorkspacePreviewLabel` bila tidak
-   ada halaman lain yang memakainya.
+4. Pengurutan kolom berjalan di peramban lewat `useTableSort`. Pindahkan ke
+   parameter kueri endpoint bila jumlah baris melampaui satu halaman.

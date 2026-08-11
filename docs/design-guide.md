@@ -123,8 +123,9 @@ Halaman baru memakai komponen yang ada sebelum membuat yang baru.
 | Komponen | Berkas | Catatan |
 |---|---|---|
 | `WorkspacePage` | `components/nexus-workspace-page/` | Pembungkus halaman, mengatur padding dan jarak antarblok |
-| `WorkspacePageHeader` | `components/nexus-workspace-page/` | Eyebrow, judul, deskripsi, dan area aksi |
-| `WorkspacePanel` | `components/nexus-workspace-page/` | Panel bertajuk. `flush` menghapus padding badan untuk tabel |
+| `WorkspacePageHeader` | `components/nexus-workspace-page/` | Judul, deskripsi, dan area aksi |
+| `WorkspacePanel` | `components/nexus-workspace-page/` | Panel. `flush` menghapus padding badan untuk tabel; tanpa `title` panel tampil tanpa kepala dan memakai `label` untuk pembaca layar |
+| `SortableColumn` | `components/nexus-workspace-page/` | Kepala kolom yang dapat diurutkan, dipasangkan dengan `useTableSort` |
 | `AutomationStatusBadge` | `components/nexus-automation-status/` | Lencana status job. Selalu membawa teks status |
 | `WorkspaceFootnote` | `components/nexus-workspace-page/` | Satu kalimat penutup di bawah panel |
 
@@ -142,10 +143,8 @@ Teks antarmuka menyebutkan apa yang dilihat dan apa yang dapat dilakukan
 pengguna. Nama komponen internal, nilai enum mentah, dan urutan pemrosesan di
 belakang layar tidak ditulis pada layar.
 
-Halaman yang isinya masih data contoh memakai `previewLabel` pada
-`WorkspacePageHeader`. Lencana itu dihapus ketika adapter server sudah mengisi
-halaman dengan data sebenarnya. Daftar data contoh beserta endpoint
-penggantinya ada di [docs/preview-data.md](preview-data.md).
+Daftar data contoh beserta endpoint penggantinya ada di
+[docs/preview-data.md](preview-data.md).
 
 Satu label tidak ditampilkan dua kali pada satu layar. Bila judul panel sudah
 menjelaskan bidang isian di dalamnya, label bidang tersebut disembunyikan

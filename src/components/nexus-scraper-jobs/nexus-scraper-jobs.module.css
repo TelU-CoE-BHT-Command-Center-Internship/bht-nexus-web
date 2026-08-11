@@ -55,12 +55,7 @@
 }
 
 .attemptOutcome[data-outcome="failed"] {
-  padding: 0.22rem 0.5rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-status-failed-surface);
   color: var(--color-status-failed-ink);
-  font-size: 0.62rem;
-  font-weight: 720;
 }
 
 .attemptMessage {

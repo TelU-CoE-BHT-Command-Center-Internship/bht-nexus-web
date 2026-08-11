@@ -1,24 +1,48 @@
+"use client";
+
 import { AutomationStatusBadge } from "@/components/nexus-automation-status/nexus-automation-status";
 import styles from "@/components/nexus-scraper-search/nexus-scraper-search.module.css";
-import type { NexusScraperSearchContent } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
+import type {
+  NexusScraperSearchContent,
+  ScraperSubmission,
+} from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import {
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
 } from "@/components/nexus-workspace-page/nexus-workspace-page";
 import shell from "@/components/nexus-workspace-page/nexus-workspace-page.module.css";
+import {
+  SortableColumn,
+  useTableSort,
+} from "@/components/nexus-workspace-page/nexus-workspace-sort";
+
+type SortKey = "name" | "status" | "submittedAt";
+
+function readSubmission(submission: ScraperSubmission, key: SortKey) {
+  if (key === "status") {
+    return submission.statusLabel;
+  }
+
+  if (key === "submittedAt") {
+    return submission.submittedAtLabel;
+  }
+
+  return submission.fullName;
+}
 
 type NexusScraperSearchProps = {
   content: NexusScraperSearchContent;
 };
 
 export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
+  const { sort, sortRows, toggle } = useTableSort<SortKey>("submittedAt");
+  const submissions = sortRows(content.submissions, readSubmission);
+
   return (
     <WorkspacePage>
       <WorkspacePageHeader
         description={content.description}
-        eyebrow={content.eyebrow}
-        previewLabel={content.previewLabel}
         title={content.title}
       />
 
@@ -53,20 +77,6 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
       </div>
 
       <WorkspacePanel
-        id="scraper-approved-hosts"
-        subtitle={content.approvedHostsSubtitle}
-        title={content.approvedHostsTitle}
-      >
-        <ul className={styles.hostList}>
-          {content.approvedHosts.map((host) => (
-            <li className={styles.host} key={host.host}>
-              <code>{host.host}</code>
-            </li>
-          ))}
-        </ul>
-      </WorkspacePanel>
-
-      <WorkspacePanel
         flush
         id="scraper-submissions"
         subtitle={content.submissionsSubtitle}
@@ -76,29 +86,71 @@ export function NexusScraperSearch({ content }: NexusScraperSearchProps) {
           <table className={shell.table}>
             <thead>
               <tr>
-                <th scope="col">{content.columns.input}</th>
-                <th scope="col">{content.columns.normalized}</th>
-                <th scope="col">{content.columns.source}</th>
-                <th scope="col">{content.columns.status}</th>
-                <th scope="col">{content.columns.submittedAt}</th>
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.columns.name}
+                  onSort={toggle}
+                  sortKey="name"
+                />
+                <th scope="col">{content.columns.sinta}</th>
+                <th scope="col">{content.columns.scholar}</th>
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.columns.status}
+                  onSort={toggle}
+                  sortKey="status"
+                />
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.columns.submittedAt}
+                  onSort={toggle}
+                  sortKey="submittedAt"
+                />
               </tr>
             </thead>
             <tbody>
-              {content.submissions.map((submission) => (
+              {submissions.map((submission) => (
                 <tr key={submission.id}>
                   <th scope="row">
-                    <span className={styles.rawInput}>
-                      {submission.rawInput}
-                    </span>
+                    {submission.fullName}
                     <span className={styles.submissionMeta}>
-                      {submission.inputKindLabel} · {submission.jobId}
+                      {submission.jobId}
                     </span>
                   </th>
-                  <td data-label={content.columns.normalized}>
-                    <code>{submission.normalizedValue}</code>
+                  <td data-label={content.columns.sinta}>
+                    {submission.sinta ? (
+                      <a
+                        className={styles.profileLink}
+                        href={submission.sinta.url}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {submission.sinta.id}
+                      </a>
+                    ) : (
+                      <span className={styles.emptyLink}>
+                        {content.emptyLinkLabel}
+                      </span>
+                    )}
                   </td>
-                  <td data-label={content.columns.source}>
-                    {submission.sourceLabel}
+                  <td data-label={content.columns.scholar}>
+                    {submission.scholar ? (
+                      <a
+                        className={styles.profileLink}
+                        href={submission.scholar.url}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {submission.scholar.id}
+                      </a>
+                    ) : (
+                      <span className={styles.emptyLink}>
+                        {content.emptyLinkLabel}
+                      </span>
+                    )}
                   </td>
                   <td data-label={content.columns.status}>
                     <AutomationStatusBadge

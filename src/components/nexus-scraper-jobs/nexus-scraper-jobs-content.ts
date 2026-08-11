@@ -1,6 +1,5 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
-import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type ScraperJobAttempt = {
@@ -16,12 +15,9 @@ export type ScraperJobAttempt = {
 export type ScraperJobSummary = {
   candidateCount: string;
   createdAtLabel: string;
+  fullName: string;
   id: string;
-  normalizedValue: string;
-  outcomeLabel: string;
   progressLabel: string;
-  rawInput: string;
-  retryLabel: string;
   status: AutomationJobStatus;
   statusLabel: string;
   updatedAtLabel: string;
@@ -38,20 +34,16 @@ export type NexusScraperJobsContent = {
   attemptsSubtitle: string;
   attemptsTitle: string;
   description: string;
-  eyebrow: string;
   job: ScraperJobSummary;
   jobTitle: string;
   lookupButtonLabel: string;
   lookupLabel: string;
   lookupPlaceholder: string;
-  previewLabel: string;
   summaryLabels: {
     candidates: string;
     created: string;
-    input: string;
-    outcome: string;
+    name: string;
     progress: string;
-    retries: string;
     updated: string;
   };
   title: string;
@@ -109,32 +101,26 @@ const jobsCopy = {
     ],
     attemptsSubtitle: "Empat percobaan pada dua sumber",
     attemptsTitle: "Log Percobaan",
-    description: "Status satu pengumpulan data dan log percobaannya.",
-    eyebrow: "Pengumpulan Data",
+    description: "Status pengumpulan data satu peneliti dan log percobaannya.",
     job: {
       candidateCount: "33",
       createdAtLabel: "2026-08-11 08:52",
       id: "job_01J9BF2K",
-      normalizedValue: "suksmandhira harimurti",
-      outcomeLabel: "Sebagian berhasil",
+      fullName: "Suksmandhira Harimurti",
       progressLabel: "100%",
-      rawInput: "Dr. Suksmandhira Harimurti, S.T., M.T.",
-      retryLabel: "0 dari 3",
       status: jobStatus,
       statusLabel: getAutomationStatusLabel("id", jobStatus),
       updatedAtLabel: "2026-08-11 08:56",
     },
     jobTitle: "Ringkasan Job",
     lookupButtonLabel: "Tampilkan",
-    lookupLabel: "job_id",
-    lookupPlaceholder: "job_01J9BF2K",
+    lookupLabel: "Nama peneliti",
+    lookupPlaceholder: "Suksmandhira Harimurti",
     summaryLabels: {
       candidates: "Kandidat",
       created: "Dibuat",
-      input: "Masukan",
-      outcome: "Keluaran",
+      name: "Nama",
       progress: "Progres",
-      retries: "Percobaan ulang",
       updated: "Diperbarui",
     },
     title: "Status Job",
@@ -188,32 +174,26 @@ const jobsCopy = {
     ],
     attemptsSubtitle: "Four attempts across two sources",
     attemptsTitle: "Attempt Log",
-    description: "Status of one data collection and its attempt log.",
-    eyebrow: "Data Collection",
+    description: "Collection status for one researcher and its attempt log.",
     job: {
       candidateCount: "33",
       createdAtLabel: "2026-08-11 08:52",
       id: "job_01J9BF2K",
-      normalizedValue: "suksmandhira harimurti",
-      outcomeLabel: "Partially succeeded",
+      fullName: "Suksmandhira Harimurti",
       progressLabel: "100%",
-      rawInput: "Dr. Suksmandhira Harimurti, S.T., M.T.",
-      retryLabel: "0 of 3",
       status: jobStatus,
       statusLabel: getAutomationStatusLabel("en", jobStatus),
       updatedAtLabel: "2026-08-11 08:56",
     },
     jobTitle: "Job Summary",
     lookupButtonLabel: "Show",
-    lookupLabel: "job_id",
-    lookupPlaceholder: "job_01J9BF2K",
+    lookupLabel: "Researcher name",
+    lookupPlaceholder: "Suksmandhira Harimurti",
     summaryLabels: {
       candidates: "Candidates",
       created: "Created",
-      input: "Input",
-      outcome: "Outcome",
+      name: "Name",
       progress: "Progress",
-      retries: "Retries",
       updated: "Updated",
     },
     title: "Job Status",
@@ -229,6 +209,5 @@ export function getNexusScraperJobsContent(
 ): NexusScraperJobsContent {
   return {
     ...jobsCopy[locale],
-    previewLabel: getWorkspacePreviewLabel(locale),
   };
 }

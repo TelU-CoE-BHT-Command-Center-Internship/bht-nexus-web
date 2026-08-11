@@ -1,18 +1,48 @@
+"use client";
+
 import { AutomationStatusBadge } from "@/components/nexus-automation-status/nexus-automation-status";
 import styles from "@/components/nexus-rag-library/nexus-rag-library.module.css";
-import type { NexusRagLibraryContent } from "@/components/nexus-rag-library/nexus-rag-library-content";
+import type {
+  NexusRagLibraryContent,
+  RagDocument,
+} from "@/components/nexus-rag-library/nexus-rag-library-content";
 import {
   WorkspacePage,
   WorkspacePageHeader,
   WorkspacePanel,
 } from "@/components/nexus-workspace-page/nexus-workspace-page";
 import shell from "@/components/nexus-workspace-page/nexus-workspace-page.module.css";
+import {
+  SortableColumn,
+  useTableSort,
+} from "@/components/nexus-workspace-page/nexus-workspace-sort";
+
+type SortKey = "indexedAt" | "owner" | "status" | "title";
 
 type NexusRagLibraryProps = {
   content: NexusRagLibraryContent;
 };
 
+function readDocument(document: RagDocument, key: SortKey) {
+  if (key === "owner") {
+    return document.ownerUnit;
+  }
+
+  if (key === "status") {
+    return document.statusLabel;
+  }
+
+  if (key === "indexedAt") {
+    return document.indexedLabel;
+  }
+
+  return document.title;
+}
+
 export function NexusRagLibrary({ content }: NexusRagLibraryProps) {
+  const { sort, sortRows, toggle } = useTableSort<SortKey>("indexedAt");
+  const documents = sortRows(content.documents, readDocument);
+
   return (
     <WorkspacePage>
       <WorkspacePageHeader
@@ -25,29 +55,46 @@ export function NexusRagLibrary({ content }: NexusRagLibraryProps) {
           </>
         }
         description={content.description}
-        eyebrow={content.eyebrow}
-        previewLabel={content.previewLabel}
         title={content.title}
       />
 
-      <WorkspacePanel
-        flush
-        id="rag-library-documents"
-        subtitle={content.tableSubtitle}
-        title={content.tableTitle}
-      >
+      <WorkspacePanel flush id="rag-library-documents" label={content.title}>
         <div className={shell.tableWrap}>
           <table className={shell.table}>
             <thead>
               <tr>
-                <th scope="col">{content.columns.document}</th>
-                <th scope="col">{content.columns.owner}</th>
-                <th scope="col">{content.columns.status}</th>
-                <th scope="col">{content.columns.indexedAt}</th>
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.columns.document}
+                  onSort={toggle}
+                  sortKey="title"
+                />
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.columns.owner}
+                  onSort={toggle}
+                  sortKey="owner"
+                />
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.columns.status}
+                  onSort={toggle}
+                  sortKey="status"
+                />
+                <SortableColumn
+                  activeKey={sort.key}
+                  direction={sort.direction}
+                  label={content.columns.indexedAt}
+                  onSort={toggle}
+                  sortKey="indexedAt"
+                />
               </tr>
             </thead>
             <tbody>
-              {content.documents.map((document) => (
+              {documents.map((document) => (
                 <tr key={document.id}>
                   <th scope="row">
                     {document.title}

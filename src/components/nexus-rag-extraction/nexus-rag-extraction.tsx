@@ -17,8 +17,6 @@ export function NexusRagExtraction({ content }: NexusRagExtractionProps) {
     <WorkspacePage>
       <WorkspacePageHeader
         description={content.description}
-        eyebrow={content.eyebrow}
-        previewLabel={content.previewLabel}
         title={content.title}
       />
 

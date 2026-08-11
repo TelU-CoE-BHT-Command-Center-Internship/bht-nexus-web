@@ -1,4 +1,3 @@
-import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type ExtractionProfileOption = {
@@ -30,13 +29,11 @@ export type NexusRagExtractionContent = {
   description: string;
   documentMeta: string;
   documentTitle: string;
-  eyebrow: string;
   fields: ExtractionField[];
   fieldsSubtitle: string;
   fieldsTitle: string;
   notFoundLabel: string;
   pageLabel: string;
-  previewLabel: string;
   profileLabel: string;
   profileOptions: ExtractionProfileOption[];
   rejectLabel: string;
@@ -52,7 +49,6 @@ const extractionCopy = {
     description: "Kandidat isian dari satu dokumen.",
     documentMeta: "PDF · 12 halaman · job_01J8K2R4 · diproses 2026-08-08 09:12",
     documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
-    eyebrow: "Tanya Jawab Dokumen",
     fields: [
       {
         decision: "accepted",
@@ -153,7 +149,6 @@ const extractionCopy = {
     description: "Field candidates from one document.",
     documentMeta: "PDF · 12 pages · job_01J8K2R4 · processed 2026-08-08 09:12",
     documentTitle: "Perjanjian Penugasan Hibah Penelitian 2026",
-    eyebrow: "Document Q&A",
     fields: [
       {
         decision: "accepted",
@@ -255,6 +250,5 @@ export function getNexusRagExtractionContent(
 ): NexusRagExtractionContent {
   return {
     ...extractionCopy[locale],
-    previewLabel: getWorkspacePreviewLabel(locale),
   };
 }

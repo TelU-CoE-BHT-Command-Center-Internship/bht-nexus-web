@@ -1,6 +1,5 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
-import { getWorkspacePreviewLabel } from "@/components/nexus-workspace-page/nexus-workspace-page-content";
 import type { Locale } from "@/i18n/locales";
 
 export type RagDocument = {
@@ -24,10 +23,6 @@ export type NexusRagLibraryContent = {
   };
   description: string;
   documents: RagDocument[];
-  eyebrow: string;
-  previewLabel: string;
-  tableSubtitle: string;
-  tableTitle: string;
   title: string;
   uploadLabel: string;
   uploadNote: string;
@@ -126,9 +121,6 @@ const libraryCopy = {
       status: "Status",
     },
     description: "Dokumen internal CoE BHT dan status pemrosesannya.",
-    eyebrow: "Tanya Jawab Dokumen",
-    tableSubtitle: "Enam terbaru",
-    tableTitle: "Dokumen",
     title: "Pustaka Dokumen",
     uploadLabel: "Unggah dokumen",
     uploadNote: "PDF atau DOCX, maksimal 25 MB",
@@ -141,17 +133,11 @@ const libraryCopy = {
       status: "Status",
     },
     description: "Internal CoE BHT documents and their processing status.",
-    eyebrow: "Document Q&A",
-    tableSubtitle: "Six most recent",
-    tableTitle: "Documents",
     title: "Document Library",
     uploadLabel: "Upload document",
     uploadNote: "PDF or DOCX, up to 25 MB",
   },
-} satisfies Record<
-  Locale,
-  Omit<NexusRagLibraryContent, "documents" | "previewLabel">
->;
+} satisfies Record<Locale, Omit<NexusRagLibraryContent, "documents">>;
 
 /**
  * Presentation-ready document library. A server adapter can replace the seeded
@@ -173,6 +159,5 @@ export function getNexusRagLibraryContent(
       statusLabel: getAutomationStatusLabel(locale, seed.status),
       title: seed.title,
     })),
-    previewLabel: getWorkspacePreviewLabel(locale),
   };
 }
