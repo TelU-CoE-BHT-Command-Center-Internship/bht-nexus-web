@@ -127,7 +127,7 @@ export const nexusDashboardPreviewViewer = {
 } satisfies DashboardViewer;
 
 const previewSession = {
-  availableRoutes: new Set(["/nexus/dashboard"]),
+  availableRoutes: new Set(["/nexus/dashboard", "/nexus/tinjauan"]),
   permissions: new Set<DashboardPermission>([
     "administration:read",
     "dashboard:read",
@@ -192,7 +192,7 @@ export function getNexusDashboardShellPreviewContent(): NexusDashboardShellConte
     notifications: [
       {
         detail: "Satu kandidat publikasi perlu diperiksa.",
-        id: "publication-review-preview",
+        id: "publication-review-decision",
         timeLabel: "Baru saja",
         title: "Publikasi baru menunggu tinjauan",
       },

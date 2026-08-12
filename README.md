@@ -21,7 +21,7 @@ Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfo
 
 ## Status Saat Ini
 
-Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk dan pratinjau dashboard juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
+Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk, dashboard, dan halaman Tinjauan juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
 
 Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi berita, kegiatan, dan mitra masih akan dilengkapi atau disesuaikan setelah tim mengonfirmasi data resminya.
 
@@ -41,7 +41,8 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Bagian landing page lanjutan | Dalam pengembangan |
 | Halaman institusional lanjutan dan konten final | Dalam pengembangan |
 | Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
-| Pratinjau dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data pratinjau |
+| Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
+| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; pencarian, filter, tabel, pagination, perbandingan data, catatan reviewer, dan keputusan berjalan pada state frontend |
 | Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
 | Deployment | Belum menjadi cakupan saat ini |
@@ -113,7 +114,8 @@ Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan inte
 | `/en/nexus` | Inggris | Pengarah menuju halaman masuk BHT Nexus |
 | `/nexus/masuk` | Indonesia | Antarmuka masuk BHT Nexus |
 | `/en/nexus/sign-in` | Inggris | Antarmuka masuk BHT Nexus |
-| `/nexus/dashboard` | Indonesia | Pratinjau dashboard ruang kerja BHT Nexus |
+| `/nexus/dashboard` | Indonesia | Dashboard ruang kerja BHT Nexus |
+| `/nexus/tinjauan` | Indonesia | Tinjauan kandidat data sebelum menjadi data resmi BHT Nexus |
 
 Landing page saat ini mencakup:
 
@@ -128,7 +130,7 @@ Landing page saat ini mencakup:
 
 Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan informasi mitra dan bagian lanjutan setelah data resmi dikonfirmasi. Pengembangan ruang kerja BHT Nexus juga berlanjut melalui penyempurnaan antarmuka per fitur, penyesuaian berbasis peran, serta integrasi autentikasi dan data server. Pekerjaan tahap awalnya dilacak melalui [issue #1](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/issues/1).
 
-### Pratinjau Ruang Kerja BHT Nexus
+### Ruang Kerja BHT Nexus
 
 Fondasi ruang kerja saat ini mencakup:
 
@@ -139,9 +141,12 @@ Fondasi ruang kerja saat ini mencakup:
 - aktivitas terbaru serta program unggulan dengan carousel dan pratinjau poster penuh;
 - grafik aktivitas riset yang tetap dapat dibaca melalui tabel aksesibel;
 - daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
+- halaman Tinjauan dengan source tabs SINTA, Scopus, dan Manual, pencarian, filter, sorting, pemilihan baris, serta pagination;
+- rincian kandidat dalam drawer responsif yang membandingkan data kandidat dengan data resmi secara kualitatif;
+- catatan reviewer dan keputusan Setujui, Minta Perbaikan, atau Tolak yang langsung memperbarui status serta riwayat kandidat pada state frontend;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
 
-Metrik dashboard saat ini masih menggunakan data contoh terpusat untuk memvalidasi presentasi antarmuka dan belum mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial karena autentikasi server belum tersedia pada tahap ini.
+Metrik dashboard dan kandidat Tinjauan saat ini menggunakan data terstruktur yang disimpan terpusat untuk memvalidasi presentasi serta interaksi antarmuka. Data tersebut belum mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial dan keputusan Tinjauan belum dipersistenkan karena autentikasi serta integrasi server belum tersedia pada tahap ini.
 
 ## Menjalankan Proyek
 
