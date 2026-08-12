@@ -359,11 +359,6 @@
   box-shadow: 0 0 0 0.2rem rgb(215 25 63 / 11%);
 }
 
-.optionTone[data-tone="ready"] {
-  background: #128a4a;
-  box-shadow: 0 0 0 0.2rem rgb(18 138 74 / 12%);
-}
-
 .optionTone[data-tone="completed"] {
   background: #315ca8;
   box-shadow: 0 0 0 0.2rem rgb(49 92 168 / 11%);

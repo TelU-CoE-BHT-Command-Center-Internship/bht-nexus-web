@@ -44,7 +44,6 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
           {
             completed: "Tinjauan diselesaikan",
             "needs-fix": "Perbaikan diminta",
-            ready: "Kandidat siap diputuskan",
             waiting: "Menunggu Tinjauan",
           }[status];
 

@@ -4,11 +4,7 @@ import {
 } from "@/components/nexus-review-summary/nexus-review-filters-content";
 import type { ReviewCandidateStatus } from "@/components/nexus-review-summary/nexus-review-table-content";
 
-export type ReviewSummaryIconName =
-  | "check-circle"
-  | "clock"
-  | "edit"
-  | "review-complete";
+export type ReviewSummaryIconName = "clock" | "edit" | "review-complete";
 
 export type ReviewSummaryCard = {
   icon: ReviewSummaryIconName;
@@ -44,14 +40,6 @@ const summaryCards: ReviewSummaryCard[] = [
     unit: "data",
   },
   {
-    icon: "check-circle",
-    id: "ready",
-    label: "Siap Diputuskan",
-    status: "ready",
-    tone: "ready",
-    unit: "data",
-  },
-  {
     icon: "review-complete",
     id: "completed",
     label: "Selesai Ditinjau",
@@ -62,7 +50,7 @@ const summaryCards: ReviewSummaryCard[] = [
 ];
 
 /**
- * Presentation-ready review totals. A server adapter can supply this same
+ * Presentation-oriented review totals. A server adapter can supply this same
  * contract later without changing the summary component or its layout.
  */
 export function getNexusReviewSummaryContent(): NexusReviewSummaryContent {

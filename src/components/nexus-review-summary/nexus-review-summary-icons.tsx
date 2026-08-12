@@ -20,13 +20,6 @@ function IconPaths({ name }: NexusReviewSummaryIconProps) {
           <path d="m9 15 1.1-3.65L17.35 4.1a1.63 1.63 0 0 1 2.3 2.3l-7.25 7.25L9 15Z" />
         </>
       );
-    case "check-circle":
-      return (
-        <>
-          <circle cx="12" cy="12" r="8.5" />
-          <path d="m8.2 12.1 2.45 2.45 5.2-5.2" />
-        </>
-      );
     case "review-complete":
       return (
         <>

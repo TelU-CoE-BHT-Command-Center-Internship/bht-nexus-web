@@ -42,7 +42,7 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Halaman institusional lanjutan dan konten final | Dalam pengembangan |
 | Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
 | Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
-| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; pencarian, filter, tabel, pagination, perbandingan data, catatan reviewer, dan keputusan berjalan pada state frontend |
+| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; pencarian, filter, tabel, pagination, perbandingan data, alur tiga status, catatan reviewer, dan hasil keputusan berjalan pada state frontend |
 | Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
 | Deployment | Belum menjadi cakupan saat ini |
@@ -143,7 +143,8 @@ Fondasi ruang kerja saat ini mencakup:
 - daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
 - halaman Tinjauan dengan tab sumber SINTA, Google Scholar, Dokumen, dan Manual, pencarian, filter, pengurutan, serta pagination;
 - rincian kandidat dalam drawer responsif untuk memeriksa data kandidat, rekam resmi terkait, perbandingan per bidang, anggota terkait, bukti, sumber, dan jejak pengambilan data;
-- keputusan Hubungkan ke rekam resmi, Setujui sebagai data baru, Minta Perbaikan, atau Tolak yang selalu meminta alasan dan langsung memperbarui status serta riwayat kandidat pada state frontend;
+- alur Tinjauan dengan status Menunggu Tinjauan, Perlu Perbaikan, dan Selesai Ditinjau; hasil Setujui sebagai data baru, Hubungkan ke rekam resmi, atau Tolak ditampilkan terpisah agar status proses dan hasil akhirnya tidak rancu;
+- keputusan tanpa pilihan awal, alasan wajib, serta pemeriksaan DOI terhadap seluruh rekam pembanding sebelum kandidat dapat dihubungkan; Minta Perbaikan tetap tersedia untuk mengembalikan kandidat ke pemilik data;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
 
 Metrik dashboard dan kandidat Tinjauan saat ini menggunakan data terstruktur yang disimpan terpusat untuk memvalidasi presentasi serta interaksi antarmuka. Data tersebut belum mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial dan keputusan Tinjauan belum dipersistenkan karena autentikasi serta integrasi server belum tersedia pada tahap ini.

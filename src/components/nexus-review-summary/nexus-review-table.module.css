@@ -193,13 +193,20 @@
   background: #fff0e8;
   color: #b1461b;
 }
-.statusBadge[data-tone="ready"] {
-  background: #eaf8f1;
-  color: #087a58;
-}
 .statusBadge[data-tone="completed"] {
   background: #eaf1fc;
   color: #315ca8;
+}
+.statusGroup {
+  align-items: start;
+  display: grid;
+  gap: 0.3rem;
+  justify-items: start;
+}
+.statusGroup > small {
+  color: #667085;
+  font-size: 0.59rem;
+  line-height: 1.35;
 }
 
 .duplicateSignal {
@@ -511,6 +518,10 @@
     flex-wrap: wrap;
     gap: 0.4rem;
     justify-content: space-between;
+  }
+  .mobileCardTop .statusGroup {
+    justify-items: end;
+    text-align: right;
   }
   .mobileCard h4 {
     color: #1d2939;

@@ -30,8 +30,6 @@ type NexusReviewDetailProps = {
 
 type ReviewDecisionMode = "create" | "merge";
 
-const finalStatuses: readonly ReviewCandidateStatus[] = ["completed"];
-
 function CloseIcon() {
   return (
     <svg aria-hidden="true" fill="none" viewBox="0 0 20 20">
@@ -79,6 +77,12 @@ function ProvenanceCard({
     official: "Data resmi",
     scraper: "Scraper",
   }[source.kind];
+  const unavailableSourceLabel = {
+    document: "Dokumen internal tanpa tautan publik.",
+    manual: "Input manual tidak memiliki tautan sumber.",
+    official: "Sumber internal tanpa tautan publik.",
+    scraper: "Tautan rekam sumber belum tersedia.",
+  }[source.kind];
 
   return (
     <article className={styles.provenanceCard}>
@@ -109,7 +113,7 @@ function ProvenanceCard({
             Buka sumber <ExternalLinkIcon />
           </a>
         ) : (
-          <span>Sumber internal tanpa tautan publik.</span>
+          <span>{unavailableSourceLabel}</span>
         )}
       </div>
 
@@ -138,6 +142,14 @@ function ProvenanceCard({
 
 function getVisibleValue(value: string | undefined, fallback: string) {
   return value?.trim() || fallback;
+}
+
+function normalizeDoi(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase("en-US")
+    .replace(/^doi:\s*/, "")
+    .replace(/^https?:\/\/(?:dx\.)?doi\.org\//, "");
 }
 
 function ComparisonField({
@@ -205,19 +217,22 @@ export function NexusReviewDetail({
   const [selectedMatchId, setSelectedMatchId] = useState(
     candidate.matches[0]?.id ?? "",
   );
-  const [decisionMode, setDecisionMode] = useState<ReviewDecisionMode>(
-    candidate.matches.length > 0 ? "merge" : "create",
+  const [decisionMode, setDecisionMode] = useState<ReviewDecisionMode | null>(
+    null,
   );
   const [showRejectConfirmation, setShowRejectConfirmation] = useState(false);
   const selectedMatch =
     candidate.matches.find((match) => match.id === selectedMatchId) ??
     candidate.matches[0];
-  const isFinal = finalStatuses.includes(candidate.status);
+  const isFinal = candidate.status === "completed";
   const hasReviewerNote = candidate.reviewerNote.trim().length > 0;
-  const hasExactIdentifier =
-    selectedMatch?.verdict === "exact" ||
-    selectedMatch?.verdict === "same-identifier";
-  const canCreateNew = !selectedMatch || !hasExactIdentifier;
+  const candidateDoi = normalizeDoi(candidate.record.doi);
+  const hasBlockingIdentifier =
+    candidateDoi.length > 0 &&
+    candidate.matches.some(
+      (match) => normalizeDoi(match.officialRecord.doi) === candidateDoi,
+    );
+  const canCreateNew = !hasBlockingIdentifier;
   const comparisonSummary = selectedMatch
     ? selectedMatch.comparisons.reduce(
         (summary, comparison) => {
@@ -290,10 +305,6 @@ export function NexusReviewDetail({
 
   const chooseMatch = (match: ReviewOfficialMatch) => {
     setSelectedMatchId(match.id);
-
-    if (match.verdict === "exact" || match.verdict === "same-identifier") {
-      setDecisionMode("merge");
-    }
   };
 
   const finishDecision = (
@@ -322,14 +333,18 @@ export function NexusReviewDetail({
   };
 
   const approveCandidate = () => {
-    if (!hasReviewerNote || (decisionMode === "merge" && !selectedMatch))
+    if (
+      !hasReviewerNote ||
+      !decisionMode ||
+      (decisionMode === "merge" && !selectedMatch)
+    )
       return;
 
     if (decisionMode === "merge" && selectedMatch) {
       finishDecision("completed", {
         decision: "merged",
-        detail: `Kandidat digabungkan ke ${selectedMatch.id}. ${candidate.reviewerNote.trim()}`,
-        label: "Kandidat digabungkan",
+        detail: `Kandidat dihubungkan ke ${selectedMatch.id}. ${candidate.reviewerNote.trim()}`,
+        label: "Dihubungkan ke rekam resmi",
       });
       return;
     }
@@ -480,10 +495,9 @@ export function NexusReviewDetail({
               className={styles.finalState}
               data-tone={candidate.status}
             >
-              <strong>
-                Keputusan final: {reviewStatusLabels[candidate.status]}
-              </strong>
+              <strong>Status: {reviewStatusLabels[candidate.status]}</strong>
               <span>
+                Hasil:{" "}
                 {candidate.decision
                   ? reviewDecisionLabels[candidate.decision]
                   : "Keputusan akhir belum tersedia."}{" "}
@@ -743,7 +757,7 @@ export function NexusReviewDetail({
                       <small>
                         {canCreateNew
                           ? "Buat rekam resmi baru dari kandidat ini."
-                          : "Tidak tersedia karena DOI identik dengan rekam resmi terpilih."}
+                          : "Tidak tersedia karena DOI identik ditemukan pada salah satu rekam resmi terkait."}
                       </small>
                     </span>
                   </label>
@@ -832,14 +846,17 @@ export function NexusReviewDetail({
                       className={styles.approveButton}
                       disabled={
                         !hasReviewerNote ||
+                        !decisionMode ||
                         (decisionMode === "merge" && !selectedMatch)
                       }
                       onClick={approveCandidate}
                       type="button"
                     >
                       {decisionMode === "merge"
-                        ? "Hubungkan kandidat"
-                        : "Setujui data baru"}
+                        ? "Hubungkan ke rekam resmi"
+                        : decisionMode === "create"
+                          ? "Setujui data baru"
+                          : "Pilih keputusan"}
                     </button>
                   </div>
                 )}

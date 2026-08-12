@@ -10,7 +10,7 @@ export type ReviewSourceFilter = {
 
 export type ReviewFilterOption = {
   label: string;
-  tone?: "completed" | "needs-fix" | "neutral" | "ready" | "waiting";
+  tone?: "completed" | "needs-fix" | "neutral" | "waiting";
   value: string;
 };
 
@@ -52,11 +52,6 @@ const filters: readonly ReviewSelectFilter[] = [
         value: "waiting",
       },
       { label: "Perlu Perbaikan", tone: "needs-fix", value: "needs-fix" },
-      {
-        label: "Siap Diputuskan",
-        tone: "ready",
-        value: "ready",
-      },
       {
         label: "Selesai Ditinjau",
         tone: "completed",

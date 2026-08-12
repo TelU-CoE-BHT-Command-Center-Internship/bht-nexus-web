@@ -31,7 +31,7 @@
 .summaryGrid {
   display: grid;
   min-width: 0;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(0.8rem, 1.25vw, 1.15rem);
   margin-top: clamp(1.8rem, 2.4vw, 2.35rem);
 }
@@ -55,11 +55,6 @@
 .summaryCard[data-tone="needs-fix"] {
   --summary-color: var(--color-brand-red);
   --summary-soft: #ffe5e9;
-}
-
-.summaryCard[data-tone="ready"] {
-  --summary-color: #128a4a;
-  --summary-soft: #e3f4e9;
 }
 
 .summaryCard[data-tone="completed"] {
@@ -124,9 +119,9 @@
   line-height: 1.2;
 }
 
-@media (max-width: 68rem) {
+@media (max-width: 44rem) {
   .summaryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

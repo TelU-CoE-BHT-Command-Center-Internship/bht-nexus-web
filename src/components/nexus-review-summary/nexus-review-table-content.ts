@@ -6,11 +6,7 @@ export type ReviewCandidateSource =
   | "Manual"
   | "SINTA";
 
-export type ReviewCandidateStatus =
-  | "completed"
-  | "needs-fix"
-  | "ready"
-  | "waiting";
+export type ReviewCandidateStatus = "completed" | "needs-fix" | "waiting";
 
 export type ReviewDecision = "approved-new" | "merged" | "rejected";
 
@@ -136,7 +132,6 @@ export type ReviewCandidateRow = {
   relatedMembers: readonly ReviewMember[];
   reviewerNote: string;
   source: ReviewCandidateSource;
-  sourceHref?: string;
   status: ReviewCandidateStatus;
   timeline: readonly ReviewTimelineEntry[];
   version: string;
@@ -168,13 +163,12 @@ export type NexusReviewTableContent = {
 export const reviewStatusLabels: Record<ReviewCandidateStatus, string> = {
   completed: "Selesai Ditinjau",
   "needs-fix": "Perlu Perbaikan",
-  ready: "Siap Diputuskan",
   waiting: "Menunggu Tinjauan",
 };
 
 export const reviewDecisionLabels: Record<ReviewDecision, string> = {
   "approved-new": "Disetujui sebagai data baru",
-  merged: "Digabungkan ke rekam resmi",
+  merged: "Dihubungkan ke rekam resmi",
   rejected: "Ditolak",
 };
 
@@ -359,14 +353,8 @@ const sourcePool: readonly ReviewCandidateSource[] = [
 const statusPool: readonly ReviewCandidateStatus[] = [
   ...Array.from({ length: 46 }, () => "waiting" as const),
   ...Array.from({ length: 18 }, () => "needs-fix" as const),
-  ...Array.from({ length: 14 }, () => "ready" as const),
-  ...Array.from({ length: 8 }, () => "completed" as const),
+  ...Array.from({ length: 22 }, () => "completed" as const),
 ];
-
-const sourceLinks: Partial<Record<ReviewCandidateSource, string>> = {
-  "Google Scholar": "https://scholar.google.com/",
-  SINTA: "https://sinta.kemdikbud.go.id/",
-};
 
 function formatDiscoveryDate(date: Date) {
   return new Intl.DateTimeFormat("id-ID", {
@@ -393,18 +381,10 @@ function getPublicationType(index: number) {
 
 function createProvenance(
   index: number,
-  source: ReviewCandidateSource | "BHT Nexus" | "Scopus",
+  source: ReviewCandidateSource | "BHT Nexus",
   suffix: string,
 ): ReviewProvenance {
-  const isOfficial = source === "BHT Nexus" || source === "Scopus";
-  const sourceHref =
-    source === "SINTA"
-      ? "https://sinta.kemdikbud.go.id/"
-      : source === "Google Scholar"
-        ? "https://scholar.google.com/"
-        : source === "Scopus"
-          ? "https://www.scopus.com/"
-          : undefined;
+  const isOfficial = source === "BHT Nexus";
   const kind = isOfficial
     ? "official"
     : source === "Dokumen"
@@ -415,7 +395,6 @@ function createProvenance(
 
   return {
     attemptId: `ATT-${String(index + 81).padStart(5, "0")}-${suffix}`,
-    href: sourceHref,
     id: `provenance-${index}-${suffix}`,
     jobId: isOfficial
       ? `SYNC-OFF-${String(index + 41).padStart(5, "0")}`
@@ -537,7 +516,6 @@ function createMatch(
   score: number,
 ): ReviewOfficialMatch {
   const officialRecord = createOfficialRecord(record, verdict, rank);
-  const source = rank === 1 ? "Scopus" : "BHT Nexus";
 
   return {
     basis:
@@ -553,7 +531,7 @@ function createMatch(
     officialRecord,
     score,
     sources: [
-      createProvenance(index + rank, source, `M${rank + 1}`),
+      createProvenance(index + rank, "BHT Nexus", `M${rank + 1}`),
       ...(rank === 0
         ? [createProvenance(index + rank + 1, "SINTA", `M${rank + 1}B`)]
         : []),
@@ -567,10 +545,18 @@ function createMatches(
   record: ReviewRecord,
   index: number,
 ): ReviewOfficialMatch[] {
+  const hasDoi = record.doi.trim().length > 0;
+
   switch (index % 8) {
     case 0:
       return [
-        createMatch(record, index, 0, "same-identifier", 98),
+        createMatch(
+          record,
+          index,
+          0,
+          hasDoi ? "same-identifier" : "strong",
+          hasDoi ? 98 : 96,
+        ),
         createMatch(record, index, 1, "strong", 91),
         createMatch(record, index, 2, "possible", 76),
       ];
@@ -587,7 +573,13 @@ function createMatches(
       return [createMatch(record, index, 0, "possible", 72)];
     case 6:
       return [
-        createMatch(record, index, 0, "same-identifier", 97),
+        createMatch(
+          record,
+          index,
+          0,
+          hasDoi ? "same-identifier" : "strong",
+          hasDoi ? 97 : 94,
+        ),
         createMatch(record, index, 1, "possible", 80),
       ];
     default:
@@ -653,19 +645,6 @@ function createTimeline(
       label: "Perbaikan diminta",
       timeLabel: "11 Agu 2026, 09.20 WIB",
       tone: "needs-fix",
-    });
-  }
-
-  if (status === "ready") {
-    entries.push({
-      actor: "Dita Puspitasari",
-      candidateVersion: "v1",
-      detail:
-        "Metadata utama dan bukti sumber telah diperiksa; kandidat menunggu keputusan akhir reviewer berwenang.",
-      id: `timeline-${index + 1}-ready`,
-      label: "Siap diputuskan",
-      timeLabel: "11 Agu 2026, 11.10 WIB",
-      tone: "ready",
     });
   }
 
@@ -771,7 +750,6 @@ function createCandidate(index: number): ReviewCandidateRow {
     relatedMembers,
     reviewerNote,
     source,
-    sourceHref: sourceLinks[source],
     status,
     timeline: createTimeline(index, status, discoveredAt, decision),
     version: "v1",

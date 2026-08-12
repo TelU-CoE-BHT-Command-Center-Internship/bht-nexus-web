@@ -244,10 +244,6 @@
   background: #fff0e8;
   color: #b1461b;
 }
-.statusBadge[data-tone="ready"] {
-  background: #eaf8f1;
-  color: #087a58;
-}
 .statusBadge[data-tone="completed"] {
   background: #eaf1fc;
   color: #315ca8;

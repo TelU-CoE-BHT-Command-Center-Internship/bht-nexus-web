@@ -8,6 +8,7 @@ import styles from "@/components/nexus-review-summary/nexus-review-table.module.
 import {
   type NexusReviewTableContent,
   type ReviewCandidateRow,
+  reviewDecisionLabels,
   reviewMatchVerdictLabels,
   reviewStatusLabels,
 } from "@/components/nexus-review-summary/nexus-review-table-content";
@@ -122,6 +123,19 @@ function MatchSignal({ candidate }: { candidate: ReviewCandidateRow }) {
         <small>{assessment.matchCount} pembanding resmi</small>
       ) : null}
     </div>
+  );
+}
+
+function ReviewStatus({ candidate }: { candidate: ReviewCandidateRow }) {
+  return (
+    <span className={styles.statusGroup}>
+      <span className={styles.statusBadge} data-tone={candidate.status}>
+        {reviewStatusLabels[candidate.status]}
+      </span>
+      {candidate.status === "completed" && candidate.decision ? (
+        <small>{reviewDecisionLabels[candidate.decision]}</small>
+      ) : null}
+    </span>
   );
 }
 
@@ -256,12 +270,7 @@ export function NexusReviewTable({
                         </time>
                       </td>
                       <td>
-                        <span
-                          className={styles.statusBadge}
-                          data-tone={row.status}
-                        >
-                          {reviewStatusLabels[row.status]}
-                        </span>
+                        <ReviewStatus candidate={row} />
                       </td>
                       <td className={styles.actionCell}>
                         <button
@@ -292,9 +301,7 @@ export function NexusReviewTable({
                   >
                     {row.source}
                   </span>
-                  <span className={styles.statusBadge} data-tone={row.status}>
-                    {reviewStatusLabels[row.status]}
-                  </span>
+                  <ReviewStatus candidate={row} />
                 </div>
                 <h4>{row.record.title}</h4>
                 <p className={styles.mobileAuthors}>{row.record.authors}</p>
