@@ -1,20 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import {
-  type Dispatch,
-  type MouseEvent,
-  type SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useState } from "react";
 import { nexusReviewOwnerPortraits } from "@/components/nexus-review-summary/nexus-review-owner-portraits";
 import { NexusReviewSelect } from "@/components/nexus-review-summary/nexus-review-select";
 import styles from "@/components/nexus-review-summary/nexus-review-table.module.css";
 import {
   type NexusReviewTableContent,
   type ReviewCandidateRow,
+  reviewMatchVerdictLabels,
   reviewStatusLabels,
 } from "@/components/nexus-review-summary/nexus-review-table-content";
 
@@ -29,21 +23,25 @@ type NexusReviewTableProps = {
   onPageChange: (page: number) => void;
   onPageSizeChange: (value: string) => void;
   onResetFilters: () => void;
-  onSelectedIdsChange: Dispatch<SetStateAction<ReadonlySet<string>>>;
   pageSizeValue: string;
-  selectedIds: ReadonlySet<string>;
   sourceCandidateCount: number;
   totalCandidateCount: number;
 };
 
-type ReviewSelectionCheckboxProps = {
-  checked: boolean;
-  indeterminate?: boolean;
-  label: string;
-  onChange: (checked: boolean) => void;
-};
-
 type PaginationItem = number | "ellipsis-end" | "ellipsis-start";
+
+const loadingRowIds = ["row-a", "row-b", "row-c", "row-d", "row-e", "row-f"];
+const loadingCellIds = [
+  "title",
+  "type",
+  "source",
+  "risk",
+  "owner",
+  "date",
+  "status",
+  "action",
+];
+const mobileLoadingIds = ["mobile-a", "mobile-b", "mobile-c"];
 
 function ArrowIcon({ direction }: { direction: "left" | "right" }) {
   return (
@@ -58,12 +56,11 @@ function ArrowIcon({ direction }: { direction: "left" | "right" }) {
   );
 }
 
-function MoreIcon() {
+function ReviewIcon() {
   return (
-    <svg aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
-      <circle cx="10" cy="4" r="1.35" />
-      <circle cx="10" cy="10" r="1.35" />
-      <circle cx="10" cy="16" r="1.35" />
+    <svg aria-hidden="true" fill="none" viewBox="0 0 20 20">
+      <path d="M3 4.5h14v11H3zM6 8h8M6 11.5h5" />
+      <path d="m13 14.5 2-2 1.5 1.5-2 2H13z" />
     </svg>
   );
 }
@@ -74,34 +71,6 @@ function EmptyIcon() {
       <path d="M7 5.5h12l6 6v15H7z" />
       <path d="M19 5.5v6h6M11 17h10M11 21h7" />
     </svg>
-  );
-}
-
-function ReviewSelectionCheckbox({
-  checked,
-  indeterminate = false,
-  label,
-  onChange,
-}: ReviewSelectionCheckboxProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.indeterminate = indeterminate;
-    }
-  }, [indeterminate]);
-
-  return (
-    <label className={styles.checkbox}>
-      <input
-        aria-label={label}
-        checked={checked}
-        onChange={(event) => onChange(event.currentTarget.checked)}
-        ref={inputRef}
-        type="checkbox"
-      />
-      <span aria-hidden="true" />
-    </label>
   );
 }
 
@@ -139,91 +108,36 @@ function getPaginationItems(
   ];
 }
 
-const loadingRowIds = [
-  "loading-row-1",
-  "loading-row-2",
-  "loading-row-3",
-  "loading-row-4",
-  "loading-row-5",
-  "loading-row-6",
-] as const;
-
-function LoadingRows() {
-  return loadingRowIds.map((rowId) => (
-    <tr className={styles.loadingRow} key={rowId}>
-      <td>
-        <span className={styles.loadingCheckbox} />
-      </td>
-      <td>
-        <span className={styles.loadingLine} data-width="long" />
-        <span className={styles.loadingLine} data-width="medium" />
-      </td>
-      <td>
-        <span className={styles.loadingLine} data-width="short" />
-      </td>
-      <td>
-        <span className={styles.loadingPill} />
-      </td>
-      <td>
-        <span className={styles.loadingLine} data-width="medium" />
-      </td>
-      <td>
-        <span className={styles.loadingLine} data-width="short" />
-      </td>
-      <td>
-        <span className={styles.loadingPill} />
-      </td>
-      <td>
-        <span className={styles.loadingDot} />
-      </td>
-    </tr>
-  ));
-}
-
-function EmptyTableState({
-  activeSourceLabel,
-  hasActiveFilters,
-  onResetFilters,
-  sourceCandidateCount,
-  totalCandidateCount,
-}: Pick<
-  NexusReviewTableProps,
-  | "activeSourceLabel"
-  | "hasActiveFilters"
-  | "onResetFilters"
-  | "sourceCandidateCount"
-  | "totalCandidateCount"
->) {
-  const isDatasetEmpty = totalCandidateCount === 0;
-  const isSourceEmpty = !isDatasetEmpty && sourceCandidateCount === 0;
-  const title = isDatasetEmpty
-    ? "Belum ada kandidat tinjauan"
-    : isSourceEmpty
-      ? `Belum ada kandidat dari ${activeSourceLabel}`
-      : "Tidak ada hasil yang cocok";
-  const description = isDatasetEmpty
-    ? "Kandidat dari sumber eksternal atau input manual akan muncul di sini."
-    : isSourceEmpty
-      ? "Sumber ini belum memiliki kandidat yang perlu ditinjau."
-      : "Coba ubah kata pencarian atau longgarkan filter yang sedang aktif.";
+function MatchSignal({ candidate }: { candidate: ReviewCandidateRow }) {
+  const assessment = candidate.duplicateAssessment;
+  const hasComparison = assessment.highestScore > 0;
 
   return (
-    <tr>
-      <td className={styles.emptyCell} colSpan={8}>
-        <div className={styles.emptyState}>
-          <span aria-hidden="true" className={styles.emptyIcon}>
-            <EmptyIcon />
-          </span>
-          <strong>{title}</strong>
-          <p>{description}</p>
-          {hasActiveFilters ? (
-            <button onClick={onResetFilters} type="button">
-              Atur ulang filter
-            </button>
-          ) : null}
-        </div>
-      </td>
-    </tr>
+    <div className={styles.duplicateSignal} data-tone={assessment.verdict}>
+      <div className={styles.matchSignalMain}>
+        <strong>{hasComparison ? `${assessment.highestScore}%` : "—"}</strong>
+        <span>{reviewMatchVerdictLabels[assessment.verdict]}</span>
+      </div>
+      {hasComparison ? (
+        <small>{assessment.matchCount} pembanding resmi</small>
+      ) : null}
+    </div>
+  );
+}
+
+function LoadingRows() {
+  return (
+    <>
+      {loadingRowIds.map((rowId) => (
+        <tr className={styles.loadingRow} key={rowId}>
+          {loadingCellIds.map((cellId) => (
+            <td key={`${rowId}-${cellId}`}>
+              <span />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
   );
 }
 
@@ -238,120 +152,54 @@ export function NexusReviewTable({
   onPageChange,
   onPageSizeChange,
   onResetFilters,
-  onSelectedIdsChange,
   pageSizeValue,
-  selectedIds,
   sourceCandidateCount,
   totalCandidateCount,
 }: NexusReviewTableProps) {
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
-  const pageSize = Number.parseInt(pageSizeValue, 10);
+  const pageSize = Number(pageSizeValue);
   const totalPages = Math.max(1, Math.ceil(candidates.length / pageSize));
   const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
   const startIndex = (safeCurrentPage - 1) * pageSize;
   const visibleRows = candidates.slice(startIndex, startIndex + pageSize);
   const endIndex = Math.min(startIndex + visibleRows.length, candidates.length);
-  const visibleIds = visibleRows.map((row) => row.id);
-  const selectedVisibleCount = visibleIds.reduce(
-    (count, id) => count + (selectedIds.has(id) ? 1 : 0),
-    0,
-  );
-  const allVisibleSelected =
-    visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
-  const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
   const paginationItems = getPaginationItems(safeCurrentPage, totalPages);
-  const selectedCount = candidates.reduce(
-    (count, candidate) => count + (selectedIds.has(candidate.id) ? 1 : 0),
-    0,
-  );
-
-  const toggleVisibleRows = (checked: boolean) => {
-    onSelectedIdsChange((currentIds) => {
-      const nextIds = new Set(currentIds);
-
-      for (const id of visibleIds) {
-        if (checked) {
-          nextIds.add(id);
-        } else {
-          nextIds.delete(id);
-        }
-      }
-
-      return nextIds;
-    });
-  };
-
-  const toggleRow = (id: string, checked: boolean) => {
-    onSelectedIdsChange((currentIds) => {
-      const nextIds = new Set(currentIds);
-
-      if (checked) {
-        nextIds.add(id);
-      } else {
-        nextIds.delete(id);
-      }
-
-      return nextIds;
-    });
-  };
 
   const changePage = (page: number) => {
     onPageChange(Math.min(Math.max(page, 1), totalPages));
   };
 
-  const openRowFromPointer = (
-    event: MouseEvent<HTMLTableRowElement>,
-    candidateId: string,
-  ) => {
-    if (
-      event.target instanceof HTMLElement &&
-      event.target.closest("button, input, label, a")
-    ) {
-      return;
-    }
-
-    onOpenCandidate(candidateId);
-  };
-
   return (
-    <section
-      aria-busy={isLoading}
-      aria-label={content.caption}
-      className={styles.tableSection}
-    >
-      <p aria-live="polite" className={styles.visuallyHidden}>
-        {isLoading ? "Menyiapkan data tinjauan" : "Data tinjauan siap"}
-      </p>
-      <div className={styles.tableFrame}>
-        <div className={styles.tableScroll}>
+    <section aria-labelledby="review-queue-title" className={styles.section}>
+      <header className={styles.sectionHeader}>
+        <div>
+          <h3 id="review-queue-title">Antrean tinjauan</h3>
+          <p>
+            {activeSourceLabel}: {candidates.length} sesuai filter dari{" "}
+            {sourceCandidateCount} kandidat sumber
+          </p>
+        </div>
+        <p className={styles.guidance}>
+          Sinyal membantu menemukan rekam terkait; reviewer tetap memeriksa
+          metadata, sumber, dan bukti sebelum mengambil keputusan.
+        </p>
+      </header>
+
+      <div className={styles.tableShell}>
+        <div className={styles.desktopTable}>
           <table>
-            <caption>{content.caption}</caption>
-            <colgroup>
-              <col className={styles.selectionColumn} />
-              <col className={styles.titleColumn} />
-              <col className={styles.typeColumn} />
-              <col className={styles.sourceColumn} />
-              <col className={styles.ownerColumn} />
-              <col className={styles.dateColumn} />
-              <col className={styles.statusColumn} />
-              <col className={styles.actionColumn} />
-            </colgroup>
+            <caption className={styles.visuallyHidden}>
+              {content.caption}
+            </caption>
             <thead>
               <tr>
-                <th scope="col">
-                  <ReviewSelectionCheckbox
-                    checked={allVisibleSelected}
-                    indeterminate={someVisibleSelected}
-                    label={content.selectAllLabel}
-                    onChange={toggleVisibleRows}
-                  />
-                </th>
-                <th scope="col">{content.columns.title}</th>
-                <th scope="col">{content.columns.publicationType}</th>
-                <th scope="col">{content.columns.source}</th>
-                <th scope="col">{content.columns.owner}</th>
-                <th scope="col">{content.columns.discoveredAt}</th>
-                <th scope="col">{content.columns.status}</th>
+                <th>{content.columns.title}</th>
+                <th>{content.columns.publicationType}</th>
+                <th>{content.columns.source}</th>
+                <th>{content.columns.duplicateRisk}</th>
+                <th>{content.columns.owner}</th>
+                <th>{content.columns.discoveredAt}</th>
+                <th>{content.columns.status}</th>
                 <th className={styles.actionHeading} scope="col">
                   {content.columns.action}
                 </th>
@@ -359,123 +207,157 @@ export function NexusReviewTable({
             </thead>
             <tbody>
               {isLoading ? <LoadingRows /> : null}
-              {!isLoading && visibleRows.length === 0 ? (
-                <EmptyTableState
-                  activeSourceLabel={activeSourceLabel}
-                  hasActiveFilters={hasActiveFilters}
-                  onResetFilters={onResetFilters}
-                  sourceCandidateCount={sourceCandidateCount}
-                  totalCandidateCount={totalCandidateCount}
-                />
-              ) : null}
-              {!isLoading
-                ? visibleRows.map((row) => {
-                    const isSelected = selectedIds.has(row.id);
-
-                    return (
-                      <tr
-                        data-selected={isSelected}
-                        key={row.id}
-                        onClick={(event) => openRowFromPointer(event, row.id)}
-                      >
-                        <td>
-                          <ReviewSelectionCheckbox
-                            checked={isSelected}
-                            label={`${content.selectRowLabel}: ${row.record.title}`}
-                            onChange={(checked) => toggleRow(row.id, checked)}
+              {!isLoading && visibleRows.length > 0
+                ? visibleRows.map((row) => (
+                    <tr key={row.id}>
+                      <td className={styles.titleCell}>
+                        <button
+                          onClick={() => onOpenCandidate(row.id)}
+                          type="button"
+                        >
+                          <strong>{row.record.title}</strong>
+                          <span>{row.record.authors}</span>
+                        </button>
+                      </td>
+                      <td>
+                        <span className={styles.publicationType}>
+                          {row.publicationType}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={styles.sourceBadge}
+                          data-source={row.source.toLowerCase()}
+                        >
+                          {row.source}
+                        </span>
+                      </td>
+                      <td>
+                        <MatchSignal candidate={row} />
+                      </td>
+                      <td>
+                        <span className={styles.owner}>
+                          <Image
+                            alt=""
+                            height={32}
+                            sizes="2rem"
+                            src={nexusReviewOwnerPortraits[row.owner.portrait]}
+                            width={32}
                           />
-                        </td>
-                        <td>
-                          <button
-                            className={styles.titleButton}
-                            onClick={() => onOpenCandidate(row.id)}
-                            type="button"
-                          >
-                            <span className={styles.titleCell}>
-                              <strong>{row.record.title}</strong>
-                              <span>{row.record.authors}</span>
-                            </span>
-                          </button>
-                        </td>
-                        <td>
-                          <span className={styles.publicationType}>
-                            {row.publicationType}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            className={styles.sourceBadge}
-                            data-source={row.source.toLocaleLowerCase("id-ID")}
-                          >
-                            {row.source}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={styles.owner}>
-                            <Image
-                              alt=""
-                              height={32}
-                              sizes="2rem"
-                              src={
-                                nexusReviewOwnerPortraits[row.owner.portrait]
-                              }
-                              width={32}
-                            />
-                            <span>{row.owner.name}</span>
-                          </span>
-                        </td>
-                        <td>
-                          <time
-                            className={styles.date}
-                            dateTime={row.discoveredAtIso}
-                          >
-                            {row.discoveredAt}
-                          </time>
-                        </td>
-                        <td>
-                          <span
-                            className={styles.statusBadge}
-                            data-tone={row.status}
-                          >
-                            {reviewStatusLabels[row.status]}
-                          </span>
-                        </td>
-                        <td className={styles.actionCell}>
-                          <button
-                            aria-label={`${content.openCandidateLabel}: ${row.record.title}`}
-                            className={styles.actionButton}
-                            onClick={() => onOpenCandidate(row.id)}
-                            title={content.openCandidateLabel}
-                            type="button"
-                          >
-                            <MoreIcon />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
+                          <span>{row.owner.name}</span>
+                        </span>
+                      </td>
+                      <td>
+                        <time
+                          className={styles.date}
+                          dateTime={row.discoveredAtIso}
+                        >
+                          {row.discoveredAt}
+                        </time>
+                      </td>
+                      <td>
+                        <span
+                          className={styles.statusBadge}
+                          data-tone={row.status}
+                        >
+                          {reviewStatusLabels[row.status]}
+                        </span>
+                      </td>
+                      <td className={styles.actionCell}>
+                        <button
+                          aria-label={`${content.openCandidateLabel}: ${row.record.title}`}
+                          className={styles.actionButton}
+                          onClick={() => onOpenCandidate(row.id)}
+                          type="button"
+                        >
+                          <ReviewIcon />
+                          <span>Tinjau</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 : null}
             </tbody>
           </table>
         </div>
 
-        <footer className={styles.tableFooter}>
-          <div className={styles.rangeGroup}>
-            <p className={styles.range}>
-              {content.rangePrefix}{" "}
-              {visibleRows.length === 0 ? 0 : startIndex + 1}–{endIndex} dari{" "}
-              {candidates.length} {content.totalUnit}
+        {!isLoading ? (
+          <div className={styles.mobileList}>
+            {visibleRows.map((row) => (
+              <article className={styles.mobileCard} key={row.id}>
+                <div className={styles.mobileCardTop}>
+                  <span
+                    className={styles.sourceBadge}
+                    data-source={row.source.toLowerCase()}
+                  >
+                    {row.source}
+                  </span>
+                  <span className={styles.statusBadge} data-tone={row.status}>
+                    {reviewStatusLabels[row.status]}
+                  </span>
+                </div>
+                <h4>{row.record.title}</h4>
+                <p className={styles.mobileAuthors}>{row.record.authors}</p>
+                <MatchSignal candidate={row} />
+                <dl className={styles.mobileMeta}>
+                  <div>
+                    <dt>Jenis</dt>
+                    <dd>{row.publicationType}</dd>
+                  </div>
+                  <div>
+                    <dt>Ditemukan</dt>
+                    <dd>{row.discoveredAt}</dd>
+                  </div>
+                  <div>
+                    <dt>Pemilik</dt>
+                    <dd>{row.owner.name}</dd>
+                  </div>
+                </dl>
+                <button
+                  className={styles.mobileReviewButton}
+                  onClick={() => onOpenCandidate(row.id)}
+                  type="button"
+                >
+                  Tinjau kandidat <ArrowIcon direction="right" />
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <output aria-label="Memuat kandidat" className={styles.mobileLoading}>
+            {mobileLoadingIds.map((loadingId) => (
+              <span key={loadingId} />
+            ))}
+          </output>
+        )}
+
+        {!isLoading && visibleRows.length === 0 ? (
+          <div className={styles.emptyState}>
+            <EmptyIcon />
+            <strong>
+              {totalCandidateCount === 0
+                ? "Belum ada kandidat untuk ditinjau"
+                : "Tidak ada kandidat yang cocok"}
+            </strong>
+            <p>
+              {totalCandidateCount === 0
+                ? "Kandidat baru akan muncul setelah proses ingest atau input terkelola menghasilkan data untuk diperiksa."
+                : "Ubah kata kunci atau filter untuk melihat kandidat lain."}
             </p>
-            {selectedCount > 0 ? (
-              <button
-                className={styles.clearSelection}
-                onClick={() => onSelectedIdsChange(new Set())}
-                type="button"
-              >
-                {selectedCount} dipilih · Bersihkan
+            {hasActiveFilters ? (
+              <button onClick={onResetFilters} type="button">
+                Atur ulang filter
               </button>
             ) : null}
           </div>
+        ) : null}
+
+        <footer className={styles.tableFooter}>
+          <p className={styles.range}>
+            {content.rangePrefix}{" "}
+            {visibleRows.length === 0 ? 0 : startIndex + 1}–{endIndex} dari{" "}
+            {candidates.length} {content.totalUnit}
+          </p>
 
           <nav
             aria-label="Navigasi halaman kandidat"
@@ -492,20 +374,16 @@ export function NexusReviewTable({
             </button>
 
             <div className={styles.pageNumbers}>
-              {paginationItems.map((item) => {
-                if (typeof item !== "number") {
-                  return (
-                    <span
-                      aria-hidden="true"
-                      className={styles.ellipsis}
-                      key={item}
-                    >
-                      •••
-                    </span>
-                  );
-                }
-
-                return (
+              {paginationItems.map((item) =>
+                typeof item !== "number" ? (
+                  <span
+                    aria-hidden="true"
+                    className={styles.ellipsis}
+                    key={item}
+                  >
+                    •••
+                  </span>
+                ) : (
                   <button
                     aria-current={item === safeCurrentPage ? "page" : undefined}
                     aria-label={`${content.pageLabel} ${item}`}
@@ -517,8 +395,8 @@ export function NexusReviewTable({
                   >
                     {item}
                   </button>
-                );
-              })}
+                ),
+              )}
             </div>
 
             <button

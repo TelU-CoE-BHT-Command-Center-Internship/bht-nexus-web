@@ -27,11 +27,13 @@ function IconPaths({ name }: NexusReviewSummaryIconProps) {
           <path d="m8.2 12.1 2.45 2.45 5.2-5.2" />
         </>
       );
-    case "x-circle":
+    case "review-complete":
       return (
         <>
-          <circle cx="12" cy="12" r="8.5" />
-          <path d="m9 9 6 6M15 9l-6 6" />
+          <path d="M7 5.5h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2Z" />
+          <path d="M9 3.5h6v4H9zM8.5 12h7M8.5 16h3.25" />
+          <circle cx="17.5" cy="17.5" r="3.25" />
+          <path d="m16.2 17.55.85.85 1.7-1.7" />
         </>
       );
   }

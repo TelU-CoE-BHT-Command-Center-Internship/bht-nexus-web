@@ -141,9 +141,9 @@ Fondasi ruang kerja saat ini mencakup:
 - aktivitas terbaru serta program unggulan dengan carousel dan pratinjau poster penuh;
 - grafik aktivitas riset yang tetap dapat dibaca melalui tabel aksesibel;
 - daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
-- halaman Tinjauan dengan source tabs SINTA, Scopus, dan Manual, pencarian, filter, sorting, pemilihan baris, serta pagination;
-- rincian kandidat dalam drawer responsif yang membandingkan data kandidat dengan data resmi secara kualitatif;
-- catatan reviewer dan keputusan Setujui, Minta Perbaikan, atau Tolak yang langsung memperbarui status serta riwayat kandidat pada state frontend;
+- halaman Tinjauan dengan tab sumber SINTA, Google Scholar, Dokumen, dan Manual, pencarian, filter, pengurutan, serta pagination;
+- rincian kandidat dalam drawer responsif untuk memeriksa data kandidat, rekam resmi terkait, perbandingan per bidang, anggota terkait, bukti, sumber, dan jejak pengambilan data;
+- keputusan Hubungkan ke rekam resmi, Setujui sebagai data baru, Minta Perbaikan, atau Tolak yang selalu meminta alasan dan langsung memperbarui status serta riwayat kandidat pada state frontend;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
 
 Metrik dashboard dan kandidat Tinjauan saat ini menggunakan data terstruktur yang disimpan terpusat untuk memvalidasi presentasi serta interaksi antarmuka. Data tersebut belum mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial dan keputusan Tinjauan belum dipersistenkan karena autentikasi serta integrasi server belum tersedia pada tahap ini.

@@ -4,7 +4,6 @@ import {
   type KeyboardEvent,
   useCallback,
   useDeferredValue,
-  useEffect,
   useId,
   useMemo,
   useState,
@@ -20,13 +19,18 @@ import { NexusReviewTable } from "@/components/nexus-review-summary/nexus-review
 import type {
   ReviewCandidateRow,
   ReviewCandidateStatus,
+  ReviewStatusChangeContext,
 } from "@/components/nexus-review-summary/nexus-review-table-content";
 
 type NexusReviewFiltersProps = {
   candidates: readonly ReviewCandidateRow[];
   content: NexusReviewFiltersContent;
   onReviewerNoteChange: (candidateId: string, note: string) => void;
-  onStatusChange: (candidateId: string, status: ReviewCandidateStatus) => void;
+  onStatusChange: (
+    candidateId: string,
+    status: ReviewCandidateStatus,
+    context?: ReviewStatusChangeContext,
+  ) => void;
 };
 
 type SourceTabKeyboardEvent = KeyboardEvent<HTMLButtonElement>;
@@ -69,6 +73,10 @@ function normalizeSearchValue(value: string) {
   return value.toLocaleLowerCase("id-ID").trim();
 }
 
+function getSourceId(source: ReviewCandidateRow["source"]) {
+  return source.toLocaleLowerCase("id-ID").replaceAll(" ", "-");
+}
+
 function SearchIcon() {
   return (
     <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
@@ -100,15 +108,11 @@ export function NexusReviewFilters({
   const [filterValues, setFilterValues] = useState(() =>
     getInitialFilterValues(content.filters),
   );
-  const [isLoading, setIsLoading] = useState(true);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
   const [pageSizeValue, setPageSizeValue] = useState(
     content.table.defaultPageSize,
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const activeSource = content.sources[activeSourceIndex];
   const normalizedQuery = normalizeSearchValue(deferredSearchQuery);
@@ -116,7 +120,7 @@ export function NexusReviewFilters({
     const counts: Record<string, number> = { all: candidates.length };
 
     for (const candidate of candidates) {
-      const sourceId = candidate.source.toLocaleLowerCase("id-ID");
+      const sourceId = getSourceId(candidate.source);
       counts[sourceId] = (counts[sourceId] ?? 0) + 1;
     }
 
@@ -126,7 +130,7 @@ export function NexusReviewFilters({
     const nextCandidates = candidates.filter((candidate) => {
       const matchesSource =
         activeSource.id === "all" ||
-        candidate.source.toLocaleLowerCase("id-ID") === activeSource.id;
+        getSourceId(candidate.source) === activeSource.id;
       const matchesStatus =
         filterValues.status === "all" ||
         candidate.status === filterValues.status;
@@ -186,12 +190,6 @@ export function NexusReviewFilters({
       (filter) => filterValues[filter.id] !== filter.defaultValue,
     );
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-
-  useEffect(() => {
-    const loadingTimer = window.setTimeout(() => setIsLoading(false), 420);
-
-    return () => window.clearTimeout(loadingTimer);
-  }, []);
 
   const closeDetail = useCallback(() => setActiveCandidateId(null), []);
 
@@ -330,7 +328,7 @@ export function NexusReviewFilters({
         content={content.table}
         currentPage={currentPage}
         hasActiveFilters={hasActiveFilters}
-        isLoading={isLoading}
+        isLoading={isSearchUpdating}
         onOpenCandidate={setActiveCandidateId}
         onPageChange={setCurrentPage}
         onPageSizeChange={(value) => {
@@ -338,9 +336,7 @@ export function NexusReviewFilters({
           setCurrentPage(1);
         }}
         onResetFilters={resetFilters}
-        onSelectedIdsChange={setSelectedIds}
         pageSizeValue={pageSizeValue}
-        selectedIds={selectedIds}
         sourceCandidateCount={sourceCounts[activeSource.id] ?? 0}
         totalCandidateCount={candidates.length}
       />

@@ -57,14 +57,14 @@
   --summary-soft: #ffe5e9;
 }
 
-.summaryCard[data-tone="approved"] {
+.summaryCard[data-tone="ready"] {
   --summary-color: #128a4a;
   --summary-soft: #e3f4e9;
 }
 
-.summaryCard[data-tone="rejected"] {
-  --summary-color: #7f3545;
-  --summary-soft: #f8e9ed;
+.summaryCard[data-tone="completed"] {
+  --summary-color: #315ca8;
+  --summary-soft: #eaf1fc;
 }
 
 .iconWrap {

@@ -1,12 +1,24 @@
 import type { ReviewSelectFilter } from "@/components/nexus-review-summary/nexus-review-filters-content";
 
-export type ReviewCandidateSource = "Manual" | "SINTA" | "Scopus";
+export type ReviewCandidateSource =
+  | "Dokumen"
+  | "Google Scholar"
+  | "Manual"
+  | "SINTA";
 
 export type ReviewCandidateStatus =
-  | "approved"
+  | "completed"
   | "needs-fix"
-  | "rejected"
+  | "ready"
   | "waiting";
+
+export type ReviewDecision = "approved-new" | "merged" | "rejected";
+
+export type ReviewStatusChangeContext = {
+  decision?: ReviewDecision;
+  detail?: string;
+  label?: string;
+};
 
 export type ReviewOwnerPortrait =
   | "ammar"
@@ -38,18 +50,28 @@ export type ReviewComparisonStatus =
   | "similar"
   | "unavailable";
 
+export type ReviewMatchVerdict =
+  | "exact"
+  | "new"
+  | "possible"
+  | "same-identifier"
+  | "strong";
+
 export type ReviewFieldComparison = {
   key: ReviewRecordFieldKey;
   label: string;
+  score: number;
   status: ReviewComparisonStatus;
 };
 
 export type ReviewTimelineEntry = {
+  actor: string;
+  candidateVersion: string;
   detail: string;
   id: string;
   label: string;
   timeLabel: string;
-  tone: ReviewCandidateStatus | "neutral";
+  tone: ReviewCandidateStatus | ReviewDecision | "neutral";
 };
 
 export type ReviewMember = {
@@ -58,14 +80,56 @@ export type ReviewMember = {
   role: string;
 };
 
-export type ReviewCandidateRow = {
+export type ReviewProvenance = {
+  attemptId: string;
+  href?: string;
+  id: string;
+  jobId: string;
+  kind: "document" | "manual" | "official" | "scraper";
+  label: string;
+  parserVersion: string;
+  responseHash: string;
+  retrievedAt: string;
+  sourceKey: string;
+};
+
+export type ReviewEvidence = {
+  documentName: string;
+  id: string;
+  page: number;
+  quote: string;
+};
+
+export type ReviewOfficialMatch = {
+  basis: string;
   comparisons: readonly ReviewFieldComparison[];
+  id: string;
+  officialRecord: ReviewRecord;
+  score: number;
+  sources: readonly ReviewProvenance[];
+  updatedAt: string;
+  verdict: Exclude<ReviewMatchVerdict, "new">;
+};
+
+export type ReviewDuplicateAssessment = {
+  basis: string;
+  explanation: string;
+  highestScore: number;
+  matchCount: number;
+  verdict: ReviewMatchVerdict;
+};
+
+export type ReviewCandidateRow = {
+  decision?: ReviewDecision;
   discoveredAt: string;
   discoveredAtIso: string;
+  duplicateAssessment: ReviewDuplicateAssessment;
+  evidence: readonly ReviewEvidence[];
   id: string;
-  officialRecord: ReviewRecord | null;
+  matches: readonly ReviewOfficialMatch[];
   owner: ReviewMember;
   previousIssue?: string;
+  provenance: readonly ReviewProvenance[];
   publicationType: "Artikel Jurnal" | "Buku / Monograf" | "Prosiding";
   publicationTypeId: ReviewPublicationTypeId;
   record: ReviewRecord;
@@ -75,6 +139,7 @@ export type ReviewCandidateRow = {
   sourceHref?: string;
   status: ReviewCandidateStatus;
   timeline: readonly ReviewTimelineEntry[];
+  version: string;
 };
 
 export type NexusReviewTableContent = {
@@ -82,6 +147,7 @@ export type NexusReviewTableContent = {
   columns: {
     action: string;
     discoveredAt: string;
+    duplicateRisk: string;
     owner: string;
     publicationType: string;
     source: string;
@@ -96,24 +162,36 @@ export type NexusReviewTableContent = {
   previousPageLabel: string;
   rangePrefix: string;
   rows: readonly ReviewCandidateRow[];
-  selectAllLabel: string;
-  selectRowLabel: string;
   totalUnit: string;
 };
 
 export const reviewStatusLabels: Record<ReviewCandidateStatus, string> = {
-  approved: "Disetujui",
+  completed: "Selesai Ditinjau",
   "needs-fix": "Perlu Perbaikan",
-  rejected: "Ditolak",
+  ready: "Siap Diputuskan",
   waiting: "Menunggu Tinjauan",
+};
+
+export const reviewDecisionLabels: Record<ReviewDecision, string> = {
+  "approved-new": "Disetujui sebagai data baru",
+  merged: "Digabungkan ke rekam resmi",
+  rejected: "Ditolak",
 };
 
 export const reviewComparisonLabels: Record<ReviewComparisonStatus, string> = {
   different: "Berbeda",
   empty: "Kosong",
   same: "Sama",
-  similar: "Mirip",
-  unavailable: "Belum ada",
+  similar: "Serupa",
+  unavailable: "Tidak tersedia",
+};
+
+export const reviewMatchVerdictLabels: Record<ReviewMatchVerdict, string> = {
+  exact: "Metadata tampak sama",
+  new: "Belum ada pembanding",
+  possible: "Sebagian metadata serupa",
+  "same-identifier": "DOI sama",
+  strong: "Kecocokan metadata tinggi",
 };
 
 const owners: readonly ReviewMember[] = [
@@ -272,21 +350,22 @@ const fieldOrder: readonly ReviewRecordFieldKey[] = [
 ];
 
 const sourcePool: readonly ReviewCandidateSource[] = [
-  ...Array.from({ length: 46 }, () => "SINTA" as const),
-  ...Array.from({ length: 24 }, () => "Scopus" as const),
+  ...Array.from({ length: 34 }, () => "SINTA" as const),
+  ...Array.from({ length: 24 }, () => "Google Scholar" as const),
   ...Array.from({ length: 16 }, () => "Manual" as const),
+  ...Array.from({ length: 12 }, () => "Dokumen" as const),
 ];
 
 const statusPool: readonly ReviewCandidateStatus[] = [
   ...Array.from({ length: 46 }, () => "waiting" as const),
   ...Array.from({ length: 18 }, () => "needs-fix" as const),
-  ...Array.from({ length: 14 }, () => "approved" as const),
-  ...Array.from({ length: 8 }, () => "rejected" as const),
+  ...Array.from({ length: 14 }, () => "ready" as const),
+  ...Array.from({ length: 8 }, () => "completed" as const),
 ];
 
 const sourceLinks: Partial<Record<ReviewCandidateSource, string>> = {
+  "Google Scholar": "https://scholar.google.com/",
   SINTA: "https://sinta.kemdikbud.go.id/",
-  Scopus: "https://www.scopus.com/",
 };
 
 function formatDiscoveryDate(date: Date) {
@@ -302,22 +381,51 @@ function formatDiscoveryDate(date: Date) {
 
 function getPublicationType(index: number) {
   if (index % 11 === 10) {
-    return {
-      id: "book" as const,
-      label: "Buku / Monograf" as const,
-    };
+    return { id: "book" as const, label: "Buku / Monograf" as const };
   }
 
   if (index % 5 === 3) {
-    return {
-      id: "proceeding" as const,
-      label: "Prosiding" as const,
-    };
+    return { id: "proceeding" as const, label: "Prosiding" as const };
   }
 
+  return { id: "journal-article" as const, label: "Artikel Jurnal" as const };
+}
+
+function createProvenance(
+  index: number,
+  source: ReviewCandidateSource | "BHT Nexus" | "Scopus",
+  suffix: string,
+): ReviewProvenance {
+  const isOfficial = source === "BHT Nexus" || source === "Scopus";
+  const sourceHref =
+    source === "SINTA"
+      ? "https://sinta.kemdikbud.go.id/"
+      : source === "Google Scholar"
+        ? "https://scholar.google.com/"
+        : source === "Scopus"
+          ? "https://www.scopus.com/"
+          : undefined;
+  const kind = isOfficial
+    ? "official"
+    : source === "Dokumen"
+      ? "document"
+      : source === "Manual"
+        ? "manual"
+        : "scraper";
+
   return {
-    id: "journal-article" as const,
-    label: "Artikel Jurnal" as const,
+    attemptId: `ATT-${String(index + 81).padStart(5, "0")}-${suffix}`,
+    href: sourceHref,
+    id: `provenance-${index}-${suffix}`,
+    jobId: isOfficial
+      ? `SYNC-OFF-${String(index + 41).padStart(5, "0")}`
+      : `JOB-ING-${String(index + 71).padStart(5, "0")}`,
+    kind,
+    label: source,
+    parserVersion: kind === "document" ? "rag-parser 0.8.2" : "metadata 2.4.1",
+    responseHash: `sha256:${(index + 1147).toString(16).padStart(8, "0")}…${suffix}`,
+    retrievedAt: `${10 - (index % 4)} Agu 2026, ${String(8 + (index % 7)).padStart(2, "0")}.20 WIB`,
+    sourceKey: `publication:${index + 1041}:${suffix.toLowerCase()}`,
   };
 }
 
@@ -326,6 +434,10 @@ function getComparisonStatus(
   candidateValue: string,
   officialValue: string,
 ): ReviewComparisonStatus {
+  if (!candidateValue) {
+    return "unavailable";
+  }
+
   if (!officialValue) {
     return "empty";
   }
@@ -334,40 +446,183 @@ function getComparisonStatus(
     return "same";
   }
 
-  if (key === "authors" || key === "keywords" || key === "abstract") {
+  if (
+    key === "authors" ||
+    key === "keywords" ||
+    key === "abstract" ||
+    key === "title"
+  ) {
     return "similar";
   }
 
   return "different";
 }
 
+const comparisonScores: Record<ReviewComparisonStatus, number> = {
+  different: 38,
+  empty: 0,
+  same: 100,
+  similar: 86,
+  unavailable: 0,
+};
+
+function buildComparisons(
+  candidate: ReviewRecord,
+  official: ReviewRecord,
+): ReviewFieldComparison[] {
+  return fieldOrder.map((key) => {
+    const status = getComparisonStatus(key, candidate[key], official[key]);
+
+    return {
+      key,
+      label: fieldLabels[key],
+      score: comparisonScores[status],
+      status,
+    };
+  });
+}
+
 function createOfficialRecord(
   record: ReviewRecord,
-  index: number,
-): ReviewRecord | null {
-  if (index % 9 === 8) {
-    return null;
+  variant: "exact" | "possible" | "same-identifier" | "strong",
+  rank: number,
+): ReviewRecord {
+  if (variant === "exact") {
+    return { ...record };
+  }
+
+  if (variant === "same-identifier") {
+    return {
+      ...record,
+      abstract: rank === 0 ? "" : record.abstract,
+      affiliation: rank === 0 ? "Telkom University" : record.affiliation,
+      authors: record.authors.replace(";", "; Dr. "),
+      keywords:
+        rank === 0
+          ? record.keywords.split(";").slice(0, 3).join(";")
+          : record.keywords,
+    };
+  }
+
+  if (variant === "strong") {
+    return {
+      ...record,
+      authors: record.authors.replace(";", "; Dr. "),
+      doi: rank === 0 ? "" : record.doi.replace("bhtnexus", "bht-index"),
+      title:
+        rank === 0
+          ? record.title.replace(" untuk ", ": Pendekatan untuk ")
+          : record.title,
+    };
   }
 
   return {
-    abstract:
-      index % 4 === 0
-        ? `${record.abstract} Data resmi saat ini belum memuat rincian metode terbaru.`
-        : record.abstract,
-    affiliation: index % 6 === 0 ? "Telkom University" : record.affiliation,
-    authors:
-      index % 3 === 0 ? record.authors.replace(";", "; Dr. ") : record.authors,
-    doi: index % 8 === 0 ? "" : record.doi,
-    journal: index % 7 === 0 ? "" : record.journal,
-    keywords:
-      index % 4 === 1
-        ? record.keywords.replace(";", "; kesehatan digital;")
-        : record.keywords,
-    title:
-      index % 5 === 0
-        ? record.title.replace(" untuk ", ": Pendekatan untuk ")
-        : record.title,
-    year: index % 10 === 0 ? String(Number(record.year) - 1) : record.year,
+    ...record,
+    abstract: "",
+    affiliation: "Telkom University",
+    authors: record.authors.split(";").slice(0, 2).join(";"),
+    doi: "",
+    journal: record.journal.replace("Journal", "Proceedings"),
+    keywords: record.keywords.split(";").slice(0, 2).join(";"),
+    title: record.title.replace(" untuk ", " pada "),
+    year: String(Number(record.year) - 1),
+  };
+}
+
+function createMatch(
+  record: ReviewRecord,
+  index: number,
+  rank: number,
+  verdict: Exclude<ReviewMatchVerdict, "new">,
+  score: number,
+): ReviewOfficialMatch {
+  const officialRecord = createOfficialRecord(record, verdict, rank);
+  const source = rank === 1 ? "Scopus" : "BHT Nexus";
+
+  return {
+    basis:
+      verdict === "exact"
+        ? "Seluruh metadata yang dinormalisasi identik."
+        : verdict === "same-identifier"
+          ? "DOI identik, tetapi beberapa metadata berbeda atau belum tersedia."
+          : verdict === "strong"
+            ? "Judul dan penulis sangat mirip pada tahun publikasi yang sama."
+            : "Sebagian judul dan penulis mirip; verifikasi manual diperlukan.",
+    comparisons: buildComparisons(record, officialRecord),
+    id: `PUB-${record.year}-${String(index * 3 + rank + 4567).padStart(5, "0")}`,
+    officialRecord,
+    score,
+    sources: [
+      createProvenance(index + rank, source, `M${rank + 1}`),
+      ...(rank === 0
+        ? [createProvenance(index + rank + 1, "SINTA", `M${rank + 1}B`)]
+        : []),
+    ],
+    updatedAt: `${8 + (index % 3)} Agu 2026, 16.10 WIB`,
+    verdict,
+  };
+}
+
+function createMatches(
+  record: ReviewRecord,
+  index: number,
+): ReviewOfficialMatch[] {
+  switch (index % 8) {
+    case 0:
+      return [
+        createMatch(record, index, 0, "same-identifier", 98),
+        createMatch(record, index, 1, "strong", 91),
+        createMatch(record, index, 2, "possible", 76),
+      ];
+    case 1:
+      return [createMatch(record, index, 0, "exact", 100)];
+    case 2:
+      return [
+        createMatch(record, index, 0, "strong", 95),
+        createMatch(record, index, 1, "possible", 78),
+      ];
+    case 3:
+      return [createMatch(record, index, 0, "strong", 93)];
+    case 4:
+      return [createMatch(record, index, 0, "possible", 72)];
+    case 6:
+      return [
+        createMatch(record, index, 0, "same-identifier", 97),
+        createMatch(record, index, 1, "possible", 80),
+      ];
+    default:
+      return [];
+  }
+}
+
+function createAssessment(
+  matches: readonly ReviewOfficialMatch[],
+): ReviewDuplicateAssessment {
+  const topMatch = matches[0];
+
+  if (!topMatch) {
+    return {
+      basis:
+        "Belum ada rekam resmi terkait yang disertakan untuk dibandingkan.",
+      explanation:
+        "Periksa kelengkapan kandidat dan sumbernya sebelum menentukan apakah data ini dapat diterima sebagai rekam baru.",
+      highestScore: 0,
+      matchCount: 0,
+      verdict: "new",
+    };
+  }
+
+  return {
+    basis: topMatch.basis,
+    explanation:
+      topMatch.verdict === "exact"
+        ? "Metadata yang dibandingkan tampak sama. Pastikan konteks karya dan sumbernya sebelum memilih keputusan."
+        : topMatch.verdict === "same-identifier"
+          ? "DOI yang sama ditemukan pada rekam resmi. Periksa perbedaan metadata dan sumber sebelum menghubungkannya."
+          : `${matches.length} rekam resmi terkait tersedia untuk diperiksa; sinyal ini bukan keputusan duplikasi.`,
+    highestScore: topMatch.score,
+    matchCount: matches.length,
+    verdict: topMatch.verdict,
   };
 }
 
@@ -375,9 +630,12 @@ function createTimeline(
   index: number,
   status: ReviewCandidateStatus,
   discoveredAt: string,
+  decision?: ReviewDecision,
 ): ReviewTimelineEntry[] {
   const entries: ReviewTimelineEntry[] = [
     {
+      actor: "Sistem ingest",
+      candidateVersion: "v1",
       detail: "Kandidat masuk ke antrean dan belum mengubah data resmi.",
       id: `timeline-${index + 1}-discovered`,
       label: "Kandidat ditemukan",
@@ -388,6 +646,8 @@ function createTimeline(
 
   if (status === "needs-fix") {
     entries.push({
+      actor: "Dita Puspitasari",
+      candidateVersion: "v1",
       detail: "Afiliasi dan DOI perlu diperiksa kembali pada sumber.",
       id: `timeline-${index + 1}-needs-fix`,
       label: "Perbaikan diminta",
@@ -396,16 +656,33 @@ function createTimeline(
     });
   }
 
-  if (status === "approved" || status === "rejected") {
+  if (status === "ready") {
     entries.push({
+      actor: "Dita Puspitasari",
+      candidateVersion: "v1",
       detail:
-        status === "approved"
-          ? "Kandidat disetujui sebagai rekam resmi BHT Nexus."
-          : "Kandidat ditolak dan tetap disimpan sebagai riwayat tinjauan.",
-      id: `timeline-${index + 1}-${status}`,
-      label: status === "approved" ? "Kandidat disetujui" : "Kandidat ditolak",
+        "Metadata utama dan bukti sumber telah diperiksa; kandidat menunggu keputusan akhir reviewer berwenang.",
+      id: `timeline-${index + 1}-ready`,
+      label: "Siap diputuskan",
+      timeLabel: "11 Agu 2026, 11.10 WIB",
+      tone: "ready",
+    });
+  }
+
+  if (status === "completed" && decision) {
+    entries.push({
+      actor: "Muhammad Ammar Asyraf",
+      candidateVersion: "v1",
+      detail:
+        decision === "rejected"
+          ? "Kandidat ditolak dan tetap disimpan bersama sumber serta riwayat keputusannya."
+          : decision === "merged"
+            ? "Kandidat dihubungkan ke rekam resmi tanpa membuat publikasi resmi kedua."
+            : "Kandidat disetujui sebagai rekam resmi baru bersama bukti sumbernya.",
+      id: `timeline-${index + 1}-${decision}`,
+      label: reviewDecisionLabels[decision],
       timeLabel: "11 Agu 2026, 14.35 WIB",
-      tone: status,
+      tone: decision,
     });
   }
 
@@ -423,24 +700,28 @@ function createCandidate(index: number): ReviewCandidateRow {
   const discoveredAtIso = discoveredDate.toISOString().slice(0, 10);
   const discoveredAt = formatDiscoveryDate(discoveredDate);
   const record: ReviewRecord = {
-    abstract: seed.abstract,
-    affiliation: seed.affiliation,
+    abstract: index % 9 === 7 ? "" : seed.abstract,
+    affiliation: index % 8 === 4 ? "" : seed.affiliation,
     authors: seed.authors,
-    doi: `10.26740/bhtnexus.${year}.${String(index + 101).padStart(4, "0")}`,
+    doi:
+      index % 7 === 4
+        ? ""
+        : `10.26740/bhtnexus.${year}.${String(index + 101).padStart(4, "0")}`,
     journal: seed.journal,
     keywords: seed.keywords,
     title:
       suffix === 0 ? seed.title : `${seed.title}: Studi Seri ${suffix + 1}`,
     year: String(year),
   };
-  const officialRecord = createOfficialRecord(record, index);
-  const comparisons: ReviewFieldComparison[] = fieldOrder.map((key) => ({
-    key,
-    label: fieldLabels[key],
-    status: officialRecord
-      ? getComparisonStatus(key, record[key], officialRecord[key])
-      : "unavailable",
-  }));
+  const matches = createMatches(record, index);
+  const decision: ReviewDecision | undefined =
+    status === "completed"
+      ? index % 3 === 0
+        ? "rejected"
+        : matches.length > 0
+          ? "merged"
+          : "approved-new"
+      : undefined;
   const owner = owners[index % owners.length];
   const relatedMembers = [
     owner,
@@ -454,23 +735,36 @@ function createCandidate(index: number): ReviewCandidateRow {
   const reviewerNote =
     status === "needs-fix"
       ? "Mohon lengkapi afiliasi penulis dan pastikan DOI sama dengan halaman sumber."
-      : status === "approved"
-        ? "Metadata utama sesuai dengan bukti sumber dan rekam resmi."
-        : status === "rejected"
+      : status === "completed" && decision !== "rejected"
+        ? "Metadata utama, pembanding, dan bukti sumber sudah diperiksa sebelum keputusan dicatat."
+        : decision === "rejected"
           ? "Judul mengarah ke karya yang berbeda dari pemilik terpilih."
           : "";
 
   return {
-    comparisons,
     discoveredAt,
     discoveredAtIso,
-    id: `candidate-${String(index + 1).padStart(3, "0")}`,
-    officialRecord,
+    decision,
+    duplicateAssessment: createAssessment(matches),
+    evidence:
+      source === "Dokumen"
+        ? [
+            {
+              documentName: "Laporan Sistem BHT Nexus 2026.pdf",
+              id: `evidence-${index}`,
+              page: 18 + (index % 4),
+              quote: `Publikasi ${record.title} dicantumkan bersama nama penulis dan tahun terbit.`,
+            },
+          ]
+        : [],
+    id: `TJV-2026-${String(index + 71).padStart(5, "0")}`,
+    matches,
     owner,
     previousIssue:
       status === "needs-fix"
         ? "Catatan sebelumnya: afiliasi kedua belum konsisten dan DOI belum dapat diverifikasi."
         : undefined,
+    provenance: [createProvenance(index, source, "C1")],
     publicationType: publicationType.label,
     publicationTypeId: publicationType.id,
     record,
@@ -479,7 +773,8 @@ function createCandidate(index: number): ReviewCandidateRow {
     source,
     sourceHref: sourceLinks[source],
     status,
-    timeline: createTimeline(index, status, discoveredAt),
+    timeline: createTimeline(index, status, discoveredAt, decision),
+    version: "v1",
   };
 }
 
@@ -510,6 +805,7 @@ export function getNexusReviewTableContent(): NexusReviewTableContent {
     columns: {
       action: "Aksi",
       discoveredAt: "Ditemukan",
+      duplicateRisk: "Sinyal kecocokan",
       owner: "Pemilik",
       publicationType: "Jenis",
       source: "Sumber",
@@ -518,14 +814,12 @@ export function getNexusReviewTableContent(): NexusReviewTableContent {
     },
     defaultPageSize: pageSizeFilter.defaultValue,
     nextPageLabel: "Halaman berikutnya",
-    openCandidateLabel: "Buka rincian kandidat",
+    openCandidateLabel: "Tinjau kandidat",
     pageLabel: "Halaman",
     pageSizeFilter,
     previousPageLabel: "Halaman sebelumnya",
     rangePrefix: "Menampilkan",
     rows,
-    selectAllLabel: "Pilih semua kandidat pada halaman ini",
-    selectRowLabel: "Pilih kandidat",
     totalUnit: "data",
   };
 }

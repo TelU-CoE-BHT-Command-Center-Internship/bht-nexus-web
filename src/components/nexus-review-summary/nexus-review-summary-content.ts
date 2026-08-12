@@ -8,7 +8,7 @@ export type ReviewSummaryIconName =
   | "check-circle"
   | "clock"
   | "edit"
-  | "x-circle";
+  | "review-complete";
 
 export type ReviewSummaryCard = {
   icon: ReviewSummaryIconName;
@@ -45,18 +45,18 @@ const summaryCards: ReviewSummaryCard[] = [
   },
   {
     icon: "check-circle",
-    id: "approved",
-    label: "Disetujui",
-    status: "approved",
-    tone: "approved",
+    id: "ready",
+    label: "Siap Diputuskan",
+    status: "ready",
+    tone: "ready",
     unit: "data",
   },
   {
-    icon: "x-circle",
-    id: "rejected",
-    label: "Ditolak",
-    status: "rejected",
-    tone: "rejected",
+    icon: "review-complete",
+    id: "completed",
+    label: "Selesai Ditinjau",
+    status: "completed",
+    tone: "completed",
     unit: "data",
   },
 ];
@@ -68,7 +68,7 @@ const summaryCards: ReviewSummaryCard[] = [
 export function getNexusReviewSummaryContent(): NexusReviewSummaryContent {
   return {
     description:
-      "Tinjau kandidat data dari SINTA, Scopus, dan input manual sebelum menjadi data resmi BHT Nexus.",
+      "Tinjau kandidat dari SINTA, Google Scholar, ekstraksi dokumen, dan input manual sebelum mengubah data resmi BHT Nexus.",
     filters: getNexusReviewFiltersContent(),
     summaryCards,
     title: "Tinjauan Data",

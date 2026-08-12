@@ -10,7 +10,7 @@ export type ReviewSourceFilter = {
 
 export type ReviewFilterOption = {
   label: string;
-  tone?: "approved" | "needs-fix" | "neutral" | "rejected" | "waiting";
+  tone?: "completed" | "needs-fix" | "neutral" | "ready" | "waiting";
   value: string;
 };
 
@@ -34,13 +34,14 @@ export type NexusReviewFiltersContent = {
 const sources: readonly ReviewSourceFilter[] = [
   { id: "all", label: "Semua" },
   { id: "sinta", label: "SINTA" },
-  { id: "scopus", label: "Scopus" },
+  { id: "google-scholar", label: "Google Scholar" },
+  { id: "dokumen", label: "Dokumen" },
   { id: "manual", label: "Manual" },
 ];
 
 const filters: readonly ReviewSelectFilter[] = [
   {
-    defaultValue: "all",
+    defaultValue: "waiting",
     id: "status",
     label: "Status tinjauan",
     options: [
@@ -52,14 +53,14 @@ const filters: readonly ReviewSelectFilter[] = [
       },
       { label: "Perlu Perbaikan", tone: "needs-fix", value: "needs-fix" },
       {
-        label: "Disetujui",
-        tone: "approved",
-        value: "approved",
+        label: "Siap Diputuskan",
+        tone: "ready",
+        value: "ready",
       },
       {
-        label: "Ditolak",
-        tone: "rejected",
-        value: "rejected",
+        label: "Selesai Ditinjau",
+        tone: "completed",
+        value: "completed",
       },
     ],
   },

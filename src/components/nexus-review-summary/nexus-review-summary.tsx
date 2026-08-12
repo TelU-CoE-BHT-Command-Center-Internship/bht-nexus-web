@@ -5,7 +5,11 @@ import { NexusReviewFilters } from "@/components/nexus-review-summary/nexus-revi
 import styles from "@/components/nexus-review-summary/nexus-review-summary.module.css";
 import type { NexusReviewSummaryContent } from "@/components/nexus-review-summary/nexus-review-summary-content";
 import { NexusReviewSummaryIcon } from "@/components/nexus-review-summary/nexus-review-summary-icons";
-import type { ReviewCandidateStatus } from "@/components/nexus-review-summary/nexus-review-table-content";
+import type {
+  ReviewCandidateStatus,
+  ReviewDecision,
+  ReviewStatusChangeContext,
+} from "@/components/nexus-review-summary/nexus-review-table-content";
 
 type NexusReviewSummaryProps = {
   content: NexusReviewSummaryContent;
@@ -27,26 +31,29 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
   const updateCandidateStatus = (
     candidateId: string,
     status: ReviewCandidateStatus,
+    context?: ReviewStatusChangeContext,
   ) => {
     setCandidates((currentCandidates) =>
       currentCandidates.map((candidate) => {
-        if (
-          candidate.id !== candidateId ||
-          candidate.status === "approved" ||
-          candidate.status === "rejected"
-        ) {
+        if (candidate.id !== candidateId || candidate.status === "completed") {
           return candidate;
         }
 
-        const decisionLabel = {
-          approved: "Kandidat disetujui",
-          "needs-fix": "Perbaikan diminta",
-          rejected: "Kandidat ditolak",
-          waiting: "Menunggu Tinjauan",
-        }[status];
+        const decisionLabel =
+          context?.label ??
+          {
+            completed: "Tinjauan diselesaikan",
+            "needs-fix": "Perbaikan diminta",
+            ready: "Kandidat siap diputuskan",
+            waiting: "Menunggu Tinjauan",
+          }[status];
+
+        const nextDecision: ReviewDecision | undefined =
+          status === "completed" ? context?.decision : candidate.decision;
 
         return {
           ...candidate,
+          decision: nextDecision,
           previousIssue:
             status === "needs-fix"
               ? `Catatan terbaru: ${candidate.reviewerNote.trim()}`
@@ -55,7 +62,10 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
           timeline: [
             ...candidate.timeline,
             {
+              actor: "Muhammad Ammar Asyraf",
+              candidateVersion: candidate.version,
               detail:
+                context?.detail ||
                 candidate.reviewerNote.trim() ||
                 "Keputusan ditambahkan ke riwayat tinjauan.",
               id: `${candidate.id}-${status}-${candidate.timeline.length + 1}`,
