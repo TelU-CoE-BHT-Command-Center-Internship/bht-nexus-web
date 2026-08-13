@@ -103,6 +103,33 @@ function ReviewStatus({ candidate }: { candidate: ReviewCandidateRow }) {
   );
 }
 
+function getCandidateAction(
+  candidate: ReviewCandidateRow,
+  openCandidateLabel: string,
+) {
+  if (candidate.status === "needs-fix") {
+    return {
+      ariaLabel: `Perbaiki kandidat: ${candidate.record.title}`,
+      desktopLabel: "Perbaiki",
+      mobileLabel: "Perbaiki kandidat",
+    };
+  }
+
+  if (candidate.status === "completed") {
+    return {
+      ariaLabel: `Lihat hasil kandidat: ${candidate.record.title}`,
+      desktopLabel: "Lihat hasil",
+      mobileLabel: "Lihat hasil",
+    };
+  }
+
+  return {
+    ariaLabel: `${openCandidateLabel}: ${candidate.record.title}`,
+    desktopLabel: "Tinjau",
+    mobileLabel: "Tinjau kandidat",
+  };
+}
+
 function LoadingRows() {
   return (
     <>
@@ -176,69 +203,76 @@ export function NexusReviewTable({
           <tbody>
             {isLoading ? <LoadingRows /> : null}
             {!isLoading && visibleRows.length > 0
-              ? visibleRows.map((row) => (
-                  <tr key={row.id}>
-                    <td className={styles.titleCell}>
-                      <button
-                        onClick={() => onOpenCandidate(row.id)}
-                        type="button"
-                      >
-                        <strong>{row.record.title}</strong>
-                        <span>{row.record.authors}</span>
-                      </button>
-                    </td>
-                    <td>
-                      <span className={styles.publicationType}>
-                        {row.publicationType}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={styles.sourceBadge}
-                        data-source={row.source.toLowerCase()}
-                      >
-                        {row.source}
-                      </span>
-                    </td>
-                    <td>
-                      <MatchSignal candidate={row} />
-                    </td>
-                    <td>
-                      <span className={styles.owner}>
-                        <Image
-                          alt=""
-                          height={32}
-                          sizes="2rem"
-                          src={nexusReviewOwnerPortraits[row.owner.portrait]}
-                          width={32}
-                        />
-                        <span>{row.owner.name}</span>
-                      </span>
-                    </td>
-                    <td>
-                      <time
-                        className={styles.date}
-                        dateTime={row.discoveredAtIso}
-                      >
-                        {row.discoveredAt}
-                      </time>
-                    </td>
-                    <td>
-                      <ReviewStatus candidate={row} />
-                    </td>
-                    <td className={styles.actionCell}>
-                      <button
-                        aria-label={`${content.openCandidateLabel}: ${row.record.title}`}
-                        className={styles.actionButton}
-                        onClick={() => onOpenCandidate(row.id)}
-                        type="button"
-                      >
-                        <ReviewIcon />
-                        <span>Tinjau</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))
+              ? visibleRows.map((row) => {
+                  const action = getCandidateAction(
+                    row,
+                    content.openCandidateLabel,
+                  );
+
+                  return (
+                    <tr key={row.id}>
+                      <td className={styles.titleCell}>
+                        <button
+                          onClick={() => onOpenCandidate(row.id)}
+                          type="button"
+                        >
+                          <strong>{row.record.title}</strong>
+                          <span>{row.record.authors}</span>
+                        </button>
+                      </td>
+                      <td>
+                        <span className={styles.publicationType}>
+                          {row.publicationType}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={styles.sourceBadge}
+                          data-source={row.source.toLowerCase()}
+                        >
+                          {row.source}
+                        </span>
+                      </td>
+                      <td>
+                        <MatchSignal candidate={row} />
+                      </td>
+                      <td>
+                        <span className={styles.owner}>
+                          <Image
+                            alt=""
+                            height={32}
+                            sizes="2rem"
+                            src={nexusReviewOwnerPortraits[row.owner.portrait]}
+                            width={32}
+                          />
+                          <span>{row.owner.name}</span>
+                        </span>
+                      </td>
+                      <td>
+                        <time
+                          className={styles.date}
+                          dateTime={row.discoveredAtIso}
+                        >
+                          {row.discoveredAt}
+                        </time>
+                      </td>
+                      <td>
+                        <ReviewStatus candidate={row} />
+                      </td>
+                      <td className={styles.actionCell}>
+                        <button
+                          aria-label={action.ariaLabel}
+                          className={styles.actionButton}
+                          onClick={() => onOpenCandidate(row.id)}
+                          type="button"
+                        >
+                          <ReviewIcon />
+                          <span>{action.desktopLabel}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               : null}
           </tbody>
         </table>
@@ -246,43 +280,48 @@ export function NexusReviewTable({
 
       {!isLoading ? (
         <div className={styles.mobileList}>
-          {visibleRows.map((row) => (
-            <article className={styles.mobileCard} key={row.id}>
-              <div className={styles.mobileCardTop}>
-                <span
-                  className={styles.sourceBadge}
-                  data-source={row.source.toLowerCase()}
+          {visibleRows.map((row) => {
+            const action = getCandidateAction(row, content.openCandidateLabel);
+
+            return (
+              <article className={styles.mobileCard} key={row.id}>
+                <div className={styles.mobileCardTop}>
+                  <span
+                    className={styles.sourceBadge}
+                    data-source={row.source.toLowerCase()}
+                  >
+                    {row.source}
+                  </span>
+                  <ReviewStatus candidate={row} />
+                </div>
+                <h4>{row.record.title}</h4>
+                <p className={styles.mobileAuthors}>{row.record.authors}</p>
+                <MatchSignal candidate={row} />
+                <dl className={styles.mobileMeta}>
+                  <div>
+                    <dt>Jenis</dt>
+                    <dd>{row.publicationType}</dd>
+                  </div>
+                  <div>
+                    <dt>Ditemukan</dt>
+                    <dd>{row.discoveredAt}</dd>
+                  </div>
+                  <div>
+                    <dt>Pemilik</dt>
+                    <dd>{row.owner.name}</dd>
+                  </div>
+                </dl>
+                <button
+                  aria-label={action.ariaLabel}
+                  className={styles.mobileReviewButton}
+                  onClick={() => onOpenCandidate(row.id)}
+                  type="button"
                 >
-                  {row.source}
-                </span>
-                <ReviewStatus candidate={row} />
-              </div>
-              <h4>{row.record.title}</h4>
-              <p className={styles.mobileAuthors}>{row.record.authors}</p>
-              <MatchSignal candidate={row} />
-              <dl className={styles.mobileMeta}>
-                <div>
-                  <dt>Jenis</dt>
-                  <dd>{row.publicationType}</dd>
-                </div>
-                <div>
-                  <dt>Ditemukan</dt>
-                  <dd>{row.discoveredAt}</dd>
-                </div>
-                <div>
-                  <dt>Pemilik</dt>
-                  <dd>{row.owner.name}</dd>
-                </div>
-              </dl>
-              <button
-                className={styles.mobileReviewButton}
-                onClick={() => onOpenCandidate(row.id)}
-                type="button"
-              >
-                Tinjau kandidat <ArrowIcon direction="right" />
-              </button>
-            </article>
-          ))}
+                  {action.mobileLabel} <ArrowIcon direction="right" />
+                </button>
+              </article>
+            );
+          })}
         </div>
       ) : (
         <output aria-label="Memuat kandidat" className={styles.mobileLoading}>

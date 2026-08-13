@@ -60,6 +60,21 @@ export type ReviewFieldComparison = {
   status: ReviewComparisonStatus;
 };
 
+export type ReviewRevisionChange = {
+  currentValue: string;
+  key: ReviewRecordFieldKey;
+  label: string;
+  previousValue: string;
+};
+
+export type ReviewRevisionSubmission = {
+  changes: readonly ReviewRevisionChange[];
+  note: string;
+  submittedAt: string;
+  submittedBy: string;
+  version: string;
+};
+
 export type ReviewTimelineEntry = {
   actor: string;
   candidateVersion: string;
@@ -122,6 +137,7 @@ export type ReviewCandidateRow = {
   duplicateAssessment: ReviewDuplicateAssessment;
   evidence: readonly ReviewEvidence[];
   id: string;
+  latestRevision?: ReviewRevisionSubmission;
   matches: readonly ReviewOfficialMatch[];
   owner: ReviewMember;
   previousIssue?: string;
@@ -321,7 +337,7 @@ const candidateSeeds: readonly CandidateSeed[] = [
   },
 ];
 
-const fieldLabels: Record<ReviewRecordFieldKey, string> = {
+export const reviewRecordFieldLabels: Record<ReviewRecordFieldKey, string> = {
   abstract: "Abstrak",
   affiliation: "Afiliasi",
   authors: "Penulis",
@@ -332,7 +348,7 @@ const fieldLabels: Record<ReviewRecordFieldKey, string> = {
   year: "Tahun",
 };
 
-const fieldOrder: readonly ReviewRecordFieldKey[] = [
+export const reviewRecordFieldOrder: readonly ReviewRecordFieldKey[] = [
   "title",
   "authors",
   "journal",
@@ -445,16 +461,16 @@ const comparisonScores: Record<ReviewComparisonStatus, number> = {
   unavailable: 0,
 };
 
-function buildComparisons(
+export function buildReviewFieldComparisons(
   candidate: ReviewRecord,
   official: ReviewRecord,
 ): ReviewFieldComparison[] {
-  return fieldOrder.map((key) => {
+  return reviewRecordFieldOrder.map((key) => {
     const status = getComparisonStatus(key, candidate[key], official[key]);
 
     return {
       key,
-      label: fieldLabels[key],
+      label: reviewRecordFieldLabels[key],
       score: comparisonScores[status],
       status,
     };
@@ -526,7 +542,7 @@ function createMatch(
           : verdict === "strong"
             ? "Judul dan penulis sangat mirip pada tahun publikasi yang sama."
             : "Sebagian judul dan penulis mirip; verifikasi manual diperlukan.",
-    comparisons: buildComparisons(record, officialRecord),
+    comparisons: buildReviewFieldComparisons(record, officialRecord),
     id: `PUB-${record.year}-${String(index * 3 + rank + 4567).padStart(5, "0")}`,
     officialRecord,
     score,

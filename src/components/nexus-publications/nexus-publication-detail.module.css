@@ -61,7 +61,8 @@
 }
 
 .metaItem dt,
-.metadataGrid dt,
+.metadataSummary dt,
+.metadataDetails dt,
 .provenanceCard dt {
   margin-bottom: 0.15rem;
   color: #98a2b3;
@@ -159,26 +160,51 @@
   font-weight: 750;
 }
 
-.metadataGrid {
+.metadataSummary,
+.metadataDetails {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
-  border: 1px solid #e4e7ec;
-  border-radius: 0.55rem;
-  overflow: hidden;
 }
 
-.metadataGrid > div {
+.metadataSummary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
+}
+
+.metadataDetails {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.metadataSummary > div,
+.metadataDetails > div {
   min-width: 0;
   padding: 0.72rem 0.8rem;
-  border-right: 1px solid #e4e7ec;
+  border: 1px solid #e4e7ec;
+  border-radius: 0.55rem;
+  background: #fff;
 }
 
-.metadataGrid > div:last-child {
-  border-right: 0;
+.metadataSummary > div {
+  background: #f8fafc;
 }
 
-.metadataGrid dd,
+.metadataSummary > div[data-quality="Perlu dilengkapi"] {
+  border-color: #f0d7b1;
+  background: #fffaf2;
+}
+
+.metadataSummary > div[data-quality="Perlu dilengkapi"] dd {
+  color: #8a5900;
+}
+
+.metadataDetails > div {
+  min-height: 4.1rem;
+}
+
+.metadataSummary dd,
+.metadataDetails dd,
 .provenanceCard dd {
   overflow-wrap: anywhere;
   margin: 0;
@@ -188,8 +214,208 @@
   line-height: 1.45;
 }
 
-.metadataGrid .wideMetadata {
-  grid-column: span 2;
+.metadataDetails a {
+  color: var(--color-brand-navy);
+  overflow-wrap: anywhere;
+}
+
+.metadataDetails > div[data-missing="true"] {
+  border-color: #f0d7b1;
+  background: #fffaf2;
+}
+
+.metadataDetails > div[data-missing="true"] dd {
+  color: #9a6400;
+}
+
+.metadataDetails .wideMetadata {
+  grid-column: 1 / -1;
+}
+
+.metadataDetails > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.citationMetric {
+  display: grid;
+  grid-template-columns: minmax(8.25rem, 0.7fr) minmax(16rem, 1.5fr);
+  gap: 0.75rem 1rem;
+  align-items: center;
+  margin-top: 0.65rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #dce4ee;
+  border-radius: 0.65rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #fff 72%);
+}
+
+.citationMetric[data-available="false"] {
+  border-style: dashed;
+}
+
+.citationValue {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.05rem 0.55rem;
+  align-items: baseline;
+}
+
+.citationValue > span {
+  grid-column: 1 / -1;
+  color: #667085;
+  font-size: 0.67rem;
+  font-weight: 750;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.citationValue strong {
+  color: #101828;
+  font-size: 1.55rem;
+  line-height: 1.15;
+}
+
+.citationValue small {
+  color: #475467;
+  font-size: 0.75rem;
+}
+
+.citationProvenance {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.citationProvenance > div {
+  min-width: 0;
+  padding: 0.52rem 0.65rem;
+  border-left: 2px solid #cbd5e1;
+}
+
+.citationProvenance dt {
+  margin-bottom: 0.12rem;
+  color: #98a2b3;
+  font-size: 0.7rem;
+}
+
+.citationProvenance dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: #344054;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.citationMetric > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 0.65rem;
+  border-top: 1px solid #e4e7ec;
+  color: #667085;
+  font-size: 0.73rem;
+  line-height: 1.55;
+}
+
+.completenessExplanation {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-left: 3px solid #7b6ed8;
+  border-radius: 0.4rem;
+  background: #f8f7ff;
+  color: #5f6375;
+  font-size: 0.66rem;
+  line-height: 1.55;
+}
+
+.completenessList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.completenessList li {
+  display: grid;
+  grid-template-columns: 1.65rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid #dce9e3;
+  border-radius: 0.55rem;
+  background: #f7fcf9;
+}
+
+.completenessList li[data-status="missing"] {
+  border-color: #f0d7b1;
+  background: #fffaf2;
+}
+
+.completenessList li[data-status="pending"] {
+  border-color: #d9d3fa;
+  background: #f9f8ff;
+}
+
+.completenessMarker {
+  display: grid;
+  width: 1.55rem;
+  height: 1.55rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #dff4e9;
+  color: #087443;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+li[data-status="missing"] .completenessMarker {
+  background: #fff0d6;
+  color: #9a6400;
+}
+
+li[data-status="pending"] .completenessMarker {
+  background: #ece9ff;
+  color: #6255ce;
+}
+
+.completenessCopy {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.completenessCopy strong {
+  color: #344054;
+  font-size: 0.68rem;
+}
+
+.completenessCopy small {
+  overflow-wrap: anywhere;
+  color: #667085;
+  font-size: 0.6rem;
+  line-height: 1.45;
+}
+
+.completenessStatus {
+  padding: 0.22rem 0.42rem;
+  border-radius: 999px;
+  background: #e4f5ec;
+  color: #087443;
+  font-size: 0.56rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+li[data-status="missing"] .completenessStatus {
+  background: #fff0d6;
+  color: #8a5900;
+}
+
+li[data-status="pending"] .completenessStatus {
+  background: #ebe8ff;
+  color: #5c4fd0;
 }
 
 .memberGrid {
@@ -379,25 +605,13 @@
 }
 
 @media (max-width: 48rem) {
-  .metaGrid,
-  .metadataGrid {
+  .metaGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .metadataGrid > div:nth-child(2) {
-    border-right: 0;
-  }
-
-  .metadataGrid > div:nth-child(-n + 2) {
-    border-bottom: 1px solid #e4e7ec;
-  }
-
-  .metadataGrid .wideMetadata {
-    grid-column: span 1;
   }
 }
 
 @media (max-width: 44rem) {
+  .completenessList,
   .provenanceGrid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -445,17 +659,26 @@
 
 @media (max-width: 25rem) {
   .metaGrid,
-  .metadataGrid {
+  .metadataSummary,
+  .metadataDetails {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .metadataGrid > div,
-  .metadataGrid > div:nth-child(2) {
-    border-right: 0;
-    border-bottom: 1px solid #e4e7ec;
+  .metadataDetails .wideMetadata {
+    grid-column: span 1;
   }
 
-  .metadataGrid > div:last-child {
-    border-bottom: 0;
+  .citationMetric,
+  .citationProvenance {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .completenessList li {
+    grid-template-columns: 1.65rem minmax(0, 1fr);
+  }
+
+  .completenessStatus {
+    grid-column: 2;
+    justify-self: start;
   }
 }

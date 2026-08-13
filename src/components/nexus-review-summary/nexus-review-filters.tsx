@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { NexusReviewCorrection } from "@/components/nexus-review-summary/nexus-review-correction";
 import { NexusReviewDetail } from "@/components/nexus-review-summary/nexus-review-detail";
 import styles from "@/components/nexus-review-summary/nexus-review-filters.module.css";
 import type {
@@ -11,6 +12,8 @@ import { NexusReviewTable } from "@/components/nexus-review-summary/nexus-review
 import type {
   ReviewCandidateRow,
   ReviewCandidateStatus,
+  ReviewRecord,
+  ReviewRevisionChange,
   ReviewStatusChangeContext,
 } from "@/components/nexus-review-summary/nexus-review-table-content";
 import {
@@ -22,6 +25,12 @@ import { NexusWorkspaceSelect } from "@/components/nexus-workspace-ui/nexus-work
 type NexusReviewFiltersProps = {
   candidates: readonly ReviewCandidateRow[];
   content: NexusReviewFiltersContent;
+  onCandidateResubmit: (
+    candidateId: string,
+    record: ReviewRecord,
+    note: string,
+    changes: readonly ReviewRevisionChange[],
+  ) => void;
   onReviewerNoteChange: (candidateId: string, note: string) => void;
   onStatusChange: (
     candidateId: string,
@@ -51,6 +60,7 @@ function getSourceId(source: ReviewCandidateRow["source"]) {
 export function NexusReviewFilters({
   candidates,
   content,
+  onCandidateResubmit,
   onReviewerNoteChange,
   onStatusChange,
 }: NexusReviewFiltersProps) {
@@ -262,7 +272,13 @@ export function NexusReviewFilters({
         totalCandidateCount={candidates.length}
       />
 
-      {activeCandidate ? (
+      {activeCandidate?.status === "needs-fix" ? (
+        <NexusReviewCorrection
+          candidate={activeCandidate}
+          onClose={closeDetail}
+          onResubmit={onCandidateResubmit}
+        />
+      ) : activeCandidate ? (
         <NexusReviewDetail
           candidate={activeCandidate}
           onClose={closeDetail}

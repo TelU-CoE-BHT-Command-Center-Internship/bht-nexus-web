@@ -15,6 +15,47 @@ export type PublicationType =
 
 export type PublicationQuality = "Lengkap" | "Perlu dilengkapi";
 
+export type PublicationCompletionFieldKey =
+  | "doi"
+  | "issue"
+  | "pages"
+  | "publisherUrl";
+
+export type PublicationCompletionResolutionStatus =
+  | "not-applicable"
+  | "not-available"
+  | "provided";
+
+export type PublicationCompletionResolution = {
+  reason: string;
+  status: PublicationCompletionResolutionStatus;
+  value: string;
+};
+
+export type PublicationCompletionResolutions = Partial<
+  Record<PublicationCompletionFieldKey, PublicationCompletionResolution>
+>;
+
+export type PublicationMetadataProposal = {
+  id: string;
+  note: string;
+  publicationId: string;
+  status: "waiting-review";
+  submittedAt: string;
+  submittedBy: string;
+  resolutions: PublicationCompletionResolutions;
+};
+
+export const publicationCompletionFieldLabels: Record<
+  PublicationCompletionFieldKey,
+  string
+> = {
+  doi: "DOI",
+  issue: "Nomor terbit",
+  pages: "Halaman",
+  publisherUrl: "Tautan penerbit",
+};
+
 export type PublicationSourceName = "Google Scholar" | "Manual" | "SINTA";
 
 export type PublicationMember = {
@@ -33,14 +74,19 @@ export type PublicationProvenance = {
 export type OfficialPublication = {
   authors: string[];
   bhtMembers: PublicationMember[];
-  citations: number;
+  citationSource?: PublicationSourceName;
+  citationUpdatedAt?: string;
+  citations: number | null;
   doi?: string;
   id: string;
-  missingFields: string[];
+  issue?: string;
+  missingFields: PublicationCompletionFieldKey[];
   owner: PublicationMember;
   provenance: PublicationProvenance[];
+  publisherUrl?: string;
   publicId: string;
   quality: PublicationQuality;
+  pages?: string;
   review: {
     candidateId: string;
     decision: "Dihubungkan ke rekam resmi" | "Disetujui sebagai data baru";
@@ -201,6 +247,7 @@ function createPublication(index: number): OfficialPublication {
   const year = 2026 - (index % 4);
   const type = publicationTypes[index % publicationTypes.length];
   const provenance = createProvenance(index, year);
+  const citations = index % 13 === 0 ? null : (index * 7 + 3) % 64;
   const quality: PublicationQuality =
     index % 11 === 0 || index % 17 === 0 ? "Perlu dilengkapi" : "Lengkap";
   const decision =
@@ -215,7 +262,10 @@ function createPublication(index: number): OfficialPublication {
       `Anggota Kolaborator ${index + 1}`,
     ],
     bhtMembers: [owner, collaborator],
-    citations: (index * 7 + 3) % 64,
+    citationSource: citations === null ? undefined : provenance[0].source,
+    citationUpdatedAt:
+      citations === null ? undefined : provenance[0].capturedAt,
+    citations,
     doi:
       type === "HKI" || index % 9 === 0
         ? undefined
@@ -224,8 +274,8 @@ function createPublication(index: number): OfficialPublication {
     missingFields:
       quality === "Perlu dilengkapi"
         ? index % 2 === 0
-          ? ["DOI", "Tautan penerbit"]
-          : ["Nomor terbit", "Halaman"]
+          ? ["doi", "publisherUrl"]
+          : ["issue", "pages"]
         : [],
     owner,
     provenance,
@@ -358,6 +408,8 @@ const highlightedRecords: OfficialPublication[] = [
     ...createPublication(91),
     authors: ["Rizky Hidayat", "Suksmandhira Harimurti", "Mira Putri"],
     bhtMembers: [members[1]],
+    citationSource: "SINTA",
+    citationUpdatedAt: "9 Jul 2026",
     citations: 25,
     id: "ecg-arrhythmia",
     owner: members[1],
@@ -386,7 +438,9 @@ const highlightedRecords: OfficialPublication[] = [
     ...createPublication(93),
     authors: ["Nur Aulia", "Fathur Rahman", "Bagus Ramadhan"],
     bhtMembers: [members[3]],
-    citations: 4,
+    citationSource: undefined,
+    citationUpdatedAt: undefined,
+    citations: null,
     id: "portable-ultrasound",
     owner: members[3],
     publicId: "PUB-2026-04786",

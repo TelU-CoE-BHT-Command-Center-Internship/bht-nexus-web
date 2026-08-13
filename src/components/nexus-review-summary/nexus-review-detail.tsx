@@ -14,6 +14,8 @@ import {
   reviewComparisonLabels,
   reviewDecisionLabels,
   reviewMatchVerdictLabels,
+  reviewRecordFieldLabels,
+  reviewRecordFieldOrder,
   reviewStatusLabels,
 } from "@/components/nexus-review-summary/nexus-review-table-content";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -207,6 +209,24 @@ export function NexusReviewDetail({
   const selectedMatch =
     candidate.matches.find((match) => match.id === selectedMatchId) ??
     candidate.matches[0];
+  const sectionIndexes = selectedMatch
+    ? {
+        comparison: "03",
+        decision: "05",
+        matches: "02",
+        metadata: "01",
+        provenance: "04",
+      }
+    : {
+        comparison: "",
+        decision: "04",
+        matches: "02",
+        metadata: "01",
+        provenance: "03",
+      };
+  const availableCandidateFieldCount = reviewRecordFieldOrder.filter(
+    (key) => candidate.record[key].trim().length > 0,
+  ).length;
   const isFinal = candidate.status === "completed";
   const hasReviewerNote = candidate.reviewerNote.trim().length > 0;
   const candidateDoi = normalizeDoi(candidate.record.doi);
@@ -327,7 +347,10 @@ export function NexusReviewDetail({
 
         <dl className={styles.metaGrid}>
           <MetaItem label="Jenis" value={candidate.publicationType} />
-          <MetaItem label="DOI" value={candidate.record.doi} />
+          <MetaItem
+            label="DOI"
+            value={candidate.record.doi || "Belum tersedia"}
+          />
           <MetaItem label="Pemilik" value={candidate.owner.name} />
           <MetaItem label="Tahun" value={candidate.record.year} />
         </dl>
@@ -352,6 +375,116 @@ export function NexusReviewDetail({
             ))}
           </ul>
         </div>
+      </section>
+
+      {candidate.latestRevision ? (
+        <section
+          aria-labelledby="latest-revision-title"
+          className={styles.revisionSummary}
+        >
+          <header className={styles.revisionHeader}>
+            <div className={styles.revisionTitleGroup}>
+              <span className={styles.revisionCheck} aria-hidden="true">
+                ✓
+              </span>
+              <div className={styles.revisionTitle}>
+                <span className={styles.revisionEyebrow}>
+                  {candidate.status === "waiting"
+                    ? "Dikirim ulang untuk ditinjau"
+                    : "Perbaikan yang telah diperiksa"}
+                </span>
+                <h3 id="latest-revision-title">
+                  {candidate.latestRevision.version} memuat{" "}
+                  {candidate.latestRevision.changes.length} perubahan
+                </h3>
+              </div>
+            </div>
+            <small className={styles.revisionMeta}>
+              {candidate.latestRevision.submittedBy} ·{" "}
+              {candidate.latestRevision.submittedAt}
+            </small>
+          </header>
+          <p className={styles.revisionNote}>
+            <strong className={styles.revisionNoteLabel}>
+              Dasar perubahan:
+            </strong>{" "}
+            {candidate.latestRevision.note}
+          </p>
+          <ul className={styles.revisionList}>
+            {candidate.latestRevision.changes.map((change) => (
+              <li className={styles.revisionItem} key={change.key}>
+                <strong className={styles.revisionFieldLabel}>
+                  {change.label}
+                </strong>
+                <div className={styles.revisionValues}>
+                  <span className={styles.revisionBefore}>
+                    Sebelum
+                    <b className={styles.revisionValue}>
+                      {change.previousValue || "Belum tersedia"}
+                    </b>
+                  </span>
+                  <span className={styles.revisionAfter}>
+                    Sesudah
+                    <b className={styles.revisionValue}>
+                      {change.currentValue || "Dikosongkan"}
+                    </b>
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section
+        aria-labelledby="candidate-metadata-title"
+        className={styles.detailSection}
+      >
+        <div className={styles.sectionHeading}>
+          <div>
+            <span className={styles.sectionIndex}>
+              {sectionIndexes.metadata}
+            </span>
+            <h3 id="candidate-metadata-title">Metadata kandidat</h3>
+          </div>
+          <p>
+            {availableCandidateFieldCount} dari {reviewRecordFieldOrder.length}{" "}
+            bidang tersedia
+          </p>
+        </div>
+
+        <p className={styles.candidateMetadataExplanation}>
+          Seluruh metadata kandidat tetap ditampilkan meskipun belum ada rekam
+          resmi pembanding. “Tidak ada pembanding” hanya berarti belum ada data
+          resmi untuk disandingkan, bukan berarti metadata kandidat boleh
+          dilewati.
+        </p>
+
+        <dl className={styles.candidateMetadataGrid}>
+          {reviewRecordFieldOrder.map((key) => {
+            const value = candidate.record[key].trim();
+            const isWide = [
+              "abstract",
+              "authors",
+              "keywords",
+              "title",
+            ].includes(key);
+
+            return (
+              <div
+                data-available={value ? "true" : "false"}
+                data-wide={isWide || undefined}
+                key={key}
+              >
+                <dt className={styles.candidateMetadataLabel}>
+                  <span>{reviewRecordFieldLabels[key]}</span>
+                  <span>{value ? "Tersedia" : "Belum tersedia"}</span>
+                </dt>
+                <dd>{value || "Belum tersedia dari kandidat"}</dd>
+              </div>
+            );
+          })}
+        </dl>
       </section>
 
       <section
@@ -398,7 +531,9 @@ export function NexusReviewDetail({
       >
         <div className={styles.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>01</span>
+            <span className={styles.sectionIndex}>
+              {sectionIndexes.matches}
+            </span>
             <h3 id="official-matches-title">Rekam resmi terkait</h3>
           </div>
           <p>
@@ -464,7 +599,9 @@ export function NexusReviewDetail({
         >
           <div className={styles.sectionHeading}>
             <div>
-              <span className={styles.sectionIndex}>02</span>
+              <span className={styles.sectionIndex}>
+                {sectionIndexes.comparison}
+              </span>
               <h3 id="comparison-title">Bandingkan setiap bidang</h3>
             </div>
             <p>Kandidat masuk vs {selectedMatch.id}</p>
@@ -541,7 +678,9 @@ export function NexusReviewDetail({
       >
         <div className={styles.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>03</span>
+            <span className={styles.sectionIndex}>
+              {sectionIndexes.provenance}
+            </span>
             <h3 id="provenance-title">Sumber dan jejak data</h3>
           </div>
           <p>Waktu ambil, parser, dan kunci sumber dapat diaudit</p>
@@ -594,7 +733,9 @@ export function NexusReviewDetail({
       >
         <div className={styles.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>04</span>
+            <span className={styles.sectionIndex}>
+              {sectionIndexes.decision}
+            </span>
             <h3 id="decision-title">Tetapkan keputusan</h3>
           </div>
           <p>Alasan disimpan pada riwayat tinjauan</p>

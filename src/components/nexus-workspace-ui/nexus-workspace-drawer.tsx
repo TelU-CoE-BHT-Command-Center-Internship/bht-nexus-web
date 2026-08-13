@@ -47,8 +47,13 @@ export function NexusWorkspaceDrawer({
 }: NexusWorkspaceDrawerProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const onCloseRef = useRef(onClose);
   const titleId = `${eyebrow}-drawer-title`;
   const descriptionId = `${eyebrow}-drawer-description`;
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const previousFocusedElement =
@@ -62,7 +67,7 @@ export function NexusWorkspaceDrawer({
     const handleDialogKeyboard = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== "Tab" || !dialogRef.current) return;
@@ -91,7 +96,7 @@ export function NexusWorkspaceDrawer({
       document.removeEventListener("keydown", handleDialogKeyboard);
       previousFocusedElement?.focus({ preventScroll: true });
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div className={styles.layer}>

@@ -17,6 +17,7 @@ import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexu
 type NexusPublicationsTableProps = {
   activeSourceLabel: string;
   activeSourceId: PublicationSourceId;
+  completionProposalIds: readonly string[];
   currentPage: number;
   guidance: string;
   hasActiveFilters: boolean;
@@ -116,13 +117,22 @@ function SourceBadge({
   );
 }
 
-function QualityBadge({ publication }: { publication: OfficialPublication }) {
+function QualitySignal({
+  hasProposal,
+  publication,
+}: {
+  hasProposal: boolean;
+  publication: OfficialPublication;
+}) {
   return (
-    <span
-      className={badgeStyles.qualityBadge}
-      data-quality={publication.quality}
-    >
-      {publication.quality}
+    <span className={styles.qualitySignal}>
+      <span
+        className={badgeStyles.qualityBadge}
+        data-quality={publication.quality}
+      >
+        {publication.quality}
+      </span>
+      {hasProposal ? <small>Pelengkapan diajukan</small> : null}
     </span>
   );
 }
@@ -130,6 +140,7 @@ function QualityBadge({ publication }: { publication: OfficialPublication }) {
 export function NexusPublicationsTable({
   activeSourceLabel,
   activeSourceId,
+  completionProposalIds,
   currentPage,
   guidance,
   hasActiveFilters,
@@ -221,14 +232,23 @@ export function NexusPublicationsTable({
                     <td>
                       <span
                         className={styles.citationSignal}
-                        data-empty={publication.citations === 0 || undefined}
+                        data-empty={publication.citations === null}
                       >
-                        <strong>{publication.citations}</strong>
-                        <span>sitasi tercatat</span>
+                        <strong>{publication.citations ?? "—"}</strong>
+                        <span>
+                          {publication.citations === null
+                            ? "belum tersinkron"
+                            : "sitasi tercatat"}
+                        </span>
                       </span>
                     </td>
                     <td>
-                      <QualityBadge publication={publication} />
+                      <QualitySignal
+                        hasProposal={completionProposalIds.includes(
+                          publication.id,
+                        )}
+                        publication={publication}
+                      />
                     </td>
                     <td className={styles.actionCell}>
                       <button
@@ -257,7 +277,10 @@ export function NexusPublicationsTable({
                   preferredSourceId={activeSourceId}
                   publication={publication}
                 />
-                <QualityBadge publication={publication} />
+                <QualitySignal
+                  hasProposal={completionProposalIds.includes(publication.id)}
+                  publication={publication}
+                />
               </div>
               <h4>{publication.title}</h4>
               <p className={styles.mobileAuthors}>
@@ -265,10 +288,14 @@ export function NexusPublicationsTable({
               </p>
               <span
                 className={styles.mobileCitation}
-                data-empty={publication.citations === 0 || undefined}
+                data-empty={publication.citations === null}
               >
-                <strong>{publication.citations}</strong>
-                <span>sitasi tercatat</span>
+                <strong>{publication.citations ?? "—"}</strong>
+                <span>
+                  {publication.citations === null
+                    ? "belum tersinkron"
+                    : "sitasi tercatat"}
+                </span>
               </span>
               <dl className={styles.mobileMeta}>
                 <div>

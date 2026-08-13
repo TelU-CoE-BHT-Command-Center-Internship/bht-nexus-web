@@ -6,6 +6,8 @@ import styles from "@/components/nexus-publications/nexus-publications.module.cs
 import type {
   NexusPublicationsContent,
   OfficialPublication,
+  PublicationCompletionResolutions,
+  PublicationMetadataProposal,
 } from "@/components/nexus-publications/nexus-publications-content";
 import { NexusPublicationsIcon } from "@/components/nexus-publications/nexus-publications-icons";
 import { NexusPublicationsTable } from "@/components/nexus-publications/nexus-publications-table";
@@ -128,7 +130,10 @@ function sortPublications(
       );
     }
     if (sortValue === "citations") {
-      return second.citations - first.citations || second.year - first.year;
+      return (
+        (second.citations ?? -1) - (first.citations ?? -1) ||
+        second.year - first.year
+      );
     }
     return second.year - first.year || first.title.localeCompare(second.title);
   });
@@ -139,6 +144,9 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
   const [activeSourceId, setActiveSourceId] =
     useState<PublicationSourceId>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [completionProposals, setCompletionProposals] = useState<
+    Record<string, PublicationMetadataProposal>
+  >({});
   const [filterValues, setFilterValues] =
     useState<PublicationFilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
@@ -259,6 +267,25 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
 
   const closeDetail = useCallback(() => setSelectedPublicationId(null), []);
 
+  const submitCompletionProposal = (
+    publicationId: string,
+    resolutions: PublicationCompletionResolutions,
+    note: string,
+  ) => {
+    setCompletionProposals((currentProposals) => ({
+      ...currentProposals,
+      [publicationId]: {
+        id: `PLG-2026-${String(Object.keys(currentProposals).length + 1).padStart(5, "0")}`,
+        note,
+        publicationId,
+        status: "waiting-review",
+        submittedAt: "Baru saja",
+        submittedBy: "Muhammad Ammar Asyraf",
+        resolutions,
+      },
+    }));
+  };
+
   const changeFilterValue = (filterId: string, value: string) => {
     setFilterValues((currentValues) => ({
       ...currentValues,
@@ -354,6 +381,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
           activeSourceId={activeSource.id}
           currentPage={currentPage}
           guidance={content.officialNote}
+          completionProposalIds={Object.keys(completionProposals)}
           hasActiveFilters={hasActiveFilters}
           isLoading={isSearchUpdating}
           onOpenPublication={setSelectedPublicationId}
@@ -373,6 +401,8 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
       {selectedPublication ? (
         <NexusPublicationDetail
           onClose={closeDetail}
+          onSubmitCompletionProposal={submitCompletionProposal}
+          proposal={completionProposals[selectedPublication.id]}
           publication={selectedPublication}
         />
       ) : null}
