@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { NexusMetadataCompletionReview } from "@/components/nexus-review-summary/nexus-metadata-completion-review";
 import { NexusReviewCorrection } from "@/components/nexus-review-summary/nexus-review-correction";
 import { NexusReviewDetail } from "@/components/nexus-review-summary/nexus-review-detail";
 import styles from "@/components/nexus-review-summary/nexus-review-filters.module.css";
@@ -240,7 +241,7 @@ export function NexusReviewFilters({
         <p>
           {isSearchUpdating
             ? "Memperbarui hasil pencarian..."
-            : `${filteredCandidates.length} kandidat ditemukan`}
+            : `${filteredCandidates.length} data tinjauan ditemukan`}
         </p>
         {hasActiveFilters ? (
           <button
@@ -272,7 +273,14 @@ export function NexusReviewFilters({
         totalCandidateCount={candidates.length}
       />
 
-      {activeCandidate?.status === "needs-fix" ? (
+      {activeCandidate?.kind === "metadata-completion" ? (
+        <NexusMetadataCompletionReview
+          candidate={activeCandidate}
+          onClose={closeDetail}
+          onReviewerNoteChange={onReviewerNoteChange}
+          onStatusChange={onStatusChange}
+        />
+      ) : activeCandidate?.status === "needs-fix" ? (
         <NexusReviewCorrection
           candidate={activeCandidate}
           onClose={closeDetail}

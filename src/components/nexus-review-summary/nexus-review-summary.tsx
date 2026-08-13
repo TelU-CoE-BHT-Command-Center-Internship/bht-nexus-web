@@ -70,10 +70,22 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
         return {
           ...candidate,
           decision: nextDecision,
+          linkOutcome:
+            context?.decision === "merged" && context.linkedTargetId
+              ? {
+                  proposedEnrichmentFields:
+                    context.proposedEnrichmentFields ?? [],
+                  targetId: context.linkedTargetId,
+                }
+              : candidate.linkOutcome,
           previousIssue:
             status === "needs-fix"
               ? `Catatan terbaru: ${candidate.reviewerNote.trim()}`
               : candidate.previousIssue,
+          requestedCorrectionFields:
+            status === "needs-fix"
+              ? context?.requestedCorrectionFields
+              : candidate.requestedCorrectionFields,
           status,
           timeline: [
             ...candidate.timeline,
@@ -132,6 +144,7 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
           matches,
           record,
           reviewerNote: "",
+          requestedCorrectionFields: undefined,
           status: "waiting" as const,
           timeline: [
             ...candidate.timeline,

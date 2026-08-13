@@ -95,9 +95,9 @@ export function getNexusReviewFiltersContent(): NexusReviewFiltersContent {
   return {
     defaultSourceId: "all",
     filters,
-    searchLabel: "Cari kandidat tinjauan",
+    searchLabel: "Cari data tinjauan",
     searchPlaceholder: "Cari judul, DOI, penulis, atau pemilik...",
-    sourceNavigationLabel: "Filter kandidat berdasarkan sumber data",
+    sourceNavigationLabel: "Filter data tinjauan berdasarkan sumber",
     sources,
     table: getNexusReviewTableContent(),
   };

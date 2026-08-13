@@ -218,6 +218,27 @@
   padding-left: 2.95rem;
 }
 
+.proposalSignal {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 2.45rem;
+  padding: 0.28rem 0.6rem;
+  border: 1px solid #ddd7ff;
+  border-left: 3px solid #6858dc;
+  border-radius: 0.45rem;
+  background: #f8f7ff;
+}
+
+.proposalSignal strong {
+  color: #4f43aa;
+  font-size: 0.68rem;
+}
+
+.proposalSignal span {
+  color: #656d80;
+  font-size: 0.62rem;
+}
+
 .owner {
   align-items: center;
   display: flex;
@@ -410,6 +431,9 @@
     border-left-width: 3px;
     border-right: 1px solid #eceaf8;
     border-top: 1px solid #eceaf8;
+    padding: 0.6rem 0.7rem;
+  }
+  .mobileCard .proposalSignal {
     padding: 0.6rem 0.7rem;
   }
   .mobileMeta {

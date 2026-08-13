@@ -56,7 +56,7 @@ const summaryCards: ReviewSummaryCard[] = [
 export function getNexusReviewSummaryContent(): NexusReviewSummaryContent {
   return {
     description:
-      "Tinjau kandidat dari SINTA, Google Scholar, ekstraksi dokumen, dan input manual sebelum mengubah data resmi BHT Nexus.",
+      "Tinjau kandidat publikasi dan usulan pelengkapan metadata sebelum mengubah data resmi BHT Nexus.",
     filters: getNexusReviewFiltersContent(),
     summaryCards,
     title: "Tinjauan Data",

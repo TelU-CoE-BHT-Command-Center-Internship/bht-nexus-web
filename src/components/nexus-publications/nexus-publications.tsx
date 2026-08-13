@@ -109,7 +109,6 @@ function createFilterConfigs(content: NexusPublicationsContent) {
       options: [
         { label: "Urutan: Terbaru", value: "newest" },
         { label: "Urutan: Terlama", value: "oldest" },
-        { label: "Sitasi terbanyak", value: "citations" },
         { label: "Judul A–Z", value: "title" },
       ],
     },
@@ -127,12 +126,6 @@ function sortPublications(
     if (sortValue === "oldest") {
       return (
         first.year - second.year || first.title.localeCompare(second.title)
-      );
-    }
-    if (sortValue === "citations") {
-      return (
-        (second.citations ?? -1) - (first.citations ?? -1) ||
-        second.year - first.year
       );
     }
     return second.year - first.year || first.title.localeCompare(second.title);

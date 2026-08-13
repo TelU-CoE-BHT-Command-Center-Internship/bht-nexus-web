@@ -43,7 +43,7 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
 | Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
 | Halaman Publikasi BHT Nexus | Tersedia dan responsif; rincian memperlihatkan metadata resmi serta keadaan kelengkapannya, sedangkan bidang yang belum selesai dapat menerima usulan nilai atau pengecualian berbasis sumber tanpa langsung menimpa data resmi |
-| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; metadata kandidat tetap dapat diperiksa saat tidak ada pembanding, sedangkan kandidat yang dikembalikan dapat diperbaiki, dibandingkan sebelum–sesudah, dibuat sebagai versi berikutnya, lalu dikirim kembali untuk ditinjau |
+| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; metadata kandidat tetap dapat diperiksa saat tidak ada pembanding, target dengan DOI identik dilindungi, kandidat yang dikembalikan hanya dapat memperbaiki bidang yang diminta, dan usulan pelengkapan publikasi resmi mempunyai alur tinjauan tersendiri |
 | Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
 | Deployment | Belum menjadi cakupan saat ini |
@@ -145,15 +145,17 @@ Fondasi ruang kerja saat ini mencakup:
 - daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
 - halaman Publikasi dengan ringkasan data resmi, tab sumber SINTA, Google Scholar, dan Manual, pencarian, filter, pengurutan, tabel desktop, kartu mobile, pagination, serta pilihan jumlah data per halaman;
 - rincian Publikasi dalam drawer responsif yang menampilkan metadata resmi secara lebih lengkap, peta kelengkapan per bidang, anggota BHT terkait, sumber pembentuk, dan keputusan tinjauan;
-- sitasi pada rincian Publikasi dipisahkan sebagai metrik tambahan yang dapat diperbarui berkala, menampilkan sumber angka dan waktu pembaruan, memiliki keadaan Belum tersinkron, serta tidak menentukan status kelengkapan metadata;
+- sitasi pada rincian Publikasi dipisahkan sebagai metrik tambahan yang dapat diperbarui berkala, menampilkan penyedia metrik yang terpisah dari sumber pembentuk metadata, waktu pembaruan, serta keadaan angka belum tersedia, dan tidak menentukan status kelengkapan metadata;
 - alur pelengkapan Publikasi untuk menyelesaikan hanya bidang resmi yang masih kosong melalui nilai, pernyataan memang tidak tersedia, atau pernyataan tidak berlaku; pengecualian wajib memuat alasan dan dasar yang dapat diperiksa;
 - status Lengkap tidak diberikan oleh formulir; usulan nilai maupun pengecualian selalu berstatus Menunggu Tinjauan dan tidak mengubah rekam resmi sebelum pemeriksa mengambil keputusan;
 - penanda Pelengkapan diajukan pada daftar Publikasi agar usulan yang sudah dikirim tidak dibuat lagi selama sesi yang sama;
 - halaman Tinjauan dengan tab sumber SINTA, Google Scholar, Dokumen, dan Manual, pencarian, filter, pengurutan, serta pagination;
 - rincian kandidat dalam drawer responsif untuk memeriksa seluruh metadata kandidat, rekam resmi terkait, perbandingan per bidang, anggota terkait, bukti, sumber, dan jejak pengambilan data; metadata kandidat tetap ditampilkan saat belum ada rekam resmi pembanding;
 - alur Tinjauan dengan status Menunggu Tinjauan, Perlu Perbaikan, dan Selesai Ditinjau; hasil Setujui sebagai data baru, Hubungkan ke rekam resmi, atau Tolak ditampilkan terpisah agar status proses dan hasil akhirnya tidak rancu;
-- keputusan tanpa pilihan awal, alasan wajib, serta pemeriksaan DOI terhadap seluruh rekam pembanding sebelum kandidat dapat dihubungkan; Minta Perbaikan tetap tersedia untuk mengembalikan kandidat ke pemilik data;
-- alur Perlu Perbaikan yang menampilkan permintaan pemeriksa, formulir metadata, dasar perubahan, ringkasan nilai sebelum–sesudah, konfirmasi pengiriman, nomor versi baru, dan riwayat kirim ulang ketika kandidat kembali ke status Menunggu Tinjauan;
+- keputusan tanpa pilihan awal, alasan wajib, serta pemeriksaan DOI terhadap seluruh rekam pembanding; ketika DOI identik ditemukan, rekam lain tetap dapat diperiksa tetapi hanya rekam dengan DOI tersebut yang dapat menjadi target hubungan;
+- hasil Hubungkan dijelaskan sebelum konfirmasi: rekam resmi tidak ditimpa, jejak sumber kandidat tetap terkait, dan nilai kandidat yang berbeda disimpan sebagai usulan pelengkapan terpisah;
+- alur Perlu Perbaikan yang menandai bidang permintaan pemeriksa, membuat hanya bidang tersebut dapat diedit, mempertahankan bidang lain sebagai hanya-baca, serta menampilkan dasar perubahan, nilai sebelum–sesudah, konfirmasi, nomor versi baru, dan riwayat kirim ulang;
+- usulan pelengkapan dari Publikasi dapat ditinjau melalui halaman Tinjauan dengan perbandingan nilai resmi dan usulan, sumber serta alasan, akibat setiap keputusan, dan pilihan setujui, minta perbaikan, atau tolak tanpa langsung menimpa rekam resmi;
 - komponen ruang kerja bersama untuk judul halaman, ringkasan, tab, pencarian, select, shell tabel, pagination, dan drawer agar pengalaman antarfitur tetap konsisten;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
 

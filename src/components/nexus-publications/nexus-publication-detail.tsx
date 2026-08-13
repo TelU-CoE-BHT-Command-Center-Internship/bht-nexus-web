@@ -259,25 +259,24 @@ export function NexusPublicationDetail({
             <strong>{publication.citations ?? "—"}</strong>
             <small>
               {publication.citations === null
-                ? "Belum tersinkron"
+                ? "Angka belum tersedia"
                 : "sitasi tercatat"}
             </small>
           </div>
           <dl className={styles.citationProvenance}>
             <div>
-              <dt>Sumber angka</dt>
-              <dd>{publication.citationSource ?? "Belum tercatat"}</dd>
+              <dt>Penyedia metrik</dt>
+              <dd>{publication.citationProvider ?? "Belum ditetapkan"}</dd>
             </div>
             <div>
               <dt>Diperbarui</dt>
-              <dd>
-                {publication.citationUpdatedAt ?? "Belum pernah disinkronkan"}
-              </dd>
+              <dd>{publication.citationUpdatedAt ?? "Belum ada pembaruan"}</dd>
             </div>
           </dl>
           <p>
-            Sitasi adalah informasi berkala dari sumber tertentu, bukan angka
-            real-time dan bukan penentu kelengkapan metadata.
+            Penyedia metrik berbeda dari sumber pembentuk metadata publikasi.
+            Sitasi diperbarui berkala, bukan real-time, dan tidak menentukan
+            kelengkapan metadata.
           </p>
         </aside>
       </section>

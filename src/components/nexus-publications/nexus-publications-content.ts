@@ -57,6 +57,7 @@ export const publicationCompletionFieldLabels: Record<
 };
 
 export type PublicationSourceName = "Google Scholar" | "Manual" | "SINTA";
+export type PublicationCitationProvider = "Google Scholar" | "SINTA";
 
 export type PublicationMember = {
   avatarSrc: ImageProps["src"];
@@ -74,7 +75,7 @@ export type PublicationProvenance = {
 export type OfficialPublication = {
   authors: string[];
   bhtMembers: PublicationMember[];
-  citationSource?: PublicationSourceName;
+  citationProvider?: PublicationCitationProvider;
   citationUpdatedAt?: string;
   citations: number | null;
   doi?: string;
@@ -247,7 +248,10 @@ function createPublication(index: number): OfficialPublication {
   const year = 2026 - (index % 4);
   const type = publicationTypes[index % publicationTypes.length];
   const provenance = createProvenance(index, year);
-  const citations = index % 13 === 0 ? null : (index * 7 + 3) % 64;
+  const citationProvider: PublicationCitationProvider | undefined =
+    index % 5 === 0 ? undefined : index % 2 === 0 ? "SINTA" : "Google Scholar";
+  const citations =
+    !citationProvider || index % 13 === 0 ? null : (index * 7 + 3) % 64;
   const quality: PublicationQuality =
     index % 11 === 0 || index % 17 === 0 ? "Perlu dilengkapi" : "Lengkap";
   const decision =
@@ -262,9 +266,9 @@ function createPublication(index: number): OfficialPublication {
       `Anggota Kolaborator ${index + 1}`,
     ],
     bhtMembers: [owner, collaborator],
-    citationSource: citations === null ? undefined : provenance[0].source,
+    citationProvider: citations === null ? undefined : citationProvider,
     citationUpdatedAt:
-      citations === null ? undefined : provenance[0].capturedAt,
+      citations === null ? undefined : `${1 + (index % 11)} Agu 2026`,
     citations,
     doi:
       type === "HKI" || index % 9 === 0
@@ -324,6 +328,8 @@ const highlightedRecords: OfficialPublication[] = [
     ...createPublication(85),
     authors: ["Dimas Wibisono", "Suksmandhira Harimurti", "Rizky Hidayat"],
     bhtMembers: [members[1]],
+    citationProvider: "Google Scholar",
+    citationUpdatedAt: "1 Agu 2026",
     citations: 12,
     id: "histopathology-classification",
     owner: members[1],
@@ -394,7 +400,9 @@ const highlightedRecords: OfficialPublication[] = [
     ...createPublication(90),
     authors: ["Nadia Rahmawati", "Hesty Susanti", "Farhan Akbar"],
     bhtMembers: [members[0]],
-    citations: 7,
+    citationProvider: undefined,
+    citationUpdatedAt: undefined,
+    citations: null,
     id: "wearable-fall-risk",
     owner: members[0],
     publicId: "PUB-2026-04783",
@@ -408,7 +416,7 @@ const highlightedRecords: OfficialPublication[] = [
     ...createPublication(91),
     authors: ["Rizky Hidayat", "Suksmandhira Harimurti", "Mira Putri"],
     bhtMembers: [members[1]],
-    citationSource: "SINTA",
+    citationProvider: "SINTA",
     citationUpdatedAt: "9 Jul 2026",
     citations: 25,
     id: "ecg-arrhythmia",
@@ -438,7 +446,7 @@ const highlightedRecords: OfficialPublication[] = [
     ...createPublication(93),
     authors: ["Nur Aulia", "Fathur Rahman", "Bagus Ramadhan"],
     bhtMembers: [members[3]],
-    citationSource: undefined,
+    citationProvider: undefined,
     citationUpdatedAt: undefined,
     citations: null,
     id: "portable-ultrasound",
@@ -468,7 +476,9 @@ const highlightedRecords: OfficialPublication[] = [
     ...createPublication(95),
     authors: ["Dita Puspitasari", "Laily Ade Oktaviana", "Fauzan Nabil"],
     bhtMembers: [members[2], members[4]],
-    citations: 8,
+    citationProvider: undefined,
+    citationUpdatedAt: undefined,
+    citations: null,
     id: "elder-rehabilitation-sensor",
     owner: members[2],
     publicId: "PUB-2023-04788",

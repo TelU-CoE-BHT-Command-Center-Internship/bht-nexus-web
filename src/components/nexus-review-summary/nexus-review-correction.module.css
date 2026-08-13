@@ -74,6 +74,25 @@
   margin-top: 0.55rem;
 }
 
+.requestedFieldList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.65rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.requestedFieldList li {
+  padding: 0.28rem 0.5rem;
+  border: 1px solid #efbac6;
+  border-radius: 999px;
+  background: #fff;
+  color: #b42342;
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
 .previousRevision {
   padding: 0.8rem 0.9rem;
   border-left: 3px solid #6c5dd3;
@@ -144,6 +163,56 @@
 .fieldList {
   display: grid;
   gap: 0.7rem;
+}
+
+.referenceFields {
+  margin-top: 0.75rem;
+  padding: 0.7rem;
+  border: 1px solid #e5e8ee;
+  border-radius: 0.6rem;
+  background: #f8f9fb;
+}
+
+.referenceFields summary {
+  color: #4e596e;
+  font-size: 0.68rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.referenceFields > p {
+  margin: 0.45rem 0 0.65rem;
+  color: #7a8497;
+  font-size: 0.63rem;
+  line-height: 1.45;
+}
+
+.referenceFields dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.referenceFields dl > div {
+  min-width: 0;
+  padding: 0.55rem;
+  border: 1px solid #e7eaf0;
+  border-radius: 0.45rem;
+  background: #fff;
+}
+
+.referenceFields dt {
+  color: #8992a5;
+  font-size: 0.59rem;
+}
+
+.referenceFields dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+  color: #526079;
+  font-size: 0.65rem;
+  line-height: 1.45;
 }
 
 .fieldCard {
@@ -408,6 +477,7 @@
   }
 
   .changeList li > div,
+  .referenceFields dl,
   .confirmation > div:last-child {
     grid-template-columns: 1fr;
   }

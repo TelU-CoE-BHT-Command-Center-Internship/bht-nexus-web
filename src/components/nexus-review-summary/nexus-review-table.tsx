@@ -74,6 +74,18 @@ function EmptyIcon() {
 }
 
 function MatchSignal({ candidate }: { candidate: ReviewCandidateRow }) {
+  if (candidate.kind === "metadata-completion") {
+    const affectedFieldCount =
+      candidate.completionProposal?.affectedFields.length ?? 0;
+
+    return (
+      <div className={styles.proposalSignal}>
+        <strong>Pelengkapan</strong>
+        <span>{affectedFieldCount} bidang diajukan</span>
+      </div>
+    );
+  }
+
   const assessment = candidate.duplicateAssessment;
   const hasComparison = assessment.highestScore > 0;
 
@@ -107,6 +119,22 @@ function getCandidateAction(
   candidate: ReviewCandidateRow,
   openCandidateLabel: string,
 ) {
+  if (candidate.kind === "metadata-completion") {
+    if (candidate.status === "waiting") {
+      return {
+        ariaLabel: `Tinjau usulan pelengkapan: ${candidate.record.title}`,
+        desktopLabel: "Tinjau usulan",
+        mobileLabel: "Tinjau usulan",
+      };
+    }
+
+    return {
+      ariaLabel: `Lihat hasil usulan pelengkapan: ${candidate.record.title}`,
+      desktopLabel: "Lihat hasil",
+      mobileLabel: "Lihat hasil usulan",
+    };
+  }
+
   if (candidate.status === "needs-fix") {
     return {
       ariaLabel: `Perbaiki kandidat: ${candidate.record.title}`,
@@ -177,7 +205,7 @@ export function NexusReviewTable({
       summary={
         <>
           {activeSourceLabel}: {candidates.length} sesuai filter dari{" "}
-          {sourceCandidateCount} kandidat sumber
+          {sourceCandidateCount} data sumber
         </>
       }
       title="Antrean tinjauan"

@@ -8,12 +8,19 @@ export type ReviewCandidateSource =
 
 export type ReviewCandidateStatus = "completed" | "needs-fix" | "waiting";
 
-export type ReviewDecision = "approved-new" | "merged" | "rejected";
+export type ReviewDecision =
+  | "approved-completion"
+  | "approved-new"
+  | "merged"
+  | "rejected";
 
 export type ReviewStatusChangeContext = {
   decision?: ReviewDecision;
   detail?: string;
   label?: string;
+  linkedTargetId?: string;
+  proposedEnrichmentFields?: readonly ReviewRecordFieldKey[];
+  requestedCorrectionFields?: readonly ReviewRecordFieldKey[];
 };
 
 export type ReviewOwnerPortrait =
@@ -75,6 +82,36 @@ export type ReviewRevisionSubmission = {
   version: string;
 };
 
+export type ReviewCompletionFieldKey =
+  | "doi"
+  | "issue"
+  | "pages"
+  | "publisherUrl";
+
+export type ReviewCompletionResolution = {
+  reason: string;
+  status: "not-applicable" | "not-available" | "provided";
+  value: string;
+};
+
+export type ReviewMetadataCompletionProposal = {
+  affectedFields: readonly ReviewCompletionFieldKey[];
+  id: string;
+  officialValues: Record<ReviewCompletionFieldKey, string>;
+  publicationId: string;
+  resolutions: Partial<
+    Record<ReviewCompletionFieldKey, ReviewCompletionResolution>
+  >;
+  sourceNote: string;
+  submittedAt: string;
+  submittedBy: string;
+};
+
+export type ReviewLinkOutcome = {
+  proposedEnrichmentFields: readonly ReviewRecordFieldKey[];
+  targetId: string;
+};
+
 export type ReviewTimelineEntry = {
   actor: string;
   candidateVersion: string;
@@ -131,13 +168,16 @@ export type ReviewDuplicateAssessment = {
 };
 
 export type ReviewCandidateRow = {
+  completionProposal?: ReviewMetadataCompletionProposal;
   decision?: ReviewDecision;
   discoveredAt: string;
   discoveredAtIso: string;
   duplicateAssessment: ReviewDuplicateAssessment;
   evidence: readonly ReviewEvidence[];
   id: string;
+  kind: "metadata-completion" | "publication-candidate";
   latestRevision?: ReviewRevisionSubmission;
+  linkOutcome?: ReviewLinkOutcome;
   matches: readonly ReviewOfficialMatch[];
   owner: ReviewMember;
   previousIssue?: string;
@@ -147,6 +187,7 @@ export type ReviewCandidateRow = {
   record: ReviewRecord;
   relatedMembers: readonly ReviewMember[];
   reviewerNote: string;
+  requestedCorrectionFields?: readonly ReviewRecordFieldKey[];
   source: ReviewCandidateSource;
   status: ReviewCandidateStatus;
   timeline: readonly ReviewTimelineEntry[];
@@ -183,6 +224,7 @@ export const reviewStatusLabels: Record<ReviewCandidateStatus, string> = {
 };
 
 export const reviewDecisionLabels: Record<ReviewDecision, string> = {
+  "approved-completion": "Pelengkapan metadata disetujui",
   "approved-new": "Disetujui sebagai data baru",
   merged: "Dihubungkan ke rekam resmi",
   rejected: "Ditolak",
@@ -359,6 +401,16 @@ export const reviewRecordFieldOrder: readonly ReviewRecordFieldKey[] = [
   "abstract",
 ];
 
+export const reviewCompletionFieldLabels: Record<
+  ReviewCompletionFieldKey,
+  string
+> = {
+  doi: "DOI",
+  issue: "Nomor terbit",
+  pages: "Halaman / nomor artikel",
+  publisherUrl: "Tautan penerbit",
+};
+
 const sourcePool: readonly ReviewCandidateSource[] = [
   ...Array.from({ length: 34 }, () => "SINTA" as const),
   ...Array.from({ length: 24 }, () => "Google Scholar" as const),
@@ -502,6 +554,7 @@ function createOfficialRecord(
   if (variant === "strong") {
     return {
       ...record,
+      abstract: rank === 0 ? "" : record.abstract,
       authors: record.authors.replace(";", "; Dr. "),
       doi: rank === 0 ? "" : record.doi.replace("bhtnexus", "bht-index"),
       title:
@@ -753,6 +806,7 @@ function createCandidate(index: number): ReviewCandidateRow {
           ]
         : [],
     id: `TJV-2026-${String(index + 71).padStart(5, "0")}`,
+    kind: "publication-candidate",
     matches,
     owner,
     previousIssue:
@@ -765,6 +819,8 @@ function createCandidate(index: number): ReviewCandidateRow {
     record,
     relatedMembers,
     reviewerNote,
+    requestedCorrectionFields:
+      status === "needs-fix" ? ["affiliation", "doi"] : undefined,
     source,
     status,
     timeline: createTimeline(index, status, discoveredAt, decision),
@@ -772,10 +828,94 @@ function createCandidate(index: number): ReviewCandidateRow {
   };
 }
 
-const rows: readonly ReviewCandidateRow[] = Array.from(
-  { length: 86 },
-  (_, index) => createCandidate(index),
-);
+function createMetadataCompletionProposal(): ReviewCandidateRow {
+  const owner = owners[1];
+  const discoveredAt = "13 Agu 2026";
+  const record: ReviewRecord = {
+    abstract:
+      "Model klasifikasi citra histopatologi dikembangkan untuk mendukung skrining kanker payudara pada data multisenter.",
+    affiliation: "Telkom University; Rumah Sakit Hasan Sadikin",
+    authors: "Dimas Wibisono; Suksmandhira Harimurti; Rizky Hidayat",
+    doi: "10.62527/bht.2025.00086",
+    journal: "JASMINE",
+    keywords: "deep learning; histopatologi; kanker payudara; multisenter",
+    title:
+      "Deep Learning untuk Klasifikasi Citra Histopatologi Kanker Payudara: Studi Multisenter",
+    year: "2026",
+  };
+
+  return {
+    completionProposal: {
+      affectedFields: ["issue", "pages"],
+      id: "PLG-2026-00112",
+      officialValues: {
+        doi: record.doi,
+        issue: "",
+        pages: "",
+        publisherUrl: "https://jasmine-journal.org/article/e10542",
+      },
+      publicationId: "PUB-2026-04778",
+      resolutions: {
+        issue: {
+          reason: "Nomor terbit tercantum pada halaman artikel penerbit.",
+          status: "provided",
+          value: "2",
+        },
+        pages: {
+          reason:
+            "Jurnal menggunakan nomor artikel e10542 dan tidak menerbitkan rentang halaman.",
+          status: "not-applicable",
+          value: "",
+        },
+      },
+      sourceNote:
+        "Halaman artikel JASMINE: https://jasmine-journal.org/article/e10542",
+      submittedAt: "13 Agu 2026, 10.15 WIB",
+      submittedBy: "Suksmandhira Harimurti",
+    },
+    discoveredAt,
+    discoveredAtIso: "2026-08-13",
+    duplicateAssessment: {
+      basis: "Usulan berasal dari rekam resmi yang sudah ada.",
+      explanation:
+        "Dua bidang metadata belum selesai dan diajukan untuk ditinjau.",
+      highestScore: 0,
+      matchCount: 0,
+      verdict: "new",
+    },
+    evidence: [],
+    id: "TJV-2026-00112",
+    kind: "metadata-completion",
+    matches: [],
+    owner,
+    provenance: [createProvenance(112, "Manual", "P1")],
+    publicationType: "Artikel Jurnal",
+    publicationTypeId: "journal-article",
+    record,
+    relatedMembers: [owner],
+    reviewerNote: "",
+    source: "Manual",
+    status: "waiting",
+    timeline: [
+      {
+        actor: "Suksmandhira Harimurti",
+        candidateVersion: "v1",
+        detail:
+          "Usulan pelengkapan dua bidang dikirim tanpa mengubah rekam resmi.",
+        id: "timeline-metadata-completion-submitted",
+        label: "Usulan pelengkapan dikirim",
+        timeLabel: discoveredAt,
+        tone: "waiting",
+      },
+    ],
+    version: "v1",
+  };
+}
+
+const rows: readonly ReviewCandidateRow[] = [
+  createMetadataCompletionProposal(),
+  ...Array.from({ length: 86 }, (_, index) => createCandidate(index)),
+];
 
 const pageSizeFilter: ReviewSelectFilter = {
   defaultValue: "10",
@@ -795,7 +935,7 @@ const pageSizeFilter: ReviewSelectFilter = {
  */
 export function getNexusReviewTableContent(): NexusReviewTableContent {
   return {
-    caption: "Daftar kandidat data yang perlu ditinjau",
+    caption: "Daftar kandidat dan usulan metadata yang perlu ditinjau",
     columns: {
       action: "Aksi",
       discoveredAt: "Ditemukan",

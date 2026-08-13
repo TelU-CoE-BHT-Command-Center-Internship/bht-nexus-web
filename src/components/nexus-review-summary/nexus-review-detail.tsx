@@ -205,6 +205,9 @@ export function NexusReviewDetail({
   const [decisionMode, setDecisionMode] = useState<ReviewDecisionMode | null>(
     null,
   );
+  const [requestedCorrectionFields, setRequestedCorrectionFields] = useState<
+    ReviewRecordFieldKey[]
+  >([...(candidate.requestedCorrectionFields ?? [])]);
   const [showRejectConfirmation, setShowRejectConfirmation] = useState(false);
   const selectedMatch =
     candidate.matches.find((match) => match.id === selectedMatchId) ??
@@ -230,12 +233,26 @@ export function NexusReviewDetail({
   const isFinal = candidate.status === "completed";
   const hasReviewerNote = candidate.reviewerNote.trim().length > 0;
   const candidateDoi = normalizeDoi(candidate.record.doi);
-  const hasBlockingIdentifier =
-    candidateDoi.length > 0 &&
-    candidate.matches.some(
-      (match) => normalizeDoi(match.officialRecord.doi) === candidateDoi,
-    );
+  const exactDoiMatch =
+    candidateDoi.length > 0
+      ? candidate.matches.find(
+          (match) => normalizeDoi(match.officialRecord.doi) === candidateDoi,
+        )
+      : undefined;
+  const hasBlockingIdentifier = Boolean(exactDoiMatch);
   const canCreateNew = !hasBlockingIdentifier;
+  const isSelectedLinkTargetValid = Boolean(
+    selectedMatch && (!exactDoiMatch || selectedMatch.id === exactDoiMatch.id),
+  );
+  const selectedEnrichmentFields = selectedMatch
+    ? selectedMatch.comparisons
+        .filter(
+          (comparison) =>
+            comparison.status !== "same" &&
+            candidate.record[comparison.key].trim().length > 0,
+        )
+        .map((comparison) => comparison.key)
+    : [];
   const comparisonSummary = selectedMatch
     ? selectedMatch.comparisons.reduce(
         (summary, comparison) => {
@@ -258,6 +275,15 @@ export function NexusReviewDetail({
 
   const chooseMatch = (match: ReviewOfficialMatch) => {
     setSelectedMatchId(match.id);
+    setDecisionMode(null);
+  };
+
+  const toggleCorrectionField = (fieldKey: ReviewRecordFieldKey) => {
+    setRequestedCorrectionFields((currentFields) =>
+      currentFields.includes(fieldKey)
+        ? currentFields.filter((key) => key !== fieldKey)
+        : [...currentFields, fieldKey],
+    );
   };
 
   const finishDecision = (
@@ -269,10 +295,11 @@ export function NexusReviewDetail({
   };
 
   const requestRevision = () => {
-    if (!hasReviewerNote) return;
+    if (!hasReviewerNote || requestedCorrectionFields.length === 0) return;
     finishDecision("needs-fix", {
       detail: candidate.reviewerNote.trim(),
       label: "Perbaikan metadata diminta",
+      requestedCorrectionFields,
     });
   };
 
@@ -289,7 +316,7 @@ export function NexusReviewDetail({
     if (
       !hasReviewerNote ||
       !decisionMode ||
-      (decisionMode === "merge" && !selectedMatch)
+      (decisionMode === "merge" && !isSelectedLinkTargetValid)
     )
       return;
 
@@ -298,6 +325,8 @@ export function NexusReviewDetail({
         decision: "merged",
         detail: `Kandidat dihubungkan ke ${selectedMatch.id}. ${candidate.reviewerNote.trim()}`,
         label: "Dihubungkan ke rekam resmi",
+        linkedTargetId: selectedMatch.id,
+        proposedEnrichmentFields: selectedEnrichmentFields,
       });
       return;
     }
@@ -509,20 +538,35 @@ export function NexusReviewDetail({
       </section>
 
       {isFinal ? (
-        <div
-          aria-live="polite"
-          className={styles.finalState}
-          data-tone={candidate.status}
-        >
-          <strong>Status: {reviewStatusLabels[candidate.status]}</strong>
-          <span>
-            Hasil:{" "}
-            {candidate.decision
-              ? reviewDecisionLabels[candidate.decision]
-              : "Keputusan akhir belum tersedia."}{" "}
-            Rincian hanya dapat dibaca dan riwayat tetap tersimpan.
-          </span>
-        </div>
+        <>
+          <div
+            aria-live="polite"
+            className={styles.finalState}
+            data-tone={candidate.status}
+          >
+            <strong>Status: {reviewStatusLabels[candidate.status]}</strong>
+            <span>
+              Hasil:{" "}
+              {candidate.decision
+                ? reviewDecisionLabels[candidate.decision]
+                : "Keputusan akhir belum tersedia."}{" "}
+              Rincian hanya dapat dibaca dan riwayat tetap tersimpan.
+            </span>
+          </div>
+          {candidate.linkOutcome ? (
+            <div className={styles.linkOutcomeFinal}>
+              <strong>
+                Rekam resmi {candidate.linkOutcome.targetId} tetap menjadi acuan
+              </strong>
+              <p>
+                Metadata resminya tidak ditimpa. Sumber kandidat sudah
+                dihubungkan dan{" "}
+                {candidate.linkOutcome.proposedEnrichmentFields.length} bidang
+                berbeda disimpan sebagai usulan pelengkapan terpisah.
+              </p>
+            </div>
+          ) : null}
+        </>
       ) : null}
 
       <section
@@ -547,6 +591,7 @@ export function NexusReviewDetail({
           <div className={styles.matchList}>
             {candidate.matches.map((match, index) => {
               const isSelected = selectedMatch?.id === match.id;
+              const isExactDoiTarget = exactDoiMatch?.id === match.id;
               return (
                 <label
                   className={styles.matchCard}
@@ -570,6 +615,11 @@ export function NexusReviewDetail({
                     <em>{match.basis}</em>
                     <span className={styles.matchSources}>
                       {match.sources.map((source) => source.label).join(" + ")}
+                      {isExactDoiTarget ? (
+                        <b className={styles.requiredTargetBadge}>
+                          Target DOI identik
+                        </b>
+                      ) : null}
                     </span>
                   </span>
                   <span className={styles.matchScore} data-tone={match.verdict}>
@@ -743,11 +793,34 @@ export function NexusReviewDetail({
 
         {!isFinal ? (
           <>
+            {exactDoiMatch && selectedMatch?.id !== exactDoiMatch.id ? (
+              <div className={styles.identifierTargetGuard} role="alert">
+                <div>
+                  <strong>Target hubungan harus {exactDoiMatch.id}</strong>
+                  <p>
+                    DOI kandidat identik dengan rekam tersebut. Pembanding yang
+                    sedang dibuka tetap dapat diperiksa, tetapi tidak dapat
+                    dipilih sebagai target hubungan.
+                  </p>
+                </div>
+                <button
+                  onClick={() => chooseMatch(exactDoiMatch)}
+                  type="button"
+                >
+                  Gunakan target DOI sama
+                </button>
+              </div>
+            ) : null}
+
             <div className={styles.decisionChoices}>
               {selectedMatch ? (
-                <label data-selected={decisionMode === "merge" || undefined}>
+                <label
+                  data-disabled={!isSelectedLinkTargetValid || undefined}
+                  data-selected={decisionMode === "merge" || undefined}
+                >
                   <input
                     checked={decisionMode === "merge"}
+                    disabled={!isSelectedLinkTargetValid}
                     name="decision-mode"
                     onChange={() => setDecisionMode("merge")}
                     type="radio"
@@ -755,8 +828,9 @@ export function NexusReviewDetail({
                   <span>
                     <strong>Hubungkan ke {selectedMatch.id}</strong>
                     <small>
-                      Pilih hanya jika bukti menunjukkan karya yang sama. Sumber
-                      kandidat dan riwayat asal tetap dipertahankan.
+                      {isSelectedLinkTargetValid
+                        ? "Pilih hanya jika bukti menunjukkan karya yang sama. Metadata resmi tidak ditimpa."
+                        : `Tidak tersedia karena DOI identik mengarah ke ${exactDoiMatch?.id}.`}
                     </small>
                   </span>
                 </label>
@@ -782,6 +856,61 @@ export function NexusReviewDetail({
                 </span>
               </label>
             </div>
+
+            {decisionMode === "merge" && selectedMatch ? (
+              <section
+                aria-labelledby="link-consequence-title"
+                className={styles.linkConsequence}
+              >
+                <header>
+                  <div>
+                    <span>Hasil jika dihubungkan</span>
+                    <h4 id="link-consequence-title">
+                      {selectedMatch.id} tetap menjadi rekam resmi
+                    </h4>
+                  </div>
+                  <b>Tidak ada penimpaan otomatis</b>
+                </header>
+                <ul className={styles.linkConsequencePrinciples}>
+                  <li>
+                    Sumber kandidat dan jejak asal ditambahkan ke rekam resmi.
+                  </li>
+                  <li>
+                    Nilai resmi yang ada tetap dipertahankan pada keputusan ini.
+                  </li>
+                  <li>
+                    Nilai kandidat yang berbeda disimpan sebagai usulan
+                    pelengkapan terpisah untuk tinjauan berikutnya.
+                  </li>
+                </ul>
+
+                {selectedEnrichmentFields.length > 0 ? (
+                  <div className={styles.linkFieldResults}>
+                    {selectedEnrichmentFields.map((fieldKey) => (
+                      <article key={fieldKey}>
+                        <strong>{reviewRecordFieldLabels[fieldKey]}</strong>
+                        <p>
+                          <span>Resmi tetap</span>
+                          {getVisibleValue(
+                            selectedMatch.officialRecord[fieldKey],
+                            "Belum tersedia",
+                          )}
+                        </p>
+                        <p>
+                          <span>Usulan disimpan</span>
+                          {candidate.record[fieldKey]}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.linkNoDifferences}>
+                    Tidak ada nilai kandidat berbeda yang perlu dijadikan usulan
+                    pelengkapan.
+                  </p>
+                )}
+              </section>
+            ) : null}
 
             {candidate.previousIssue ? (
               <div className={styles.previousIssue}>
@@ -818,6 +947,37 @@ export function NexusReviewDetail({
               </p>
             ) : null}
 
+            <fieldset className={styles.correctionFieldPicker}>
+              <legend>Bidang jika meminta perbaikan</legend>
+              <p>
+                Pilih hanya bidang yang perlu dikoreksi. Bidang lain akan tetap
+                dapat dibaca, tetapi tidak dapat diubah oleh pengaju.
+              </p>
+              <div>
+                {reviewRecordFieldOrder.map((fieldKey) => (
+                  <label key={fieldKey}>
+                    <input
+                      checked={requestedCorrectionFields.includes(fieldKey)}
+                      onChange={() => toggleCorrectionField(fieldKey)}
+                      type="checkbox"
+                    />
+                    <span>{reviewRecordFieldLabels[fieldKey]}</span>
+                  </label>
+                ))}
+              </div>
+              {requestedCorrectionFields.length === 0 ? (
+                <small>
+                  Pilih sedikitnya satu bidang untuk mengaktifkan “Minta
+                  perbaikan”.
+                </small>
+              ) : (
+                <small>
+                  {requestedCorrectionFields.length} bidang akan ditandai pada
+                  formulir perbaikan.
+                </small>
+              )}
+            </fieldset>
+
             {showRejectConfirmation ? (
               <div aria-live="polite" className={styles.rejectConfirmation}>
                 <div>
@@ -853,7 +1013,9 @@ export function NexusReviewDetail({
                 </button>
                 <button
                   className={styles.secondaryButton}
-                  disabled={!hasReviewerNote}
+                  disabled={
+                    !hasReviewerNote || requestedCorrectionFields.length === 0
+                  }
                   onClick={requestRevision}
                   type="button"
                 >
@@ -864,7 +1026,7 @@ export function NexusReviewDetail({
                   disabled={
                     !hasReviewerNote ||
                     !decisionMode ||
-                    (decisionMode === "merge" && !selectedMatch)
+                    (decisionMode === "merge" && !isSelectedLinkTargetValid)
                   }
                   onClick={approveCandidate}
                   type="button"

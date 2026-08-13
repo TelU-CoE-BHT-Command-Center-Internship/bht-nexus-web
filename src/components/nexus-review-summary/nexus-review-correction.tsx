@@ -116,6 +116,15 @@ export function NexusReviewCorrection({
   onClose,
   onResubmit,
 }: NexusReviewCorrectionProps) {
+  const requestedFieldKeys = candidate.requestedCorrectionFields?.length
+    ? candidate.requestedCorrectionFields
+    : reviewRecordFieldOrder;
+  const requestedFields = correctionFields.filter((field) =>
+    requestedFieldKeys.includes(field.key),
+  );
+  const referenceFields = correctionFields.filter(
+    (field) => !requestedFieldKeys.includes(field.key),
+  );
   const [draftRecord, setDraftRecord] = useState<ReviewRecord>({
     ...candidate.record,
   });
@@ -127,7 +136,7 @@ export function NexusReviewCorrection({
   );
   const changes = useMemo(
     () =>
-      reviewRecordFieldOrder.flatMap<ReviewRevisionChange>((key) => {
+      requestedFieldKeys.flatMap<ReviewRevisionChange>((key) => {
         const previousValue = candidate.record[key].trim();
         const currentValue = normalizedDraft[key];
 
@@ -142,7 +151,7 @@ export function NexusReviewCorrection({
               },
             ];
       }),
-    [candidate.record, normalizedDraft],
+    [candidate.record, normalizedDraft, requestedFieldKeys],
   );
   const canPrepareSubmission =
     changes.length > 0 && sourceNote.trim().length >= 8;
@@ -209,6 +218,11 @@ export function NexusReviewCorrection({
             Pemilik data: {candidate.owner.name} · Sumber awal:{" "}
             {candidate.provenance.map((source) => source.label).join(" + ")}
           </small>
+          <ul className={styles.requestedFieldList}>
+            {requestedFieldKeys.map((fieldKey) => (
+              <li key={fieldKey}>{reviewRecordFieldLabels[fieldKey]}</li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -233,12 +247,12 @@ export function NexusReviewCorrection({
           </div>
 
           <p className={styles.sectionIntro}>
-            Ubah hanya bidang yang dapat dibuktikan. Nilai di kolom kiri adalah
-            versi kandidat yang dikembalikan oleh pemeriksa.
+            Hanya bidang yang diminta pemeriksa yang dapat diubah. Nilai di
+            kolom kiri adalah versi kandidat yang dikembalikan.
           </p>
 
           <div className={styles.fieldList}>
-            {correctionFields.map((field) => {
+            {requestedFields.map((field) => {
               const fieldId = `${candidate.id}-${field.key}-correction`;
               const helpId = `${fieldId}-help`;
 
@@ -288,6 +302,26 @@ export function NexusReviewCorrection({
               );
             })}
           </div>
+
+          {referenceFields.length > 0 ? (
+            <details className={styles.referenceFields}>
+              <summary>
+                Lihat {referenceFields.length} bidang lain (hanya baca)
+              </summary>
+              <p>
+                Bidang berikut tidak termasuk permintaan ini dan tidak berubah
+                pada versi yang dikirim ulang.
+              </p>
+              <dl>
+                {referenceFields.map((field) => (
+                  <div key={field.key}>
+                    <dt>{reviewRecordFieldLabels[field.key]}</dt>
+                    <dd>{candidate.record[field.key] || "Belum tersedia"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          ) : null}
         </section>
 
         <section aria-labelledby="correction-source-title">

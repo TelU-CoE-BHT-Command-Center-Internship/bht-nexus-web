@@ -237,8 +237,8 @@ export function NexusPublicationsTable({
                         <strong>{publication.citations ?? "—"}</strong>
                         <span>
                           {publication.citations === null
-                            ? "belum tersinkron"
-                            : "sitasi tercatat"}
+                            ? "penyedia belum ditetapkan"
+                            : `${publication.citationProvider} · berkala`}
                         </span>
                       </span>
                     </td>
@@ -293,8 +293,8 @@ export function NexusPublicationsTable({
                 <strong>{publication.citations ?? "—"}</strong>
                 <span>
                   {publication.citations === null
-                    ? "belum tersinkron"
-                    : "sitasi tercatat"}
+                    ? "penyedia belum ditetapkan"
+                    : `${publication.citationProvider} · berkala`}
                 </span>
               </span>
               <dl className={styles.mobileMeta}>
