@@ -127,7 +127,11 @@ export const nexusDashboardPreviewViewer = {
 } satisfies DashboardViewer;
 
 const previewSession = {
-  availableRoutes: new Set(["/nexus/dashboard", "/nexus/tinjauan"]),
+  availableRoutes: new Set([
+    "/nexus/dashboard",
+    "/nexus/publikasi",
+    "/nexus/tinjauan",
+  ]),
   permissions: new Set<DashboardPermission>([
     "administration:read",
     "dashboard:read",

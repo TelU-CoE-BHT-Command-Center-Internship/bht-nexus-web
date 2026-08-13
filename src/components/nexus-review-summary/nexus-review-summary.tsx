@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { NexusReviewFilters } from "@/components/nexus-review-summary/nexus-review-filters";
-import styles from "@/components/nexus-review-summary/nexus-review-summary.module.css";
 import type { NexusReviewSummaryContent } from "@/components/nexus-review-summary/nexus-review-summary-content";
 import { NexusReviewSummaryIcon } from "@/components/nexus-review-summary/nexus-review-summary-icons";
 import type {
@@ -10,6 +9,10 @@ import type {
   ReviewDecision,
   ReviewStatusChangeContext,
 } from "@/components/nexus-review-summary/nexus-review-table-content";
+import {
+  NexusWorkspaceMetrics,
+  NexusWorkspacePage,
+} from "@/components/nexus-workspace-ui/nexus-workspace-page";
 
 type NexusReviewSummaryProps = {
   content: NexusReviewSummaryContent;
@@ -17,6 +20,17 @@ type NexusReviewSummaryProps = {
 
 export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
   const [candidates, setCandidates] = useState(content.filters.table.rows);
+  const metrics = content.summaryCards.map((card) => ({
+    icon: <NexusReviewSummaryIcon name={card.icon} />,
+    id: card.id,
+    label: card.label,
+    tone: card.tone,
+    unit: card.unit,
+    value: candidates.reduce(
+      (total, candidate) => total + (candidate.status === card.status ? 1 : 0),
+      0,
+    ),
+  }));
 
   const updateReviewerNote = (candidateId: string, reviewerNote: string) => {
     setCandidates((currentCandidates) =>
@@ -79,46 +93,13 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
   };
 
   return (
-    <section
-      aria-describedby="review-summary-description"
-      aria-labelledby="review-summary-title"
-      className={styles.page}
+    <NexusWorkspacePage
+      description={content.description}
+      descriptionId="review-summary-description"
+      title={content.title}
+      titleId="review-summary-title"
     >
-      <header className={styles.header}>
-        <h2 id="review-summary-title">{content.title}</h2>
-        <p id="review-summary-description">{content.description}</p>
-      </header>
-
-      <div className={styles.summaryGrid}>
-        {content.summaryCards.map((card) => {
-          const count = candidates.reduce(
-            (total, candidate) =>
-              total + (candidate.status === card.status ? 1 : 0),
-            0,
-          );
-
-          return (
-            <article
-              aria-label={`${card.label}: ${count} ${card.unit}`}
-              className={styles.summaryCard}
-              data-tone={card.tone}
-              key={card.id}
-            >
-              <span aria-hidden="true" className={styles.iconWrap}>
-                <NexusReviewSummaryIcon name={card.icon} />
-              </span>
-
-              <div className={styles.cardCopy}>
-                <h3>{card.label}</h3>
-                <p>
-                  <strong>{count}</strong>
-                  <span>{card.unit}</span>
-                </p>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      <NexusWorkspaceMetrics metrics={metrics} />
 
       <NexusReviewFilters
         candidates={candidates}
@@ -126,6 +107,6 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
         onReviewerNoteChange={updateReviewerNote}
         onStatusChange={updateCandidateStatus}
       />
-    </section>
+    </NexusWorkspacePage>
   );
 }

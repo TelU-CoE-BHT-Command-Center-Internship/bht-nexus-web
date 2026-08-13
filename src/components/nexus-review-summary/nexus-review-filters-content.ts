@@ -2,24 +2,18 @@ import {
   getNexusReviewTableContent,
   type NexusReviewTableContent,
 } from "@/components/nexus-review-summary/nexus-review-table-content";
+import type {
+  NexusSelectConfig,
+  NexusSelectOption,
+} from "@/components/nexus-workspace-ui/nexus-workspace-select";
 
 export type ReviewSourceFilter = {
   id: string;
   label: string;
 };
 
-export type ReviewFilterOption = {
-  label: string;
-  tone?: "completed" | "needs-fix" | "neutral" | "waiting";
-  value: string;
-};
-
-export type ReviewSelectFilter = {
-  defaultValue: string;
-  id: string;
-  label: string;
-  options: readonly [ReviewFilterOption, ...ReviewFilterOption[]];
-};
+export type ReviewFilterOption = NexusSelectOption;
+export type ReviewSelectFilter = NexusSelectConfig;
 
 export type NexusReviewFiltersContent = {
   defaultSourceId: string;

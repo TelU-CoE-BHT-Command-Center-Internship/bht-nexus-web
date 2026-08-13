@@ -1,26 +1,23 @@
 "use client";
 
-import {
-  type KeyboardEvent,
-  useCallback,
-  useDeferredValue,
-  useId,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { NexusReviewDetail } from "@/components/nexus-review-summary/nexus-review-detail";
 import styles from "@/components/nexus-review-summary/nexus-review-filters.module.css";
 import type {
   NexusReviewFiltersContent,
   ReviewSelectFilter,
 } from "@/components/nexus-review-summary/nexus-review-filters-content";
-import { NexusReviewSelect } from "@/components/nexus-review-summary/nexus-review-select";
 import { NexusReviewTable } from "@/components/nexus-review-summary/nexus-review-table";
 import type {
   ReviewCandidateRow,
   ReviewCandidateStatus,
   ReviewStatusChangeContext,
 } from "@/components/nexus-review-summary/nexus-review-table-content";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceTabs,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import { NexusWorkspaceSelect } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 
 type NexusReviewFiltersProps = {
   candidates: readonly ReviewCandidateRow[];
@@ -33,8 +30,6 @@ type NexusReviewFiltersProps = {
   ) => void;
 };
 
-type SourceTabKeyboardEvent = KeyboardEvent<HTMLButtonElement>;
-
 function getInitialFilterValues(filters: readonly ReviewSelectFilter[]) {
   const values: Record<string, string> = {};
 
@@ -45,30 +40,6 @@ function getInitialFilterValues(filters: readonly ReviewSelectFilter[]) {
   return values;
 }
 
-function getAdjacentTabIndex(
-  event: SourceTabKeyboardEvent,
-  currentIndex: number,
-  tabCount: number,
-) {
-  if (event.key === "Home") {
-    return 0;
-  }
-
-  if (event.key === "End") {
-    return tabCount - 1;
-  }
-
-  if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-    return (currentIndex + 1) % tabCount;
-  }
-
-  if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-    return (currentIndex - 1 + tabCount) % tabCount;
-  }
-
-  return null;
-}
-
 function normalizeSearchValue(value: string) {
   return value.toLocaleLowerCase("id-ID").trim();
 }
@@ -77,22 +48,12 @@ function getSourceId(source: ReviewCandidateRow["source"]) {
   return source.toLocaleLowerCase("id-ID").replaceAll(" ", "-");
 }
 
-function SearchIcon() {
-  return (
-    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      <circle cx="10.75" cy="10.75" r="6.75" />
-      <path d="m16 16 4 4" />
-    </svg>
-  );
-}
-
 export function NexusReviewFilters({
   candidates,
   content,
   onReviewerNoteChange,
   onStatusChange,
 }: NexusReviewFiltersProps) {
-  const idPrefix = useId();
   const defaultSourceIndex = Math.max(
     content.sources.findIndex(
       (source) => source.id === content.defaultSourceId,
@@ -126,6 +87,11 @@ export function NexusReviewFilters({
 
     return counts;
   }, [candidates]);
+  const sourceTabs = content.sources.map((source) => ({
+    count: sourceCounts[source.id] ?? 0,
+    id: source.id,
+    label: source.label,
+  }));
   const filteredCandidates = useMemo(() => {
     const nextCandidates = candidates.filter((candidate) => {
       const matchesSource =
@@ -198,30 +164,6 @@ export function NexusReviewFilters({
     setCurrentPage(1);
   };
 
-  const selectAdjacentSource = (
-    event: SourceTabKeyboardEvent,
-    currentIndex: number,
-  ) => {
-    const nextIndex = getAdjacentTabIndex(
-      event,
-      currentIndex,
-      content.sources.length,
-    );
-
-    if (nextIndex === null) {
-      return;
-    }
-
-    event.preventDefault();
-    selectSource(nextIndex);
-
-    const tabs =
-      event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
-        '[role="tab"]',
-      );
-    tabs?.[nextIndex]?.focus();
-  };
-
   const changeFilterValue = (filterId: string, value: string) => {
     setFilterValues((currentValues) => ({
       ...currentValues,
@@ -239,63 +181,42 @@ export function NexusReviewFilters({
 
   return (
     <div className={styles.filters}>
-      <div
-        aria-label={content.sourceNavigationLabel}
-        className={styles.sourceTabs}
-        role="tablist"
-      >
-        {content.sources.map((source, index) => {
-          const isActive = index === activeSourceIndex;
-
-          return (
-            <button
-              aria-controls={`${idPrefix}-source-panel`}
-              aria-selected={isActive}
-              className={styles.sourceTab}
-              id={`${idPrefix}-source-${source.id}`}
-              key={source.id}
-              onClick={() => selectSource(index)}
-              onKeyDown={(event) => selectAdjacentSource(event, index)}
-              role="tab"
-              tabIndex={isActive ? 0 : -1}
-              type="button"
-            >
-              <span>{source.label}</span>
-              <span className={styles.sourceCount}>
-                {sourceCounts[source.id] ?? 0}
-              </span>
-            </button>
+      <NexusWorkspaceTabs
+        activeId={activeSource.id}
+        label={content.sourceNavigationLabel}
+        onActiveChange={(sourceId) => {
+          const nextIndex = content.sources.findIndex(
+            (source) => source.id === sourceId,
           );
-        })}
-      </div>
+          if (nextIndex >= 0) selectSource(nextIndex);
+        }}
+        panelId="review-source-panel"
+        tabs={sourceTabs}
+      />
 
       <div
-        aria-labelledby={`${idPrefix}-source-${activeSource.id}`}
+        aria-label={`Sumber ${activeSource.label}`}
         className={styles.toolbar}
-        id={`${idPrefix}-source-panel`}
+        id="review-source-panel"
         role="tabpanel"
       >
-        <label className={styles.searchField}>
-          <span className={styles.visuallyHidden}>{content.searchLabel}</span>
-          <SearchIcon />
-          <input
-            autoComplete="off"
-            name="review-search"
-            onChange={(event) => {
-              setSearchQuery(event.currentTarget.value);
-              setCurrentPage(1);
-            }}
-            placeholder={content.searchPlaceholder}
-            type="search"
-            value={searchQuery}
-          />
-        </label>
+        <NexusWorkspaceSearch
+          label={content.searchLabel}
+          name="review-search"
+          onValueChange={(value) => {
+            setSearchQuery(value);
+            setCurrentPage(1);
+          }}
+          placeholder={content.searchPlaceholder}
+          value={searchQuery}
+        />
 
         {content.filters.map((filter) => (
-          <NexusReviewSelect
-            filter={filter}
+          <NexusWorkspaceSelect
+            config={filter}
             isOpen={openFilterId === filter.id}
             key={filter.id}
+            name={`review-${filter.id}`}
             onOpenChange={(isOpen) =>
               setOpenFilterId(isOpen ? filter.id : null)
             }
