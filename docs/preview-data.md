@@ -37,6 +37,7 @@ contoh, dan tidak termasuk daftar ini.
 |---|---|---|---|---|
 | Pencarian terkini beserta log percobaannya | `nexus-scraper-search/nexus-scraper-search-content.ts` | `submissionSeeds` | 4 pencarian, 7 percobaan | `/nexus/pencarian` |
 | Antrean tinjauan kandidat | `nexus-scraper-results/nexus-scraper-results-content.ts` | `candidateSeeds` | 14 kandidat dari 4 sumber | `/nexus/kandidat` |
+| Data resmi pembanding | `nexus-scraper-results/nexus-scraper-results-content.ts` | `official` di dalam `candidateSeeds` | 7 rekam | `/nexus/kandidat` |
 
 ## Dashboard dan kerangka ruang kerja
 

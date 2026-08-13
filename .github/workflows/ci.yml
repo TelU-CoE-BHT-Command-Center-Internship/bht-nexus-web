@@ -46,5 +46,8 @@ jobs:
       - name: Memeriksa TypeScript
         run: npm run typecheck
 
+      - name: Memeriksa kontras warna
+        run: npm run validate:contrast
+
       - name: Membuat build produksi
         run: npm run build

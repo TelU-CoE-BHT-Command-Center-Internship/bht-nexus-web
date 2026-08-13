@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import styles from "@/components/nexus-scraper-results/nexus-scraper-results.module.css";
 import type {
+  CandidateDecision,
   NexusScraperResultsContent,
   StagedCandidate,
 } from "@/components/nexus-scraper-results/nexus-scraper-results-content";
+import { normalizeDoi } from "@/components/nexus-scraper-results/nexus-scraper-review";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import shell from "@/components/nexus-workspace-ui/nexus-workspace-page.module.css";
 import {
@@ -19,6 +21,12 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-sort";
 
 type SortKey = "discoveredAt" | "match" | "status" | "title";
+
+type DecisionRecord = {
+  decision: CandidateDecision;
+  label: string;
+  note: string;
+};
 
 type NexusScraperResultsProps = {
   content: NexusScraperResultsContent;
@@ -49,9 +57,33 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
   const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [decisions, setDecisions] = useState<Record<string, DecisionRecord>>(
+    () => {
+      const settled: Record<string, DecisionRecord> = {};
+
+      for (const candidate of content.candidates) {
+        if (candidate.status !== "completed") {
+          continue;
+        }
+
+        const decision =
+          candidate.matches.length > 0 ? "merged" : "approved_new";
+        settled[candidate.id] = {
+          decision,
+          label: content.decisionLabels[decision],
+          note: "",
+        };
+      }
+
+      return settled;
+    },
+  );
+
+  const deferredQuery = useDeferredValue(query);
+  const isPending = deferredQuery !== query;
 
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = deferredQuery.trim().toLocaleLowerCase("id-ID");
 
     return content.candidates.filter((candidate) => {
       if (source !== "all" && candidate.source !== source) {
@@ -67,12 +99,17 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
         return true;
       }
 
-      return [candidate.title, candidate.owner, candidate.researcher]
+      return [
+        candidate.title,
+        candidate.owner,
+        candidate.researcher,
+        candidate.doi ?? "",
+      ]
         .join(" ")
-        .toLowerCase()
+        .toLocaleLowerCase("id-ID")
         .includes(needle);
     });
-  }, [content.candidates, query, source, status, type]);
+  }, [content.candidates, deferredQuery, source, status, type]);
 
   const sorted = sortRows(filtered, readCandidate);
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
@@ -81,6 +118,8 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
+  const isFiltered =
+    source !== "all" || status !== "all" || type !== "all" || query.length > 0;
 
   function reset(apply: () => void) {
     apply();
@@ -88,11 +127,36 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
     setOpenId(null);
   }
 
+  function resetFilters() {
+    reset(() => {
+      setSource("all");
+      setStatus("all");
+      setType("all");
+      setQuery("");
+    });
+  }
+
+  function decide(
+    candidate: StagedCandidate,
+    decision: CandidateDecision,
+    note: string,
+  ) {
+    setDecisions((current) => ({
+      ...current,
+      [candidate.id]: {
+        decision,
+        label: content.decisionLabels[decision],
+        note,
+      },
+    }));
+    setOpenId(null);
+  }
+
   return (
     <NexusWorkspacePage
       description={content.description}
-      title={content.title}
       descriptionId="candidates-description"
+      title={content.title}
       titleId="candidates-title"
     >
       <NexusWorkspaceStack>
@@ -161,8 +225,17 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
             </label>
           </div>
 
+          <p aria-live="polite" className={styles.resultCount}>
+            {isPending
+              ? content.loadingLabel
+              : `${sorted.length} ${content.resultCountLabel}`}
+          </p>
+
           <div className={shell.tableWrap}>
             <table className={shell.table}>
+              <caption className={styles.visuallyHidden}>
+                {content.tableCaption}
+              </caption>
               <thead>
                 <tr>
                   <SortableColumn
@@ -203,7 +276,16 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
                 {visible.length === 0 ? (
                   <tr>
                     <td className={styles.emptyCell} colSpan={8}>
-                      {content.emptyLabel}
+                      <p>{content.emptyFilterLabel}</p>
+                      {isFiltered ? (
+                        <button
+                          className={shell.ghostButton}
+                          onClick={resetFilters}
+                          type="button"
+                        >
+                          {content.resetFiltersLabel}
+                        </button>
+                      ) : null}
                     </td>
                   </tr>
                 ) : null}
@@ -212,8 +294,10 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
                   <CandidateRows
                     candidate={candidate}
                     content={content}
+                    decision={decisions[candidate.id]}
                     isOpen={openId === candidate.id}
                     key={candidate.id}
+                    onDecide={decide}
                     onToggle={() =>
                       setOpenId(openId === candidate.id ? null : candidate.id)
                     }
@@ -276,16 +360,32 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
 type CandidateRowsProps = {
   candidate: StagedCandidate;
   content: NexusScraperResultsContent;
+  decision?: DecisionRecord;
   isOpen: boolean;
+  onDecide: (
+    candidate: StagedCandidate,
+    decision: CandidateDecision,
+    note: string,
+  ) => void;
   onToggle: () => void;
 };
 
 function CandidateRows({
   candidate,
   content,
+  decision,
   isOpen,
+  onDecide,
   onToggle,
 }: CandidateRowsProps) {
+  const [note, setNote] = useState("");
+  const [confirmingReject, setConfirmingReject] = useState(false);
+
+  const match = candidate.matches[0];
+  const sharesDoi = Boolean(
+    candidate.doi && match?.doi && normalizeDoi(candidate.doi) === match.doi,
+  );
+
   return (
     <>
       <tr className={styles.row} data-open={isOpen}>
@@ -297,18 +397,23 @@ function CandidateRows({
         <td data-label={content.columns.source}>{candidate.sourceLabel}</td>
         <td data-label={content.columns.match}>
           <span className={styles.match} data-verdict={candidate.match.verdict}>
-            <strong>
-              {candidate.match.score === null
-                ? content.noMatchLabel
-                : `${candidate.match.score}%`}
-            </strong>
-            <span>{candidate.match.verdictLabel}</span>
+            {candidate.match.score === null ? (
+              <strong>{content.noMatchLabel}</strong>
+            ) : (
+              <>
+                <strong>{candidate.match.score}%</strong>
+                <span>{candidate.match.verdictLabel}</span>
+              </>
+            )}
           </span>
         </td>
         <td data-label={content.columns.owner}>{candidate.owner}</td>
         <td data-label={content.columns.status}>
-          <span className={styles.status} data-status={candidate.status}>
-            {candidate.statusLabel}
+          <span
+            className={styles.status}
+            data-status={decision ? "completed" : candidate.status}
+          >
+            {decision ? decision.label : candidate.statusLabel}
           </span>
         </td>
         <td data-label={content.columns.discoveredAt}>
@@ -319,6 +424,7 @@ function CandidateRows({
         <td data-label={content.columns.action}>
           <button
             aria-expanded={isOpen}
+            aria-label={`${content.reviewLabel}: ${candidate.title}`}
             className={shell.ghostButton}
             onClick={onToggle}
             type="button"
@@ -340,6 +446,62 @@ function CandidateRows({
               ))}
             </dl>
 
+            {match ? (
+              <details className={`${shell.disclosure} ${styles.block}`}>
+                <summary>{content.comparisonTitle}</summary>
+                <div className={shell.disclosureBody}>
+                  <table className={styles.comparisonTable}>
+                    <thead>
+                      <tr>
+                        <th scope="col">{content.comparisonColumns.field}</th>
+                        <th scope="col">
+                          {content.comparisonColumns.candidate}
+                        </th>
+                        <th scope="col">
+                          {content.comparisonColumns.official}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {match.comparisons.map((row) => (
+                        <tr key={row.id}>
+                          <th scope="row">{row.label}</th>
+                          <td>{row.candidateValue}</td>
+                          <td>
+                            <span
+                              className={styles.comparisonValue}
+                              data-status={row.status}
+                            >
+                              {row.officialValue}
+                            </span>
+                            <span className={styles.comparisonStatus}>
+                              {row.statusLabel}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            ) : null}
+
+            <details className={`${shell.disclosure} ${styles.block}`}>
+              <summary>
+                {content.timelineTitle} ({candidate.timeline.length})
+              </summary>
+              <ol className={`${shell.disclosureBody} ${styles.timeline}`}>
+                {candidate.timeline.map((entry) => (
+                  <li key={entry.id}>
+                    <p>{entry.label}</p>
+                    <span>
+                      {entry.actor} · {entry.timeLabel}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </details>
+
             <div className={styles.detailFooter}>
               <a
                 className={styles.sourceLink}
@@ -350,19 +512,69 @@ function CandidateRows({
                 {content.sourceUrlLabel}
               </a>
 
-              <div className={styles.decisionButtons}>
-                <button className={shell.ghostButton} type="button">
-                  {content.rejectLabel}
-                </button>
-                {candidate.match.comparisonCount > 0 ? (
-                  <button className={shell.ghostButton} type="button">
-                    {content.mergeLabel}
-                  </button>
-                ) : null}
-                <button className={shell.primaryButton} type="button">
-                  {content.acceptNewLabel}
-                </button>
-              </div>
+              {decision ? (
+                <p aria-live="polite" className={styles.decided}>
+                  {content.decidedLabel}: {decision.label}
+                  {decision.note ? ` · ${decision.note}` : ""}
+                </p>
+              ) : (
+                <div className={styles.decisionArea}>
+                  <label
+                    className={styles.noteField}
+                    htmlFor={`note-${candidate.id}`}
+                  >
+                    <span>{content.noteLabel}</span>
+                    <input
+                      id={`note-${candidate.id}`}
+                      onChange={(event) => setNote(event.target.value)}
+                      placeholder={content.notePlaceholder}
+                      type="text"
+                      value={note}
+                    />
+                  </label>
+
+                  {sharesDoi ? (
+                    <p className={styles.blocked}>
+                      {content.blockedByDoiLabel}
+                    </p>
+                  ) : null}
+
+                  <div className={styles.decisionButtons}>
+                    <button
+                      className={shell.ghostButton}
+                      onClick={() =>
+                        confirmingReject
+                          ? onDecide(candidate, "rejected", note)
+                          : setConfirmingReject(true)
+                      }
+                      type="button"
+                    >
+                      {confirmingReject
+                        ? content.confirmRejectLabel
+                        : content.rejectLabel}
+                    </button>
+
+                    {match ? (
+                      <button
+                        className={shell.ghostButton}
+                        onClick={() => onDecide(candidate, "merged", note)}
+                        type="button"
+                      >
+                        {content.mergeLabel}
+                      </button>
+                    ) : null}
+
+                    <button
+                      className={shell.primaryButton}
+                      disabled={sharesDoi}
+                      onClick={() => onDecide(candidate, "approved_new", note)}
+                      type="button"
+                    >
+                      {content.acceptNewLabel}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </td>
         </tr>

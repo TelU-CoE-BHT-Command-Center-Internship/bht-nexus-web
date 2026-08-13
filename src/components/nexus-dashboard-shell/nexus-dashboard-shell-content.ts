@@ -12,7 +12,6 @@ export type DashboardShellIconName =
   | "members"
   | "publications"
   | "questions"
-  | "reviews"
   | "search";
 
 export type DashboardNavigationItem = {
@@ -81,7 +80,6 @@ type DashboardPermission =
   | "members:read"
   | "publications:read"
   | "queries:read"
-  | "reviews:read"
   | "scraper:read";
 
 type NavigationGroupId =
@@ -166,14 +164,6 @@ const navigationDefinitions: NavigationDefinition[] = [
     permission: "publications:read",
   },
   {
-    group: "data",
-    href: { en: "/en/nexus/reviews", id: "/nexus/tinjauan" },
-    icon: "reviews",
-    id: "reviews",
-    label: { en: "Reviews", id: "Tinjauan" },
-    permission: "reviews:read",
-  },
-  {
     group: "administration",
     href: { en: "/en/nexus/administration", id: "/nexus/administrasi" },
     icon: "administration",
@@ -224,7 +214,6 @@ const previewSession = {
     "/nexus/pencarian",
     "/nexus/publikasi",
     "/nexus/tanya-dokumen",
-    "/nexus/tinjauan",
     "/en/nexus/ask-documents",
     "/en/nexus/candidates",
     "/en/nexus/documents",
@@ -240,7 +229,6 @@ const previewSession = {
     "members:read",
     "publications:read",
     "queries:read",
-    "reviews:read",
     "scraper:read",
   ]),
   viewer: nexusDashboardPreviewViewer,

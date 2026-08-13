@@ -224,7 +224,7 @@ export function NexusPublicationDetail({
         </div>
         <Link
           className={styles.reviewLink}
-          href="/nexus/tinjauan"
+          href="/nexus/kandidat"
           prefetch={false}
         >
           Buka antrean Tinjauan <ArrowIcon />

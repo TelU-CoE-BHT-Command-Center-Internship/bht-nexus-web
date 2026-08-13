@@ -1,5 +1,15 @@
+import {
+  type CandidateDecision,
+  type ComparisonStatus,
+  getComparisonLabel,
+  getComparisonStatus,
+  getDecisionLabel,
+  normalizeDoi,
+} from "@/components/nexus-scraper-results/nexus-scraper-review";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
+
+export type { CandidateDecision, ComparisonStatus };
 
 export type CandidateDetail = {
   id: string;
@@ -42,7 +52,39 @@ export type CandidateMatch = {
   verdictLabel: string;
 };
 
+export type FieldComparison = {
+  candidateValue: string;
+  id: string;
+  label: string;
+  officialValue: string;
+  status: ComparisonStatus;
+  statusLabel: string;
+};
+
+/** An existing official record this candidate may duplicate. */
+export type OfficialMatch = {
+  comparisons: FieldComparison[];
+  doi: string | null;
+  id: string;
+  score: number;
+  title: string;
+  updatedAtLabel: string;
+};
+
+/** Audit trail for where a candidate came from, one row of `staging_candidates`. */
+export type TimelineEntry = {
+  actor: string;
+  id: string;
+  label: string;
+  timeLabel: string;
+};
+
 export type StagedCandidate = {
+  decision?: CandidateDecision;
+  decisionLabel?: string;
+  doi: string | null;
+  matches: OfficialMatch[];
+  timeline: TimelineEntry[];
   details: CandidateDetail[];
   discoveredAt: string;
   discoveredAtLabel: string;
@@ -73,6 +115,20 @@ export type CandidateSelectOption = {
 
 export type NexusScraperResultsContent = {
   acceptNewLabel: string;
+  blockedByDoiLabel: string;
+  comparisonColumns: { candidate: string; field: string; official: string };
+  comparisonTitle: string;
+  confirmRejectLabel: string;
+  decidedLabel: string;
+  decisionLabels: Record<CandidateDecision, string>;
+  emptyFilterLabel: string;
+  loadingLabel: string;
+  noteLabel: string;
+  notePlaceholder: string;
+  resetFiltersLabel: string;
+  resultCountLabel: string;
+  tableCaption: string;
+  timelineTitle: string;
   candidates: StagedCandidate[];
   candidatesTitle: string;
   columns: {
@@ -105,8 +161,20 @@ export type NexusScraperResultsContent = {
   typeOptions: CandidateSelectOption[];
 };
 
+type OfficialSeed = {
+  /** Overrides applied to the candidate's own details to stand in for the held record. */
+  changes: Record<string, string>;
+  title?: string;
+  updatedAt: string;
+};
+
 type CandidateSeed = Omit<
   StagedCandidate,
+  | "decision"
+  | "decisionLabel"
+  | "doi"
+  | "matches"
+  | "timeline"
   | "details"
   | "discoveredAtLabel"
   | "match"
@@ -116,9 +184,73 @@ type CandidateSeed = Omit<
 > & {
   comparisonCount: number;
   details: Array<{ id: string; label: Record<Locale, string>; value: string }>;
+  official?: OfficialSeed;
   score: number | null;
   verdict: CandidateVerdict;
 };
+
+function buildMatches(
+  seed: CandidateSeed,
+  locale: Locale,
+  details: CandidateDetail[],
+): OfficialMatch[] {
+  if (!seed.official || seed.score === null) {
+    return [];
+  }
+
+  const official = seed.official;
+  const comparisons: FieldComparison[] = details.map((detail) => {
+    const officialValue = official.changes[detail.id] ?? detail.value;
+    const status = getComparisonStatus(detail.id, detail.value, officialValue);
+
+    return {
+      candidateValue: detail.value,
+      id: detail.id,
+      label: detail.label,
+      officialValue,
+      status,
+      statusLabel: getComparisonLabel(locale, status),
+    };
+  });
+
+  const doiField = comparisons.find((item) => item.id === "doi");
+
+  return [
+    {
+      comparisons,
+      doi: doiField ? normalizeDoi(doiField.officialValue) : null,
+      id: `${seed.id}-official`,
+      score: seed.score,
+      title: official.title ?? seed.title,
+      updatedAtLabel: formatTimestamp(official.updatedAt),
+    },
+  ];
+}
+
+function buildTimeline(seed: CandidateSeed, locale: Locale): TimelineEntry[] {
+  const found = locale === "id" ? "Kandidat ditemukan" : "Candidate found";
+  const flagged =
+    locale === "id" ? "Ditandai perlu perbaikan" : "Flagged as needing fixes";
+  const entries: TimelineEntry[] = [
+    {
+      actor: dictionary[locale].source[seed.source],
+      id: `${seed.id}-found`,
+      label: found,
+      timeLabel: formatTimestamp(seed.discoveredAt),
+    },
+  ];
+
+  if (seed.status === "needs_fix") {
+    entries.push({
+      actor: seed.owner,
+      id: `${seed.id}-flagged`,
+      label: flagged,
+      timeLabel: formatTimestamp(seed.discoveredAt),
+    });
+  }
+
+  return entries;
+}
 
 const dictionary = {
   id: {
@@ -222,6 +354,13 @@ const candidateSeeds: CandidateSeed[] = [
       doi("10.2196/48213"),
     ],
     discoveredAt: "2026-08-11T08:54",
+    official: {
+      changes: {
+        authors: "S. Harimurti, H. Susanti, M. A. Asyraf, R. Pratama",
+        venue: "J Med Internet Res",
+      },
+      updatedAt: "2026-06-02T10:15",
+    },
     id: "paper-telemedicine",
     owner: "Hesty Susanti",
     researcher: "Suksmandhira Harimurti",
@@ -242,6 +381,10 @@ const candidateSeeds: CandidateSeed[] = [
       doi("10.31219/osf.io/3kq7d"),
     ],
     discoveredAt: "2026-08-11T08:52",
+    official: {
+      changes: {},
+      updatedAt: "2026-07-19T14:02",
+    },
     id: "paper-histopathology",
     owner: "Suksmandhira Harimurti",
     researcher: "Suksmandhira Harimurti",
@@ -261,6 +404,13 @@ const candidateSeeds: CandidateSeed[] = [
       authors("M. Rafi, F. Rahman"),
     ],
     discoveredAt: "2026-08-10T14:20",
+    official: {
+      changes: {
+        authors: "Muhammad Rafi, Fathur Rahman",
+        year: "2024",
+      },
+      updatedAt: "2026-05-11T08:40",
+    },
     id: "paper-curcumin",
     owner: "Fathur Rahman",
     researcher: "Fathur Rahman",
@@ -330,6 +480,14 @@ const candidateSeeds: CandidateSeed[] = [
       doi("10.1109/ACCESS.2026.3312904"),
     ],
     discoveredAt: "2026-08-09T11:15",
+    official: {
+      changes: {
+        authors: "N. Rahmawati, H. Susanti, D. Puspitasari",
+        doi: "10.1109/ACCESS.2026.9990001",
+        venue: "IEEE Access Journal",
+      },
+      updatedAt: "2026-07-30T16:25",
+    },
     id: "paper-gait",
     owner: "Hesty Susanti",
     researcher: "Hesty Susanti",
@@ -372,6 +530,12 @@ const candidateSeeds: CandidateSeed[] = [
       { id: "isbn", label: label("ISBN", "ISBN"), value: "978-623-8756-11-4" },
     ],
     discoveredAt: "2026-08-10T16:12",
+    official: {
+      changes: {
+        isbn: "978-623-8756-11-5",
+      },
+      updatedAt: "2026-04-08T09:00",
+    },
     id: "book-rehabilitasi",
     owner: "Dita Puspitasari",
     researcher: "Dita Puspitasari",
@@ -451,6 +615,13 @@ const candidateSeeds: CandidateSeed[] = [
       },
     ],
     discoveredAt: "2026-08-08T09:12",
+    official: {
+      changes: {
+        amount: "Rp 180.000.000",
+        scheme: "Hibah Penelitian Terapan Unggulan",
+      },
+      updatedAt: "2026-03-21T11:30",
+    },
     id: "document-hibah",
     owner: "Muhammad Ammar Asyraf",
     researcher: "Suksmandhira Harimurti",
@@ -491,6 +662,13 @@ const candidateSeeds: CandidateSeed[] = [
       },
     ],
     discoveredAt: "2026-08-06T13:30",
+    official: {
+      changes: {
+        registration: "EC00202511934",
+        year: "2024",
+      },
+      updatedAt: "2026-02-14T13:05",
+    },
     id: "ipr-biosignal",
     owner: "Fathur Rahman",
     researcher: "Fathur Rahman",
@@ -526,6 +704,24 @@ const candidateSeeds: CandidateSeed[] = [
 const resultsCopy = {
   id: {
     acceptNewLabel: "Terima sebagai data baru",
+    blockedByDoiLabel:
+      "DOI kandidat sama dengan data resmi terkait. Hubungkan alih-alih menerima sebagai data baru.",
+    comparisonColumns: {
+      candidate: "Kandidat",
+      field: "Bidang",
+      official: "Data resmi",
+    },
+    comparisonTitle: "Perbandingan dengan data resmi",
+    confirmRejectLabel: "Konfirmasi penolakan",
+    decidedLabel: "Keputusan",
+    emptyFilterLabel: "Tidak ada kandidat yang cocok dengan filter ini.",
+    loadingLabel: "Memperbarui hasil",
+    noteLabel: "Alasan keputusan",
+    notePlaceholder: "Tulis alasan singkat untuk keputusan ini",
+    resetFiltersLabel: "Atur ulang filter",
+    resultCountLabel: "kandidat ditemukan",
+    tableCaption: "Daftar kandidat yang menunggu keputusan peninjau",
+    timelineTitle: "Riwayat",
     candidatesTitle: "Antrean Tinjauan",
     columns: {
       action: "Aksi",
@@ -575,6 +771,24 @@ const resultsCopy = {
   },
   en: {
     acceptNewLabel: "Accept as new record",
+    blockedByDoiLabel:
+      "This candidate shares a DOI with the matched official record. Link it instead of accepting it as new.",
+    comparisonColumns: {
+      candidate: "Candidate",
+      field: "Field",
+      official: "Official record",
+    },
+    comparisonTitle: "Comparison with the official record",
+    confirmRejectLabel: "Confirm rejection",
+    decidedLabel: "Decision",
+    emptyFilterLabel: "No candidate matches these filters.",
+    loadingLabel: "Updating results",
+    noteLabel: "Reason for the decision",
+    notePlaceholder: "Write a short reason for this decision",
+    resetFiltersLabel: "Reset filters",
+    resultCountLabel: "candidates found",
+    tableCaption: "Candidates awaiting a reviewer decision",
+    timelineTitle: "History",
     candidatesTitle: "Review Queue",
     columns: {
       action: "Action",
@@ -624,7 +838,10 @@ const resultsCopy = {
   },
 } satisfies Record<
   Locale,
-  Omit<NexusScraperResultsContent, "candidates" | "sourceTabs">
+  Omit<
+    NexusScraperResultsContent,
+    "candidates" | "decisionLabels" | "sourceTabs"
+  >
 >;
 
 const sourceOrder: CandidateSource[] = [
@@ -662,32 +879,45 @@ export function getNexusScraperResultsContent(
 
   return {
     ...resultsCopy[locale],
-    candidates: candidateSeeds.map((seed) => ({
-      details: seed.details.map((detail) => ({
+    candidates: candidateSeeds.map((seed) => {
+      const details = seed.details.map((detail) => ({
         id: detail.id,
         label: detail.label[locale],
         value: detail.value,
-      })),
-      discoveredAt: seed.discoveredAt,
-      discoveredAtLabel: formatTimestamp(seed.discoveredAt),
-      id: seed.id,
-      match: {
-        comparisonCount: seed.comparisonCount,
-        score: seed.score,
-        verdict: seed.verdict,
-        verdictLabel: words.verdict[seed.verdict],
-      },
-      owner: seed.owner,
-      researcher: seed.researcher,
-      source: seed.source,
-      sourceLabel: words.source[seed.source],
-      sourceUrl: seed.sourceUrl,
-      status: seed.status,
-      statusLabel: words.status[seed.status],
-      title: seed.title,
-      type: seed.type,
-      typeLabel: words.type[seed.type],
-    })),
+      }));
+      const doiDetail = details.find((detail) => detail.id === "doi");
+
+      return {
+        details,
+        doi: doiDetail ? normalizeDoi(doiDetail.value) : null,
+        matches: buildMatches(seed, locale, details),
+        timeline: buildTimeline(seed, locale),
+        discoveredAt: seed.discoveredAt,
+        discoveredAtLabel: formatTimestamp(seed.discoveredAt),
+        id: seed.id,
+        match: {
+          comparisonCount: seed.comparisonCount,
+          score: seed.score,
+          verdict: seed.verdict,
+          verdictLabel: words.verdict[seed.verdict],
+        },
+        owner: seed.owner,
+        researcher: seed.researcher,
+        source: seed.source,
+        sourceLabel: words.source[seed.source],
+        sourceUrl: seed.sourceUrl,
+        status: seed.status,
+        statusLabel: words.status[seed.status],
+        title: seed.title,
+        type: seed.type,
+        typeLabel: words.type[seed.type],
+      };
+    }),
+    decisionLabels: {
+      approved_new: getDecisionLabel(locale, "approved_new"),
+      merged: getDecisionLabel(locale, "merged"),
+      rejected: getDecisionLabel(locale, "rejected"),
+    },
     sourceTabs: buildSourceTabs(locale),
   };
 }

@@ -41,13 +41,6 @@ function IconPaths({ name }: DashboardShellIconProps) {
           <path d="M14 2v6h5M8 13h7M8 17h7" />
         </>
       );
-    case "reviews":
-      return (
-        <>
-          <rect x="4" y="4" width="16" height="18" rx="2" />
-          <path d="M9 4.5V3a3 3 0 0 1 6 0v1.5M8.5 13l2.25 2.25L16 10" />
-        </>
-      );
     case "administration":
       return (
         <>
