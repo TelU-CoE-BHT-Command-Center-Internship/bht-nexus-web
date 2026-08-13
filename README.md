@@ -21,7 +21,7 @@ Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfo
 
 ## Status Saat Ini
 
-Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk dan pratinjau dashboard juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
+Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk, dashboard, Publikasi, dan Tinjauan juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
 
 Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi berita, kegiatan, dan mitra masih akan dilengkapi atau disesuaikan setelah tim mengonfirmasi data resminya.
 
@@ -41,7 +41,9 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Bagian landing page lanjutan | Dalam pengembangan |
 | Halaman institusional lanjutan dan konten final | Dalam pengembangan |
 | Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
-| Pratinjau dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data pratinjau |
+| Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
+| Halaman Publikasi BHT Nexus | Tersedia dan responsif; ringkasan, tab sumber, pencarian, filter, pengurutan, tabel, kartu mobile, pagination, serta rincian metadata dan jejak data berjalan pada state frontend |
+| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; pencarian, filter, tabel, pagination, perbandingan data, alur tiga status, catatan reviewer, dan hasil keputusan berjalan pada state frontend |
 | Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
 | Deployment | Belum menjadi cakupan saat ini |
@@ -90,7 +92,7 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 ├── src/
 │   ├── app/             # route, layout, metadata, font, dan gaya global
 │   ├── assets/          # logo serta gambar landing page dan ruang kerja
-│   ├── components/      # komponen landing page, halaman masuk, dan dashboard
+│   ├── components/      # komponen landing page, halaman masuk, dan ruang kerja
 │   ├── content/         # data institusi yang dipakai lintas komponen
 │   └── i18n/            # tipe bahasa yang dipakai lintas fitur
 ├── biome.json          # aturan pemeriksaan dan format kode
@@ -113,7 +115,9 @@ Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan inte
 | `/en/nexus` | Inggris | Pengarah menuju halaman masuk BHT Nexus |
 | `/nexus/masuk` | Indonesia | Antarmuka masuk BHT Nexus |
 | `/en/nexus/sign-in` | Inggris | Antarmuka masuk BHT Nexus |
-| `/nexus/dashboard` | Indonesia | Pratinjau dashboard ruang kerja BHT Nexus |
+| `/nexus/dashboard` | Indonesia | Dashboard ruang kerja BHT Nexus |
+| `/nexus/publikasi` | Indonesia | Daftar publikasi resmi beserta metadata, sumber, dan riwayat tinjauannya |
+| `/nexus/tinjauan` | Indonesia | Tinjauan kandidat data sebelum menjadi data resmi BHT Nexus |
 
 Landing page saat ini mencakup:
 
@@ -128,7 +132,7 @@ Landing page saat ini mencakup:
 
 Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan informasi mitra dan bagian lanjutan setelah data resmi dikonfirmasi. Pengembangan ruang kerja BHT Nexus juga berlanjut melalui penyempurnaan antarmuka per fitur, penyesuaian berbasis peran, serta integrasi autentikasi dan data server. Pekerjaan tahap awalnya dilacak melalui [issue #1](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/issues/1).
 
-### Pratinjau Ruang Kerja BHT Nexus
+### Ruang Kerja BHT Nexus
 
 Fondasi ruang kerja saat ini mencakup:
 
@@ -139,9 +143,16 @@ Fondasi ruang kerja saat ini mencakup:
 - aktivitas terbaru serta program unggulan dengan carousel dan pratinjau poster penuh;
 - grafik aktivitas riset yang tetap dapat dibaca melalui tabel aksesibel;
 - daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
+- halaman Publikasi dengan ringkasan data resmi, tab sumber SINTA, Google Scholar, dan Manual, pencarian, filter, pengurutan, tabel desktop, kartu mobile, pagination, serta pilihan jumlah data per halaman;
+- rincian Publikasi dalam drawer responsif yang menampilkan metadata utama, anggota BHT terkait, sumber pembentuk, kelengkapan data, dan keputusan tinjauan;
+- halaman Tinjauan dengan tab sumber SINTA, Google Scholar, Dokumen, dan Manual, pencarian, filter, pengurutan, serta pagination;
+- rincian kandidat dalam drawer responsif untuk memeriksa data kandidat, rekam resmi terkait, perbandingan per bidang, anggota terkait, bukti, sumber, dan jejak pengambilan data;
+- alur Tinjauan dengan status Menunggu Tinjauan, Perlu Perbaikan, dan Selesai Ditinjau; hasil Setujui sebagai data baru, Hubungkan ke rekam resmi, atau Tolak ditampilkan terpisah agar status proses dan hasil akhirnya tidak rancu;
+- keputusan tanpa pilihan awal, alasan wajib, serta pemeriksaan DOI terhadap seluruh rekam pembanding sebelum kandidat dapat dihubungkan; Minta Perbaikan tetap tersedia untuk mengembalikan kandidat ke pemilik data;
+- komponen ruang kerja bersama untuk judul halaman, ringkasan, tab, pencarian, select, shell tabel, pagination, dan drawer agar pengalaman antarfitur tetap konsisten;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
 
-Metrik dashboard saat ini masih menggunakan data contoh terpusat untuk memvalidasi presentasi antarmuka dan belum mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial karena autentikasi server belum tersedia pada tahap ini.
+Metrik dashboard, koleksi Publikasi, dan kandidat Tinjauan saat ini menggunakan data terstruktur yang disimpan terpusat untuk memvalidasi presentasi serta interaksi antarmuka. Data tersebut belum mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial dan perubahan ruang kerja belum dipersistenkan karena autentikasi serta integrasi server belum tersedia pada tahap ini.
 
 ## Menjalankan Proyek
 

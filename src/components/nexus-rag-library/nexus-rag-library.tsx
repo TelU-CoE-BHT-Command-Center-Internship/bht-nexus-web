@@ -6,16 +6,16 @@ import type {
   NexusRagLibraryContent,
   RagDocument,
 } from "@/components/nexus-rag-library/nexus-rag-library-content";
+import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
+import shell from "@/components/nexus-workspace-ui/nexus-workspace-page.module.css";
 import {
-  WorkspacePage,
-  WorkspacePageHeader,
-  WorkspacePanel,
-} from "@/components/nexus-workspace-page/nexus-workspace-page";
-import shell from "@/components/nexus-workspace-page/nexus-workspace-page.module.css";
+  NexusWorkspacePanel,
+  NexusWorkspaceStack,
+} from "@/components/nexus-workspace-ui/nexus-workspace-panel";
 import {
   SortableColumn,
   useTableSort,
-} from "@/components/nexus-workspace-page/nexus-workspace-sort";
+} from "@/components/nexus-workspace-ui/nexus-workspace-sort";
 
 type SortKey = "indexedAt" | "owner" | "status" | "title";
 
@@ -44,84 +44,90 @@ export function NexusRagLibrary({ content }: NexusRagLibraryProps) {
   const documents = sortRows(content.documents, readDocument);
 
   return (
-    <WorkspacePage>
-      <WorkspacePageHeader
-        actions={
-          <>
-            <button className={shell.primaryButton} type="button">
-              {content.uploadLabel}
-            </button>
-            <span className={styles.uploadNote}>{content.uploadNote}</span>
-          </>
-        }
-        description={content.description}
-        title={content.title}
-      />
-
-      <WorkspacePanel flush id="rag-library-documents" label={content.title}>
-        <div className={shell.tableWrap}>
-          <table className={shell.table}>
-            <thead>
-              <tr>
-                <SortableColumn
-                  activeKey={sort.key}
-                  direction={sort.direction}
-                  label={content.columns.document}
-                  onSort={toggle}
-                  sortKey="title"
-                />
-                <SortableColumn
-                  activeKey={sort.key}
-                  direction={sort.direction}
-                  label={content.columns.owner}
-                  onSort={toggle}
-                  sortKey="owner"
-                />
-                <SortableColumn
-                  activeKey={sort.key}
-                  direction={sort.direction}
-                  label={content.columns.status}
-                  onSort={toggle}
-                  sortKey="status"
-                />
-                <SortableColumn
-                  activeKey={sort.key}
-                  direction={sort.direction}
-                  label={content.columns.indexedAt}
-                  onSort={toggle}
-                  sortKey="indexedAt"
-                />
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((document) => (
-                <tr key={document.id}>
-                  <th scope="row">
-                    {document.title}
-                    <span className={styles.documentMeta}>
-                      {document.fileLabel}
-                    </span>
-                  </th>
-                  <td data-label={content.columns.owner}>
-                    {document.ownerUnit}
-                  </td>
-                  <td data-label={content.columns.status}>
-                    <AutomationStatusBadge
-                      label={document.statusLabel}
-                      status={document.status}
-                    />
-                  </td>
-                  <td data-label={content.columns.indexedAt}>
-                    <time dateTime={document.indexedAt}>
-                      {document.indexedLabel}
-                    </time>
-                  </td>
+    <NexusWorkspacePage
+      actions={
+        <>
+          <button className={shell.primaryButton} type="button">
+            {content.uploadLabel}
+          </button>
+          <span className={styles.uploadNote}>{content.uploadNote}</span>
+        </>
+      }
+      description={content.description}
+      title={content.title}
+      descriptionId="library-description"
+      titleId="library-title"
+    >
+      <NexusWorkspaceStack>
+        <NexusWorkspacePanel
+          flush
+          id="rag-library-documents"
+          label={content.title}
+        >
+          <div className={shell.tableWrap}>
+            <table className={shell.table}>
+              <thead>
+                <tr>
+                  <SortableColumn
+                    activeKey={sort.key}
+                    direction={sort.direction}
+                    label={content.columns.document}
+                    onSort={toggle}
+                    sortKey="title"
+                  />
+                  <SortableColumn
+                    activeKey={sort.key}
+                    direction={sort.direction}
+                    label={content.columns.owner}
+                    onSort={toggle}
+                    sortKey="owner"
+                  />
+                  <SortableColumn
+                    activeKey={sort.key}
+                    direction={sort.direction}
+                    label={content.columns.status}
+                    onSort={toggle}
+                    sortKey="status"
+                  />
+                  <SortableColumn
+                    activeKey={sort.key}
+                    direction={sort.direction}
+                    label={content.columns.indexedAt}
+                    onSort={toggle}
+                    sortKey="indexedAt"
+                  />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </WorkspacePanel>
-    </WorkspacePage>
+              </thead>
+              <tbody>
+                {documents.map((document) => (
+                  <tr key={document.id}>
+                    <th scope="row">
+                      {document.title}
+                      <span className={styles.documentMeta}>
+                        {document.fileLabel}
+                      </span>
+                    </th>
+                    <td data-label={content.columns.owner}>
+                      {document.ownerUnit}
+                    </td>
+                    <td data-label={content.columns.status}>
+                      <AutomationStatusBadge
+                        label={document.statusLabel}
+                        status={document.status}
+                      />
+                    </td>
+                    <td data-label={content.columns.indexedAt}>
+                      <time dateTime={document.indexedAt}>
+                        {document.indexedLabel}
+                      </time>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </NexusWorkspacePanel>
+      </NexusWorkspaceStack>
+    </NexusWorkspacePage>
   );
 }

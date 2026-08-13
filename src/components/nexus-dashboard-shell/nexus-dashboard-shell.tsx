@@ -1,7 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { type ReactNode, type TransitionEvent, useState } from "react";
+import {
+  type ReactNode,
+  type TransitionEvent,
+  useLayoutEffect,
+  useState,
+} from "react";
 import { NexusDashboardHeader } from "@/components/nexus-dashboard-shell/nexus-dashboard-header";
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
 import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
@@ -27,6 +32,10 @@ export function NexusDashboardShell({
     .flatMap((group) => group.items)
     .find((item) => item.href === pathname);
   const pageTitle = activeNavigationItem?.label ?? content.defaultPageTitle;
+
+  useLayoutEffect(() => {
+    document.scrollingElement?.scrollTo({ left: 0, top: 0 });
+  }, []);
 
   function closeTransientUi() {
     setIsMobileMenuOpen(false);
@@ -61,6 +70,7 @@ export function NexusDashboardShell({
     <div
       className={styles.shell}
       data-mobile-menu-open={isMobileMenuOpen}
+      data-nexus-workspace-shell=""
       data-sidebar-collapsed={isSidebarCollapsed}
       data-sidebar-transitioning={isSidebarTransitioning}
       onTransitionEnd={finishSidebarTransition}

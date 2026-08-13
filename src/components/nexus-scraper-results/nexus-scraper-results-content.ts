@@ -1,4 +1,4 @@
-import { formatTimestamp } from "@/components/nexus-workspace-page/nexus-workspace-format";
+import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
 export type CandidateDetail = {

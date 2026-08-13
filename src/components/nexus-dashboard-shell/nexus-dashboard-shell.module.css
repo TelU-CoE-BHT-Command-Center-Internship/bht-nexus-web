@@ -3,13 +3,15 @@
   --sidebar-collapsed-width: 5.25rem;
   --header-height: 5.5rem;
 
+  position: fixed;
+  inset: 0;
   display: grid;
-  height: 100svh;
+  height: 100%;
   min-width: 320px;
-  min-height: 100svh;
+  min-height: 0;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   grid-template-rows: var(--header-height) minmax(0, 1fr);
-  overflow: hidden;
+  overflow: clip;
   background: var(--color-paper);
   transition: grid-template-columns 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -800,7 +802,9 @@
   min-width: 0;
   min-height: 0;
   grid-column: 2;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--color-surface-muted);
   outline: none;
 }

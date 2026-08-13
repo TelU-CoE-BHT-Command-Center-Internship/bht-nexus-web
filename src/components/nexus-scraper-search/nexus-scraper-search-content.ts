@@ -1,6 +1,6 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
-import { formatTimestamp } from "@/components/nexus-workspace-page/nexus-workspace-format";
+import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
 export type ScraperSourceOption = {

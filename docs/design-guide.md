@@ -122,17 +122,17 @@ Halaman baru memakai komponen yang ada sebelum membuat yang baru.
 
 | Komponen | Berkas | Catatan |
 |---|---|---|
-| `WorkspacePage` | `components/nexus-workspace-page/` | Pembungkus halaman, mengatur padding dan jarak antarblok |
-| `WorkspacePageHeader` | `components/nexus-workspace-page/` | Judul, deskripsi, dan area aksi |
-| `WorkspacePanel` | `components/nexus-workspace-page/` | Panel. `flush` menghapus padding badan untuk tabel; tanpa `title` panel tampil tanpa kepala dan memakai `label` untuk pembaca layar |
-| `SortableColumn` | `components/nexus-workspace-page/` | Kepala kolom yang dapat diurutkan, dipasangkan dengan `useTableSort` |
+| `NexusWorkspacePage` | `components/nexus-workspace-ui/` | Judul, deskripsi, dan area aksi |
+| `NexusWorkspaceStack` | `components/nexus-workspace-ui/` | Jarak antarpanel pada satu halaman |
+| `NexusWorkspacePanel` | `components/nexus-workspace-ui/` | Panel. `flush` menghapus padding badan untuk tabel; tanpa `title` panel tampil tanpa kepala dan memakai `label` untuk pembaca layar |
+| `SortableColumn` | `components/nexus-workspace-ui/` | Kepala kolom yang dapat diurutkan, dipasangkan dengan `useTableSort` |
 | `AutomationStatusBadge` | `components/nexus-automation-status/` | Lencana status job. Selalu membawa teks status |
-| `WorkspaceFootnote` | `components/nexus-workspace-page/` | Satu kalimat penutup di bawah panel |
+| `NexusWorkspaceFootnote` | `components/nexus-workspace-ui/` | Satu kalimat penutup di bawah panel |
 
 Tabel memakai kelas `.table` dari `nexus-workspace-page.module.css`. Setiap
 `<td>` memakai atribut `data-label`, yang menjadi label baris di bawah `42rem`.
 
-**Panel tidak memiliki subjudul.** `WorkspacePanel` hanya menerima `title`.
+**Panel tidak memiliki subjudul.** `NexusWorkspacePanel` hanya menerima `title`.
 Kalimat seperti `Tiga pertanyaan terakhir` atau `Enam isian` menghitung baris
 yang sudah terlihat, dan menjadi salah begitu endpoint mengembalikan jumlah
 yang berbeda. Jumlah baris ditampilkan lewat baris itu sendiri; nilai yang
@@ -176,7 +176,7 @@ secara visual dan tetap tersedia untuk pembaca layar.
 Warna teks, garis, permukaan, status, radius, dan bayangan pada berkas berikut
 memakai token:
 
-- `components/nexus-workspace-page/`, `components/nexus-automation-status/`
+- `components/nexus-workspace-ui/`, `components/nexus-automation-status/`
 - `components/nexus-rag-*/`, `components/nexus-scraper-*/`
 - `components/nexus-dashboard-overview/`, `components/nexus-dashboard-insights/`
 - `components/nexus-dashboard-shell/`, `components/nexus-dashboard-announcement/`

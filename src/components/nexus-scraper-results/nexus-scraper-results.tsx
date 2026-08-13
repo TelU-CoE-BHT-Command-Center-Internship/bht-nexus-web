@@ -6,17 +6,17 @@ import type {
   NexusScraperResultsContent,
   StagedCandidate,
 } from "@/components/nexus-scraper-results/nexus-scraper-results-content";
+import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
+import shell from "@/components/nexus-workspace-ui/nexus-workspace-page.module.css";
 import {
-  WorkspaceFootnote,
-  WorkspacePage,
-  WorkspacePageHeader,
-  WorkspacePanel,
-} from "@/components/nexus-workspace-page/nexus-workspace-page";
-import shell from "@/components/nexus-workspace-page/nexus-workspace-page.module.css";
+  NexusWorkspaceFootnote,
+  NexusWorkspacePanel,
+  NexusWorkspaceStack,
+} from "@/components/nexus-workspace-ui/nexus-workspace-panel";
 import {
   SortableColumn,
   useTableSort,
-} from "@/components/nexus-workspace-page/nexus-workspace-sort";
+} from "@/components/nexus-workspace-ui/nexus-workspace-sort";
 
 type SortKey = "discoveredAt" | "match" | "status" | "title";
 
@@ -89,176 +89,187 @@ export function NexusScraperResults({ content }: NexusScraperResultsProps) {
   }
 
   return (
-    <WorkspacePage>
-      <WorkspacePageHeader
-        description={content.description}
-        title={content.title}
-      />
-
-      <WorkspacePanel flush id="scraper-queue" title={content.candidatesTitle}>
-        <div className={styles.tabs}>
-          {content.sourceTabs.map((tab) => (
-            <button
-              aria-pressed={source === tab.id}
-              className={styles.tab}
-              key={tab.id}
-              onClick={() => reset(() => setSource(tab.id))}
-              type="button"
-            >
-              {tab.label}
-              <span className={styles.tabCount}>{tab.count}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className={styles.toolbar}>
-          <label className={styles.searchField} htmlFor="candidate-search">
-            <span className={styles.visuallyHidden}>{content.searchLabel}</span>
-            <input
-              id="candidate-search"
-              onChange={(event) => reset(() => setQuery(event.target.value))}
-              placeholder={content.searchPlaceholder}
-              type="search"
-              value={query}
-            />
-          </label>
-
-          <label className={styles.filterField} htmlFor="candidate-status">
-            <span>{content.statusFilterLabel}</span>
-            <select
-              id="candidate-status"
-              onChange={(event) => reset(() => setStatus(event.target.value))}
-              value={status}
-            >
-              {content.statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className={styles.filterField} htmlFor="candidate-type">
-            <span>{content.typeFilterLabel}</span>
-            <select
-              id="candidate-type"
-              onChange={(event) => reset(() => setType(event.target.value))}
-              value={type}
-            >
-              {content.typeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className={shell.tableWrap}>
-          <table className={shell.table}>
-            <thead>
-              <tr>
-                <SortableColumn
-                  activeKey={sort.key}
-                  direction={sort.direction}
-                  label={content.columns.title}
-                  onSort={toggle}
-                  sortKey="title"
-                />
-                <th scope="col">{content.columns.type}</th>
-                <th scope="col">{content.columns.source}</th>
-                <SortableColumn
-                  activeKey={sort.key}
-                  direction={sort.direction}
-                  label={content.columns.match}
-                  onSort={toggle}
-                  sortKey="match"
-                />
-                <th scope="col">{content.columns.owner}</th>
-                <SortableColumn
-                  activeKey={sort.key}
-                  direction={sort.direction}
-                  label={content.columns.status}
-                  onSort={toggle}
-                  sortKey="status"
-                />
-                <SortableColumn
-                  activeKey={sort.key}
-                  direction={sort.direction}
-                  label={content.columns.discoveredAt}
-                  onSort={toggle}
-                  sortKey="discoveredAt"
-                />
-                <th scope="col">{content.columns.action}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.length === 0 ? (
-                <tr>
-                  <td className={styles.emptyCell} colSpan={8}>
-                    {content.emptyLabel}
-                  </td>
-                </tr>
-              ) : null}
-
-              {visible.map((candidate) => (
-                <CandidateRows
-                  candidate={candidate}
-                  content={content}
-                  isOpen={openId === candidate.id}
-                  key={candidate.id}
-                  onToggle={() =>
-                    setOpenId(openId === candidate.id ? null : candidate.id)
-                  }
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <nav aria-label={content.paginationLabel} className={styles.pagination}>
-          <label className={styles.pageSize} htmlFor="candidate-page-size">
-            <span className={styles.visuallyHidden}>
-              {content.paginationLabel}
-            </span>
-            <select
-              id="candidate-page-size"
-              onChange={(event) =>
-                reset(() => setPageSize(Number(event.target.value)))
-              }
-              value={String(pageSize)}
-            >
-              {content.pageSizeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className={styles.pageButtons}>
-            {Array.from({ length: pageCount }, (_, index) => index + 1).map(
-              (number) => (
-                <button
-                  aria-current={number === currentPage ? "page" : undefined}
-                  className={styles.pageButton}
-                  key={number}
-                  onClick={() => {
-                    setPage(number);
-                    setOpenId(null);
-                  }}
-                  type="button"
-                >
-                  {number}
-                </button>
-              ),
-            )}
+    <NexusWorkspacePage
+      description={content.description}
+      title={content.title}
+      descriptionId="candidates-description"
+      titleId="candidates-title"
+    >
+      <NexusWorkspaceStack>
+        <NexusWorkspacePanel
+          flush
+          id="scraper-queue"
+          title={content.candidatesTitle}
+        >
+          <div className={styles.tabs}>
+            {content.sourceTabs.map((tab) => (
+              <button
+                aria-pressed={source === tab.id}
+                className={styles.tab}
+                key={tab.id}
+                onClick={() => reset(() => setSource(tab.id))}
+                type="button"
+              >
+                {tab.label}
+                <span className={styles.tabCount}>{tab.count}</span>
+              </button>
+            ))}
           </div>
-        </nav>
-      </WorkspacePanel>
 
-      <WorkspaceFootnote>{content.promoteNote}</WorkspaceFootnote>
-    </WorkspacePage>
+          <div className={styles.toolbar}>
+            <label className={styles.searchField} htmlFor="candidate-search">
+              <span className={styles.visuallyHidden}>
+                {content.searchLabel}
+              </span>
+              <input
+                id="candidate-search"
+                onChange={(event) => reset(() => setQuery(event.target.value))}
+                placeholder={content.searchPlaceholder}
+                type="search"
+                value={query}
+              />
+            </label>
+
+            <label className={styles.filterField} htmlFor="candidate-status">
+              <span>{content.statusFilterLabel}</span>
+              <select
+                id="candidate-status"
+                onChange={(event) => reset(() => setStatus(event.target.value))}
+                value={status}
+              >
+                {content.statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className={styles.filterField} htmlFor="candidate-type">
+              <span>{content.typeFilterLabel}</span>
+              <select
+                id="candidate-type"
+                onChange={(event) => reset(() => setType(event.target.value))}
+                value={type}
+              >
+                {content.typeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className={shell.tableWrap}>
+            <table className={shell.table}>
+              <thead>
+                <tr>
+                  <SortableColumn
+                    activeKey={sort.key}
+                    direction={sort.direction}
+                    label={content.columns.title}
+                    onSort={toggle}
+                    sortKey="title"
+                  />
+                  <th scope="col">{content.columns.type}</th>
+                  <th scope="col">{content.columns.source}</th>
+                  <SortableColumn
+                    activeKey={sort.key}
+                    direction={sort.direction}
+                    label={content.columns.match}
+                    onSort={toggle}
+                    sortKey="match"
+                  />
+                  <th scope="col">{content.columns.owner}</th>
+                  <SortableColumn
+                    activeKey={sort.key}
+                    direction={sort.direction}
+                    label={content.columns.status}
+                    onSort={toggle}
+                    sortKey="status"
+                  />
+                  <SortableColumn
+                    activeKey={sort.key}
+                    direction={sort.direction}
+                    label={content.columns.discoveredAt}
+                    onSort={toggle}
+                    sortKey="discoveredAt"
+                  />
+                  <th scope="col">{content.columns.action}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.length === 0 ? (
+                  <tr>
+                    <td className={styles.emptyCell} colSpan={8}>
+                      {content.emptyLabel}
+                    </td>
+                  </tr>
+                ) : null}
+
+                {visible.map((candidate) => (
+                  <CandidateRows
+                    candidate={candidate}
+                    content={content}
+                    isOpen={openId === candidate.id}
+                    key={candidate.id}
+                    onToggle={() =>
+                      setOpenId(openId === candidate.id ? null : candidate.id)
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <nav
+            aria-label={content.paginationLabel}
+            className={styles.pagination}
+          >
+            <label className={styles.pageSize} htmlFor="candidate-page-size">
+              <span className={styles.visuallyHidden}>
+                {content.paginationLabel}
+              </span>
+              <select
+                id="candidate-page-size"
+                onChange={(event) =>
+                  reset(() => setPageSize(Number(event.target.value)))
+                }
+                value={String(pageSize)}
+              >
+                {content.pageSizeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className={styles.pageButtons}>
+              {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+                (number) => (
+                  <button
+                    aria-current={number === currentPage ? "page" : undefined}
+                    className={styles.pageButton}
+                    key={number}
+                    onClick={() => {
+                      setPage(number);
+                      setOpenId(null);
+                    }}
+                    type="button"
+                  >
+                    {number}
+                  </button>
+                ),
+              )}
+            </div>
+          </nav>
+        </NexusWorkspacePanel>
+
+        <NexusWorkspaceFootnote>{content.promoteNote}</NexusWorkspaceFootnote>
+      </NexusWorkspaceStack>
+    </NexusWorkspacePage>
   );
 }
 

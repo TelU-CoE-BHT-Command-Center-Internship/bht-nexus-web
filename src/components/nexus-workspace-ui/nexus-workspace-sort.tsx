@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import styles from "@/components/nexus-workspace-page/nexus-workspace-page.module.css";
+import styles from "@/components/nexus-workspace-ui/nexus-workspace-page.module.css";
 
 export type SortDirection = "ascending" | "descending";
 

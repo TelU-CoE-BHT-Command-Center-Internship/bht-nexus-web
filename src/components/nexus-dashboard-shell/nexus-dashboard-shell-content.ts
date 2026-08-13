@@ -222,7 +222,9 @@ const previewSession = {
     "/nexus/ekstraksi",
     "/nexus/kandidat",
     "/nexus/pencarian",
+    "/nexus/publikasi",
     "/nexus/tanya-dokumen",
+    "/nexus/tinjauan",
     "/en/nexus/ask-documents",
     "/en/nexus/candidates",
     "/en/nexus/documents",
@@ -272,7 +274,7 @@ const shellCopy = {
     notifications: [
       {
         detail: "Satu kandidat publikasi perlu diperiksa.",
-        id: "publication-review-preview",
+        id: "publication-review-decision",
         timeLabel: "Baru saja",
         title: "Publikasi baru menunggu tinjauan",
       },

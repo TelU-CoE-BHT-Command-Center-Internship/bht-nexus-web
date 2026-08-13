@@ -22,7 +22,7 @@ export default function IndonesianNexusLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html className={inter.variable} lang="id">
+    <html className={inter.variable} data-scroll-behavior="smooth" lang="id">
       <body>{children}</body>
     </html>
   );
