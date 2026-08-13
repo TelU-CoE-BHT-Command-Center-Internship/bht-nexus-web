@@ -36,7 +36,7 @@ contoh, dan tidak termasuk daftar ini.
 | Rekaman | Berkas | Simbol | Jumlah | Halaman |
 |---|---|---|---|---|
 | Pencarian terkini beserta log percobaannya | `nexus-scraper-search/nexus-scraper-search-content.ts` | `submissionSeeds` | 4 pencarian, 7 percobaan | `/nexus/pencarian` |
-| Kandidat hasil, dikelompokkan per peneliti | `nexus-scraper-results/nexus-scraper-results-content.ts` | `groupSeeds` | 2 peneliti, 6 kandidat | `/nexus/kandidat` |
+| Antrean tinjauan kandidat | `nexus-scraper-results/nexus-scraper-results-content.ts` | `candidateSeeds` | 14 kandidat dari 4 sumber | `/nexus/kandidat` |
 
 ## Dashboard dan kerangka ruang kerja
 
