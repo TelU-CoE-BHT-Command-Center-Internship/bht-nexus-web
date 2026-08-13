@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import styles from "@/components/nexus-review-summary/nexus-metadata-completion-review.module.css";
+import { metadataCompletionResolutionLabels } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import styles from "@/components/nexus-review-summary/nexus-metadata-completion.module.css";
 import {
   type ReviewCandidateRow,
   type ReviewCandidateStatus,
+  type ReviewCompletionFieldKey,
   type ReviewCompletionResolution,
   type ReviewStatusChangeContext,
   reviewCompletionFieldLabels,
@@ -26,12 +28,6 @@ type NexusMetadataCompletionReviewProps = {
   ) => void;
 };
 
-const resolutionLabels = {
-  "not-applicable": "Tidak berlaku",
-  "not-available": "Memang tidak tersedia",
-  provided: "Nilai diajukan",
-} as const;
-
 function ReviewDocumentIcon() {
   return (
     <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
@@ -44,7 +40,15 @@ function ReviewDocumentIcon() {
 function getResolutionDisplay(resolution?: ReviewCompletionResolution) {
   if (!resolution) return "Belum ada usulan";
   if (resolution.status === "provided") return resolution.value;
-  return resolutionLabels[resolution.status];
+  return metadataCompletionResolutionLabels[resolution.status];
+}
+
+function getRevisionResolutionDisplay(resolution: ReviewCompletionResolution) {
+  const display = getResolutionDisplay(resolution);
+
+  return resolution.status === "provided"
+    ? display
+    : `${display} · ${resolution.reason}`;
 }
 
 export function NexusMetadataCompletionReview({
@@ -55,12 +59,16 @@ export function NexusMetadataCompletionReview({
 }: NexusMetadataCompletionReviewProps) {
   const proposal = candidate.completionProposal;
   const [decision, setDecision] = useState<CompletionDecision | null>(null);
+  const [requestedCorrectionFields, setRequestedCorrectionFields] = useState<
+    ReviewCompletionFieldKey[]
+  >([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   if (!proposal) return null;
 
   const isWaiting = candidate.status === "waiting";
   const hasReviewerNote = candidate.reviewerNote.trim().length > 0;
+  const revision = proposal.latestRevision;
 
   const chooseDecision = (nextDecision: CompletionDecision) => {
     setDecision(nextDecision);
@@ -68,12 +76,31 @@ export function NexusMetadataCompletionReview({
   };
 
   const prepareDecision = () => {
-    if (!decision || !hasReviewerNote) return;
+    if (
+      !decision ||
+      !hasReviewerNote ||
+      (decision === "needs-fix" && requestedCorrectionFields.length === 0)
+    )
+      return;
     setShowConfirmation(true);
   };
 
+  const toggleCorrectionField = (fieldKey: ReviewCompletionFieldKey) => {
+    setRequestedCorrectionFields((currentFields) =>
+      currentFields.includes(fieldKey)
+        ? currentFields.filter((key) => key !== fieldKey)
+        : [...currentFields, fieldKey],
+    );
+    setShowConfirmation(false);
+  };
+
   const confirmDecision = () => {
-    if (!decision || !hasReviewerNote) return;
+    if (
+      !decision ||
+      !hasReviewerNote ||
+      (decision === "needs-fix" && requestedCorrectionFields.length === 0)
+    )
+      return;
 
     if (decision === "approve") {
       onStatusChange(candidate.id, "completed", {
@@ -85,6 +112,7 @@ export function NexusMetadataCompletionReview({
       onStatusChange(candidate.id, "needs-fix", {
         detail: candidate.reviewerNote.trim(),
         label: "Perbaikan usulan diminta",
+        requestedCompletionFields: requestedCorrectionFields,
       });
     } else {
       onStatusChange(candidate.id, "completed", {
@@ -110,7 +138,7 @@ export function NexusMetadataCompletionReview({
     <NexusWorkspaceDrawer
       closeLabel="Tutup tinjauan pelengkapan metadata"
       description="Periksa nilai atau pengecualian yang diajukan untuk publikasi resmi sebelum menetapkan keputusan."
-      eyebrow={`${proposal.id} · ${proposal.publicationId}`}
+      eyebrow={`${proposal.id} · ${candidate.version} · ${proposal.publicationId}`}
       onClose={onClose}
       steps={[
         { active: true, complete: true, label: "Rekam resmi", number: 1 },
@@ -135,7 +163,9 @@ export function NexusMetadataCompletionReview({
         </span>
         <div>
           <span className={styles.proposalEyebrow}>
-            Usulan untuk publikasi resmi
+            {revision
+              ? `Usulan diperbaiki dan dikirim ulang · ${revision.version}`
+              : "Usulan untuk publikasi resmi"}
           </span>
           <h3>{candidate.record.title}</h3>
           <p>{candidate.record.authors}</p>
@@ -153,7 +183,7 @@ export function NexusMetadataCompletionReview({
               <dd>{proposal.submittedBy}</dd>
             </div>
             <div className={styles.proposalMetaItem}>
-              <dt>Dikirim</dt>
+              <dt>{revision ? "Dikirim ulang" : "Dikirim"}</dt>
               <dd>{proposal.submittedAt}</dd>
             </div>
           </dl>
@@ -165,7 +195,7 @@ export function NexusMetadataCompletionReview({
         className={styles.section}
       >
         <header className={styles.sectionHeading}>
-          <div className={styles.officialSummaryItem}>
+          <div>
             <span>01</span>
             <h3 id="official-record-title">Kondisi rekam resmi</h3>
           </div>
@@ -188,7 +218,7 @@ export function NexusMetadataCompletionReview({
             <dt>Tahun</dt>
             <dd>{candidate.record.year}</dd>
           </div>
-          <div>
+          <div className={styles.officialSummaryItem}>
             <dt>Kelengkapan saat ini</dt>
             <dd className={styles.incompleteValue}>Perlu dilengkapi</dd>
           </div>
@@ -217,7 +247,7 @@ export function NexusMetadataCompletionReview({
                   <h4>{reviewCompletionFieldLabels[fieldKey]}</h4>
                   <span data-tone={resolution?.status}>
                     {resolution
-                      ? resolutionLabels[resolution.status]
+                      ? metadataCompletionResolutionLabels[resolution.status]
                       : "Belum ada usulan"}
                   </span>
                 </header>
@@ -247,13 +277,83 @@ export function NexusMetadataCompletionReview({
         </aside>
       </section>
 
+      {revision ? (
+        <section
+          aria-labelledby="proposal-revision-title"
+          className={styles.section}
+        >
+          <header className={styles.sectionHeading}>
+            <div>
+              <span>03</span>
+              <h3 id="proposal-revision-title">Perubahan sejak pengembalian</h3>
+            </div>
+            <p>{revision.version} · siap ditinjau ulang</p>
+          </header>
+
+          <div className={styles.reviewerRequestSummary}>
+            <strong>Permintaan pemeriksa sebelumnya</strong>
+            <p>{revision.reviewerRequest}</p>
+            <ul>
+              {revision.requestedFields.map((fieldKey) => (
+                <li key={fieldKey}>{reviewCompletionFieldLabels[fieldKey]}</li>
+              ))}
+            </ul>
+          </div>
+
+          {revision.changes.length > 0 ? (
+            <div className={styles.revisionChanges}>
+              {revision.changes.map((change) => (
+                <article key={change.key}>
+                  <h4>{reviewCompletionFieldLabels[change.key]}</h4>
+                  <dl>
+                    <div>
+                      <dt>Sebelumnya</dt>
+                      <dd>
+                        {getRevisionResolutionDisplay(
+                          change.previousResolution,
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Setelah diperbaiki</dt>
+                      <dd>
+                        {getRevisionResolutionDisplay(change.currentResolution)}
+                      </dd>
+                    </div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.sourceOnlyRevision}>
+              Nilai usulan tidak berubah; pengaju memperbarui dasar sumbernya.
+            </p>
+          )}
+
+          <div className={styles.sourceRevision}>
+            <div>
+              <span className={styles.sourceRevisionLabel}>
+                Sumber sebelumnya
+              </span>
+              <p>{revision.previousSourceNote}</p>
+            </div>
+            <div>
+              <span className={styles.sourceRevisionLabel}>
+                Sumber setelah diperbaiki
+              </span>
+              <p>{revision.currentSourceNote}</p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section
         aria-labelledby="completion-decision-title"
         className={styles.section}
       >
         <header className={styles.sectionHeading}>
           <div>
-            <span>03</span>
+            <span>{revision ? "04" : "03"}</span>
             <h3 id="completion-decision-title">Tetapkan keputusan</h3>
           </div>
           <p>Rekam resmi aman sampai usulan disetujui</p>
@@ -310,6 +410,33 @@ export function NexusMetadataCompletionReview({
               </label>
             </fieldset>
 
+            {decision === "needs-fix" ? (
+              <fieldset className={styles.correctionFieldPicker}>
+                <legend>Bagian yang harus diperbaiki</legend>
+                <p>
+                  Pilih hanya bagian yang bermasalah. Bagian lain tetap terlihat
+                  tetapi tidak dapat diubah oleh pengaju.
+                </p>
+                <div>
+                  {proposal.affectedFields.map((fieldKey) => (
+                    <label key={fieldKey}>
+                      <input
+                        checked={requestedCorrectionFields.includes(fieldKey)}
+                        onChange={() => toggleCorrectionField(fieldKey)}
+                        type="checkbox"
+                      />
+                      <span>{reviewCompletionFieldLabels[fieldKey]}</span>
+                    </label>
+                  ))}
+                </div>
+                <small>
+                  {requestedCorrectionFields.length === 0
+                    ? "Pilih sedikitnya satu bagian untuk melanjutkan."
+                    : `${requestedCorrectionFields.length} bagian akan dapat diperbaiki oleh pengaju.`}
+                </small>
+              </fieldset>
+            ) : null}
+
             <div aria-live="polite" className={styles.consequence}>
               <strong>Akibat keputusan</strong>
               <p>{selectedConsequence}</p>
@@ -363,7 +490,12 @@ export function NexusMetadataCompletionReview({
                 </p>
                 <button
                   className={styles.primaryButton}
-                  disabled={!decision || !hasReviewerNote}
+                  disabled={
+                    !decision ||
+                    !hasReviewerNote ||
+                    (decision === "needs-fix" &&
+                      requestedCorrectionFields.length === 0)
+                  }
                   onClick={prepareDecision}
                   type="button"
                 >

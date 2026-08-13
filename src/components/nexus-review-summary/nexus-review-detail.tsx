@@ -562,7 +562,8 @@ export function NexusReviewDetail({
                 Metadata resminya tidak ditimpa. Sumber kandidat sudah
                 dihubungkan dan{" "}
                 {candidate.linkOutcome.proposedEnrichmentFields.length} bidang
-                berbeda disimpan sebagai usulan pelengkapan terpisah.
+                berbeda ditandai sebagai bahan pelengkapan untuk tinjauan
+                berikutnya.
               </p>
             </div>
           ) : null}
@@ -879,8 +880,8 @@ export function NexusReviewDetail({
                     Nilai resmi yang ada tetap dipertahankan pada keputusan ini.
                   </li>
                   <li>
-                    Nilai kandidat yang berbeda disimpan sebagai usulan
-                    pelengkapan terpisah untuk tinjauan berikutnya.
+                    Nilai kandidat yang berbeda ditandai sebagai bahan
+                    pelengkapan metadata untuk tinjauan berikutnya.
                   </li>
                 </ul>
 
@@ -897,7 +898,7 @@ export function NexusReviewDetail({
                           )}
                         </p>
                         <p>
-                          <span>Usulan disimpan</span>
+                          <span>Bahan pelengkapan</span>
                           {candidate.record[fieldKey]}
                         </p>
                       </article>
@@ -905,8 +906,8 @@ export function NexusReviewDetail({
                   </div>
                 ) : (
                   <p className={styles.linkNoDifferences}>
-                    Tidak ada nilai kandidat berbeda yang perlu dijadikan usulan
-                    pelengkapan.
+                    Tidak ada nilai kandidat berbeda yang perlu ditandai sebagai
+                    bahan pelengkapan.
                   </p>
                 )}
               </section>
@@ -947,36 +948,46 @@ export function NexusReviewDetail({
               </p>
             ) : null}
 
-            <fieldset className={styles.correctionFieldPicker}>
-              <legend>Bidang jika meminta perbaikan</legend>
-              <p>
-                Pilih hanya bidang yang perlu dikoreksi. Bidang lain akan tetap
-                dapat dibaca, tetapi tidak dapat diubah oleh pengaju.
-              </p>
-              <div>
-                {reviewRecordFieldOrder.map((fieldKey) => (
-                  <label key={fieldKey}>
-                    <input
-                      checked={requestedCorrectionFields.includes(fieldKey)}
-                      onChange={() => toggleCorrectionField(fieldKey)}
-                      type="checkbox"
-                    />
-                    <span>{reviewRecordFieldLabels[fieldKey]}</span>
-                  </label>
-                ))}
-              </div>
-              {requestedCorrectionFields.length === 0 ? (
+            <details className={styles.correctionDisclosure}>
+              <summary>
+                <span>Jika ingin meminta perbaikan</span>
                 <small>
-                  Pilih sedikitnya satu bidang untuk mengaktifkan “Minta
-                  perbaikan”.
+                  {requestedCorrectionFields.length > 0
+                    ? `${requestedCorrectionFields.length} bidang dipilih`
+                    : "Pilih bidang yang perlu dikoreksi"}
                 </small>
-              ) : (
-                <small>
-                  {requestedCorrectionFields.length} bidang akan ditandai pada
-                  formulir perbaikan.
-                </small>
-              )}
-            </fieldset>
+              </summary>
+              <fieldset className={styles.correctionFieldPicker}>
+                <legend>Bidang yang perlu diperbaiki</legend>
+                <p>
+                  Pilih hanya bidang yang perlu dikoreksi. Bidang lain akan
+                  tetap dapat dibaca, tetapi tidak dapat diubah oleh pengaju.
+                </p>
+                <div>
+                  {reviewRecordFieldOrder.map((fieldKey) => (
+                    <label key={fieldKey}>
+                      <input
+                        checked={requestedCorrectionFields.includes(fieldKey)}
+                        onChange={() => toggleCorrectionField(fieldKey)}
+                        type="checkbox"
+                      />
+                      <span>{reviewRecordFieldLabels[fieldKey]}</span>
+                    </label>
+                  ))}
+                </div>
+                {requestedCorrectionFields.length === 0 ? (
+                  <small>
+                    Pilih sedikitnya satu bidang untuk mengaktifkan “Minta
+                    perbaikan”.
+                  </small>
+                ) : (
+                  <small>
+                    {requestedCorrectionFields.length} bidang akan ditandai pada
+                    formulir perbaikan.
+                  </small>
+                )}
+              </fieldset>
+            </details>
 
             {showRejectConfirmation ? (
               <div aria-live="polite" className={styles.rejectConfirmation}>

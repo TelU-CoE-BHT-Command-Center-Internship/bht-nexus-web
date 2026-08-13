@@ -4,7 +4,7 @@
 .submitRow {
   border: 1px solid #e1e6ef;
   border-radius: 0.8rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
   box-shadow: 0 0.35rem 1rem rgb(15 23 42 / 4%);
 }
 
@@ -59,7 +59,7 @@
 .sectionIntro,
 .submitRow p,
 .confirmation p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.72rem;
   line-height: 1.55;
 }
@@ -87,7 +87,7 @@
   padding: 0.28rem 0.5rem;
   border: 1px solid #efbac6;
   border-radius: 999px;
-  background: #fff;
+  background: var(--color-nexus-surface);
   color: #b42342;
   font-size: 0.62rem;
   font-weight: 750;
@@ -124,7 +124,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding-bottom: 0.7rem;
-  border-bottom: 1px solid #e8ebf1;
+  border-bottom: 1px solid var(--color-nexus-border-subtle);
 }
 
 .sectionHeading > div {
@@ -145,7 +145,7 @@
 
 .sectionHeading h3 {
   margin: 0;
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.85rem;
 }
 
@@ -199,7 +199,7 @@
   padding: 0.55rem;
   border: 1px solid #e7eaf0;
   border-radius: 0.45rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
 }
 
 .referenceFields dt {
@@ -222,7 +222,7 @@
   padding: 0.75rem;
   border: 1px solid #e7eaf0;
   border-radius: 0.65rem;
-  background: #fbfcfe;
+  background: var(--color-nexus-surface-subtle);
 }
 
 .currentValue {
@@ -237,7 +237,7 @@
 .sourceField > span {
   display: block;
   margin-bottom: 0.35rem;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.68rem;
   font-weight: 750;
 }
@@ -245,7 +245,7 @@
 .currentValue p {
   margin: 0;
   overflow-wrap: anywhere;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.72rem;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -272,8 +272,8 @@
   border: 1px solid #ccd5e2;
   border-radius: 0.5rem;
   outline: 0;
-  background: #fff;
-  color: #1d2939;
+  background: var(--color-nexus-surface);
+  color: var(--color-nexus-text-strong);
   font: inherit;
   font-size: 0.73rem;
   line-height: 1.5;
@@ -310,14 +310,14 @@
 
 .changeList li {
   padding: 0.7rem;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 0.55rem;
 }
 
 .changeList li > strong {
   display: block;
   margin-bottom: 0.55rem;
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.73rem;
 }
 
@@ -340,14 +340,14 @@
 
 .changeList span:last-child {
   background: #eef8f3;
-  color: #087443;
+  color: var(--color-nexus-success);
 }
 
 .changeList b {
   display: block;
   margin-top: 0.25rem;
   overflow-wrap: anywhere;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.68rem;
   font-weight: 550;
   line-height: 1.45;
@@ -364,7 +364,7 @@
 }
 
 .noChanges strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.75rem;
 }
 
@@ -426,7 +426,7 @@
 
 .primaryButton {
   background: #5e4fd6;
-  color: #fff;
+  color: var(--color-nexus-surface);
 }
 
 .primaryButton:hover:not(:disabled) {
@@ -441,8 +441,8 @@
 
 .secondaryButton {
   border-color: #cfd5df;
-  background: #fff;
-  color: #344054;
+  background: var(--color-nexus-surface);
+  color: var(--color-nexus-text);
 }
 
 @media (max-width: 44rem) {

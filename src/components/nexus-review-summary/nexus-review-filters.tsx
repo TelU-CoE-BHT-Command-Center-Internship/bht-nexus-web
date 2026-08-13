@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { NexusMetadataCompletionCorrection } from "@/components/nexus-review-summary/nexus-metadata-completion-correction";
 import { NexusMetadataCompletionReview } from "@/components/nexus-review-summary/nexus-metadata-completion-review";
 import { NexusReviewCorrection } from "@/components/nexus-review-summary/nexus-review-correction";
 import { NexusReviewDetail } from "@/components/nexus-review-summary/nexus-review-detail";
@@ -13,6 +14,8 @@ import { NexusReviewTable } from "@/components/nexus-review-summary/nexus-review
 import type {
   ReviewCandidateRow,
   ReviewCandidateStatus,
+  ReviewCompletionRevisionChange,
+  ReviewMetadataCompletionProposal,
   ReviewRecord,
   ReviewRevisionChange,
   ReviewStatusChangeContext,
@@ -31,6 +34,12 @@ type NexusReviewFiltersProps = {
     record: ReviewRecord,
     note: string,
     changes: readonly ReviewRevisionChange[],
+  ) => void;
+  onCompletionProposalResubmit: (
+    candidateId: string,
+    resolutions: ReviewMetadataCompletionProposal["resolutions"],
+    sourceNote: string,
+    changes: readonly ReviewCompletionRevisionChange[],
   ) => void;
   onReviewerNoteChange: (candidateId: string, note: string) => void;
   onStatusChange: (
@@ -62,6 +71,7 @@ export function NexusReviewFilters({
   candidates,
   content,
   onCandidateResubmit,
+  onCompletionProposalResubmit,
   onReviewerNoteChange,
   onStatusChange,
 }: NexusReviewFiltersProps) {
@@ -273,7 +283,14 @@ export function NexusReviewFilters({
         totalCandidateCount={candidates.length}
       />
 
-      {activeCandidate?.kind === "metadata-completion" ? (
+      {activeCandidate?.kind === "metadata-completion" &&
+      activeCandidate.status === "needs-fix" ? (
+        <NexusMetadataCompletionCorrection
+          candidate={activeCandidate}
+          onClose={closeDetail}
+          onResubmit={onCompletionProposalResubmit}
+        />
+      ) : activeCandidate?.kind === "metadata-completion" ? (
         <NexusMetadataCompletionReview
           candidate={activeCandidate}
           onClose={closeDetail}

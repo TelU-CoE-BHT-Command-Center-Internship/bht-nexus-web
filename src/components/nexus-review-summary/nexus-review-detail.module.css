@@ -3,8 +3,8 @@
 .decisionSection,
 .revisionSummary,
 .timelineSection {
-  background: #fff;
-  border: 1px solid #e6e9f0;
+  background: var(--color-nexus-surface);
+  border: 1px solid var(--color-nexus-border-soft);
   border-radius: 0.75rem;
   box-shadow: 0 1px 2px rgb(16 24 40 / 3%);
 }
@@ -37,13 +37,13 @@
   justify-content: center;
   border-radius: 50%;
   background: #d7f3e4;
-  color: #087443;
+  color: var(--color-nexus-success);
   font-size: 0.9rem;
   font-weight: 800;
 }
 
 .revisionEyebrow {
-  color: #087443;
+  color: var(--color-nexus-success);
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.045em;
@@ -52,25 +52,25 @@
 
 .revisionTitle h3 {
   margin: 0.12rem 0 0;
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.83rem;
 }
 
 .revisionMeta {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.63rem;
   text-align: right;
 }
 
 .revisionNote {
   margin: 0.7rem 0;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.7rem;
   line-height: 1.5;
 }
 
 .revisionNoteLabel {
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
 }
 
 .revisionList {
@@ -85,13 +85,13 @@
   padding: 0.65rem;
   border: 1px solid #d7e9df;
   border-radius: 0.55rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
 }
 
 .revisionFieldLabel {
   display: block;
   margin-bottom: 0.45rem;
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.7rem;
 }
 
@@ -115,14 +115,14 @@
 
 .revisionAfter {
   background: #edf8f2;
-  color: #087443;
+  color: var(--color-nexus-success);
 }
 
 .revisionValue {
   display: block;
   margin-top: 0.2rem;
   overflow-wrap: anywhere;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.66rem;
   font-weight: 550;
   line-height: 1.45;
@@ -149,14 +149,14 @@
   font-size: 0.65rem;
 }
 .overview h3 {
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.95rem;
   letter-spacing: -0.01em;
   line-height: 1.45;
   margin: 0;
 }
 .overview > p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.72rem;
   line-height: 1.55;
   margin: -0.25rem 0 0;
@@ -188,7 +188,7 @@
 }
 .sourceBadge[data-source="manual"] {
   background: #f2f4f7;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
 }
 .statusBadge[data-tone="waiting"] {
   background: #fff5df;
@@ -215,12 +215,12 @@
   min-width: 0;
 }
 .metaItem dt {
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
   font-size: 0.61rem;
   margin-bottom: 0.15rem;
 }
 .metaItem dd {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.68rem;
   font-weight: 600;
   margin: 0;
@@ -235,7 +235,7 @@
   padding-top: 0.65rem;
 }
 .relatedMembers > strong {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.62rem;
 }
 .relatedMembers ul {
@@ -254,7 +254,7 @@
   min-width: 0;
 }
 .relatedMembers img {
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 50%;
   object-fit: cover;
 }
@@ -269,7 +269,7 @@
   white-space: nowrap;
 }
 .relatedMembers b {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.62rem;
   font-weight: 650;
 }
@@ -311,7 +311,7 @@
   text-align: center;
 }
 .assessmentScore strong {
-  color: #b42336;
+  color: var(--color-nexus-danger);
   font-size: 1.25rem;
   line-height: 1.2;
 }
@@ -329,20 +329,20 @@
   font-size: 0.58rem;
 }
 .assessmentLabel {
-  color: #b42336;
+  color: var(--color-nexus-danger);
   font-size: 0.63rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .assessment h3 {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.78rem;
   line-height: 1.45;
   margin: 0.12rem 0;
 }
 .assessment p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.67rem;
   line-height: 1.5;
   margin: 0;
@@ -365,10 +365,10 @@
   font-size: 0.74rem;
 }
 .finalState[data-tone="rejected"] strong {
-  color: #b42336;
+  color: var(--color-nexus-danger);
 }
 .finalState span {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.66rem;
 }
 .linkOutcomeFinal {
@@ -406,7 +406,7 @@
   gap: 0.5rem;
 }
 .sectionHeading h3 {
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.82rem;
   line-height: 1.4;
   margin: 0;
@@ -421,7 +421,7 @@
   align-items: center;
   background: #f2f0ff;
   border-radius: 0.4rem;
-  color: #5c4fd0;
+  color: var(--color-nexus-accent);
   display: inline-flex;
   font-size: 0.6rem;
   font-weight: 750;
@@ -446,16 +446,16 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   margin: 0;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 0.6rem;
-  background: #e4e7ec;
+  background: var(--color-nexus-border);
   overflow: hidden;
 }
 
 .candidateMetadataGrid > div {
   min-width: 0;
   padding: 0.65rem 0.7rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
 }
 
 .candidateMetadataGrid > div[data-available="false"] {
@@ -475,7 +475,7 @@
 }
 
 .candidateMetadataLabel > span:first-child {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.61rem;
   font-weight: 700;
 }
@@ -484,7 +484,7 @@
   padding: 0.18rem 0.38rem;
   border-radius: 999px;
   background: #e5f5ec;
-  color: #087443;
+  color: var(--color-nexus-success);
   font-size: 0.53rem;
   font-weight: 700;
   white-space: nowrap;
@@ -498,7 +498,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
 .candidateMetadataGrid dd {
   margin: 0;
   overflow-wrap: anywhere;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.65rem;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -510,7 +510,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
 }
 .matchCard {
   align-items: center;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 0.65rem;
   cursor: pointer;
   display: grid;
@@ -564,7 +564,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   align-items: center;
   background: #f2f4f7;
   border-radius: 50%;
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   display: inline-flex;
   font-size: 0.62rem;
   font-weight: 700;
@@ -578,7 +578,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   min-width: 0;
 }
 .matchCopy strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.72rem;
   line-height: 1.35;
   overflow: hidden;
@@ -596,11 +596,11 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   white-space: nowrap;
 }
 .matchCopy em {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
 }
 .matchSources {
   align-items: center;
-  color: #5c4fd0;
+  color: var(--color-nexus-accent);
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
@@ -621,7 +621,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   justify-items: end;
 }
 .matchScore strong {
-  color: #b42336;
+  color: var(--color-nexus-danger);
   font-size: 0.9rem;
 }
 .matchScore[data-tone="strong"] strong {
@@ -646,14 +646,14 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   font-size: 0.73rem;
 }
 .noMatch p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.66rem;
   line-height: 1.5;
   margin: 0.25rem 0 0;
 }
 
 .comparisonList {
-  border: 1px solid #e6e9f0;
+  border: 1px solid var(--color-nexus-border-soft);
   border-radius: 0.65rem;
   overflow: hidden;
 }
@@ -680,12 +680,12 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   color: #087a58;
 }
 .comparisonSummary span {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.62rem;
   white-space: nowrap;
 }
 .comparisonField {
-  border-bottom: 1px solid #e6e9f0;
+  border-bottom: 1px solid var(--color-nexus-border-soft);
 }
 .comparisonField:last-child {
   border-bottom: 0;
@@ -698,7 +698,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding: 0.5rem 0.65rem;
 }
 .comparisonField h4 {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.65rem;
   margin: 0;
 }
@@ -727,12 +727,12 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
 }
 .comparisonBadge[data-tone="different"] {
   background: #ffebee;
-  color: #b42336;
+  color: var(--color-nexus-danger);
 }
 .comparisonBadge[data-tone="empty"],
 .comparisonBadge[data-tone="unavailable"] {
   background: #f2f4f7;
-  color: #667085;
+  color: var(--color-nexus-text-muted);
 }
 .valuePair {
   display: grid;
@@ -743,16 +743,16 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding: 0.6rem 0.65rem;
 }
 .valuePair > div + div {
-  border-left: 1px solid #e6e9f0;
+  border-left: 1px solid var(--color-nexus-border-soft);
 }
 .valuePair span {
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
   display: block;
   font-size: 0.57rem;
   margin-bottom: 0.2rem;
 }
 .valuePair p {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.65rem;
   line-height: 1.48;
   margin: 0;
@@ -771,7 +771,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   margin-top: 0.65rem;
 }
 .scoreDetails summary {
-  color: #5c4fd0;
+  color: var(--color-nexus-accent);
   cursor: pointer;
   font-size: 0.66rem;
   font-weight: 650;
@@ -782,7 +782,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding: 0.7rem 0.75rem;
 }
 .scoreDetails p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.64rem;
   line-height: 1.5;
   margin: 0 0 0.55rem;
@@ -800,7 +800,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   grid-template-columns: 6rem 1fr;
 }
 .scoreDetails li strong {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.62rem;
 }
 .scoreDetails li span {
@@ -821,13 +821,13 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
 }
 .provenanceColumns h4,
 .evidenceList h4 {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.63rem;
   margin: 0;
 }
 .provenanceCard {
-  background: #fbfcfe;
-  border: 1px solid #e6e9f0;
+  background: var(--color-nexus-surface-subtle);
+  border: 1px solid var(--color-nexus-border-soft);
   border-radius: 0.6rem;
   padding: 0.75rem;
 }
@@ -844,7 +844,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   min-width: 0;
 }
 .provenanceCard header strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.68rem;
 }
 .provenanceCard header span {
@@ -870,11 +870,11 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   grid-template-columns: 5rem minmax(0, 1fr);
 }
 .provenanceCard dt {
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
   font-size: 0.57rem;
 }
 .provenanceCard dd {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.55rem;
   margin: 0;
@@ -923,7 +923,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
 }
 .sourceAccess > span,
 .provenanceEmpty {
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
   font-size: 0.58rem;
   line-height: 1.4;
   margin: 0;
@@ -948,7 +948,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding: 0.65rem 0.75rem;
 }
 .evidenceList p {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.65rem;
   line-height: 1.5;
   margin: 0 0 0.25rem;
@@ -969,7 +969,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
 }
 .decisionChoices label {
   align-items: flex-start;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 0.6rem;
   cursor: pointer;
   display: flex;
@@ -994,7 +994,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   gap: 0.2rem;
 }
 .decisionChoices strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.68rem;
 }
 .decisionChoices small {
@@ -1029,7 +1029,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   flex: 0 0 auto;
   border: 1px solid #d96b0b;
   border-radius: 0.48rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
   color: #a34d04;
   font: inherit;
   font-size: 0.62rem;
@@ -1073,7 +1073,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding: 0.25rem 0.45rem;
   border-radius: 999px;
   background: #e8f7ef;
-  color: #087443;
+  color: var(--color-nexus-success);
   font-size: 0.56rem;
 }
 .linkConsequencePrinciples {
@@ -1097,10 +1097,10 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding: 0.6rem;
   border: 1px solid #e4e1f5;
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
 }
 .linkFieldResults strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.65rem;
 }
 .linkFieldResults p {
@@ -1136,7 +1136,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   font-size: 0.62rem;
 }
 .previousIssue p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.61rem;
   line-height: 1.45;
   margin: 0.2rem 0 0;
@@ -1157,19 +1157,19 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   margin-top: 0.7rem;
 }
 .noteField > span {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.65rem;
   font-weight: 650;
 }
 .noteField em {
-  color: #b42336;
+  color: var(--color-nexus-danger);
   font-style: normal;
   font-weight: 500;
 }
 .noteField textarea {
   border: 1px solid #d8dce4;
   border-radius: 0.55rem;
-  color: #344054;
+  color: var(--color-nexus-text);
   font: inherit;
   font-size: 0.68rem;
   line-height: 1.5;
@@ -1183,17 +1183,53 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   outline: none;
 }
 .noteField small {
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
   font-size: 0.57rem;
   justify-self: end;
 }
 .noteRequired {
-  color: #b42336;
+  color: var(--color-nexus-danger);
   font-size: 0.61rem;
   margin: 0.35rem 0 0;
 }
+.correctionDisclosure {
+  margin-top: 0.7rem;
+}
+.correctionDisclosure summary {
+  display: flex;
+  min-height: 2.6rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e0e4eb;
+  border-radius: 0.6rem;
+  background: #fafbfc;
+  color: var(--color-nexus-text);
+  cursor: pointer;
+  font-size: 0.67rem;
+  font-weight: 750;
+  list-style: none;
+}
+.correctionDisclosure summary::-webkit-details-marker {
+  display: none;
+}
+.correctionDisclosure summary small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.58rem;
+  font-weight: 500;
+}
+.correctionDisclosure summary::after {
+  color: var(--color-nexus-accent);
+  content: "+";
+  font-size: 1rem;
+  line-height: 1;
+}
+.correctionDisclosure[open] summary::after {
+  content: "−";
+}
 .correctionFieldPicker {
-  margin: 0.7rem 0 0;
+  margin: 0.5rem 0 0;
   padding: 0.7rem;
   border: 1px solid #e0e4eb;
   border-radius: 0.6rem;
@@ -1201,7 +1237,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
 }
 .correctionFieldPicker legend {
   padding: 0 0.25rem;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.67rem;
   font-weight: 750;
 }
@@ -1224,7 +1260,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding: 0.35rem 0.55rem;
   border: 1px solid #dfe3eb;
   border-radius: 999px;
-  background: #fff;
+  background: var(--color-nexus-surface);
   color: #526079;
   font-size: 0.6rem;
   cursor: pointer;
@@ -1270,19 +1306,19 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   opacity: 0.42;
 }
 .rejectButton {
-  background: #fff;
+  background: var(--color-nexus-surface);
   border: 1px solid #e6aeb6;
-  color: #b42336;
+  color: var(--color-nexus-danger);
 }
 .secondaryButton {
-  background: #fff;
+  background: var(--color-nexus-surface);
   border: 1px solid #d8dce4;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
 }
 .approveButton {
-  background: #5c4fd0;
-  border: 1px solid #5c4fd0;
-  color: #fff;
+  background: var(--color-nexus-accent);
+  border: 1px solid var(--color-nexus-accent);
+  color: var(--color-nexus-surface);
 }
 .approveButton:hover:not(:disabled) {
   background: #4d41be;
@@ -1302,11 +1338,11 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   gap: 0.15rem;
 }
 .rejectConfirmation strong {
-  color: #b42336;
+  color: var(--color-nexus-danger);
   font-size: 0.66rem;
 }
 .rejectConfirmation span {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.59rem;
 }
 .rejectConfirmation > div:last-child {
@@ -1319,11 +1355,11 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding: 0.75rem;
 }
 .readOnlyDecision strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.7rem;
 }
 .readOnlyDecision p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.65rem;
   line-height: 1.5;
   margin: 0.25rem 0 0;
@@ -1333,14 +1369,14 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   overflow: hidden;
 }
 .timelineSection > summary {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   cursor: pointer;
   font-size: 0.68rem;
   font-weight: 650;
   padding: 0.8rem 1rem;
 }
 .timeline {
-  border-top: 1px solid #e6e9f0;
+  border-top: 1px solid var(--color-nexus-border-soft);
   list-style: none;
   margin: 0;
   padding: 0.8rem 1rem 1rem;
@@ -1356,7 +1392,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   padding-bottom: 0;
 }
 .timeline li:not(:last-child)::after {
-  background: #e4e7ec;
+  background: var(--color-nexus-border);
   content: "";
   left: 0.31rem;
   position: absolute;
@@ -1365,8 +1401,8 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   width: 1px;
 }
 .timelineMarker {
-  background: #98a2b3;
-  border: 2px solid #fff;
+  background: var(--color-nexus-text-subtle);
+  border: 2px solid var(--color-nexus-surface);
   border-radius: 50%;
   box-shadow: 0 0 0 1px #cbd0da;
   height: 0.65rem;
@@ -1387,11 +1423,11 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   background: #e8882d;
 }
 .timeline li strong {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.65rem;
 }
 .timeline li p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.61rem;
   line-height: 1.45;
   margin: 0.12rem 0;
@@ -1403,7 +1439,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   margin-top: 0.2rem;
 }
 .timeline li time {
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
   font-size: 0.56rem;
 }
 
@@ -1455,7 +1491,7 @@ div[data-available="false"] > .candidateMetadataLabel > span:last-child {
   }
   .valuePair > div + div {
     border-left: 0;
-    border-top: 1px solid #e6e9f0;
+    border-top: 1px solid var(--color-nexus-border-soft);
   }
   .provenanceColumns,
   .decisionChoices {

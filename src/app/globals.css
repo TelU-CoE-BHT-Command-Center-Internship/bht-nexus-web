@@ -6,6 +6,19 @@
   --color-brand-navy-dark: #051c43;
   --color-brand-gold: #f3bd25;
   --color-line: #e3e5e9;
+  --color-nexus-surface: #ffffff;
+  --color-nexus-surface-subtle: #fbfcfe;
+  --color-nexus-text-strong: #1d2939;
+  --color-nexus-text: #344054;
+  --color-nexus-text-soft: #475467;
+  --color-nexus-text-muted: #667085;
+  --color-nexus-text-subtle: #98a2b3;
+  --color-nexus-border: #e4e7ec;
+  --color-nexus-border-soft: #e6e9f0;
+  --color-nexus-border-subtle: #e8ebf1;
+  --color-nexus-accent: #5c4fd0;
+  --color-nexus-success: #087443;
+  --color-nexus-danger: #b42336;
   --section-space: clamp(3.75rem, 5vw, 5rem);
   --font-sans:
     var(--font-inter), Inter, ui-sans-serif, system-ui, -apple-system,

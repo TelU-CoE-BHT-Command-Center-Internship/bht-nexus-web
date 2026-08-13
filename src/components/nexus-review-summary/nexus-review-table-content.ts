@@ -1,3 +1,8 @@
+import {
+  type MetadataCompletionFieldKey,
+  type MetadataCompletionResolution,
+  metadataCompletionFieldLabels,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import type { ReviewSelectFilter } from "@/components/nexus-review-summary/nexus-review-filters-content";
 
 export type ReviewCandidateSource =
@@ -20,6 +25,7 @@ export type ReviewStatusChangeContext = {
   label?: string;
   linkedTargetId?: string;
   proposedEnrichmentFields?: readonly ReviewRecordFieldKey[];
+  requestedCompletionFields?: readonly ReviewCompletionFieldKey[];
   requestedCorrectionFields?: readonly ReviewRecordFieldKey[];
 };
 
@@ -82,21 +88,30 @@ export type ReviewRevisionSubmission = {
   version: string;
 };
 
-export type ReviewCompletionFieldKey =
-  | "doi"
-  | "issue"
-  | "pages"
-  | "publisherUrl";
+export type ReviewCompletionFieldKey = MetadataCompletionFieldKey;
+export type ReviewCompletionResolution = MetadataCompletionResolution;
 
-export type ReviewCompletionResolution = {
-  reason: string;
-  status: "not-applicable" | "not-available" | "provided";
-  value: string;
+export type ReviewCompletionRevisionChange = {
+  currentResolution: ReviewCompletionResolution;
+  key: ReviewCompletionFieldKey;
+  previousResolution: ReviewCompletionResolution;
+};
+
+export type ReviewMetadataCompletionRevision = {
+  changes: readonly ReviewCompletionRevisionChange[];
+  currentSourceNote: string;
+  previousSourceNote: string;
+  requestedFields: readonly ReviewCompletionFieldKey[];
+  reviewerRequest: string;
+  submittedAt: string;
+  submittedBy: string;
+  version: string;
 };
 
 export type ReviewMetadataCompletionProposal = {
   affectedFields: readonly ReviewCompletionFieldKey[];
   id: string;
+  latestRevision?: ReviewMetadataCompletionRevision;
   officialValues: Record<ReviewCompletionFieldKey, string>;
   publicationId: string;
   resolutions: Partial<
@@ -187,6 +202,7 @@ export type ReviewCandidateRow = {
   record: ReviewRecord;
   relatedMembers: readonly ReviewMember[];
   reviewerNote: string;
+  requestedCompletionFields?: readonly ReviewCompletionFieldKey[];
   requestedCorrectionFields?: readonly ReviewRecordFieldKey[];
   source: ReviewCandidateSource;
   status: ReviewCandidateStatus;
@@ -404,12 +420,7 @@ export const reviewRecordFieldOrder: readonly ReviewRecordFieldKey[] = [
 export const reviewCompletionFieldLabels: Record<
   ReviewCompletionFieldKey,
   string
-> = {
-  doi: "DOI",
-  issue: "Nomor terbit",
-  pages: "Halaman / nomor artikel",
-  publisherUrl: "Tautan penerbit",
-};
+> = metadataCompletionFieldLabels;
 
 const sourcePool: readonly ReviewCandidateSource[] = [
   ...Array.from({ length: 34 }, () => "SINTA" as const),
@@ -884,7 +895,7 @@ function createMetadataCompletionProposal(): ReviewCandidateRow {
       verdict: "new",
     },
     evidence: [],
-    id: "TJV-2026-00112",
+    id: "TJV-2026-00157",
     kind: "metadata-completion",
     matches: [],
     owner,

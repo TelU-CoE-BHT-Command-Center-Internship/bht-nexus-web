@@ -1,9 +1,9 @@
 .overview,
 .detailSection,
 .reviewSection {
-  border: 1px solid #e6e9f0;
+  border: 1px solid var(--color-nexus-border-soft);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
   box-shadow: 0 1px 2px rgb(16 24 40 / 3%);
 }
 
@@ -34,7 +34,7 @@
 
 .overview h3 {
   margin: 0;
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.95rem;
   letter-spacing: -0.01em;
   line-height: 1.45;
@@ -42,7 +42,7 @@
 
 .overview > p {
   margin: -0.25rem 0 0;
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.72rem;
   line-height: 1.55;
 }
@@ -65,14 +65,14 @@
 .metadataDetails dt,
 .provenanceCard dt {
   margin-bottom: 0.15rem;
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
   font-size: 0.61rem;
 }
 
 .metaItem dd {
   overflow: hidden;
   margin: 0;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.68rem;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -135,7 +135,7 @@
 
 .sectionHeading h3 {
   margin: 0;
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.82rem;
   line-height: 1.4;
 }
@@ -155,7 +155,7 @@
   justify-content: center;
   border-radius: 0.4rem;
   background: #f2f0ff;
-  color: #5c4fd0;
+  color: var(--color-nexus-accent);
   font-size: 0.6rem;
   font-weight: 750;
 }
@@ -181,9 +181,9 @@
 .metadataDetails > div {
   min-width: 0;
   padding: 0.72rem 0.8rem;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 0.55rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
 }
 
 .metadataSummary > div {
@@ -208,7 +208,7 @@
 .provenanceCard dd {
   overflow-wrap: anywhere;
   margin: 0;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.68rem;
   font-weight: 620;
   line-height: 1.45;
@@ -245,7 +245,11 @@
   padding: 0.85rem 0.95rem;
   border: 1px solid #dce4ee;
   border-radius: 0.65rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #fff 72%);
+  background: linear-gradient(
+    135deg,
+    #f8fafc 0%,
+    var(--color-nexus-surface) 72%
+  );
 }
 
 .citationMetric[data-available="false"] {
@@ -261,7 +265,7 @@
 
 .citationValue > span {
   grid-column: 1 / -1;
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.67rem;
   font-weight: 750;
   letter-spacing: 0.045em;
@@ -275,7 +279,7 @@
 }
 
 .citationValue small {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.75rem;
 }
 
@@ -294,14 +298,14 @@
 
 .citationProvenance dt {
   margin-bottom: 0.12rem;
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
   font-size: 0.7rem;
 }
 
 .citationProvenance dd {
   overflow-wrap: anywhere;
   margin: 0;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -310,8 +314,8 @@
   grid-column: 1 / -1;
   margin: 0;
   padding-top: 0.65rem;
-  border-top: 1px solid #e4e7ec;
-  color: #667085;
+  border-top: 1px solid var(--color-nexus-border);
+  color: var(--color-nexus-text-muted);
   font-size: 0.73rem;
   line-height: 1.55;
 }
@@ -365,7 +369,7 @@
   place-items: center;
   border-radius: 50%;
   background: #dff4e9;
-  color: #087443;
+  color: var(--color-nexus-success);
   font-size: 0.72rem;
   font-weight: 800;
 }
@@ -387,13 +391,13 @@ li[data-status="pending"] .completenessMarker {
 }
 
 .completenessCopy strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.68rem;
 }
 
 .completenessCopy small {
   overflow-wrap: anywhere;
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.6rem;
   line-height: 1.45;
 }
@@ -402,7 +406,7 @@ li[data-status="pending"] .completenessMarker {
   padding: 0.22rem 0.42rem;
   border-radius: 999px;
   background: #e4f5ec;
-  color: #087443;
+  color: var(--color-nexus-success);
   font-size: 0.56rem;
   font-weight: 700;
   white-space: nowrap;
@@ -415,7 +419,7 @@ li[data-status="missing"] .completenessStatus {
 
 li[data-status="pending"] .completenessStatus {
   background: #ebe8ff;
-  color: #5c4fd0;
+  color: var(--color-nexus-accent);
 }
 
 .memberGrid {
@@ -431,13 +435,13 @@ li[data-status="pending"] .completenessStatus {
   gap: 0.65rem;
   min-width: 0;
   padding: 0.7rem;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 0.6rem;
-  background: #fbfcfe;
+  background: var(--color-nexus-surface-subtle);
 }
 
 .memberCard img {
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 50%;
   object-fit: cover;
 }
@@ -456,7 +460,7 @@ li[data-status="pending"] .completenessStatus {
 }
 
 .memberCard strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.69rem;
 }
 
@@ -473,9 +477,9 @@ li[data-status="pending"] .completenessStatus {
 
 .provenanceCard {
   overflow: hidden;
-  border: 1px solid #e4e7ec;
+  border: 1px solid var(--color-nexus-border);
   border-radius: 0.65rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
 }
 
 .provenanceCard header {
@@ -485,7 +489,7 @@ li[data-status="pending"] .completenessStatus {
   gap: 0.6rem;
   padding: 0.75rem;
   border-bottom: 1px solid #edf0f5;
-  background: #fbfcfe;
+  background: var(--color-nexus-surface-subtle);
 }
 
 .sourceIcon {
@@ -515,7 +519,7 @@ li[data-status="pending"] .completenessStatus {
 }
 
 .provenanceCard header strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.72rem;
 }
 

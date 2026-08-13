@@ -101,7 +101,9 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 └── tsconfig.json       # aturan TypeScript
 ```
 
-Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan interaksi dapat diperbarui tanpa membuat halaman utama sulit dirawat. Folder baru ditambahkan ketika benar-benar dibutuhkan.
+Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan interaksi dapat diperbarui tanpa membuat halaman utama sulit dirawat. Folder baru ditambahkan ketika benar-benar dibutuhkan. Komponen antarmuka yang benar-benar dipakai lintas fitur ruang kerja berada di `nexus-workspace-ui`, sedangkan aturan bentuk data pelengkapan metadata yang dipakai bersama oleh Publikasi dan Tinjauan berada di `nexus-metadata-completion`. Logika serta gaya yang hanya berlaku untuk satu fitur tetap disimpan di folder fiturnya.
+
+Palet dasar ruang kerja BHT Nexus—permukaan, teks, garis, aksen, serta warna status utama—didefinisikan sebagai token CSS di `src/app/globals.css`. Variasi yang hanya memiliki makna pada satu komponen tetap lokal agar daftar token tidak menjadi kumpulan warna tanpa konteks.
 
 ## Halaman yang Tersedia
 
@@ -153,9 +155,10 @@ Fondasi ruang kerja saat ini mencakup:
 - rincian kandidat dalam drawer responsif untuk memeriksa seluruh metadata kandidat, rekam resmi terkait, perbandingan per bidang, anggota terkait, bukti, sumber, dan jejak pengambilan data; metadata kandidat tetap ditampilkan saat belum ada rekam resmi pembanding;
 - alur Tinjauan dengan status Menunggu Tinjauan, Perlu Perbaikan, dan Selesai Ditinjau; hasil Setujui sebagai data baru, Hubungkan ke rekam resmi, atau Tolak ditampilkan terpisah agar status proses dan hasil akhirnya tidak rancu;
 - keputusan tanpa pilihan awal, alasan wajib, serta pemeriksaan DOI terhadap seluruh rekam pembanding; ketika DOI identik ditemukan, rekam lain tetap dapat diperiksa tetapi hanya rekam dengan DOI tersebut yang dapat menjadi target hubungan;
-- hasil Hubungkan dijelaskan sebelum konfirmasi: rekam resmi tidak ditimpa, jejak sumber kandidat tetap terkait, dan nilai kandidat yang berbeda disimpan sebagai usulan pelengkapan terpisah;
+- hasil Hubungkan dijelaskan sebelum konfirmasi: rekam resmi tidak ditimpa, jejak sumber kandidat tetap terkait, dan nilai kandidat yang berbeda ditandai sebagai bahan pelengkapan metadata untuk tinjauan berikutnya;
 - alur Perlu Perbaikan yang menandai bidang permintaan pemeriksa, membuat hanya bidang tersebut dapat diedit, mempertahankan bidang lain sebagai hanya-baca, serta menampilkan dasar perubahan, nilai sebelum–sesudah, konfirmasi, nomor versi baru, dan riwayat kirim ulang;
 - usulan pelengkapan dari Publikasi dapat ditinjau melalui halaman Tinjauan dengan perbandingan nilai resmi dan usulan, sumber serta alasan, akibat setiap keputusan, dan pilihan setujui, minta perbaikan, atau tolak tanpa langsung menimpa rekam resmi;
+- usulan pelengkapan yang dikembalikan menampilkan catatan pemeriksa dan bagian yang perlu diperbaiki, membatasi perubahan pada bagian tersebut, lalu mengirim proposal yang sama sebagai versi baru dengan perbandingan sebelum–sesudah untuk tinjauan ulang;
 - komponen ruang kerja bersama untuk judul halaman, ringkasan, tab, pencarian, select, shell tabel, pagination, dan drawer agar pengalaman antarfitur tetap konsisten;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
 

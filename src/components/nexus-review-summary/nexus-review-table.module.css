@@ -12,8 +12,8 @@
 
 .desktopTable th {
   background: #f8f9fc;
-  border-bottom: 1px solid #e6e9f0;
-  color: #667085;
+  border-bottom: 1px solid var(--color-nexus-border-soft);
+  color: var(--color-nexus-text-muted);
   font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.035em;
@@ -50,7 +50,7 @@
 
 .desktopTable td {
   border-bottom: 1px solid #edf0f5;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.75rem;
   padding: 0.85rem 0.625rem;
   vertical-align: middle;
@@ -79,7 +79,7 @@
 }
 
 .titleCell strong {
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   display: -webkit-box;
   font-size: 0.78rem;
   font-weight: 650;
@@ -115,7 +115,7 @@
 
 .publicationType {
   background: transparent;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   padding-inline: 0;
   white-space: nowrap;
 }
@@ -138,7 +138,7 @@
 }
 .sourceBadge[data-source="manual"] {
   background: #f2f4f7;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
 }
 
 .statusBadge[data-tone="waiting"] {
@@ -160,7 +160,7 @@
   justify-items: start;
 }
 .statusGroup > small {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.59rem;
   line-height: 1.35;
 }
@@ -195,14 +195,14 @@
 }
 
 .duplicateSignal strong {
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   text-align: right;
 }
 .duplicateSignal span {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   display: -webkit-box;
   font-size: 0.65rem;
   font-weight: 620;
@@ -256,7 +256,7 @@
   white-space: nowrap;
 }
 .date {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   white-space: nowrap;
 }
 .actionCell {
@@ -309,7 +309,12 @@
 .loadingRow td span,
 .mobileLoading span {
   animation: shimmer 1.4s infinite linear;
-  background: linear-gradient(90deg, #f1f3f6 20%, #e4e7ec 48%, #f1f3f6 76%);
+  background: linear-gradient(
+    90deg,
+    #f1f3f6 20%,
+    var(--color-nexus-border) 48%,
+    #f1f3f6 76%
+  );
   background-size: 200% 100%;
   border-radius: 0.35rem;
   display: block;
@@ -331,18 +336,18 @@
 
 .emptyState svg {
   height: 2.5rem;
-  stroke: #98a2b3;
+  stroke: var(--color-nexus-text-subtle);
   stroke-linejoin: round;
   stroke-width: 1.4;
   width: 2.5rem;
 }
 .emptyState strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.9rem;
   margin-top: 0.8rem;
 }
 .emptyState p {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.78rem;
   margin: 0.3rem 0 0.85rem;
 }
@@ -350,7 +355,7 @@
   background: #f3f0ff;
   border: 0;
   border-radius: 0.5rem;
-  color: #5c4fd0;
+  color: var(--color-nexus-accent);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 650;
@@ -391,7 +396,7 @@
     height: 14rem;
   }
   .mobileCard {
-    border: 1px solid #e6e9f0;
+    border: 1px solid var(--color-nexus-border-soft);
     border-radius: 0.75rem;
     display: grid;
     gap: 0.7rem;
@@ -409,13 +414,13 @@
     text-align: right;
   }
   .mobileCard h4 {
-    color: #1d2939;
+    color: var(--color-nexus-text-strong);
     font-size: 0.85rem;
     line-height: 1.45;
     margin: 0;
   }
   .mobileAuthors {
-    color: #667085;
+    color: var(--color-nexus-text-muted);
     display: -webkit-box;
     font-size: 0.72rem;
     line-height: 1.5;
@@ -451,16 +456,16 @@
     font-size: 0.67rem;
   }
   .mobileMeta dd {
-    color: #475467;
+    color: var(--color-nexus-text-soft);
     font-size: 0.7rem;
     margin: 0;
   }
   .mobileReviewButton {
     align-items: center;
-    background: #5c4fd0;
+    background: var(--color-nexus-accent);
     border: 0;
     border-radius: 0.55rem;
-    color: #fff;
+    color: var(--color-nexus-surface);
     cursor: pointer;
     display: flex;
     font-size: 0.75rem;

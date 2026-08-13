@@ -1,8 +1,8 @@
 .section,
 .result {
-  border: 1px solid #e6e9f0;
+  border: 1px solid var(--color-nexus-border-soft);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
   box-shadow: 0 1px 2px rgb(16 24 40 / 3%);
 }
 
@@ -16,7 +16,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e8ebf1;
+  border-bottom: 1px solid var(--color-nexus-border-subtle);
 }
 
 .heading > div {
@@ -41,7 +41,7 @@
 
 .heading h3 {
   margin: 0;
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.85rem;
 }
 
@@ -70,7 +70,7 @@
 .confirmation p,
 .resultCopy > p,
 .resultFinish {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.7rem;
   line-height: 1.55;
 }
@@ -97,7 +97,7 @@
 .fieldLabel {
   display: block;
   margin-bottom: 0.35rem;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.68rem;
   font-weight: 750;
 }
@@ -116,12 +116,12 @@
   padding: 0.75rem;
   border: 1px solid #dde2ea;
   border-radius: 0.6rem;
-  background: #fbfcfe;
+  background: var(--color-nexus-surface-subtle);
 }
 
 .resolutionField legend {
   padding: 0 0.25rem;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.7rem;
   font-weight: 760;
 }
@@ -138,7 +138,7 @@
   padding: 0.5rem;
   border: 1px solid #e0e4eb;
   border-radius: 0.45rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
   cursor: pointer;
 }
 
@@ -159,7 +159,7 @@
 }
 
 .resolutionOptions strong {
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.65rem;
 }
 
@@ -178,7 +178,7 @@
 .valueField > span {
   display: block;
   margin-bottom: 0.3rem;
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.64rem;
   font-weight: 700;
 }
@@ -191,8 +191,8 @@
   border: 1px solid #ccd5e2;
   border-radius: 0.5rem;
   outline: 0;
-  background: #fff;
-  color: #1d2939;
+  background: var(--color-nexus-surface);
+  color: var(--color-nexus-text-strong);
   font: inherit;
   font-size: 0.73rem;
   line-height: 1.5;
@@ -273,7 +273,7 @@
 
 .primaryButton {
   background: #5e4fd6;
-  color: #fff;
+  color: var(--color-nexus-surface);
 }
 
 .primaryButton:hover:not(:disabled) {
@@ -289,8 +289,8 @@
 .secondaryButton,
 .resultActions button {
   border-color: #cfd5df;
-  background: #fff;
-  color: #344054;
+  background: var(--color-nexus-surface);
+  color: var(--color-nexus-text);
 }
 
 .result {
@@ -310,7 +310,7 @@
   justify-content: center;
   border-radius: 50%;
   background: #d7f3e4;
-  color: #087443;
+  color: var(--color-nexus-success);
 }
 
 .resultIcon svg {
@@ -327,7 +327,7 @@
 }
 
 .resultStatus {
-  color: #087443;
+  color: var(--color-nexus-success);
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.055em;
@@ -356,7 +356,7 @@
   padding: 0.55rem;
   border: 1px solid #d7e9df;
   border-radius: 0.45rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
 }
 
 .resultCopy dt {
@@ -369,7 +369,7 @@
 .resultCopy dd {
   margin: 0.2rem 0 0;
   overflow-wrap: anywhere;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.68rem;
   line-height: 1.45;
 }
@@ -380,7 +380,7 @@
 
 .resultFinish {
   padding: 0.6rem 0.7rem;
-  border-left: 3px solid #087443;
+  border-left: 3px solid var(--color-nexus-success);
   border-radius: 0.4rem;
   background: #eaf7f0;
 }

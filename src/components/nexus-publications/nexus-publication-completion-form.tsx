@@ -1,12 +1,16 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
+import {
+  createEmptyMetadataCompletionResolution,
+  metadataCompletionFieldConfigs,
+  metadataCompletionResolutionOptions,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import styles from "@/components/nexus-publications/nexus-publication-completion-form.module.css";
 import type {
   OfficialPublication,
   PublicationCompletionFieldKey,
   PublicationCompletionResolution,
-  PublicationCompletionResolutionStatus,
   PublicationCompletionResolutions,
   PublicationMetadataProposal,
 } from "@/components/nexus-publications/nexus-publications-content";
@@ -22,69 +26,6 @@ type NexusPublicationCompletionFormProps = {
   proposal?: PublicationMetadataProposal;
   publication: OfficialPublication;
 };
-
-type CompletionFieldConfig = {
-  help: string;
-  key: PublicationCompletionFieldKey;
-  placeholder: string;
-  type: "text" | "url";
-};
-
-const completionFieldConfigs: Record<
-  PublicationCompletionFieldKey,
-  CompletionFieldConfig
-> = {
-  doi: {
-    help: "Masukkan DOI tanpa harus menambahkan https://doi.org/.",
-    key: "doi",
-    placeholder: "10.xxxx/xxxxx",
-    type: "text",
-  },
-  issue: {
-    help: "Gunakan nomor terbit yang ditulis oleh jurnal atau penerbit.",
-    key: "issue",
-    placeholder: "Contoh: 2",
-    type: "text",
-  },
-  pages: {
-    help: "Gunakan rentang halaman atau nomor artikel dari penerbit.",
-    key: "pages",
-    placeholder: "Contoh: 115–128 atau e10452",
-    type: "text",
-  },
-  publisherUrl: {
-    help: "Gunakan tautan langsung menuju halaman karya pada situs penerbit.",
-    key: "publisherUrl",
-    placeholder: "https://penerbit.example/artikel",
-    type: "url",
-  },
-};
-
-const resolutionOptions: readonly {
-  description: string;
-  label: string;
-  status: PublicationCompletionResolutionStatus;
-}[] = [
-  {
-    description: "Nilai tersedia pada sumber yang dapat diperiksa.",
-    label: "Isi nilai",
-    status: "provided",
-  },
-  {
-    description: "Sumber sudah diperiksa dan memang tidak menyediakan nilai.",
-    label: "Memang tidak tersedia",
-    status: "not-available",
-  },
-  {
-    description: "Bidang ini tidak relevan untuk karya tersebut.",
-    label: "Tidak berlaku",
-    status: "not-applicable",
-  },
-];
-
-function createEmptyResolution(): PublicationCompletionResolution {
-  return { reason: "", status: "provided", value: "" };
-}
 
 function getResolutionResult(resolution: PublicationCompletionResolution) {
   if (resolution.status === "provided") return resolution.value;
@@ -114,14 +55,14 @@ export function NexusPublicationCompletionForm({
         Object.fromEntries(
           publication.missingFields.map((key) => [
             key,
-            createEmptyResolution(),
+            createEmptyMetadataCompletionResolution(),
           ]),
         ) as PublicationCompletionResolutions,
     );
   const [sourceNote, setSourceNote] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
   const fields = publication.missingFields.map(
-    (key) => completionFieldConfigs[key],
+    (key) => metadataCompletionFieldConfigs[key],
   );
   const normalizedResolutions = useMemo(
     () =>
@@ -154,7 +95,8 @@ export function NexusPublicationCompletionForm({
     setResolutions((currentResolutions) => ({
       ...currentResolutions,
       [key]: {
-        ...(currentResolutions[key] ?? createEmptyResolution()),
+        ...(currentResolutions[key] ??
+          createEmptyMetadataCompletionResolution()),
         ...update,
       },
     }));
@@ -259,7 +201,8 @@ export function NexusPublicationCompletionForm({
             const helpId = `${fieldId}-help`;
             const reasonId = `${fieldId}-reason`;
             const resolution =
-              resolutions[field.key] ?? createEmptyResolution();
+              resolutions[field.key] ??
+              createEmptyMetadataCompletionResolution();
 
             return (
               <fieldset className={styles.resolutionField} key={field.key}>
@@ -269,7 +212,7 @@ export function NexusPublicationCompletionForm({
                 </legend>
 
                 <div className={styles.resolutionOptions}>
-                  {resolutionOptions.map((option) => (
+                  {metadataCompletionResolutionOptions.map((option) => (
                     <label
                       data-selected={
                         resolution.status === option.status || undefined

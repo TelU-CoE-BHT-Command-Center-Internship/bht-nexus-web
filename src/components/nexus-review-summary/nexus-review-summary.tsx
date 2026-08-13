@@ -6,7 +6,9 @@ import type { NexusReviewSummaryContent } from "@/components/nexus-review-summar
 import { NexusReviewSummaryIcon } from "@/components/nexus-review-summary/nexus-review-summary-icons";
 import type {
   ReviewCandidateStatus,
+  ReviewCompletionRevisionChange,
   ReviewDecision,
+  ReviewMetadataCompletionProposal,
   ReviewRecord,
   ReviewRevisionChange,
   ReviewStatusChangeContext,
@@ -86,6 +88,10 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
             status === "needs-fix"
               ? context?.requestedCorrectionFields
               : candidate.requestedCorrectionFields,
+          requestedCompletionFields:
+            status === "needs-fix"
+              ? context?.requestedCompletionFields
+              : candidate.requestedCompletionFields,
           status,
           timeline: [
             ...candidate.timeline,
@@ -164,6 +170,77 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
     );
   };
 
+  const resubmitCompletionProposal = (
+    candidateId: string,
+    resolutions: ReviewMetadataCompletionProposal["resolutions"],
+    sourceNote: string,
+    changes: readonly ReviewCompletionRevisionChange[],
+  ) => {
+    setCandidates((currentCandidates) =>
+      currentCandidates.map((candidate) => {
+        const proposal = candidate.completionProposal;
+
+        if (
+          candidate.id !== candidateId ||
+          candidate.status !== "needs-fix" ||
+          !proposal
+        ) {
+          return candidate;
+        }
+
+        const currentVersionNumber = Number.parseInt(
+          candidate.version.replace(/^v/, ""),
+          10,
+        );
+        const nextVersion = `v${Number.isNaN(currentVersionNumber) ? 2 : currentVersionNumber + 1}`;
+        const previousSourceNote = proposal.sourceNote;
+        const reviewerRequest = candidate.reviewerNote.trim();
+        const requestedFields =
+          candidate.requestedCompletionFields ?? proposal.affectedFields;
+        const revisionDetail =
+          changes.length > 0
+            ? `${changes.length} nilai usulan diperbarui. Dasar revisi: ${sourceNote}`
+            : `Dasar sumber usulan diperbarui: ${sourceNote}`;
+
+        return {
+          ...candidate,
+          completionProposal: {
+            ...proposal,
+            latestRevision: {
+              changes,
+              currentSourceNote: sourceNote,
+              previousSourceNote,
+              requestedFields,
+              reviewerRequest,
+              submittedAt: "Baru saja",
+              submittedBy: candidate.owner.name,
+              version: nextVersion,
+            },
+            resolutions,
+            sourceNote,
+            submittedAt: "Baru saja",
+          },
+          reviewerNote: "",
+          requestedCompletionFields: undefined,
+          status: "waiting" as const,
+          timeline: [
+            ...candidate.timeline,
+            {
+              actor: candidate.owner.name,
+              candidateVersion: nextVersion,
+              detail: revisionDetail,
+              id: `${candidate.id}-proposal-resubmitted-${candidate.timeline.length + 1}`,
+              label: "Usulan diperbaiki dan dikirim ulang",
+              timeLabel: "Baru saja",
+              tone: "waiting" as const,
+            },
+          ],
+          version: nextVersion,
+        };
+      }),
+    );
+  };
+
   return (
     <NexusWorkspacePage
       description={content.description}
@@ -177,6 +254,7 @@ export function NexusReviewSummary({ content }: NexusReviewSummaryProps) {
         candidates={candidates}
         content={content.filters}
         onCandidateResubmit={resubmitCandidate}
+        onCompletionProposalResubmit={resubmitCompletionProposal}
         onReviewerNoteChange={updateReviewerNote}
         onStatusChange={updateCandidateStatus}
       />

@@ -12,9 +12,9 @@
 
 .desktopTable th {
   padding: 0.75rem 0.625rem;
-  border-bottom: 1px solid #e6e9f0;
+  border-bottom: 1px solid var(--color-nexus-border-soft);
   background: #f8f9fc;
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.035em;
@@ -58,7 +58,7 @@
 .desktopTable td {
   padding: 0.85rem 0.625rem;
   border-bottom: 1px solid #edf0f5;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.75rem;
   vertical-align: middle;
 }
@@ -89,7 +89,7 @@
 .titleCell strong {
   display: -webkit-box;
   overflow: hidden;
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.78rem;
   font-weight: 650;
   line-height: 1.45;
@@ -110,7 +110,7 @@
 }
 
 .publicationType {
-  color: #475467;
+  color: var(--color-nexus-text-soft);
   font-size: 0.675rem;
   font-weight: 650;
   line-height: 1.25;
@@ -148,7 +148,7 @@
 }
 
 .year {
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -161,11 +161,11 @@
 }
 
 .citationSignal[data-empty="true"] {
-  border-color: #98a2b3;
+  border-color: var(--color-nexus-text-subtle);
 }
 
 .citationSignal strong {
-  color: #1d2939;
+  color: var(--color-nexus-text-strong);
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -233,7 +233,12 @@
   height: 1.8rem;
   border-radius: 0.35rem;
   animation: shimmer 1.4s infinite linear;
-  background: linear-gradient(90deg, #f1f3f6 20%, #e4e7ec 48%, #f1f3f6 76%);
+  background: linear-gradient(
+    90deg,
+    #f1f3f6 20%,
+    var(--color-nexus-border) 48%,
+    #f1f3f6 76%
+  );
   background-size: 200% 100%;
 }
 
@@ -271,7 +276,7 @@
   place-items: center;
   border-radius: 50%;
   background: #f2f4f7;
-  color: #98a2b3;
+  color: var(--color-nexus-text-subtle);
 }
 
 .emptyIcon svg {
@@ -284,13 +289,13 @@
 
 .emptyState strong {
   margin-top: 0.8rem;
-  color: #344054;
+  color: var(--color-nexus-text);
   font-size: 0.9rem;
 }
 
 .emptyState p {
   margin: 0.3rem 0 0.85rem;
-  color: #667085;
+  color: var(--color-nexus-text-muted);
   font-size: 0.78rem;
 }
 
@@ -299,7 +304,7 @@
   border: 0;
   border-radius: 0.5rem;
   background: #f3f0ff;
-  color: #5c4fd0;
+  color: var(--color-nexus-accent);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 650;
@@ -343,7 +348,7 @@
     display: grid;
     gap: 0.7rem;
     padding: 0.85rem;
-    border: 1px solid #e6e9f0;
+    border: 1px solid var(--color-nexus-border-soft);
     border-radius: 0.75rem;
   }
 
@@ -357,7 +362,7 @@
 
   .mobileCard h4 {
     margin: 0;
-    color: #1d2939;
+    color: var(--color-nexus-text-strong);
     font-size: 0.85rem;
     line-height: 1.45;
   }
@@ -366,7 +371,7 @@
     display: -webkit-box;
     overflow: hidden;
     margin: -0.25rem 0 0;
-    color: #667085;
+    color: var(--color-nexus-text-muted);
     font-size: 0.72rem;
     line-height: 1.5;
     -webkit-box-orient: vertical;
@@ -385,16 +390,16 @@
   }
 
   .mobileCitation[data-empty="true"] {
-    border-left-color: #98a2b3;
+    border-left-color: var(--color-nexus-text-subtle);
   }
 
   .mobileCitation strong {
-    color: #1d2939;
+    color: var(--color-nexus-text-strong);
     font-size: 0.85rem;
   }
 
   .mobileCitation span {
-    color: #667085;
+    color: var(--color-nexus-text-muted);
     font-size: 0.67rem;
   }
 
@@ -417,7 +422,7 @@
 
   .mobileMeta dd {
     margin: 0;
-    color: #475467;
+    color: var(--color-nexus-text-soft);
     font-size: 0.7rem;
   }
 
@@ -429,8 +434,8 @@
     margin-top: 0.1rem;
     border: 0;
     border-radius: 0.55rem;
-    background: #5c4fd0;
-    color: #fff;
+    background: var(--color-nexus-accent);
+    color: var(--color-nexus-surface);
     cursor: pointer;
     font-size: 0.75rem;
     font-weight: 650;

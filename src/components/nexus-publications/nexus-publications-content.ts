@@ -6,6 +6,13 @@ import lailyAdeOktavianaPhoto from "@/assets/members/laily-ade-oktaviana.webp";
 import muhammadAmmarAsyrafPhoto from "@/assets/members/muhammad-ammar-asyraf.webp";
 import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
 import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
+import {
+  type MetadataCompletionFieldKey,
+  type MetadataCompletionResolution,
+  type MetadataCompletionResolutionStatus,
+  type MetadataCompletionResolutions,
+  metadataCompletionFieldLabels,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 
 export type PublicationType =
   | "Artikel Jurnal"
@@ -15,26 +22,11 @@ export type PublicationType =
 
 export type PublicationQuality = "Lengkap" | "Perlu dilengkapi";
 
-export type PublicationCompletionFieldKey =
-  | "doi"
-  | "issue"
-  | "pages"
-  | "publisherUrl";
-
+export type PublicationCompletionFieldKey = MetadataCompletionFieldKey;
 export type PublicationCompletionResolutionStatus =
-  | "not-applicable"
-  | "not-available"
-  | "provided";
-
-export type PublicationCompletionResolution = {
-  reason: string;
-  status: PublicationCompletionResolutionStatus;
-  value: string;
-};
-
-export type PublicationCompletionResolutions = Partial<
-  Record<PublicationCompletionFieldKey, PublicationCompletionResolution>
->;
+  MetadataCompletionResolutionStatus;
+export type PublicationCompletionResolution = MetadataCompletionResolution;
+export type PublicationCompletionResolutions = MetadataCompletionResolutions;
 
 export type PublicationMetadataProposal = {
   id: string;
@@ -49,12 +41,7 @@ export type PublicationMetadataProposal = {
 export const publicationCompletionFieldLabels: Record<
   PublicationCompletionFieldKey,
   string
-> = {
-  doi: "DOI",
-  issue: "Nomor terbit",
-  pages: "Halaman",
-  publisherUrl: "Tautan penerbit",
-};
+> = metadataCompletionFieldLabels;
 
 export type PublicationSourceName = "Google Scholar" | "Manual" | "SINTA";
 export type PublicationCitationProvider = "Google Scholar" | "SINTA";

@@ -259,7 +259,7 @@
   z-index: 2;
   width: min(62%, 27rem);
   padding: clamp(1.2rem, 1.65vw, 1.55rem);
-  color: #fff;
+  color: var(--color-nexus-surface);
   pointer-events: none;
 }
 
@@ -282,7 +282,7 @@
 
 .programCopy h3 {
   margin: 0.8rem 0 0;
-  color: #fff;
+  color: var(--color-nexus-surface);
   font-size: clamp(1.1rem, 1.45vw, 1.38rem);
   font-weight: 735;
   letter-spacing: -0.032em;
@@ -308,7 +308,7 @@
   padding: 0.58rem 0.8rem;
   border: 1px solid rgb(255 255 255 / 70%);
   border-radius: 0.52rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
   box-shadow: 0 0.4rem 0.95rem rgb(0 12 36 / 16%);
   color: #0b315f;
   font-size: 0.7rem;
@@ -349,7 +349,7 @@
   border: 1px solid rgb(255 255 255 / 38%);
   border-radius: 50%;
   background: rgb(5 30 66 / 58%);
-  color: #fff;
+  color: var(--color-nexus-surface);
   pointer-events: none;
   backdrop-filter: blur(8px);
 }
@@ -437,7 +437,7 @@
   overflow: hidden;
   border: 1px solid rgb(180 196 215 / 82%);
   border-radius: 0.9rem;
-  background: #fff;
+  background: var(--color-nexus-surface);
   box-shadow: 0 1.5rem 4rem rgb(2 18 44 / 28%);
   color: #0a234a;
 }
