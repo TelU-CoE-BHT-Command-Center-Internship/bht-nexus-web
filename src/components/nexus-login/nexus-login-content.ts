@@ -7,6 +7,7 @@ export type NexusLoginContent = {
   backShortLabel: string;
   emailLabel: string;
   emailPlaceholder: string;
+  destinationHref: string;
   forgotPasswordHref: string;
   forgotPasswordLabel: string;
   formDescription: string;
@@ -21,6 +22,7 @@ export type NexusLoginContent = {
   passwordShowLabel: string;
   platformName: string;
   signInLabel: string;
+  signingInLabel: string;
   storyTagline: string;
   switchLocaleHref: string;
 };
@@ -35,6 +37,7 @@ const nexusLoginContent = {
     backShortLabel: "Situs CoE BHT",
     emailLabel: "Email",
     emailPlaceholder: "nama@telkomuniversity.ac.id",
+    destinationHref: "/nexus/dashboard",
     forgotPasswordHref: `${COE_BHT_LINKS.email}?subject=Bantuan%20kata%20sandi%20BHT%20Nexus`,
     forgotPasswordLabel: "Lupa kata sandi?",
     formDescription:
@@ -53,6 +56,7 @@ const nexusLoginContent = {
     passwordShowLabel: "Tampilkan kata sandi",
     platformName: "BHT Nexus",
     signInLabel: "Masuk",
+    signingInLabel: "Membuka ruang kerja…",
     storyTagline: "One Data. One Platform. One Ecosystem.",
     switchLocaleHref: "/en/nexus/sign-in",
   },
@@ -62,6 +66,7 @@ const nexusLoginContent = {
     backShortLabel: "CoE BHT website",
     emailLabel: "Email",
     emailPlaceholder: "name@telkomuniversity.ac.id",
+    destinationHref: "/en/nexus/documents",
     forgotPasswordHref: `${COE_BHT_LINKS.email}?subject=BHT%20Nexus%20password%20help`,
     forgotPasswordLabel: "Forgot your password?",
     formDescription:
@@ -80,6 +85,7 @@ const nexusLoginContent = {
     passwordShowLabel: "Show password",
     platformName: "BHT Nexus",
     signInLabel: "Sign in",
+    signingInLabel: "Opening workspace…",
     storyTagline: "One Data. One Platform. One Ecosystem.",
     switchLocaleHref: "/nexus/masuk",
   },

@@ -42,6 +42,13 @@ function IconPaths({ name }: DashboardShellIconProps) {
           <path d="M14 2v6h5M8 13h7M8 17h7" />
         </>
       );
+    case "documents":
+      return (
+        <>
+          <path d="M8 2h6l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" />
+          <path d="M14 2v5h4M9.5 12h5M9.5 16h5" />
+        </>
+      );
     case "reviews":
       return (
         <>

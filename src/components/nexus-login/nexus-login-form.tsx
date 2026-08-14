@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import styles from "@/components/nexus-login/nexus-login.module.css";
 import type { NexusLoginContent } from "@/components/nexus-login/nexus-login-content";
@@ -9,11 +10,13 @@ type NexusLoginFormProps = {
     NexusLoginContent,
     | "emailLabel"
     | "emailPlaceholder"
+    | "destinationHref"
     | "passwordHideLabel"
     | "passwordLabel"
     | "passwordPlaceholder"
     | "passwordShowLabel"
     | "signInLabel"
+    | "signingInLabel"
   >;
 };
 
@@ -28,10 +31,14 @@ function EyeIcon({ concealed }: { concealed: boolean }) {
 }
 
 export function NexusLoginForm({ content }: NexusLoginFormProps) {
+  const router = useRouter();
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsSubmitting(true);
+    router.push(content.destinationHref);
   }
 
   return (
@@ -78,8 +85,12 @@ export function NexusLoginForm({ content }: NexusLoginFormProps) {
         </div>
       </div>
 
-      <button className={styles.submitButton} type="submit">
-        {content.signInLabel}
+      <button
+        className={styles.submitButton}
+        disabled={isSubmitting}
+        type="submit"
+      >
+        {isSubmitting ? content.signingInLabel : content.signInLabel}
       </button>
     </form>
   );

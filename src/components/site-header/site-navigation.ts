@@ -47,39 +47,14 @@ const siteNavigation = {
         label: "Telkom University",
         external: true,
       },
-      { href: "#contact", label: "Kontak" },
+      { href: "/#contact", label: "Kontak" },
     ],
     primaryLinks: [
-      {
-        href: "/tentang",
-        label: "Tentang",
-        children: [
-          { href: "/tentang", label: "Profil CoE BHT" },
-          { href: "/tentang/visi-misi", label: "Visi & Misi" },
-          { href: "/anggota", label: "Anggota" },
-        ],
-      },
-      { href: "/riset", label: "Riset & Inovasi" },
-      {
-        href: "/program",
-        label: "Program",
-        children: [
-          { href: "/program", label: "Program" },
-          {
-            href: "/pengabdian-masyarakat",
-            label: "Pengabdian Masyarakat",
-          },
-        ],
-      },
-      {
-        href: "/kolaborasi",
-        label: "Kolaborasi",
-        children: [
-          { href: "/kolaborasi", label: "Peluang Kolaborasi" },
-          { href: "/mitra", label: "Mitra" },
-        ],
-      },
-      { href: "/berita", label: "Berita & Kegiatan" },
+      { href: "/#research-focus", label: "Riset & Inovasi" },
+      { href: "/#news-highlights", label: "Berita" },
+      { href: "/#latest-events", label: "Kegiatan" },
+      { href: "/#partners", label: "Mitra" },
+      { href: "/anggota", label: "Anggota" },
     ],
     action: {
       href: "/nexus",
@@ -102,39 +77,14 @@ const siteNavigation = {
         label: "Telkom University",
         external: true,
       },
-      { href: "#contact", label: "Contact" },
+      { href: "/en#contact", label: "Contact" },
     ],
     primaryLinks: [
-      {
-        href: "/en/about",
-        label: "About",
-        children: [
-          { href: "/en/about", label: "CoE BHT Profile" },
-          { href: "/en/about/vision-mission", label: "Vision & Mission" },
-          { href: "/en/members", label: "Members" },
-        ],
-      },
-      { href: "/en/research", label: "Research & Innovation" },
-      {
-        href: "/en/programs",
-        label: "Programs",
-        children: [
-          { href: "/en/programs", label: "Programs" },
-          { href: "/en/community-service", label: "Community Service" },
-        ],
-      },
-      {
-        href: "/en/collaboration",
-        label: "Collaboration",
-        children: [
-          {
-            href: "/en/collaboration",
-            label: "Collaboration Opportunities",
-          },
-          { href: "/en/partners", label: "Partners" },
-        ],
-      },
-      { href: "/en/news", label: "News & Events" },
+      { href: "/en#research-focus", label: "Research & Innovation" },
+      { href: "/en#news-highlights", label: "News" },
+      { href: "/en#latest-events", label: "Events" },
+      { href: "/en#partners", label: "Partners" },
+      { href: "/en/members", label: "Members" },
     ],
     action: {
       href: "/en/nexus",

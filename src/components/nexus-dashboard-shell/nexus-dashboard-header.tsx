@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useMemo, useState } from "react";
 import { resetDismissedAnnouncementsForSession } from "@/components/nexus-dashboard-announcement/nexus-dashboard-announcement-session";
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
 import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
@@ -24,6 +28,26 @@ export function NexusDashboardHeader({
   openPanel,
   pageTitle,
 }: NexusDashboardHeaderProps) {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const matches = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    if (!query) return [];
+    return content.searchItems.filter((item) =>
+      `${item.label} ${item.description}`.toLocaleLowerCase().includes(query),
+    );
+  }, [content.searchItems, searchQuery]);
+
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const firstMatch = matches[0];
+    if (!firstMatch) return;
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    router.push(firstMatch.href);
+  }
+
   return (
     <header className={styles.header}>
       <h1 className={styles.visuallyHidden}>{pageTitle}</h1>
@@ -40,11 +64,69 @@ export function NexusDashboardHeader({
       </button>
       <span className={styles.mobileBrandLabel}>{content.brandLabel}</span>
 
-      <label className={styles.searchField}>
-        <span className={styles.visuallyHidden}>{content.searchLabel}</span>
-        <DashboardShellIcon name="search" />
-        <input placeholder={content.searchPlaceholder} type="search" />
-      </label>
+      <form
+        className={styles.searchWrap}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setIsSearchOpen(false);
+          }
+        }}
+        onSubmit={submitSearch}
+      >
+        <label className={styles.searchField}>
+          <span className={styles.visuallyHidden}>{content.searchLabel}</span>
+          <DashboardShellIcon name="search" />
+          <input
+            aria-controls="nexus-global-search-results"
+            aria-expanded={isSearchOpen && searchQuery.length > 0}
+            aria-autocomplete="list"
+            autoComplete="off"
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setIsSearchOpen(true);
+            }}
+            onFocus={() => setIsSearchOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setIsSearchOpen(false);
+                event.currentTarget.blur();
+              }
+            }}
+            placeholder={content.searchPlaceholder}
+            role="combobox"
+            type="search"
+            value={searchQuery}
+          />
+        </label>
+        {isSearchOpen && searchQuery.length > 0 ? (
+          <div
+            aria-label={content.searchLabel}
+            className={styles.searchResults}
+            id="nexus-global-search-results"
+            role="listbox"
+          >
+            {matches.length > 0 ? (
+              matches.map((item) => (
+                <Link
+                  href={item.href}
+                  key={item.id}
+                  onClick={() => {
+                    setIsSearchOpen(false);
+                    setSearchQuery("");
+                  }}
+                  prefetch={false}
+                  role="option"
+                >
+                  <strong>{item.label}</strong>
+                  <span>{item.description}</span>
+                </Link>
+              ))
+            ) : (
+              <p>{content.searchEmptyLabel}</p>
+            )}
+          </div>
+        ) : null}
+      </form>
 
       <div className={styles.headerActions}>
         <div className={styles.actionMenu}>
@@ -72,14 +154,20 @@ export function NexusDashboardHeader({
             >
               <h2>{content.notificationsTitle}</h2>
               {content.notifications.map((notification) => (
-                <div className={styles.notificationItem} key={notification.id}>
+                <Link
+                  className={styles.notificationItem}
+                  href={notification.href}
+                  key={notification.id}
+                  onClick={() => onTogglePanel("notifications")}
+                  prefetch={false}
+                >
                   <span className={styles.notificationMarker} />
                   <div>
                     <strong>{notification.title}</strong>
                     <p>{notification.detail}</p>
                     <time>{notification.timeLabel}</time>
                   </div>
-                </div>
+                </Link>
               ))}
             </section>
           ) : null}
@@ -139,7 +227,7 @@ export function NexusDashboardHeader({
                 </span>
               </div>
               <Link
-                href="/nexus/masuk"
+                href={content.signOutHref}
                 onClick={resetDismissedAnnouncementsForSession}
                 prefetch={false}
               >

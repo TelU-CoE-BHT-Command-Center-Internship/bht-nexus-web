@@ -11,6 +11,7 @@ export type NexusWorkspaceMetric = {
 };
 
 type NexusWorkspacePageProps = {
+  actions?: ReactNode;
   children: ReactNode;
   description: string;
   descriptionId: string;
@@ -24,6 +25,7 @@ type NexusWorkspaceMetricsProps = {
 };
 
 export function NexusWorkspacePage({
+  actions,
   children,
   description,
   descriptionId,
@@ -42,6 +44,7 @@ export function NexusWorkspacePage({
           <h2 id={titleId}>{title}</h2>
           <p id={descriptionId}>{description}</p>
         </div>
+        {actions ? <div className={styles.actions}>{actions}</div> : null}
         {meta ? <span className={styles.meta}>{meta}</span> : null}
       </header>
       {children}

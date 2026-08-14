@@ -1,15 +1,19 @@
 import type { ImageProps } from "next/image";
 import muhammadAmmarAsyrafPhoto from "@/assets/members/muhammad-ammar-asyraf.webp";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
+import type { Locale } from "@/i18n/locales";
 
 export type DashboardShellIconName =
   | "administration"
   | "dashboard"
+  | "documents"
   | "members"
   | "publications"
-  | "reviews";
+  | "reviews"
+  | "search";
 
 export type DashboardNavigationItem = {
+  activeHrefs: string[];
   available: boolean;
   href: string;
   icon: DashboardShellIconName;
@@ -22,19 +26,24 @@ export type DashboardNavigationGroup = {
   items: DashboardNavigationItem[];
   label: string;
 };
-
 export type DashboardNotification = {
   detail: string;
+  href: string;
   id: string;
   timeLabel: string;
   title: string;
 };
-
 export type DashboardViewer = {
   avatarSrc?: ImageProps["src"];
   initials: string;
   name: string;
   roleLabel: string;
+};
+export type DashboardSearchItem = {
+  description: string;
+  href: string;
+  id: string;
+  label: string;
 };
 
 export type NexusDashboardShellContent = {
@@ -47,6 +56,7 @@ export type NexusDashboardShellContent = {
   expandMenuLabel: string;
   helpHref: string;
   helpLabel: string;
+  homeHref: string;
   mainNavigationLabel: string;
   navigationGroups: DashboardNavigationGroup[];
   notificationLabel: string;
@@ -55,8 +65,11 @@ export type NexusDashboardShellContent = {
   openMenuLabel: string;
   plannedFeatureLabel: string;
   profileLabel: string;
+  searchEmptyLabel: string;
+  searchItems: DashboardSearchItem[];
   searchLabel: string;
   searchPlaceholder: string;
+  signOutHref: string;
   signOutLabel: string;
   supportDescription: string;
   supportHref: string;
@@ -64,60 +77,91 @@ export type NexusDashboardShellContent = {
   viewer: DashboardViewer;
 };
 
-type DashboardPermission =
-  | "administration:read"
-  | "dashboard:read"
-  | "members:read"
-  | "publications:read"
-  | "reviews:read";
-
-type NavigationDefinition = Omit<DashboardNavigationItem, "available"> & {
+type NavigationDefinition = {
+  activeHrefs?: Record<Locale, string[]>;
+  available: Record<Locale, boolean>;
   group: "administration" | "data" | "main";
-  permission: DashboardPermission;
+  href: Record<Locale, string>;
+  icon: DashboardShellIconName;
+  id: string;
+  label: Record<Locale, string>;
 };
 
 const navigationDefinitions: NavigationDefinition[] = [
   {
-    href: "/nexus/dashboard",
+    available: { en: false, id: true },
     group: "main",
+    href: { en: "/en/nexus", id: "/nexus/dashboard" },
     icon: "dashboard",
     id: "dashboard",
-    label: "Dashboard",
-    permission: "dashboard:read",
+    label: { en: "Dashboard", id: "Dashboard" },
   },
   {
-    href: "/nexus/anggota",
+    available: { en: false, id: false },
     group: "data",
+    href: { en: "/en/nexus/members", id: "/nexus/anggota" },
     icon: "members",
     id: "members",
-    label: "Anggota",
-    permission: "members:read",
+    label: { en: "Members", id: "Anggota" },
   },
   {
-    href: "/nexus/publikasi",
+    available: { en: true, id: true },
     group: "data",
-    icon: "publications",
-    id: "publications",
-    label: "Publikasi",
-    permission: "publications:read",
+    href: { en: "/en/nexus/collection", id: "/nexus/pengumpulan" },
+    icon: "search",
+    id: "collection",
+    label: { en: "Collection", id: "Pengumpulan" },
   },
   {
-    href: "/nexus/tinjauan",
+    available: { en: true, id: true },
     group: "data",
+    href: { en: "/en/nexus/reviews", id: "/nexus/tinjauan" },
     icon: "reviews",
     id: "reviews",
-    label: "Tinjauan",
-    permission: "reviews:read",
+    label: { en: "Reviews", id: "Tinjauan" },
   },
   {
-    href: "/nexus/administrasi",
+    available: { en: false, id: true },
+    group: "data",
+    href: { en: "/en/nexus/publications", id: "/nexus/publikasi" },
+    icon: "publications",
+    id: "publications",
+    label: { en: "Publications", id: "Publikasi" },
+  },
+  {
+    activeHrefs: {
+      en: [
+        "/en/nexus/documents",
+        "/en/nexus/ask-documents",
+        "/en/nexus/extraction",
+      ],
+      id: ["/nexus/dokumen", "/nexus/tanya-dokumen", "/nexus/ekstraksi"],
+    },
+    available: { en: true, id: true },
+    group: "data",
+    href: { en: "/en/nexus/documents", id: "/nexus/dokumen" },
+    icon: "documents",
+    id: "documents",
+    label: { en: "Documents", id: "Dokumen" },
+  },
+  {
+    available: { en: false, id: false },
     group: "administration",
+    href: { en: "/en/nexus/administration", id: "/nexus/administrasi" },
     icon: "administration",
     id: "administration",
-    label: "Administrasi",
-    permission: "administration:read",
+    label: { en: "Administration", id: "Administrasi" },
   },
 ];
+
+const groupLabels = {
+  id: { administration: "Administrasi", data: "Data & Konten", main: "Utama" },
+  en: {
+    administration: "Administration",
+    data: "Data & Content",
+    main: "Main",
+  },
+} satisfies Record<Locale, Record<NavigationDefinition["group"], string>>;
 
 export const nexusDashboardPreviewViewer = {
   avatarSrc: muhammadAmmarAsyrafPhoto,
@@ -126,91 +170,96 @@ export const nexusDashboardPreviewViewer = {
   roleLabel: "Admin / Pimpinan",
 } satisfies DashboardViewer;
 
-const previewSession = {
-  availableRoutes: new Set([
-    "/nexus/dashboard",
-    "/nexus/publikasi",
-    "/nexus/tinjauan",
-  ]),
-  permissions: new Set<DashboardPermission>([
-    "administration:read",
-    "dashboard:read",
-    "members:read",
-    "publications:read",
-    "reviews:read",
-  ]),
-  viewer: nexusDashboardPreviewViewer,
-};
-
-/**
- * Temporary presentation data for the dashboard-shell milestone.
- * Replace this function with the authenticated server-session adapter when the
- * BHT Nexus server contract is ready; the component API can remain unchanged.
- */
-export function getNexusDashboardShellPreviewContent(): NexusDashboardShellContent {
-  const allowedNavigation = navigationDefinitions.filter((item) =>
-    previewSession.permissions.has(item.permission),
+export function getNexusDashboardShellPreviewContent(
+  locale: Locale = "id",
+): NexusDashboardShellContent {
+  const isId = locale === "id";
+  const navigationGroups = (["main", "data", "administration"] as const).map(
+    (group) => ({
+      id: group,
+      items: navigationDefinitions
+        .filter((item) => item.group === group)
+        .map((item) => ({
+          activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
+          available: item.available[locale],
+          href: item.href[locale],
+          icon: item.icon,
+          id: item.id,
+          label: item.label[locale],
+        })),
+      label: groupLabels[locale][group],
+    }),
   );
-  const navigationGroups = [
-    { id: "main", label: "Utama" },
-    { id: "data", label: "Data & Konten" },
-    { id: "administration", label: "Administrasi" },
-  ].flatMap((group) => {
-    const items = allowedNavigation
-      .filter((item) => item.group === group.id)
-      .map(({ group: _group, permission: _permission, ...item }) => ({
-        ...item,
-        available: previewSession.availableRoutes.has(item.href),
-      }));
-
-    return items.length > 0 ? [{ ...group, items }] : [];
-  });
   const supportMessage = [
-    "Halo Tim Dukungan BHT Nexus,",
+    isId ? "Halo Tim Dukungan BHT Nexus," : "Hello BHT Nexus Support Team,",
     "",
-    "Saya ingin meminta bantuan terkait penggunaan BHT Nexus.",
+    isId
+      ? "Saya ingin meminta bantuan terkait penggunaan BHT Nexus."
+      : "I would like help using BHT Nexus.",
     "",
-    `Nama: ${previewSession.viewer.name}`,
-    `Peran/posisi: ${previewSession.viewer.roleLabel}`,
-    "Halaman/fitur:",
-    "Kategori bantuan:",
-    "Uraian kendala:",
-    "Waktu kejadian:",
-    "",
-    "Terima kasih.",
+    `${isId ? "Nama" : "Name"}: ${nexusDashboardPreviewViewer.name}`,
+    `${isId ? "Peran/posisi" : "Role"}: ${nexusDashboardPreviewViewer.roleLabel}`,
+    isId ? "Halaman/fitur:" : "Page/feature:",
+    isId ? "Uraian kendala:" : "Issue description:",
+    isId ? "Waktu kejadian:" : "Time of occurrence:",
   ].join("\n");
+  const searchItems: DashboardSearchItem[] = navigationGroups.flatMap((group) =>
+    group.items
+      .filter((item) => item.available)
+      .map((item) => ({
+        description: isId ? `Buka halaman ${item.label}` : `Open ${item.label}`,
+        href: item.href,
+        id: item.id,
+        label: item.label,
+      })),
+  );
 
   return {
     brandInstitutionLabel: "Telkom University, Indonesia",
     brandLabel: "BHT Nexus",
     brandOrganizationLabel: "CoE Biomedical & Healthcare Technology",
-    closeMenuLabel: "Tutup navigasi",
-    collapseMenuLabel: "Ciutkan navigasi",
-    defaultPageTitle: "Dashboard",
-    expandMenuLabel: "Perluas navigasi",
-    helpHref: `${COE_BHT_LINKS.email}?subject=Bantuan%20BHT%20Nexus`,
-    helpLabel: "Bantuan BHT Nexus",
-    mainNavigationLabel: "Navigasi ruang kerja",
+    closeMenuLabel: isId ? "Tutup navigasi" : "Close navigation",
+    collapseMenuLabel: isId ? "Ciutkan navigasi" : "Collapse navigation",
+    defaultPageTitle: "BHT Nexus",
+    expandMenuLabel: isId ? "Perluas navigasi" : "Expand navigation",
+    helpHref: `${COE_BHT_LINKS.email}?subject=${isId ? "Bantuan%20BHT%20Nexus" : "BHT%20Nexus%20help"}`,
+    helpLabel: isId ? "Bantuan BHT Nexus" : "BHT Nexus help",
+    homeHref: isId ? "/nexus/dashboard" : "/en/nexus/collection",
+    mainNavigationLabel: isId ? "Navigasi ruang kerja" : "Workspace navigation",
     navigationGroups,
-    notificationLabel: "Buka notifikasi",
+    notificationLabel: isId ? "Buka notifikasi" : "Open notifications",
     notifications: [
       {
-        detail: "Satu kandidat publikasi perlu diperiksa.",
-        id: "publication-review-decision",
-        timeLabel: "Baru saja",
-        title: "Publikasi baru menunggu tinjauan",
+        detail: isId
+          ? "Kandidat publikasi dan lintas-domain tersedia dalam satu antrean."
+          : "Publication and cross-domain candidates share one queue.",
+        href: isId ? "/nexus/tinjauan" : "/en/nexus/reviews",
+        id: "candidate-review",
+        timeLabel: isId ? "Baru saja" : "Just now",
+        title: isId ? "Data menunggu tinjauan" : "Data awaiting review",
       },
     ],
-    notificationsTitle: "Notifikasi",
-    openMenuLabel: "Buka navigasi",
-    plannedFeatureLabel: "Fitur ini akan dibangun pada tahap berikutnya",
-    profileLabel: "Buka menu pengguna",
-    searchLabel: "Cari di BHT Nexus",
-    searchPlaceholder: "Cari anggota, publikasi, atau dokumen",
-    signOutLabel: "Keluar",
-    supportDescription: "Hubungi Dukungan BHT Nexus",
+    notificationsTitle: isId ? "Notifikasi" : "Notifications",
+    openMenuLabel: isId ? "Buka navigasi" : "Open navigation",
+    plannedFeatureLabel: isId
+      ? "Fitur ini akan dibangun pada tahap berikutnya"
+      : "This feature is planned for a later stage",
+    profileLabel: isId ? "Buka menu pengguna" : "Open user menu",
+    searchEmptyLabel: isId
+      ? "Tidak ada halaman yang cocok."
+      : "No matching page.",
+    searchItems,
+    searchLabel: isId ? "Cari di BHT Nexus" : "Search BHT Nexus",
+    searchPlaceholder: isId
+      ? "Cari pengumpulan, tinjauan, publikasi, atau dokumen"
+      : "Search collection, reviews, publications, or documents",
+    signOutHref: isId ? "/nexus/masuk" : "/en/nexus/sign-in",
+    signOutLabel: isId ? "Keluar" : "Sign out",
+    supportDescription: isId
+      ? "Hubungi Dukungan BHT Nexus"
+      : "Contact BHT Nexus Support",
     supportHref: `${COE_BHT_LINKS.whatsapp}?text=${encodeURIComponent(supportMessage)}`,
-    supportTitle: "Butuh bantuan?",
-    viewer: previewSession.viewer,
+    supportTitle: isId ? "Butuh bantuan?" : "Need help?",
+    viewer: nexusDashboardPreviewViewer,
   };
 }

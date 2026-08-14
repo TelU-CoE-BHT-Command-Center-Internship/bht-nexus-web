@@ -40,6 +40,9 @@ jobs:
       - name: Memeriksa konfigurasi repository
         run: npm run validate:config
 
+      - name: Memeriksa kontras token warna
+        run: npm run validate:contrast
+
       - name: Memeriksa format dan pola kode
         run: npm run lint
 

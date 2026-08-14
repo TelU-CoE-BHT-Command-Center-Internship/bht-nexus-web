@@ -1,0 +1,350 @@
+.desktopTable {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.desktopTable table {
+  width: 100%;
+  min-width: 60rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.desktopTable th {
+  padding: 0.75rem 0.625rem;
+  border-bottom: 1px solid var(--color-nexus-border-soft);
+  background: #f8f9fc;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.035em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.desktopTable th[data-column="primary"] {
+  width: 26%;
+}
+
+.desktopTable th[data-column="action"] {
+  width: 7.25rem;
+  text-align: center;
+}
+
+.desktopTable td,
+.desktopTable tbody th {
+  padding: 0.85rem 0.625rem;
+  border-bottom: 1px solid #edf0f5;
+  background: transparent;
+  color: var(--color-nexus-text);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.45;
+  text-align: left;
+  text-transform: none;
+  vertical-align: middle;
+  white-space: normal;
+}
+
+.desktopTable td[data-column="action"] {
+  text-align: center;
+}
+
+.desktopTable tbody tr {
+  transition: background 140ms ease;
+}
+
+.desktopTable tbody tr:hover {
+  background: #fbfbfe;
+}
+
+.desktopTable tbody tr:last-child td,
+.desktopTable tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+.primaryCell,
+.primaryCellButton {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.primaryCellButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.primaryCell strong,
+.primaryCellButton strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.primaryCell span,
+.primaryCellButton span {
+  overflow: hidden;
+  color: #7b8291;
+  font-size: 0.7rem;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primaryCellButton:hover strong,
+.primaryCellButton:focus-visible strong {
+  color: #5b4fd6;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.5rem;
+  border-radius: 999px;
+  background: #f2f4f7;
+  color: var(--color-nexus-text-soft);
+  font-size: 0.675rem;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.badge[data-tone="success"] {
+  background: #edf8f3;
+  color: #087a58;
+}
+
+.badge[data-tone="info"] {
+  background: #eef4ff;
+  color: #2f66c2;
+}
+
+.badge[data-tone="waiting"] {
+  background: #fff5df;
+  color: #9a6400;
+}
+
+.badge[data-tone="danger"] {
+  background: #fff0e8;
+  color: #b1461b;
+}
+
+.signal {
+  display: grid;
+  min-height: 2.45rem;
+  gap: 0.2rem;
+  padding: 0.16rem 0 0.16rem 0.62rem;
+  border-left: 2px solid #5277b5;
+}
+
+.signal[data-tone="success"] {
+  border-color: #12a474;
+}
+.signal[data-tone="waiting"] {
+  border-color: #d98508;
+}
+.signal[data-tone="danger"] {
+  border-color: #d7193f;
+}
+.signal[data-tone="neutral"] {
+  border-color: var(--color-nexus-text-subtle);
+}
+
+.signal strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.signal span {
+  color: #7b8291;
+  font-size: 0.62rem;
+  line-height: 1.3;
+}
+
+.actionButton {
+  display: inline-flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d8e2ef;
+  border-radius: 0.5rem;
+  background: #f2f6fb;
+  color: var(--color-brand-navy);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.actionButton:hover {
+  border-color: #aebfd5;
+  background: #e7eef8;
+}
+
+.actionButton span {
+  font-size: 0.68rem;
+  font-weight: 680;
+}
+
+.actionButton svg,
+.mobileAction svg {
+  width: 1rem;
+  height: 1rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.loadingRow td span,
+.mobileLoading > span {
+  display: block;
+  height: 1.8rem;
+  border-radius: 0.35rem;
+  animation: shimmer 1.4s infinite linear;
+  background: linear-gradient(
+    90deg,
+    #f1f3f6 20%,
+    var(--color-nexus-border) 48%,
+    #f1f3f6 76%
+  );
+  background-size: 200% 100%;
+}
+
+.mobileList,
+.mobileLoading {
+  display: none;
+}
+
+.mobileCard {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--color-nexus-border-soft);
+  border-radius: 0.75rem;
+}
+
+.mobileCardTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.mobileCard h4 {
+  margin: 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.mobileMeta {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.mobileMeta dl,
+.mobileMeta div {
+  margin: 0;
+}
+
+.mobileMeta div {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 0.4rem;
+}
+
+.mobileMeta dt {
+  color: #8a91a1;
+  font-size: 0.67rem;
+}
+
+.mobileMeta dd {
+  margin: 0;
+  color: var(--color-nexus-text-soft);
+  font-size: 0.7rem;
+}
+
+.mobileAction {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.55rem;
+  background: var(--color-nexus-accent);
+  color: var(--color-nexus-surface);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.mobileAction svg {
+  margin-left: 0.35rem;
+  stroke-width: 1.5;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+  margin: -1px;
+  white-space: nowrap;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 48rem) {
+  .desktopTable {
+    display: none;
+  }
+
+  .mobileList,
+  .mobileLoading {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .mobileLoading > span {
+    height: 13rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktopTable tbody tr,
+  .actionButton {
+    transition: none;
+  }
+
+  .loadingRow td span,
+  .mobileLoading > span {
+    animation: none;
+  }
+}

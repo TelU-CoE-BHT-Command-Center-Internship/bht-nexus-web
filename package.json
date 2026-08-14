@@ -12,10 +12,11 @@
     "build": "next build",
     "start": "next start",
     "validate:config": "node scripts/validate-github-config.mjs",
+    "validate:contrast": "node scripts/validate-contrast.mjs",
     "lint": "biome check",
     "format": "biome format --write",
     "typecheck": "next typegen && tsc --noEmit",
-    "check": "npm run validate:config && npm run lint && npm run typecheck && npm run build"
+    "check": "npm run validate:config && npm run validate:contrast && npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
     "maplibre-gl": "5.24.0",

@@ -30,12 +30,14 @@ export function NexusDashboardShell({
   const [openPanel, setOpenPanel] = useState<DashboardPanel | null>(null);
   const activeNavigationItem = content.navigationGroups
     .flatMap((group) => group.items)
-    .find((item) => item.href === pathname);
+    .find((item) => item.activeHrefs.includes(pathname));
   const pageTitle = activeNavigationItem?.label ?? content.defaultPageTitle;
 
   useLayoutEffect(() => {
-    document.scrollingElement?.scrollTo({ left: 0, top: 0 });
-  }, []);
+    if (pathname) {
+      document.scrollingElement?.scrollTo({ left: 0, top: 0 });
+    }
+  }, [pathname]);
 
   function closeTransientUi() {
     setIsMobileMenuOpen(false);

@@ -37,7 +37,7 @@ export function SiteFooter({ locale }: SiteFooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className={styles.footer} id="contact">
+    <footer className={styles.footer}>
       <div className={styles.main}>
         <div className={styles.brandColumn}>
           <Link

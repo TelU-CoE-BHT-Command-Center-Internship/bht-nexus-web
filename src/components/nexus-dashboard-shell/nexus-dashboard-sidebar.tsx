@@ -29,7 +29,7 @@ export function NexusDashboardSidebar({
         <Link
           aria-label={content.brandLabel}
           className={styles.brandLink}
-          href="/nexus/dashboard"
+          href={content.homeHref}
           prefetch={false}
         >
           <Image
@@ -76,7 +76,7 @@ export function NexusDashboardSidebar({
             <p className={styles.navGroupLabel}>{group.label}</p>
             <div className={styles.navItems}>
               {group.items.map((item) => {
-                const isActive = item.href === pathname;
+                const isActive = item.activeHrefs.includes(pathname);
                 const itemContent = (
                   <>
                     <span className={styles.navIcon}>

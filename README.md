@@ -21,7 +21,7 @@ Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfo
 
 ## Status Saat Ini
 
-Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk, dashboard, Publikasi, dan Tinjauan juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
+Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk, dashboard, Pengumpulan, Tinjauan, Publikasi, dan Dokumen juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
 
 Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi berita, kegiatan, dan mitra masih akan dilengkapi atau disesuaikan setelah tim mengonfirmasi data resminya.
 
@@ -43,7 +43,9 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
 | Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
 | Halaman Publikasi BHT Nexus | Tersedia dan responsif; rincian memperlihatkan metadata resmi serta keadaan kelengkapannya, sedangkan bidang yang belum selesai dapat menerima usulan nilai atau pengecualian berbasis sumber tanpa langsung menimpa data resmi |
-| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; metadata kandidat tetap dapat diperiksa saat tidak ada pembanding, target dengan DOI identik dilindungi, kandidat yang dikembalikan hanya dapat memperbaiki bidang yang diminta, dan usulan pelengkapan publikasi resmi mempunyai alur tinjauan tersendiri |
+| Halaman Pengumpulan BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan, dan meneruskan hasil ke Tinjauan |
+| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; publikasi serta pelengkapan metadata memakai alur rinci yang sudah ada, sedangkan kegiatan, profil, buku, kekayaan intelektual, dan kandidat lain berada dalam domain kedua pada antrean keputusan yang sama |
+| Ruang kerja Dokumen BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; mencakup pustaka, tanya jawab bersitasi yang menolak jawaban tanpa dukungan, serta ekstraksi kandidat per bidang sebelum diteruskan ke Tinjauan |
 | Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
 | Deployment | Belum menjadi cakupan saat ini |
@@ -88,7 +90,8 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 ```text
 .
 ├── .github/            # template kontribusi dan pemeriksaan otomatis
-├── scripts/            # pemeriksaan konfigurasi repository
+├── docs/               # panduan desain dan batas data frontend
+├── scripts/            # pemeriksaan konfigurasi dan kontras
 ├── src/
 │   ├── app/             # route, layout, metadata, font, dan gaya global
 │   ├── assets/          # logo serta gambar landing page dan ruang kerja
@@ -105,6 +108,8 @@ Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan inte
 
 Palet dasar ruang kerja BHT Nexus—permukaan, teks, garis, aksen, serta warna status utama—didefinisikan sebagai token CSS di `src/app/globals.css`. Variasi yang hanya memiliki makna pada satu komponen tetap lokal agar daftar token tidak menjadi kumpulan warna tanpa konteks.
 
+Pola navigasi, state, aksesibilitas, dan pemakaian token dijelaskan di [panduan desain](docs/design-guide.md). Sumber fixture, perilaku lokal, batas keamanan, serta kemampuan server penggantinya dicatat di [batas data frontend](docs/preview-data.md).
+
 ## Halaman yang Tersedia
 
 | Alamat | Bahasa | Cakupan |
@@ -118,8 +123,19 @@ Palet dasar ruang kerja BHT Nexus—permukaan, teks, garis, aksen, serta warna s
 | `/nexus/masuk` | Indonesia | Antarmuka masuk BHT Nexus |
 | `/en/nexus/sign-in` | Inggris | Antarmuka masuk BHT Nexus |
 | `/nexus/dashboard` | Indonesia | Dashboard ruang kerja BHT Nexus |
+| `/nexus/pengumpulan` | Indonesia | Pekerjaan pengumpulan profil publik SINTA atau Google Scholar |
+| `/en/nexus/collection` | Inggris | Pekerjaan pengumpulan profil publik SINTA atau Google Scholar |
 | `/nexus/publikasi` | Indonesia | Daftar publikasi resmi beserta metadata, sumber, dan riwayat tinjauannya |
-| `/nexus/tinjauan` | Indonesia | Tinjauan kandidat data sebelum menjadi data resmi BHT Nexus |
+| `/nexus/tinjauan` | Indonesia | Satu antrean Tinjauan untuk publikasi, pelengkapan metadata, serta kandidat lintas-domain |
+| `/en/nexus/reviews` | Inggris | Tinjauan kandidat lintas-domain sebelum menjadi data resmi |
+| `/nexus/dokumen` | Indonesia | Pustaka dan status pemrosesan dokumen |
+| `/nexus/tanya-dokumen` | Indonesia | Tanya jawab dokumen dengan sumber dan kutipan |
+| `/nexus/ekstraksi` | Indonesia | Tinjauan kandidat isian hasil ekstraksi dokumen |
+| `/en/nexus/documents` | Inggris | Pustaka dan status pemrosesan dokumen |
+| `/en/nexus/ask-documents` | Inggris | Tanya jawab dokumen dengan sumber dan kutipan |
+| `/en/nexus/extraction` | Inggris | Tinjauan kandidat isian hasil ekstraksi dokumen |
+
+Alamat lama `/nexus/pencarian`, `/nexus/kandidat`, `/en/nexus/search`, dan `/en/nexus/candidates` tetap diarahkan ke Pengumpulan atau Tinjauan yang sesuai agar tautan lama tidak berakhir pada halaman buntu.
 
 Landing page saat ini mencakup:
 
@@ -139,12 +155,19 @@ Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan infor
 Fondasi ruang kerja saat ini mencakup:
 
 - shell dashboard responsif dengan navigasi desktop dan mobile, area menu yang dapat digulir, serta akses bantuan yang tetap tersedia;
-- identitas pengguna, notifikasi, pencarian, bantuan, dan menu profil;
+- identitas pengguna, notifikasi yang menuju Tinjauan, bantuan, dan menu profil;
 - ringkasan empat metrik utama dengan kondisi naik, tetap, turun, dan periode pembanding;
 - antrean pengumuman berdasarkan tenggat yang dapat ditutup dan tidak muncul kembali selama sesi aktif;
 - aktivitas terbaru serta program unggulan dengan carousel dan pratinjau poster penuh;
 - grafik aktivitas riset yang tetap dapat dibaca melalui tabel aksesibel;
 - daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
+- halaman Pengumpulan yang memvalidasi nama, HTTPS, dan host profil publik sesuai sumber; pekerjaan menampilkan status antrean hingga selesai dan tidak pernah menulis langsung ke data resmi;
+- satu antrean Tinjauan dengan pemilih domain: Publikasi & pelengkapan metadata mempertahankan alur rinci, sedangkan Kegiatan, profil & karya lain mengadaptasi kandidat lintas-domain tanpa membuat antrean keputusan kedua;
+- keputusan kandidat lintas-domain mewajibkan alasan; pemeriksa dapat meminta perbaikan, mengubah isian, mengirim versi baru, melihat sebelum–sesudah, lalu meninjau ulang atau mengambil keputusan terminal;
+- ruang kerja Dokumen dengan navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi agar kapabilitas dokumen terbaca sebagai satu pekerjaan pengguna;
+- pemilih berkas PDF/DOCX maksimal 25 MB yang menampilkan kegagalan validasi atau menambahkan dokumen ke antrean pemrosesan pada sesi aktif;
+- tanya jawab dokumen yang hanya memberikan jawaban untuk istilah yang didukung korpus terstruktur, selalu menyertakan kutipan untuk jawaban yang didukung, dan menolak pertanyaan yang tidak mempunyai bukti;
+- ekstraksi dokumen yang menyimpan keputusan terima/tolak per bidang pada sesi aktif dan baru dapat dikirim ke Tinjauan setelah seluruh bidang diputuskan;
 - halaman Publikasi dengan ringkasan data resmi, tab sumber SINTA, Google Scholar, dan Manual, pencarian, filter, pengurutan, tabel desktop, kartu mobile, pagination, serta pilihan jumlah data per halaman;
 - rincian Publikasi dalam drawer responsif yang menampilkan metadata resmi secara lebih lengkap, peta kelengkapan per bidang, anggota BHT terkait, sumber pembentuk, dan keputusan tinjauan;
 - sitasi pada rincian Publikasi dipisahkan sebagai metrik tambahan yang dapat diperbarui berkala, menampilkan penyedia metrik yang terpisah dari sumber pembentuk metadata, waktu pembaruan, serta keadaan angka belum tersedia, dan tidak menentukan status kelengkapan metadata;
@@ -162,7 +185,7 @@ Fondasi ruang kerja saat ini mencakup:
 - komponen ruang kerja bersama untuk judul halaman, ringkasan, tab, pencarian, select, shell tabel, pagination, dan drawer agar pengalaman antarfitur tetap konsisten;
 - struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
 
-Metrik dashboard, koleksi Publikasi, dan kandidat Tinjauan saat ini menggunakan data terstruktur yang disimpan terpusat untuk memvalidasi presentasi serta interaksi antarmuka. Data tersebut belum mewakili laporan resmi CoE BHT. Halaman masuk belum mengirim kredensial. Daftar bidang wajib menurut jenis publikasi dan aturan penerimaan pengecualian juga belum ditetapkan oleh layanan server; antarmuka hanya menjelaskan bidang yang sudah ditandai belum selesai pada data saat ini dan tidak mengarang aturan universal baru. Sitasi belum terhubung ke penyedia eksternal; pemilihan sumber metrik, jadwal pembaruan, serta penyimpanan hasil sinkronisasi tetap menjadi kontrak layanan server. Perbaikan kandidat dan usulan pelengkapan hanya bertahan selama halaman masih dibuka; isinya kembali ke keadaan awal setelah halaman dimuat ulang. Penyimpanan permanen, perpindahan usulan dari Publikasi ke antrean Tinjauan, keputusan atas pengecualian, perhitungan ulang status Lengkap, serta perubahan data resmi tetap menunggu autentikasi dan layanan server yang sesuai.
+Metrik dashboard, koleksi Publikasi, pekerjaan Pengumpulan, pustaka Dokumen, riwayat tanya jawab, ekstraksi, dan kandidat Tinjauan saat ini menggunakan data terstruktur yang disimpan terpusat untuk memvalidasi presentasi serta interaksi antarmuka. Data tersebut bukan laporan resmi CoE BHT. Formulir masuk menjalankan validasi browser dan membuka ruang kerja frontend tanpa mengirim kredensial ke server. Transisi pekerjaan, unggahan, pertanyaan, keputusan ekstraksi, perbaikan kandidat, dan usulan pelengkapan hanya bertahan selama halaman terkait masih dibuka; isinya kembali ke keadaan awal setelah halaman dimuat ulang. Autentikasi, otorisasi per peran, unggahan permanen, worker pengumpulan dan pemrosesan dokumen, indeks pencarian, penyimpanan keputusan/audit, serta perubahan data resmi tetap menunggu kontrak dan implementasi layanan server.
 
 ## Menjalankan Proyek
 
@@ -202,7 +225,7 @@ npm run check
 npm audit --audit-level=high
 ```
 
-`npm run check` memeriksa konfigurasi repository, pola kode, TypeScript, dan proses build. `npm audit` memeriksa paket yang mempunyai peringatan keamanan tingkat tinggi.
+`npm run check` memeriksa konfigurasi repository, kontras token warna, pola kode, TypeScript, dan proses build. `npm audit` memeriksa paket yang mempunyai peringatan keamanan tingkat tinggi.
 
 ## Perintah yang Tersedia
 
@@ -210,11 +233,12 @@ npm audit --audit-level=high
 |---|---|
 | `npm run dev` | Menjalankan web untuk pengembangan |
 | `npm run validate:config` | Memeriksa YAML dan struktur issue form |
+| `npm run validate:contrast` | Memeriksa pasangan token warna teks dan komponen terhadap ambang WCAG 2.2 AA |
 | `npm run lint` | Memeriksa format dan pola kode |
 | `npm run typecheck` | Memeriksa kesesuaian TypeScript |
 | `npm run build` | Membuat build produksi |
 | `npm run start` | Menjalankan hasil build |
-| `npm run check` | Menjalankan lint, typecheck, dan build |
+| `npm run check` | Menjalankan pemeriksaan konfigurasi, kontras, lint, typecheck, dan build |
 | `npm run format` | Merapikan format berkas yang didukung Biome |
 
 ## Cara Berkontribusi
@@ -235,6 +259,8 @@ Panduan lengkap tersedia di [CONTRIBUTING.md](CONTRIBUTING.md).
 - [Muhammad Zaenal Abidin Abdurrahman](https://github.com/Zendin110206)
 - [Facalder](https://github.com/Facalder)
 - [Liamours](https://github.com/Liamours)
+
+Integrasi ruang kerja Pengumpulan, kandidat lintas-domain, dan Dokumen mempertahankan gagasan serta pekerjaan fitur dari PR #2 milik Liamours. Implementasinya direkonsiliasi dengan arsitektur dan bahasa visual terbaru di `main`, lalu dicatat kembali melalui atribusi Git pada commit integrasi.
 
 Daftar ini akan mengikuti perkembangan kontribusi pada BHT-Nexus Web.
 

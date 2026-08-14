@@ -1,0 +1,16 @@
+.domainTabs {
+  padding: 0 clamp(1.5rem, 2.25vw, 2.25rem);
+  background: var(--color-nexus-surface);
+}
+
+@media (max-width: 56rem) {
+  .domainTabs {
+    padding-inline: 1.25rem;
+  }
+}
+
+@media (max-width: 36rem) {
+  .domainTabs {
+    padding-inline: 1rem;
+  }
+}

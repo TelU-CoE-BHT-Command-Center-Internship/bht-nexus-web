@@ -1,0 +1,162 @@
+.workspace {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  margin-top: clamp(1.7rem, 2.2vw, 2.15rem);
+}
+
+.documentControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.4fr);
+  align-items: end;
+  gap: 1rem;
+}
+
+.documentSignal,
+.profileField {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.documentSignal > span,
+.profileField > span {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.66rem;
+  font-weight: 680;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.documentSignal strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.9rem;
+}
+
+.documentSignal small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.68rem;
+}
+
+.fieldList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.field {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-nexus-border-soft);
+}
+
+.field:last-child {
+  border-bottom: 0;
+}
+
+.fieldMain {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.fieldLabel {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.66rem;
+  font-weight: 680;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fieldMain > strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.86rem;
+  font-weight: 630;
+  line-height: 1.5;
+}
+
+.fieldMain > strong[data-empty="true"] {
+  color: var(--color-nexus-text-muted);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.fieldDecision {
+  display: grid;
+  align-content: center;
+  justify-items: end;
+  gap: 0.65rem;
+}
+
+.fieldDecision > div {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.fieldDecision button[aria-pressed="true"] {
+  box-shadow: 0 0 0 0.18rem rgb(8 40 92 / 12%);
+}
+
+.source > summary {
+  width: fit-content;
+  color: var(--color-brand-navy);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 680;
+}
+
+.source blockquote {
+  max-width: 72ch;
+  margin: 0.55rem 0 0;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #dfe6f0;
+  border-left: 3px solid #5277b5;
+  border-radius: 0.5rem;
+  background: #f7f9fc;
+  color: var(--color-nexus-text-soft);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.sendArea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--color-nexus-border-soft);
+  background: #f8f9fc;
+}
+
+.sendArea > p {
+  margin: 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.72rem;
+}
+
+.sendArea a {
+  color: var(--color-brand-navy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15rem;
+}
+
+@media (max-width: 48rem) {
+  .documentControls,
+  .field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fieldDecision {
+    justify-items: start;
+  }
+
+  .sendArea {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
