@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { getNexusReviewSummaryContent } from "@/components/nexus-review-summary/nexus-review-summary-content";
-import { NexusReviewWorkspace } from "@/components/nexus-review-workspace/nexus-review-workspace";
-import { getNexusScraperResultsContent } from "@/components/nexus-scraper-results/nexus-scraper-results-content";
+import { NexusAuditReview } from "@/components/nexus-audit-review/nexus-audit-review";
+import { getNexusAuditReviewContent } from "@/components/nexus-audit-review/nexus-audit-review-content";
 
 export const metadata: Metadata = {
   title: "Tinjauan Data",
@@ -13,14 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default function NexusReviewPage() {
-  const publicationContent = getNexusReviewSummaryContent();
-  const crossDomainContent = getNexusScraperResultsContent("id");
+  const content = getNexusAuditReviewContent();
 
-  return (
-    <NexusReviewWorkspace
-      crossDomainContent={crossDomainContent}
-      locale="id"
-      publicationContent={publicationContent}
-    />
-  );
+  return <NexusAuditReview content={content} />;
 }

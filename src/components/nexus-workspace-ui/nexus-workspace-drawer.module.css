@@ -178,7 +178,9 @@
 .body {
   display: grid;
   min-height: 0;
+  align-content: start;
   gap: 0.9rem;
+  grid-auto-rows: max-content;
   padding: 1rem 1.35rem 1.75rem;
   overflow-y: auto;
   overscroll-behavior: contain;

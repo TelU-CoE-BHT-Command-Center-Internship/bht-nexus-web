@@ -9,9 +9,9 @@ Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di rep
 | Shell workspace | `getNexusDashboardShellPreviewContent` | navigasi, notifikasi, identitas tampilan, dan tautan bantuan |
 | Dashboard | folder `nexus-dashboard-*` | metrik, aktivitas, program, dan pengumuman |
 | Publikasi | `getNexusPublicationsContent` | filter, rincian, sitasi, dan pengajuan pelengkapan |
-| Tinjauan publikasi | `getNexusReviewSummaryContent` | keputusan, pengembalian, koreksi terbatas, versi, dan tinjauan ulang |
 | Pengumpulan | `getNexusScraperSearchContent` | validasi host publik, status pekerjaan, dan tautan ke Tinjauan |
-| Tinjauan lintas-domain | `getNexusScraperResultsContent` | filter kandidat, pembanding, alasan wajib, koreksi, versi, dan keputusan |
+| Tinjauan Indonesia | `getNexusAuditReviewContent` | satu antrean lintas-domain, filter sumber dan jenis data, metadata adaptif, pembanding, bukti, keputusan, koreksi, versi, dan riwayat |
+| Tinjauan Inggris | `getNexusScraperResultsContent` | filter kandidat, pembanding, alasan wajib, koreksi, versi, dan keputusan |
 | Pustaka dokumen | `getNexusRagLibraryContent` | validasi PDF/DOCX hingga 25 MB dan antrean pemrosesan |
 | Tanya jawab | `getNexusRagQaContent` | jawaban berbasis istilah yang didukung, kutipan, dan penolakan tanpa bukti |
 | Ekstraksi | `getNexusRagExtractionContent` | keputusan per bidang dan pengiriman kandidat ke Tinjauan |

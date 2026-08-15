@@ -9,7 +9,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16.3.0-111827)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933)](https://nodejs.org/)
 
-[Status](#status-saat-ini) · [Menjalankan proyek](#menjalankan-proyek) · [Kontribusi](CONTRIBUTING.md) · [Keamanan](SECURITY.md)
+[Status](#status-saat-ini) · [Cakupan saat ini](docs/current-scope.md) · [Menjalankan proyek](#menjalankan-proyek) · [Kontribusi](CONTRIBUTING.md) · [Keamanan](SECURITY.md)
 
 </div>
 
@@ -44,7 +44,7 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
 | Halaman Publikasi BHT Nexus | Tersedia dan responsif; rincian memperlihatkan metadata resmi serta keadaan kelengkapannya, sedangkan bidang yang belum selesai dapat menerima usulan nilai atau pengecualian berbasis sumber tanpa langsung menimpa data resmi |
 | Halaman Pengumpulan BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan, dan meneruskan hasil ke Tinjauan |
-| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; publikasi serta pelengkapan metadata memakai alur rinci yang sudah ada, sedangkan kegiatan, profil, buku, kekayaan intelektual, dan kandidat lain berada dalam domain kedua pada antrean keputusan yang sama |
+| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; seluruh kandidat berada dalam satu antrean, sumber dan domain menjadi filter, sedangkan metadata, bukti, pembanding, serta keputusan menyesuaikan jenis data |
 | Ruang kerja Dokumen BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; mencakup pustaka, tanya jawab bersitasi yang menolak jawaban tanpa dukungan, serta ekstraksi kandidat per bidang sebelum diteruskan ke Tinjauan |
 | Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
@@ -108,7 +108,7 @@ Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan inte
 
 Palet dasar ruang kerja BHT Nexus—permukaan, teks, garis, aksen, serta warna status utama—didefinisikan sebagai token CSS di `src/app/globals.css`. Variasi yang hanya memiliki makna pada satu komponen tetap lokal agar daftar token tidak menjadi kumpulan warna tanpa konteks.
 
-Pola navigasi, state, aksesibilitas, dan pemakaian token dijelaskan di [panduan desain](docs/design-guide.md). Sumber fixture, perilaku lokal, batas keamanan, serta kemampuan server penggantinya dicatat di [batas data frontend](docs/preview-data.md).
+Inventaris fitur dan batas implementasi terbaru tersedia di [cakupan produk saat ini](docs/current-scope.md). Pola navigasi, state, aksesibilitas, dan pemakaian token dijelaskan di [panduan desain](docs/design-guide.md). Sumber fixture, perilaku lokal, batas keamanan, serta kemampuan server penggantinya dicatat di [batas data frontend](docs/preview-data.md).
 
 ## Halaman yang Tersedia
 
@@ -152,40 +152,11 @@ Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan infor
 
 ### Ruang Kerja BHT Nexus
 
-Fondasi ruang kerja saat ini mencakup:
+Ruang kerja menyediakan Dashboard, Pengumpulan, Tinjauan, Publikasi, dan Dokumen dalam shell responsif yang konsisten. Tinjauan menjadi satu antrean keputusan manusia untuk kandidat lintas-domain, sementara metadata, bukti, pembanding, dan tindakan menyesuaikan jenis datanya.
 
-- shell dashboard responsif dengan navigasi desktop dan mobile, area menu yang dapat digulir, serta akses bantuan yang tetap tersedia;
-- identitas pengguna, notifikasi yang menuju Tinjauan, bantuan, dan menu profil;
-- ringkasan empat metrik utama dengan kondisi naik, tetap, turun, dan periode pembanding;
-- antrean pengumuman berdasarkan tenggat yang dapat ditutup dan tidak muncul kembali selama sesi aktif;
-- aktivitas terbaru serta program unggulan dengan carousel dan pratinjau poster penuh;
-- grafik aktivitas riset yang tetap dapat dibaca melalui tabel aksesibel;
-- daftar proyek terkini yang berubah menjadi kartu pada layar kecil;
-- halaman Pengumpulan yang memvalidasi nama, HTTPS, dan host profil publik sesuai sumber; pekerjaan menampilkan status antrean hingga selesai dan tidak pernah menulis langsung ke data resmi;
-- satu antrean Tinjauan dengan pemilih domain: Publikasi & pelengkapan metadata mempertahankan alur rinci, sedangkan Kegiatan, profil & karya lain mengadaptasi kandidat lintas-domain tanpa membuat antrean keputusan kedua;
-- keputusan kandidat lintas-domain mewajibkan alasan; pemeriksa dapat meminta perbaikan, mengubah isian, mengirim versi baru, melihat sebelum–sesudah, lalu meninjau ulang atau mengambil keputusan terminal;
-- ruang kerja Dokumen dengan navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi agar kapabilitas dokumen terbaca sebagai satu pekerjaan pengguna;
-- pemilih berkas PDF/DOCX maksimal 25 MB yang menampilkan kegagalan validasi atau menambahkan dokumen ke antrean pemrosesan pada sesi aktif;
-- tanya jawab dokumen yang hanya memberikan jawaban untuk istilah yang didukung korpus terstruktur, selalu menyertakan kutipan untuk jawaban yang didukung, dan menolak pertanyaan yang tidak mempunyai bukti;
-- ekstraksi dokumen yang menyimpan keputusan terima/tolak per bidang pada sesi aktif dan baru dapat dikirim ke Tinjauan setelah seluruh bidang diputuskan;
-- halaman Publikasi dengan ringkasan data resmi, tab sumber SINTA, Google Scholar, dan Manual, pencarian, filter, pengurutan, tabel desktop, kartu mobile, pagination, serta pilihan jumlah data per halaman;
-- rincian Publikasi dalam drawer responsif yang menampilkan metadata resmi secara lebih lengkap, peta kelengkapan per bidang, anggota BHT terkait, sumber pembentuk, dan keputusan tinjauan;
-- sitasi pada rincian Publikasi dipisahkan sebagai metrik tambahan yang dapat diperbarui berkala, menampilkan penyedia metrik yang terpisah dari sumber pembentuk metadata, waktu pembaruan, serta keadaan angka belum tersedia, dan tidak menentukan status kelengkapan metadata;
-- alur pelengkapan Publikasi untuk menyelesaikan hanya bidang resmi yang masih kosong melalui nilai, pernyataan memang tidak tersedia, atau pernyataan tidak berlaku; pengecualian wajib memuat alasan dan dasar yang dapat diperiksa;
-- status Lengkap tidak diberikan oleh formulir; usulan nilai maupun pengecualian selalu berstatus Menunggu Tinjauan dan tidak mengubah rekam resmi sebelum pemeriksa mengambil keputusan;
-- penanda Pelengkapan diajukan pada daftar Publikasi agar usulan yang sudah dikirim tidak dibuat lagi selama sesi yang sama;
-- halaman Tinjauan dengan tab sumber SINTA, Google Scholar, Dokumen, dan Manual, pencarian, filter, pengurutan, serta pagination;
-- rincian kandidat dalam drawer responsif untuk memeriksa seluruh metadata kandidat, rekam resmi terkait, perbandingan per bidang, anggota terkait, bukti, sumber, dan jejak pengambilan data; metadata kandidat tetap ditampilkan saat belum ada rekam resmi pembanding;
-- alur Tinjauan dengan status Menunggu Tinjauan, Perlu Perbaikan, dan Selesai Ditinjau; hasil Setujui sebagai data baru, Hubungkan ke rekam resmi, atau Tolak ditampilkan terpisah agar status proses dan hasil akhirnya tidak rancu;
-- keputusan tanpa pilihan awal, alasan wajib, serta pemeriksaan DOI terhadap seluruh rekam pembanding; ketika DOI identik ditemukan, rekam lain tetap dapat diperiksa tetapi hanya rekam dengan DOI tersebut yang dapat menjadi target hubungan;
-- hasil Hubungkan dijelaskan sebelum konfirmasi: rekam resmi tidak ditimpa, jejak sumber kandidat tetap terkait, dan nilai kandidat yang berbeda ditandai sebagai bahan pelengkapan metadata untuk tinjauan berikutnya;
-- alur Perlu Perbaikan yang menandai bidang permintaan pemeriksa, membuat hanya bidang tersebut dapat diedit, mempertahankan bidang lain sebagai hanya-baca, serta menampilkan dasar perubahan, nilai sebelum–sesudah, konfirmasi, nomor versi baru, dan riwayat kirim ulang;
-- usulan pelengkapan dari Publikasi dapat ditinjau melalui halaman Tinjauan dengan perbandingan nilai resmi dan usulan, sumber serta alasan, akibat setiap keputusan, dan pilihan setujui, minta perbaikan, atau tolak tanpa langsung menimpa rekam resmi;
-- usulan pelengkapan yang dikembalikan menampilkan catatan pemeriksa dan bagian yang perlu diperbaiki, membatasi perubahan pada bagian tersebut, lalu mengirim proposal yang sama sebagai versi baru dengan perbandingan sebelum–sesudah untuk tinjauan ulang;
-- komponen ruang kerja bersama untuk judul halaman, ringkasan, tab, pencarian, select, shell tabel, pagination, dan drawer agar pengalaman antarfitur tetap konsisten;
-- struktur konten terpisah agar dapat diganti dengan sesi dan data server tanpa membongkar komponen presentasi.
+Data saat ini masih bersifat lokal dan deterministik untuk memvalidasi presentasi serta interaksi frontend. Autentikasi, hak akses, penyimpanan permanen, worker, dan perubahan data resmi tetap menunggu integrasi layanan server.
 
-Metrik dashboard, koleksi Publikasi, pekerjaan Pengumpulan, pustaka Dokumen, riwayat tanya jawab, ekstraksi, dan kandidat Tinjauan saat ini menggunakan data terstruktur yang disimpan terpusat untuk memvalidasi presentasi serta interaksi antarmuka. Data tersebut bukan laporan resmi CoE BHT. Formulir masuk menjalankan validasi browser dan membuka ruang kerja frontend tanpa mengirim kredensial ke server. Transisi pekerjaan, unggahan, pertanyaan, keputusan ekstraksi, perbaikan kandidat, dan usulan pelengkapan hanya bertahan selama halaman terkait masih dibuka; isinya kembali ke keadaan awal setelah halaman dimuat ulang. Autentikasi, otorisasi per peran, unggahan permanen, worker pengumpulan dan pemrosesan dokumen, indeks pencarian, penyimpanan keputusan/audit, serta perubahan data resmi tetap menunggu kontrak dan implementasi layanan server.
+Inventaris kemampuan per halaman, batas implementasi, dan prioritas pengembangan berikutnya dijelaskan di [cakupan produk saat ini](docs/current-scope.md).
 
 ## Menjalankan Proyek
 

@@ -46,6 +46,10 @@ Gunakan komponen di `src/components/nexus-workspace-ui` untuk struktur lintas-fi
 
 Logika fitur, isi, dan CSS yang hanya berlaku pada satu domain tetap berada di folder fitur tersebut.
 
+Tinjauan Indonesia memakai satu antrean untuk seluruh kandidat. Tab memfilter sumber, sedangkan status, jenis data, periode, dan urutan berada pada kontrol filter. Perbedaan domain mengubah metadata, bukti minimum, serta konteks evaluasi di dalam drawer; perbedaan tersebut tidak membuat antrean atau pola keputusan baru.
+
+Rincian Tinjauan yang baru diperlukan setelah tindakan pengguna dimuat sebagai bagian terpisah. Pemisahan ini menjaga halaman antrean tetap ringan tanpa memecah alur kandidat, bukti, dan keputusan menjadi beberapa layar.
+
 Publikasi dan Tinjauan pada `main` adalah acuan visual. Fitur hasil integrasi tidak boleh membawa sistem panel, tabel, dropdown, pagination, token warna, atau loading indicator alternatif. Perbedaan domain boleh mengubah isi dan tindakan, tetapi tidak membuat bahasa visual kedua.
 
 ## Warna dan kontras
