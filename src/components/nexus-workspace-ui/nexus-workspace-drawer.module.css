@@ -19,7 +19,7 @@
   top: 0;
   right: 0;
   display: flex;
-  width: min(50rem, calc(100% - 2.5rem));
+  width: min(60rem, calc(100% - 2.5rem));
   min-height: 0;
   height: 100dvh;
   max-width: 100%;

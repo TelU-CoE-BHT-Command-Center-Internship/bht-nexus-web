@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { NexusDocumentNav } from "@/components/nexus-document-workspace/nexus-document-nav";
 import styles from "@/components/nexus-rag-extraction/nexus-rag-extraction.module.css";
@@ -8,6 +9,8 @@ import type {
   ExtractionFieldDecision,
   NexusRagExtractionContent,
 } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
+import { createExtractionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
+import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
@@ -51,6 +54,8 @@ export function NexusRagExtraction({
 }: {
   content: NexusRagExtractionContent;
 }) {
+  const router = useRouter();
+  const reviewSession = useOptionalNexusReviewSession();
   const initialDecisions = Object.fromEntries(
     content.fields.map((field) => [field.id, field.decision]),
   ) as Record<string, ExtractionFieldDecision>;
@@ -98,6 +103,25 @@ export function NexusRagExtraction({
       ) as Record<string, ExtractionFieldDecision>,
     );
     setSent(false);
+  }
+
+  function sendToReview() {
+    if (!allDecided) return;
+    if (content.locale === "en") {
+      setSent(true);
+      return;
+    }
+    if (!reviewSession) {
+      throw new Error("Review session is unavailable");
+    }
+    const reviewRecord = createExtractionReviewRecord(
+      content,
+      decisions,
+      profile,
+      reviewSession.actor,
+    );
+    reviewSession.submitRecord(reviewRecord);
+    router.push(`${content.reviewHref}?record=${reviewRecord.id}`);
   }
 
   return (
@@ -259,7 +283,7 @@ export function NexusRagExtraction({
             ) : (
               <NexusWorkspaceButton
                 disabled={!allDecided}
-                onClick={() => setSent(true)}
+                onClick={sendToReview}
                 tone="primary"
                 type="button"
               >

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
 import {
   createEmptyMetadataCompletionResolution,
@@ -162,6 +163,12 @@ export function NexusPublicationCompletionForm({
             dikirim kembali selama masih menunggu tinjauan.
           </p>
           <div className={styles.resultActions}>
+            <Link
+              href={`/nexus/tinjauan?record=${proposal.id}`}
+              prefetch={false}
+            >
+              Buka di Tinjauan
+            </Link>
             <button onClick={onClose} type="button">
               Tutup rincian
             </button>

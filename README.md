@@ -30,7 +30,7 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Fondasi Next.js | Tersedia |
 | TypeScript dan CSS Modules | Tersedia |
 | Pemeriksaan kode dengan Biome | Tersedia |
-| Pemeriksaan otomatis di GitHub | Tersedia |
+| Pemeriksaan otomatis di GitHub | Tersedia untuk konfigurasi, keamanan dependency, kontras, pola kode, TypeScript, dan build produksi |
 | Navigasi dan identitas visual CoE BHT | Tersedia |
 | Hero, riset, berita, dan kegiatan | Tersedia |
 | Lokasi interaktif, kanal kontak, dan footer institusional | Tersedia |
@@ -43,8 +43,8 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
 | Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
 | Halaman Publikasi BHT Nexus | Tersedia dan responsif; rincian memperlihatkan metadata resmi serta keadaan kelengkapannya, sedangkan bidang yang belum selesai dapat menerima usulan nilai atau pengecualian berbasis sumber tanpa langsung menimpa data resmi |
-| Halaman Pengumpulan BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan, dan meneruskan hasil ke Tinjauan |
-| Halaman Tinjauan BHT Nexus | Tersedia dan responsif; seluruh kandidat berada dalam satu antrean, sumber dan domain menjadi filter, sedangkan metadata, bukti, pembanding, serta keputusan menyesuaikan jenis data |
+| Halaman Pengumpulan BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan, dan membuat satu rekam Tinjauan untuk setiap kandidat yang ditemukan |
+| Halaman Tinjauan BHT Nexus | Alur Indonesia tersedia dan responsif; seluruh kandidat berada dalam satu antrean, sumber dan domain menjadi filter, sedangkan metadata, bukti, pembanding, asal-usul data, serta keputusan menyesuaikan tujuan kandidat. Terjemahan Inggris belum tersedia dan dinyatakan apa adanya pada route Inggris |
 | Ruang kerja Dokumen BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; mencakup pustaka, tanya jawab bersitasi yang menolak jawaban tanpa dukungan, serta ekstraksi kandidat per bidang sebelum diteruskan ke Tinjauan |
 | Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
@@ -95,7 +95,7 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 ├── src/
 │   ├── app/             # route, layout, metadata, font, dan gaya global
 │   ├── assets/          # logo serta gambar landing page dan ruang kerja
-│   ├── components/      # komponen landing page, halaman masuk, dan ruang kerja
+│   ├── components/      # komponen landing page, halaman masuk, ruang kerja, dan state lintas fitur
 │   ├── content/         # data institusi yang dipakai lintas komponen
 │   └── i18n/            # tipe bahasa yang dipakai lintas fitur
 ├── biome.json          # aturan pemeriksaan dan format kode
@@ -108,7 +108,7 @@ Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan inte
 
 Palet dasar ruang kerja BHT Nexus—permukaan, teks, garis, aksen, serta warna status utama—didefinisikan sebagai token CSS di `src/app/globals.css`. Variasi yang hanya memiliki makna pada satu komponen tetap lokal agar daftar token tidak menjadi kumpulan warna tanpa konteks.
 
-Inventaris fitur dan batas implementasi terbaru tersedia di [cakupan produk saat ini](docs/current-scope.md). Pola navigasi, state, aksesibilitas, dan pemakaian token dijelaskan di [panduan desain](docs/design-guide.md). Sumber fixture, perilaku lokal, batas keamanan, serta kemampuan server penggantinya dicatat di [batas data frontend](docs/preview-data.md).
+Inventaris fitur, alur kandidat, dan batas implementasi terbaru tersedia di [cakupan produk saat ini](docs/current-scope.md). Pola navigasi, state, aksesibilitas, dan pemakaian token dijelaskan di [panduan desain](docs/design-guide.md). Sumber fixture, perilaku lokal, batas keamanan, serta kemampuan server penggantinya dicatat di [batas data frontend](docs/preview-data.md).
 
 ## Halaman yang Tersedia
 
@@ -127,7 +127,7 @@ Inventaris fitur dan batas implementasi terbaru tersedia di [cakupan produk saat
 | `/en/nexus/collection` | Inggris | Pekerjaan pengumpulan profil publik SINTA atau Google Scholar |
 | `/nexus/publikasi` | Indonesia | Daftar publikasi resmi beserta metadata, sumber, dan riwayat tinjauannya |
 | `/nexus/tinjauan` | Indonesia | Satu antrean Tinjauan untuk publikasi, pelengkapan metadata, serta kandidat lintas-domain |
-| `/en/nexus/reviews` | Inggris | Tinjauan kandidat lintas-domain sebelum menjadi data resmi |
+| `/en/nexus/reviews` | Inggris | Pemberitahuan bahwa terjemahan Tinjauan belum tersedia, dengan tautan ke alur Indonesia |
 | `/nexus/dokumen` | Indonesia | Pustaka dan status pemrosesan dokumen |
 | `/nexus/tanya-dokumen` | Indonesia | Tanya jawab dokumen dengan sumber dan kutipan |
 | `/nexus/ekstraksi` | Indonesia | Tinjauan kandidat isian hasil ekstraksi dokumen |
@@ -152,7 +152,9 @@ Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan infor
 
 ### Ruang Kerja BHT Nexus
 
-Ruang kerja menyediakan Dashboard, Pengumpulan, Tinjauan, Publikasi, dan Dokumen dalam shell responsif yang konsisten. Tinjauan menjadi satu antrean keputusan manusia untuk kandidat lintas-domain, sementara metadata, bukti, pembanding, dan tindakan menyesuaikan jenis datanya.
+Ruang kerja menyediakan Dashboard, Pengumpulan, Tinjauan, Publikasi, dan Dokumen dalam shell responsif yang konsisten. Tinjauan menjadi satu antrean keputusan manusia untuk kandidat lintas-domain. Metadata, bukti, pilihan pembanding, kaitan evaluasi, asal-usul data, dan tindakan menyesuaikan apakah kandidat merupakan data baru, pembaruan rekam, atau pelengkapan metadata.
+
+Pada ruang kerja Indonesia, setiap hasil bisnis dari Pengumpulan, bidang yang diterima dari Ekstraksi Dokumen, dan usulan pelengkapan Publikasi benar-benar dibuat sebagai rekam Tinjauan dan dibuka kembali melalui identitas rekamnya selama sesi frontend. Identitas pekerjaan Pengumpulan tetap disimpan sebagai jejak sumber, bukan dijadikan satu kandidat gabungan. Perpindahan ini tetap bersifat lokal sampai endpoint staging dan penyimpanan server tersedia. Route Tinjauan Inggris menampilkan keadaan belum tersedia secara jujur dan pemindah bahasa disembunyikan pada alur ini sampai terjemahannya mempunyai kemampuan yang setara.
 
 Data saat ini masih bersifat lokal dan deterministik untuk memvalidasi presentasi serta interaksi frontend. Autentikasi, hak akses, penyimpanan permanen, worker, dan perubahan data resmi tetap menunggu integrasi layanan server.
 
@@ -196,7 +198,7 @@ npm run check
 npm audit --audit-level=high
 ```
 
-`npm run check` memeriksa konfigurasi repository, kontras token warna, pola kode, TypeScript, dan proses build. `npm audit` memeriksa paket yang mempunyai peringatan keamanan tingkat tinggi.
+`npm run check` memeriksa konfigurasi repository, kontras token warna, pola kode, TypeScript, dan proses build. `npm audit` memeriksa paket yang mempunyai peringatan keamanan tingkat tinggi. Keduanya cukup untuk pemeriksaan rutin repository saat ini dan tidak memerlukan instalasi browser pengujian tambahan.
 
 ## Perintah yang Tersedia
 

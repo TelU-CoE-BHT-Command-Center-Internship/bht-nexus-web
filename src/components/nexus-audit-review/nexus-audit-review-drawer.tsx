@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AuditReviewDecisionSection } from "@/components/nexus-audit-review/nexus-audit-review-decision";
 import { AuditCandidateDetails } from "@/components/nexus-audit-review/nexus-audit-review-detail";
 import {
@@ -10,7 +11,13 @@ import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-work
 
 export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
   const { onClose, record, state } = props;
-  const sectionIndexes = auditSectionIndexes(Boolean(record.match));
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(
+    record.matches[0]?.id ?? null,
+  );
+  const selectedMatch =
+    record.matches.find((match) => match.id === selectedMatchId) ??
+    record.matches[0];
+  const sectionIndexes = auditSectionIndexes(record.matches.length > 0);
 
   return (
     <NexusWorkspaceDrawer
@@ -23,7 +30,7 @@ export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
         {
           active: state.status === "waiting",
           complete: state.status !== "waiting",
-          label: record.match ? "Kecocokan" : "Bukti",
+          label: record.matches.length > 0 ? "Kecocokan" : "Bukti",
           number: 2,
         },
         {
@@ -37,12 +44,15 @@ export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
     >
       <AuditCandidateDetails
         indexes={sectionIndexes}
+        onSelectMatch={setSelectedMatchId}
         record={record}
+        selectedMatch={selectedMatch}
         state={state}
       />
       <AuditReviewDecisionSection
         {...props}
         decisionIndex={sectionIndexes.decision}
+        selectedMatch={selectedMatch}
       />
     </NexusWorkspaceDrawer>
   );

@@ -24,6 +24,8 @@ export type ExtractionField = {
 export type NexusRagExtractionContent = {
   acceptLabel: string;
   acceptedLabel: string;
+  candidateOwner: string;
+  candidatePrimaryParty: string;
   description: string;
   documentMeta: string;
   documentTitle: string;
@@ -155,6 +157,8 @@ const copy = {
   id: {
     acceptLabel: "Terima",
     acceptedLabel: "Diterima",
+    candidateOwner: "Belum ditetapkan",
+    candidatePrimaryParty: "Tim Riset Telemedisin CoE BHT",
     description:
       "Periksa setiap kandidat isian beserta potongan sumber sebelum mengirimkannya ke antrean Tinjauan.",
     documentMeta: "PDF · 10 halaman · selesai diproses",
@@ -187,6 +191,8 @@ const copy = {
   en: {
     acceptLabel: "Accept",
     acceptedLabel: "Accepted",
+    candidateOwner: "Not assigned",
+    candidatePrimaryParty: "CoE BHT Telemedicine Research Team",
     description:
       "Check every candidate field and its source passage before sending it to the Reviews queue.",
     documentMeta: "PDF · 10 pages · processing complete",

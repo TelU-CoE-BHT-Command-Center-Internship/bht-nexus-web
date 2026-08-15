@@ -57,6 +57,8 @@ export type NexusDashboardShellContent = {
   helpHref: string;
   helpLabel: string;
   homeHref: string;
+  languageLabel: string;
+  locale: Locale;
   mainNavigationLabel: string;
   navigationGroups: DashboardNavigationGroup[];
   notificationLabel: string;
@@ -225,6 +227,10 @@ export function getNexusDashboardShellPreviewContent(
     helpHref: `${COE_BHT_LINKS.email}?subject=${isId ? "Bantuan%20BHT%20Nexus" : "BHT%20Nexus%20help"}`,
     helpLabel: isId ? "Bantuan BHT Nexus" : "BHT Nexus help",
     homeHref: isId ? "/nexus/dashboard" : "/en/nexus/collection",
+    languageLabel: isId
+      ? "Pilih bahasa ruang kerja"
+      : "Choose workspace language",
+    locale,
     mainNavigationLabel: isId ? "Navigasi ruang kerja" : "Workspace navigation",
     navigationGroups,
     notificationLabel: isId ? "Buka notifikasi" : "Open notifications",

@@ -262,30 +262,22 @@
 .reviewMetadataGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
   margin: 0;
   overflow: hidden;
   border: 1px solid #dfe4ec;
   border-radius: 0.65rem;
+  background: #dfe4ec;
 }
 
 .reviewMetadataGrid > div {
   min-width: 0;
   padding: 0.65rem 0.75rem;
-  border-right: 1px solid #dfe4ec;
-  border-bottom: 1px solid #dfe4ec;
-}
-
-.reviewMetadataGrid > div:nth-child(even),
-.reviewMetadataGrid > div[data-wide="true"] {
-  border-right: 0;
+  background: #fff;
 }
 
 .reviewMetadataGrid > div[data-wide="true"] {
   grid-column: 1 / -1;
-}
-
-.reviewMetadataGrid > div:nth-last-child(-n + 2) {
-  border-bottom: 0;
 }
 
 .reviewMetadataGrid > div[data-available="true"] {
@@ -409,13 +401,30 @@
   box-shadow: 0 0 0 0.1rem rgb(108 93 211 / 8%);
 }
 
+.reviewMatchList,
+.reviewKpiLinks {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.reviewMatchCard:not([data-selected="true"]) {
+  border-color: #dfe4ec;
+  box-shadow: none;
+}
+
 .reviewMatchCard > input,
 .reviewDecisionChoices input {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   opacity: 0;
-  pointer-events: none;
+  cursor: pointer;
+  inset: 0;
+}
+
+.reviewDecisionChoices label[data-disabled="true"] input {
+  cursor: not-allowed;
 }
 
 .reviewRadio {
@@ -551,6 +560,12 @@
 }
 
 .reviewComparisonList header span[data-tone="different"] {
+  background: #fdebed;
+  color: #b32b3d;
+}
+
+.reviewComparisonList header span[data-tone="missing"],
+.reviewComparisonList header span[data-tone="similar"] {
   background: #fff0d5;
   color: #96600d;
 }
@@ -624,6 +639,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.6rem;
   margin: 0.7rem 0 0;
+}
+
+.reviewSourceColumns dl > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .reviewSourceColumns article > p {
@@ -715,6 +734,66 @@
   border-left: 0.18rem solid #6c5dd3;
   border-radius: 0.55rem;
   background: #f8f6ff;
+}
+
+.reviewKpiLinks {
+  margin-top: 0.75rem;
+}
+
+.reviewKpiLinks .reviewKpiCallout {
+  margin-top: 0;
+}
+
+.reviewProvenance {
+  margin-top: 0.75rem;
+  border: 1px solid #dfe4ec;
+  border-radius: 0.55rem;
+  background: #fbfcfe;
+}
+
+.reviewProvenance summary {
+  padding: 0.65rem 0.75rem;
+  color: #4d5a70;
+  cursor: pointer;
+  font-size: 0.63rem;
+  font-weight: 750;
+}
+
+.reviewProvenance dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid #e5e9ef;
+}
+
+.reviewProvenance dl > div {
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+  border-right: 1px solid #e5e9ef;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.reviewProvenance dl > div:nth-child(even) {
+  border-right: 0;
+}
+
+.reviewProvenance dl > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.reviewProvenance dt {
+  color: #8a96aa;
+  font-size: 0.56rem;
+  font-weight: 700;
+}
+
+.reviewProvenance dd {
+  margin: 0.18rem 0 0;
+  overflow-wrap: anywhere;
+  color: #445168;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.58rem;
+  line-height: 1.45;
 }
 
 .reviewKpiCallout > span {
@@ -1112,6 +1191,64 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.reviewCorrectionRequest {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #dfe4ec;
+  border-radius: 0.65rem;
+  background: #fbfcfe;
+}
+
+.reviewCorrectionRequest dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.reviewCorrectionRequest dt,
+.reviewCorrectionRequest > div > strong {
+  color: #6c788c;
+  font-size: 0.6rem;
+  font-weight: 750;
+}
+
+.reviewCorrectionRequest dd {
+  margin: 0.2rem 0 0;
+  color: #39465b;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.reviewCorrectionRequest ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reviewCorrectionRequest li {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #d7deea;
+  border-radius: 999px;
+  background: #fff;
+  color: #4d5a70;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.reviewCorrectionRequest > p {
+  margin: 0;
+  color: #748197;
+  font-size: 0.63rem;
+  line-height: 1.5;
 }
 
 .reviewCorrectionFields .reviewTextField {
@@ -1188,6 +1325,10 @@
     align-items: stretch;
     flex-direction: column;
   }
+
+  .reviewCorrectionFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 36rem) {
@@ -1216,20 +1357,29 @@
   .reviewSourceColumns,
   .reviewDecisionChoices,
   .reviewCorrectionFields,
+  .reviewCorrectionRequest dl,
   .reviewFinalMeta {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .reviewMetadataGrid > div,
-  .reviewMetadataGrid > div:nth-child(even),
-  .reviewMetadataGrid > div[data-wide="true"] {
-    grid-column: auto;
-    border-right: 0;
-    border-bottom: 1px solid #dfe4ec;
+  .reviewProvenance dl {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .reviewMetadataGrid > div:last-child {
+  .reviewProvenance dl > div,
+  .reviewProvenance dl > div:nth-child(even),
+  .reviewProvenance dl > div:nth-last-child(-n + 2) {
+    border-right: 0;
+    border-bottom: 1px solid #e5e9ef;
+  }
+
+  .reviewProvenance dl > div:last-child {
     border-bottom: 0;
+  }
+
+  .reviewMetadataGrid > div,
+  .reviewMetadataGrid > div[data-wide="true"] {
+    grid-column: auto;
   }
 
   .reviewAssessment {

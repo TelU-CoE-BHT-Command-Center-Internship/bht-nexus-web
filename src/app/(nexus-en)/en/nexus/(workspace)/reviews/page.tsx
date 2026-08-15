@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { NexusReviewWorkspace } from "@/components/nexus-review-workspace/nexus-review-workspace";
-import { getNexusScraperResultsContent } from "@/components/nexus-scraper-results/nexus-scraper-results-content";
+import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
 export const metadata: Metadata = {
   title: "Data Reviews",
@@ -10,9 +11,22 @@ export const metadata: Metadata = {
 
 export default function ReviewsPage() {
   return (
-    <NexusReviewWorkspace
-      crossDomainContent={getNexusScraperResultsContent("en")}
-      locale="en"
-    />
+    <NexusWorkspacePage
+      description="The unified Audit KM review workflow is currently available in Indonesian only."
+      descriptionId="reviews-language-description"
+      title="Data Reviews"
+      titleId="reviews-language-title"
+    >
+      <NexusWorkspaceState
+        actions={
+          <NexusWorkspaceLinkButton href="/nexus/tinjauan" tone="primary">
+            Open Indonesian Reviews
+          </NexusWorkspaceLinkButton>
+        }
+        description="The previous English review screen is not presented as a translation because it uses a different workflow. English parity will be exposed after the same review contract is available."
+        eyebrow="Language availability"
+        title="This language version is not available yet"
+      />
+    </NexusWorkspacePage>
   );
 }

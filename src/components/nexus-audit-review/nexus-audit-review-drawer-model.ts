@@ -1,11 +1,13 @@
 import type {
   AuditDecisionKind,
   AuditFixRequest,
+  AuditOfficialMatch,
   AuditReviewDecision,
   AuditReviewHistory,
   AuditReviewRecord,
   AuditReviewStatus,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
+import type { NexusReviewCapabilities } from "@/components/nexus-review-session/nexus-review-session";
 
 export type AuditCorrection = {
   after: Record<string, string>;
@@ -25,6 +27,7 @@ export type AuditRuntimeState = {
 };
 
 export type AuditReviewDrawerProps = {
+  capabilities: NexusReviewCapabilities;
   onClose: () => void;
   onDecide: (kind: AuditDecisionKind, note: string, fieldIds: string[]) => void;
   onResubmit: (values: Record<string, string>, evidenceNote: string) => void;
@@ -56,6 +59,7 @@ export function auditSourceTone(source: AuditReviewRecord["source"]) {
   if (source === "sinta") return "success" as const;
   if (source === "scholar") return "info" as const;
   if (source === "document") return "waiting" as const;
+  if (source === "spreadsheet") return "info" as const;
   return "neutral" as const;
 }
 
@@ -90,12 +94,24 @@ export function auditSectionIndexes(
 
 export function auditDecisionConsequence(
   choice: AuditDecisionKind | null,
-  record: AuditReviewRecord,
+  selectedMatch?: AuditOfficialMatch,
 ) {
   if (choice === "merged") {
     return {
-      body: `Rekam resmi ${record.match?.id ?? "terpilih"} tetap menjadi acuan. Sumber kandidat dihubungkan dan perbedaan metadata dicatat sebagai bahan pelengkapan, tanpa penimpaan otomatis.`,
+      body: `Rekam resmi ${selectedMatch?.id ?? "terpilih"} tetap menjadi acuan. Sumber kandidat dihubungkan dan perbedaan metadata dicatat sebagai bahan pelengkapan, tanpa penimpaan otomatis.`,
       title: "Data resmi tetap aman dan dapat diaudit",
+    };
+  }
+  if (choice === "approved_update") {
+    return {
+      body: `Perubahan yang diperiksa diterapkan pada ${selectedMatch?.id ?? "rekam resmi terpilih"} setelah konfirmasi. Nilai sebelumnya, sumber, reviewer, waktu, dan versi tetap dapat ditelusuri.`,
+      title: "Pembaruan diterapkan dengan jejak versi",
+    };
+  }
+  if (choice === "approved_completion") {
+    return {
+      body: `Nilai atau pengecualian yang diajukan diterapkan pada ${selectedMatch?.id ?? "rekam resmi tujuan"}. Status kelengkapan dihitung ulang tanpa membuat rekam baru.`,
+      title: "Pelengkapan metadata diterapkan",
     };
   }
   if (choice === "approved_new") {
@@ -106,7 +122,7 @@ export function auditDecisionConsequence(
   }
   if (choice === "changes_requested") {
     return {
-      body: "Kandidat dikembalikan kepada pemilik data untuk memperbaiki bidang yang dipilih. Rekam resmi dan perhitungan evaluasi belum berubah.",
+      body: "Kandidat dikembalikan kepada pihak pengusul atau pengelola yang berwenang untuk memperbaiki bidang yang dipilih. Rekam resmi dan perhitungan evaluasi belum berubah.",
       title: "Perbaikan diminta sebelum data dipakai",
     };
   }

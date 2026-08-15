@@ -16,6 +16,8 @@ import {
   type PublicationSourceId,
   publicationHasSource,
 } from "@/components/nexus-publications/nexus-publications-utils";
+import { createMetadataCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
+import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import {
   NexusWorkspaceSearch,
   NexusWorkspaceTabs,
@@ -133,6 +135,7 @@ function sortPublications(
 }
 
 export function NexusPublications({ content }: NexusPublicationsProps) {
+  const reviewSession = useNexusReviewSession();
   const filterConfigs = useMemo(() => createFilterConfigs(content), [content]);
   const [activeSourceId, setActiveSourceId] =
     useState<PublicationSourceId>("all");
@@ -265,18 +268,31 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
     resolutions: PublicationCompletionResolutions,
     note: string,
   ) => {
+    const publication = content.records.find(
+      (record) => record.id === publicationId,
+    );
+    if (!publication) return;
+
+    const proposal: PublicationMetadataProposal = {
+      id: `PLG-2026-${String(Object.keys(completionProposals).length + 1).padStart(5, "0")}`,
+      note,
+      publicationId,
+      resolutions,
+      status: "waiting-review",
+      submittedAt: "Baru saja",
+      submittedBy: reviewSession.actor.name,
+    };
     setCompletionProposals((currentProposals) => ({
       ...currentProposals,
-      [publicationId]: {
-        id: `PLG-2026-${String(Object.keys(currentProposals).length + 1).padStart(5, "0")}`,
-        note,
-        publicationId,
-        status: "waiting-review",
-        submittedAt: "Baru saja",
-        submittedBy: "Muhammad Ammar Asyraf",
-        resolutions,
-      },
+      [publicationId]: proposal,
     }));
+    reviewSession.submitRecord(
+      createMetadataCompletionReviewRecord(
+        publication,
+        proposal,
+        reviewSession.actor,
+      ),
+    );
   };
 
   const changeFilterValue = (filterId: string, value: string) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useId, useRef } from "react";
 import styles from "@/components/nexus-workspace-ui/nexus-workspace-drawer.module.css";
 
 export type NexusDrawerStep = {
@@ -48,8 +48,9 @@ export function NexusWorkspaceDrawer({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
-  const titleId = `${eyebrow}-drawer-title`;
-  const descriptionId = `${eyebrow}-drawer-description`;
+  const technicalId = useId();
+  const titleId = `${technicalId}-drawer-title`;
+  const descriptionId = `${technicalId}-drawer-description`;
 
   useEffect(() => {
     onCloseRef.current = onClose;

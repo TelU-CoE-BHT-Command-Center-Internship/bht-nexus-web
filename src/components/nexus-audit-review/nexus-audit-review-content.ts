@@ -8,13 +8,31 @@ export type AuditReviewCategory =
   | "publication_conference"
   | "research_business";
 
-export type AuditReviewSource = "document" | "manual" | "scholar" | "sinta";
+export type AuditReviewSource =
+  | "document"
+  | "manual"
+  | "scholar"
+  | "sinta"
+  | "spreadsheet";
+
+export type AuditCandidateKind =
+  | "metadata_completion"
+  | "new_record"
+  | "record_update";
 
 export type AuditDecisionKind =
+  | "approved_completion"
   | "approved_new"
+  | "approved_update"
   | "changes_requested"
   | "merged"
   | "rejected";
+
+export type AuditComparisonStatus =
+  | "different"
+  | "missing"
+  | "same"
+  | "similar";
 
 export type AuditReviewField = {
   id: string;
@@ -46,6 +64,7 @@ export type AuditReviewDecision = {
 };
 
 export type AuditFixRequest = {
+  assigneeLabel?: string;
   fieldIds: string[];
   reason: string;
 };
@@ -56,6 +75,7 @@ export type AuditOfficialMatch = {
     fieldId: string;
     label: string;
     officialValue: string;
+    status: AuditComparisonStatus;
     statusLabel: string;
   }>;
   id: string;
@@ -65,6 +85,23 @@ export type AuditOfficialMatch = {
   verdictLabel: string;
 };
 
+export type AuditKpiLink = {
+  category: string;
+  evidenceRule: string;
+  indicatorId: string;
+  indicatorLabel: string;
+  indicatorNumber: number;
+};
+
+export type AuditReviewProvenance = {
+  attempt: number;
+  fingerprint: string;
+  jobId: string;
+  parser: string;
+  retrievedAt: string;
+  sourceKey: string;
+};
+
 export type AuditReviewSignal = {
   primary: string;
   secondary: string;
@@ -72,6 +109,7 @@ export type AuditReviewSignal = {
 };
 
 export type AuditReviewRecord = {
+  candidateKind: AuditCandidateKind;
   category: AuditReviewCategory;
   categoryLabel: string;
   decision?: AuditReviewDecision;
@@ -82,22 +120,36 @@ export type AuditReviewRecord = {
   fixRequest?: AuditFixRequest;
   history: AuditReviewHistory[];
   id: string;
-  kpiCategory: string;
-  kpiEvidenceRule: string;
-  kpiIndicator: string;
-  match?: AuditOfficialMatch;
+  kpiLinks: AuditKpiLink[];
+  matches: AuditOfficialMatch[];
   owner: string;
   periodLabel: string;
   primaryPerson: string;
+  provenance: AuditReviewProvenance;
   signal: AuditReviewSignal;
   source: AuditReviewSource;
   sourceLabel: string;
   status: AuditReviewStatus;
   statusLabel: string;
+  submittedBy: string;
   subtitle: string;
   title: string;
   typeLabel: string;
   version: number;
+};
+
+type AuditReviewRecordSeed = Omit<
+  AuditReviewRecord,
+  "kpiLinks" | "matches" | "provenance" | "submittedBy"
+> & {
+  kpiCategory: string;
+  kpiEvidenceRule: string;
+  kpiIndicator: {
+    id: string;
+    label: string;
+    number: number;
+  };
+  match?: AuditOfficialMatch;
 };
 
 export type NexusAuditReviewContent = {
@@ -130,11 +182,13 @@ const discovered = (
   timeLabel,
 });
 
+const sessionReviewerActor = "Pemeriksa sesi";
+
 const correctionRequested = (
   id: string,
   timeLabel: string,
 ): AuditReviewHistory => ({
-  actor: "Nadia Putri · Audit KM",
+  actor: sessionReviewerActor,
   id: `${id}-correction`,
   label: "Perbaikan diminta kepada pemilik data",
   timeLabel,
@@ -146,7 +200,7 @@ const completed = (
   note: string,
   timeLabel: string,
 ): AuditReviewDecision => ({
-  actor: "Nadia Putri · Audit KM",
+  actor: sessionReviewerActor,
   kind,
   label,
   note,
@@ -156,8 +210,9 @@ const completed = (
 const coeUrl = "https://coe-bht.telkomuniversity.ac.id/";
 const sintaUrl = "https://sinta.kemdiktisaintek.go.id/";
 
-const records: AuditReviewRecord[] = [
+const records: AuditReviewRecordSeed[] = [
   {
+    candidateKind: "new_record",
     category: "publication_conference",
     categoryLabel: "Publikasi & konferensi",
     discoveredAt: "2026-08-14T08:54:00+07:00",
@@ -203,7 +258,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Riset",
     kpiEvidenceRule:
       "Tautan DOI/penerbit, daftar penulis, afiliasi CoE, tahun, dan kuartil jurnal.",
-    kpiIndicator: "Publikasi internasional bereputasi · Q1",
+    kpiIndicator: {
+      id: "KM-14",
+      label: "Publikasi internasional bereputasi · Q1",
+      number: 14,
+    },
     match: {
       comparisons: [
         {
@@ -213,6 +272,7 @@ const records: AuditReviewRecord[] = [
           label: "Judul",
           officialValue:
             "Primary Care Telemedicine Adoption in Indonesian District Clinics",
+          status: "same",
           statusLabel: "Sama",
         },
         {
@@ -220,6 +280,7 @@ const records: AuditReviewRecord[] = [
           fieldId: "authors",
           label: "Penulis",
           officialValue: "S. Harimurti, H. Susanti, M. A. Asyraf, R. Pratama",
+          status: "different",
           statusLabel: "Berbeda",
         },
         {
@@ -227,6 +288,7 @@ const records: AuditReviewRecord[] = [
           fieldId: "doi",
           label: "DOI",
           officialValue: "10.2196/48213",
+          status: "same",
           statusLabel: "Sama",
         },
       ],
@@ -255,6 +317,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "record_update",
     category: "publication_conference",
     categoryLabel: "Publikasi & konferensi",
     discoveredAt: "2026-08-14T08:52:00+07:00",
@@ -285,7 +348,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Riset",
     kpiEvidenceRule:
       "Tautan artikel, penulis terafiliasi, tahun terbit, dan peringkat jurnal.",
-    kpiIndicator: "Publikasi nasional/internasional · Q3",
+    kpiIndicator: {
+      id: "KM-15",
+      label: "Publikasi nasional/internasional · Q3",
+      number: 15,
+    },
     match: {
       comparisons: [
         {
@@ -293,6 +360,7 @@ const records: AuditReviewRecord[] = [
           fieldId: "title",
           label: "Judul",
           officialValue: "Deep Learning untuk Klasifikasi Citra Histopatologi",
+          status: "same",
           statusLabel: "Sama",
         },
         {
@@ -300,6 +368,7 @@ const records: AuditReviewRecord[] = [
           fieldId: "doi",
           label: "DOI",
           officialValue: "10.31219/osf.io/3kq7d",
+          status: "same",
           statusLabel: "Sama",
         },
       ],
@@ -327,6 +396,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "publication_conference",
     categoryLabel: "Publikasi & konferensi",
     discoveredAt: "2026-08-13T15:20:00+07:00",
@@ -365,7 +435,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Riset",
     kpiEvidenceRule:
       "Prosiding/sertifikat, judul makalah, peran, nama kegiatan, dan tanggal.",
-    kpiIndicator: "Keikutsertaan konferensi ilmiah",
+    kpiIndicator: {
+      id: "KM-16",
+      label: "Keikutsertaan konferensi ilmiah",
+      number: 16,
+    },
     owner: "Laily Ade Oktaviana",
     periodLabel: "2026",
     primaryPerson: "Hesty Susanti",
@@ -384,6 +458,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "research_business",
     categoryLabel: "Riset & bisnis",
     discoveredAt: "2026-08-13T10:32:00+07:00",
@@ -423,7 +498,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Riset",
     kpiEvidenceRule:
       "Kontrak/proposal, ketua, skema, nilai, periode, dan luaran yang dijanjikan.",
-    kpiIndicator: "Kontrak riset eksternal",
+    kpiIndicator: {
+      id: "KM-17",
+      label: "Kontrak riset eksternal",
+      number: 17,
+    },
     owner: "Suksmandhira Harimurti",
     periodLabel: "2026",
     primaryPerson: "Suksmandhira Harimurti",
@@ -442,6 +521,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "research_business",
     categoryLabel: "Riset & bisnis",
     discoveredAt: "2026-08-12T16:40:00+07:00",
@@ -479,7 +559,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Riset",
     kpiEvidenceRule:
       "Dokumen kontrak final, nama skema, nilai dana, ketua, dan periode pelaksanaan.",
-    kpiIndicator: "Kontrak riset eksternal",
+    kpiIndicator: {
+      id: "KM-17",
+      label: "Kontrak riset eksternal",
+      number: 17,
+    },
     owner: "Muhammad Ammar Asyraf",
     periodLabel: "2026",
     primaryPerson: "Suksmandhira Harimurti",
@@ -498,6 +582,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "community_service",
     categoryLabel: "Pengabdian masyarakat",
     discoveredAt: "2026-08-12T14:18:00+07:00",
@@ -537,7 +622,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Pengabdian Masyarakat",
     kpiEvidenceRule:
       "Surat tugas/kontrak, mitra, peserta, tanggal, lokasi, dan laporan kegiatan.",
-    kpiIndicator: "Pelatihan atau layanan kepada masyarakat",
+    kpiIndicator: {
+      id: "KM-18",
+      label: "Pelatihan atau layanan kepada masyarakat",
+      number: 18,
+    },
     owner: "Dita Puspitasari",
     periodLabel: "2026",
     primaryPerson: "Dita Puspitasari",
@@ -556,6 +645,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "innovation_ip",
     categoryLabel: "HKI, paten & inovasi",
     discoveredAt: "2026-08-11T13:30:00+07:00",
@@ -593,7 +683,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Inovasi",
     kpiEvidenceRule:
       "Sertifikat resmi, nomor pencatatan, pencipta, pemegang hak, dan tahun.",
-    kpiIndicator: "Hak Kekayaan Intelektual tercatat",
+    kpiIndicator: {
+      id: "KM-19",
+      label: "Hak Kekayaan Intelektual tercatat",
+      number: 19,
+    },
     owner: "Fathur Rahman",
     periodLabel: "2025",
     primaryPerson: "Fathur Rahman",
@@ -612,6 +706,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "innovation_ip",
     categoryLabel: "HKI, paten & inovasi",
     discoveredAt: "2026-08-11T09:22:00+07:00",
@@ -650,7 +745,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Inovasi",
     kpiEvidenceRule:
       "Bukti permohonan, nomor, inventor, tanggal pengajuan, dan status proses.",
-    kpiIndicator: "Permohonan paten",
+    kpiIndicator: {
+      id: "KM-20",
+      label: "Permohonan paten",
+      number: 20,
+    },
     owner: "Hesty Susanti",
     periodLabel: "2026",
     primaryPerson: "Hesty Susanti",
@@ -669,6 +768,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "academic_hr",
     categoryLabel: "Akademik & SDM",
     discoveredAt: "2026-08-10T16:12:00+07:00",
@@ -696,7 +796,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Akademik",
     kpiEvidenceRule:
       "Surat penetapan, mahasiswa, program, pembimbing, topik, dan periode.",
-    kpiIndicator: "Pembimbingan mahasiswa magister",
+    kpiIndicator: {
+      id: "KM-21",
+      label: "Pembimbingan mahasiswa magister",
+      number: 21,
+    },
     owner: "Hesty Susanti",
     periodLabel: "2026",
     primaryPerson: "Hesty Susanti",
@@ -715,6 +819,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "activity_governance",
     categoryLabel: "Kegiatan & tata kelola",
     discoveredAt: "2026-08-10T10:05:00+07:00",
@@ -757,7 +862,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Organisasi CoE",
     kpiEvidenceRule:
       "Undangan/sertifikat, nama narasumber, topik, penyelenggara, dan tanggal.",
-    kpiIndicator: "Narasumber kegiatan eksternal",
+    kpiIndicator: {
+      id: "KM-22",
+      label: "Narasumber kegiatan eksternal",
+      number: 22,
+    },
     owner: "Muhammad Ammar Asyraf",
     periodLabel: "2026",
     primaryPerson: "Suksmandhira Harimurti",
@@ -776,6 +885,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "activity_governance",
     categoryLabel: "Kegiatan & tata kelola",
     discoveredAt: "2026-08-09T14:45:00+07:00",
@@ -817,7 +927,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Organisasi CoE",
     kpiEvidenceRule:
       "Agenda/surat, institusi tujuan, peserta, tanggal, tujuan, dan dokumentasi.",
-    kpiIndicator: "Kunjungan atau benchmarking CoE",
+    kpiIndicator: {
+      id: "KM-23",
+      label: "Kunjungan atau benchmarking CoE",
+      number: 23,
+    },
     owner: "Muhammad Ammar Asyraf",
     periodLabel: "2026",
     primaryPerson: "Muhammad Ammar Asyraf",
@@ -836,6 +950,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "community_service",
     categoryLabel: "Pengabdian masyarakat",
     decision: completed(
@@ -875,7 +990,7 @@ const records: AuditReviewRecord[] = [
     history: [
       discovered("PKM-260808-011", "Ekstraksi dokumen", "8 Agu 2026, 15.40"),
       {
-        actor: "Nadia Putri · Audit KM",
+        actor: sessionReviewerActor,
         id: "PKM-260808-011-completed",
         label: "Dihubungkan ke data resmi",
         timeLabel: "9 Agu 2026, 11.42",
@@ -885,7 +1000,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Pengabdian Masyarakat",
     kpiEvidenceRule:
       "Laporan, mitra, penerima manfaat, tanggal, daftar hadir, dan dokumentasi.",
-    kpiIndicator: "Layanan kepada masyarakat",
+    kpiIndicator: {
+      id: "KM-24",
+      label: "Layanan kepada masyarakat",
+      number: 24,
+    },
     owner: "Dita Puspitasari",
     periodLabel: "2026",
     primaryPerson: "Dita Puspitasari",
@@ -904,6 +1023,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "academic_hr",
     categoryLabel: "Akademik & SDM",
     decision: completed(
@@ -933,7 +1053,7 @@ const records: AuditReviewRecord[] = [
     history: [
       discovered("SDM-260808-006", "Input manual", "8 Agu 2026, 09.12"),
       {
-        actor: "Nadia Putri · Audit KM",
+        actor: sessionReviewerActor,
         id: "SDM-260808-006-completed",
         label: "Diterima sebagai data baru",
         timeLabel: "8 Agu 2026, 13.18",
@@ -943,7 +1063,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "SDM",
     kpiEvidenceRule:
       "Sertifikat, pemegang, kompetensi, lembaga penerbit, dan masa berlaku.",
-    kpiIndicator: "Sertifikasi kompetensi anggota",
+    kpiIndicator: {
+      id: "KM-25",
+      label: "Sertifikasi kompetensi anggota",
+      number: 25,
+    },
     owner: "Nabila Rahmawati",
     periodLabel: "2026",
     primaryPerson: "Nabila Rahmawati",
@@ -962,6 +1086,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "research_business",
     categoryLabel: "Riset & bisnis",
     decision: completed(
@@ -995,7 +1120,7 @@ const records: AuditReviewRecord[] = [
     history: [
       discovered("BUS-260807-008", "Ekstraksi dokumen", "7 Agu 2026, 10.20"),
       {
-        actor: "Nadia Putri · Audit KM",
+        actor: sessionReviewerActor,
         id: "BUS-260807-008-completed",
         label: "Diterima sebagai data baru",
         timeLabel: "7 Agu 2026, 15.06",
@@ -1005,7 +1130,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Bisnis",
     kpiEvidenceRule:
       "Kontrak final, mitra, penanggung jawab, nilai, periode, dan ruang lingkup.",
-    kpiIndicator: "Kontrak komersial/layanan CoE",
+    kpiIndicator: {
+      id: "KM-26",
+      label: "Kontrak komersial/layanan CoE",
+      number: 26,
+    },
     owner: "Hesty Susanti",
     periodLabel: "2026",
     primaryPerson: "Hesty Susanti",
@@ -1024,6 +1153,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "publication_conference",
     categoryLabel: "Publikasi & konferensi",
     decision: completed(
@@ -1060,7 +1190,7 @@ const records: AuditReviewRecord[] = [
     history: [
       discovered("BOOK-260806-003", "SINTA", "6 Agu 2026, 09.45"),
       {
-        actor: "Nadia Putri · Audit KM",
+        actor: sessionReviewerActor,
         id: "BOOK-260806-003-completed",
         label: "Diterima sebagai data baru",
         timeLabel: "6 Agu 2026, 14.24",
@@ -1070,7 +1200,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Akademik",
     kpiEvidenceRule:
       "ISBN, halaman penerbit, penulis, afiliasi, dan tahun terbit.",
-    kpiIndicator: "Buku yang diterbitkan",
+    kpiIndicator: {
+      id: "KM-27",
+      label: "Buku yang diterbitkan",
+      number: 27,
+    },
     owner: "Dita Puspitasari",
     periodLabel: "2026",
     primaryPerson: "Dita Puspitasari",
@@ -1089,6 +1223,7 @@ const records: AuditReviewRecord[] = [
     version: 1,
   },
   {
+    candidateKind: "new_record",
     category: "activity_governance",
     categoryLabel: "Kegiatan & tata kelola",
     decision: completed(
@@ -1121,7 +1256,7 @@ const records: AuditReviewRecord[] = [
     history: [
       discovered("ACT-260805-002", "Input manual", "5 Agu 2026, 11.30"),
       {
-        actor: "Nadia Putri · Audit KM",
+        actor: sessionReviewerActor,
         id: "ACT-260805-002-completed",
         label: "Kandidat ditolak",
         timeLabel: "5 Agu 2026, 16.02",
@@ -1131,7 +1266,11 @@ const records: AuditReviewRecord[] = [
     kpiCategory: "Organisasi CoE",
     kpiEvidenceRule:
       "Sertifikat/undangan, nama peserta, peran, kegiatan, dan tanggal dalam periode evaluasi.",
-    kpiIndicator: "Keikutsertaan pada kegiatan eksternal",
+    kpiIndicator: {
+      id: "KM-28",
+      label: "Keikutsertaan pada kegiatan eksternal",
+      number: 28,
+    },
     owner: "Fathur Rahman",
     periodLabel: "2023",
     primaryPerson: "Fathur Rahman",
@@ -1149,15 +1288,139 @@ const records: AuditReviewRecord[] = [
     typeLabel: "Konferensi",
     version: 1,
   },
+  {
+    candidateKind: "new_record",
+    category: "research_business",
+    categoryLabel: "Riset & bisnis",
+    discoveredAt: "2026-08-14T10:18:00+07:00",
+    discoveredAtLabel: "14 Agu 2026, 10.18",
+    evidence: [
+      evidence(
+        "ev-spreadsheet-research-contract",
+        "Baris kontrak riset",
+        "Impor lembar kerja",
+        "Riset dan Bisnis · baris 17",
+        "/nexus/dokumen",
+      ),
+    ],
+    fields: [
+      field(
+        "title",
+        "Judul penelitian",
+        "Platform Pemantauan Biosinyal untuk Klinik Bergerak",
+      ),
+      field("lead", "Ketua peneliti", "Suksmandhira Harimurti"),
+      field("scheme", "Skema", "Penelitian Terapan Unggulan"),
+      field("partner", "Mitra/pemberi dana", "Kemdiktisaintek"),
+      field("amount", "Nilai kontrak", "Rp210.000.000"),
+      field("period", "Periode", "Februari–November 2026"),
+    ],
+    history: [
+      discovered("RES-260814-032", "Impor lembar kerja", "14 Agu 2026, 10.18"),
+    ],
+    id: "RES-260814-032",
+    kpiCategory: "Riset",
+    kpiEvidenceRule:
+      "Dokumen kontrak, nama skema, nilai pendanaan, ketua, mitra, dan periode pelaksanaan.",
+    kpiIndicator: {
+      id: "KM-17",
+      label: "Kontrak riset eksternal",
+      number: 17,
+    },
+    owner: "Suksmandhira Harimurti",
+    periodLabel: "2026",
+    primaryPerson: "Suksmandhira Harimurti",
+    signal: {
+      primary: "Kandidat dari lembar kerja",
+      secondary: "Periksa kontrak dan nilai pendanaan",
+      tone: "info",
+    },
+    source: "spreadsheet",
+    sourceLabel: "Impor lembar kerja",
+    status: "waiting",
+    statusLabel: "Menunggu tinjauan",
+    subtitle: "Suksmandhira Harimurti · KM-17 · kontrak riset",
+    title: "Platform Pemantauan Biosinyal untuk Klinik Bergerak",
+    typeLabel: "Kontrak riset",
+    version: 1,
+  },
 ];
 
 /**
  * Serializable route content. Future server data can replace this factory at
  * the page boundary without changing the interactive review workspace.
  */
-export function getNexusAuditReviewContent(): NexusAuditReviewContent {
+function getRecordMatches(record: AuditReviewRecordSeed) {
+  if (!record.match) return [];
+  if (record.id !== "PUB-260814-041") return [record.match];
+
+  return [
+    record.match,
+    {
+      ...record.match,
+      id: "OFF-PUB-2026-021",
+      score: 84,
+      title: "Primary Care Telemedicine Adoption for District Health Services",
+      verdict: "possible" as const,
+      verdictLabel: "Metadata serupa",
+    },
+  ];
+}
+
+function hydrateRecord(
+  record: AuditReviewRecordSeed,
+  reviewerLabel: string,
+): AuditReviewRecord {
+  const {
+    kpiCategory,
+    kpiEvidenceRule,
+    kpiIndicator,
+    match: _match,
+    ...base
+  } = record;
+  const replacePreviewActor = (actor: string) =>
+    actor === sessionReviewerActor ? reviewerLabel : actor;
+
+  return {
+    ...base,
+    decision: record.decision
+      ? {
+          ...record.decision,
+          actor: replacePreviewActor(record.decision.actor),
+        }
+      : undefined,
+    history: record.history.map((entry) => ({
+      ...entry,
+      actor: replacePreviewActor(entry.actor),
+    })),
+    kpiLinks: [
+      {
+        category: kpiCategory,
+        evidenceRule: kpiEvidenceRule,
+        indicatorId: kpiIndicator.id,
+        indicatorLabel: kpiIndicator.label,
+        indicatorNumber: kpiIndicator.number,
+      },
+    ],
+    matches: getRecordMatches(record),
+    provenance: {
+      attempt: 1,
+      fingerprint: `sha256:${record.id.toLocaleLowerCase("en-US")}-preview`,
+      jobId: `JOB-${record.id}`,
+      parser:
+        record.source === "document" ? "document-parser@1" : "source-adapter@1",
+      retrievedAt: record.discoveredAt,
+      sourceKey: `${record.source}:${record.id.toLocaleLowerCase("en-US")}`,
+    },
+    submittedBy: `${record.sourceLabel} · sumber kandidat`,
+  };
+}
+
+export function getNexusAuditReviewContent(
+  reviewerLabel: string,
+): NexusAuditReviewContent {
   return {
     lastUpdatedLabel: "Diperbarui 15 Agu 2026, 08.55 WIB",
-    records,
+    records: records.map((record) => hydrateRecord(record, reviewerLabel)),
   };
 }

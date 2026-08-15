@@ -256,6 +256,7 @@
 
 .primaryButton,
 .secondaryButton,
+.resultActions a,
 .resultActions button {
   display: inline-flex;
   min-height: 2.45rem;
@@ -291,6 +292,15 @@
   border-color: #cfd5df;
   background: var(--color-nexus-surface);
   color: var(--color-nexus-text);
+}
+
+.resultActions a {
+  background: #5e4fd6;
+  color: var(--color-nexus-surface);
+}
+
+.resultActions a:hover {
+  background: #4d3fc1;
 }
 
 .result {
@@ -426,6 +436,7 @@
   }
 
   .confirmation button,
+  .resultActions a,
   .resultActions button {
     width: 100%;
   }

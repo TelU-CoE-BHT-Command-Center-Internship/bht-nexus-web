@@ -1,13 +1,17 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
+import { createCollectionReviewRecords } from "@/components/nexus-review-session/nexus-review-record-factory";
+import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import styles from "@/components/nexus-scraper-search/nexus-scraper-search.module.css";
 import type {
   CollectionJob,
   CollectionSource,
   NexusScraperSearchContent,
 } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
+import { createLocalCollectionCandidates } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceButton,
@@ -105,6 +109,8 @@ export function NexusScraperSearch({
 }: {
   content: NexusScraperSearchContent;
 }) {
+  const router = useRouter();
+  const reviewSession = useOptionalNexusReviewSession();
   const [jobs, setJobs] = useState(content.jobs);
   const [name, setName] = useState("");
   const [profileUrl, setProfileUrl] = useState("");
@@ -145,7 +151,7 @@ export function NexusScraperSearch({
     ["queued", "running", "retrying"].includes(job.status),
   ).length;
   const candidateCount = jobs.reduce(
-    (total, job) => total + job.candidateCount,
+    (total, job) => total + job.candidates.length,
     0,
   );
   const metrics = [
@@ -192,7 +198,7 @@ export function NexusScraperSearch({
       content.sourceOptions.find((option) => option.id === source)?.label ??
       source;
     const queued: CollectionJob = {
-      candidateCount: 0,
+      candidates: [],
       fullName: cleanName,
       id,
       profileUrl: cleanUrl,
@@ -202,6 +208,9 @@ export function NexusScraperSearch({
       statusLabel: getAutomationStatusLabel(content.locale, "queued"),
       submittedAt: now.toISOString(),
       submittedAtLabel: formatTimestamp(now.toISOString()),
+      submittedBy: reviewSession
+        ? `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`
+        : "Pengguna ruang kerja",
     };
 
     setJobs((current) => [queued, ...current]);
@@ -216,7 +225,11 @@ export function NexusScraperSearch({
           job.id === id
             ? {
                 ...job,
-                candidateCount: 3,
+                candidates: createLocalCollectionCandidates(
+                  job.id,
+                  job.fullName,
+                  3,
+                ),
                 status: "succeeded",
                 statusLabel: getAutomationStatusLabel(
                   content.locale,
@@ -232,7 +245,28 @@ export function NexusScraperSearch({
   const rows = visibleJobs.map((job) => {
     const tone = statusTone(job.status);
     const action =
-      job.status === "succeeded" ? (
+      job.status === "succeeded" && content.locale === "id" ? (
+        <NexusWorkspaceButton
+          key={`${job.id}-action`}
+          onClick={() => {
+            if (!reviewSession) {
+              throw new Error("Review session is unavailable");
+            }
+            const reviewRecords = createCollectionReviewRecords(job);
+            const firstRecord = reviewRecords[0];
+            if (!firstRecord) return;
+            reviewSession.submitRecords(reviewRecords);
+            router.push(
+              `${content.reviewHref}?record=${encodeURIComponent(firstRecord.id)}`,
+            );
+          }}
+          type="button"
+        >
+          {content.locale === "id"
+            ? `Tinjau ${job.candidates.length} kandidat`
+            : `Review ${job.candidates.length} candidates`}
+        </NexusWorkspaceButton>
+      ) : job.status === "succeeded" ? (
         <NexusWorkspaceLinkButton
           href={content.reviewHref}
           key={`${job.id}-action`}
@@ -267,9 +301,9 @@ export function NexusScraperSearch({
         ),
         result: (
           <NexusWorkspaceTableSignal
-            primary={job.candidateCount}
+            primary={job.candidates.length}
             secondary={content.candidatesLabel}
-            tone={job.candidateCount > 0 ? "success" : "neutral"}
+            tone={job.candidates.length > 0 ? "success" : "neutral"}
           />
         ),
         submitted: (
@@ -297,7 +331,7 @@ export function NexusScraperSearch({
               <div>
                 <dt>{content.columns.candidates}</dt>
                 <dd>
-                  {job.candidateCount} {content.candidatesLabel}
+                  {job.candidates.length} {content.candidatesLabel}
                 </dd>
               </div>
               <div>

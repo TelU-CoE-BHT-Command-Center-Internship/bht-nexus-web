@@ -1,5 +1,8 @@
 import { useState } from "react";
-import type { AuditDecisionKind } from "@/components/nexus-audit-review/nexus-audit-review-content";
+import type {
+  AuditDecisionKind,
+  AuditOfficialMatch,
+} from "@/components/nexus-audit-review/nexus-audit-review-content";
 import { AuditReviewSectionHeading } from "@/components/nexus-audit-review/nexus-audit-review-detail";
 import drawerStyles from "@/components/nexus-audit-review/nexus-audit-review-drawer.module.css";
 import {
@@ -15,19 +18,24 @@ import {
 
 type AuditReviewDecisionSectionProps = AuditReviewDrawerProps & {
   decisionIndex: ReviewSectionIndexes["decision"];
+  selectedMatch?: AuditOfficialMatch;
 };
 
 export function AuditReviewDecisionSection({
+  capabilities,
   decisionIndex,
   onClose,
   onDecide,
   onResubmit,
   record,
+  selectedMatch,
   state,
 }: AuditReviewDecisionSectionProps) {
-  const exactIdentifier = record.match?.verdict === "same_identifier";
+  const exactIdentifier = record.matches.some(
+    (match) => match.verdict === "same_identifier",
+  );
   const [decisionChoice, setDecisionChoice] =
-    useState<AuditDecisionKind | null>(exactIdentifier ? "merged" : null);
+    useState<AuditDecisionKind | null>(null);
   const [note, setNote] = useState("");
   const [selectedFieldIds, setSelectedFieldIds] = useState<string[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -50,11 +58,20 @@ export function AuditReviewDecisionSection({
   const correctionComplete = correctionFields.every(
     (item) => draft[item.id]?.trim().length > 0,
   );
-  const consequence = auditDecisionConsequence(decisionChoice, record);
+  const consequence = auditDecisionConsequence(decisionChoice, selectedMatch);
   const correctionSelectionReady =
     decisionChoice !== "changes_requested" || selectedFieldIds.length > 0;
+  const targetSelectionReady =
+    !decisionChoice ||
+    !["approved_completion", "approved_update", "merged"].includes(
+      decisionChoice,
+    ) ||
+    Boolean(selectedMatch);
   const decisionReady = Boolean(
-    decisionChoice && note.trim().length > 0 && correctionSelectionReady,
+    decisionChoice &&
+      note.trim().length > 0 &&
+      correctionSelectionReady &&
+      targetSelectionReady,
   );
 
   const selectDecision = (choice: AuditDecisionKind) => {
@@ -81,6 +98,57 @@ export function AuditReviewDecisionSection({
   };
 
   if (state.status === "needs_fix" && state.fixRequest) {
+    if (!capabilities.canSubmitCorrection) {
+      return (
+        <section
+          aria-labelledby="audit-correction-title"
+          className={drawerStyles.reviewDecisionSection}
+        >
+          <AuditReviewSectionHeading
+            id="audit-correction-title"
+            index={decisionIndex}
+            meta="Menunggu pihak berwenang"
+            title="Perbaikan telah diminta"
+          />
+          <NexusWorkspaceNotice tone="danger">
+            {state.fixRequest.reason}
+          </NexusWorkspaceNotice>
+          <div className={drawerStyles.reviewCorrectionRequest}>
+            <dl>
+              <div>
+                <dt>Status</dt>
+                <dd>Menunggu perbaikan</dd>
+              </div>
+              <div>
+                <dt>Penerima</dt>
+                <dd>
+                  {state.fixRequest.assigneeLabel ??
+                    "Akan ditentukan berdasarkan hak akses sistem"}
+                </dd>
+              </div>
+            </dl>
+            <div>
+              <strong>Bidang yang diminta</strong>
+              <ul>
+                {correctionFields.map((item) => (
+                  <li key={item.id}>{item.label}</li>
+                ))}
+              </ul>
+            </div>
+            <p>
+              Pemeriksa dapat melihat status dan riwayat permintaan, tetapi
+              tidak mengubah kandidat atas nama pihak lain.
+            </p>
+          </div>
+          <div className={drawerStyles.reviewDecisionActions}>
+            <NexusWorkspaceButton onClick={onClose} type="button">
+              Tutup status perbaikan
+            </NexusWorkspaceButton>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section
         aria-labelledby="audit-correction-title"
@@ -127,7 +195,7 @@ export function AuditReviewDecisionSection({
         </label>
         <div className={drawerStyles.reviewDecisionActions}>
           <NexusWorkspaceButton onClick={onClose} type="button">
-            Simpan untuk nanti
+            Tutup tanpa mengirim
           </NexusWorkspaceButton>
           <NexusWorkspaceButton
             className={drawerStyles.reviewPrimaryAction}
@@ -203,7 +271,7 @@ export function AuditReviewDecisionSection({
 
       <fieldset className={drawerStyles.reviewDecisionChoices}>
         <legend>Pilih hasil tinjauan</legend>
-        {record.match ? (
+        {record.candidateKind === "new_record" && selectedMatch ? (
           <label data-selected={decisionChoice === "merged" || undefined}>
             <input
               checked={decisionChoice === "merged"}
@@ -213,34 +281,83 @@ export function AuditReviewDecisionSection({
             />
             <span className={drawerStyles.reviewRadio} />
             <span>
-              <strong>Hubungkan ke {record.match.id}</strong>
+              <strong>Hubungkan ke {selectedMatch.id}</strong>
               <small>
                 Pilih jika bukti menunjukkan karya atau entitas yang sama.
               </small>
             </span>
           </label>
         ) : null}
-        <label
-          data-disabled={exactIdentifier || undefined}
-          data-selected={decisionChoice === "approved_new" || undefined}
-        >
-          <input
-            checked={decisionChoice === "approved_new"}
-            disabled={exactIdentifier}
-            name={`decision-${record.id}`}
-            onChange={() => selectDecision("approved_new")}
-            type="radio"
-          />
-          <span className={drawerStyles.reviewRadio} />
-          <span>
-            <strong>Terima sebagai data baru</strong>
-            <small>
-              {exactIdentifier
-                ? "Tidak tersedia karena pengenal identik ditemukan."
-                : "Tetapkan kandidat sebagai rekam resmi baru."}
-            </small>
-          </span>
-        </label>
+        {record.candidateKind === "new_record" ? (
+          <label
+            data-disabled={exactIdentifier || undefined}
+            data-selected={decisionChoice === "approved_new" || undefined}
+          >
+            <input
+              checked={decisionChoice === "approved_new"}
+              disabled={exactIdentifier}
+              name={`decision-${record.id}`}
+              onChange={() => selectDecision("approved_new")}
+              type="radio"
+            />
+            <span className={drawerStyles.reviewRadio} />
+            <span>
+              <strong>Terima sebagai data baru</strong>
+              <small>
+                {exactIdentifier
+                  ? "Tidak tersedia karena pengenal identik ditemukan."
+                  : "Tetapkan kandidat sebagai rekam resmi baru."}
+              </small>
+            </span>
+          </label>
+        ) : null}
+        {record.candidateKind === "record_update" ? (
+          <label
+            data-disabled={!selectedMatch || undefined}
+            data-selected={decisionChoice === "approved_update" || undefined}
+          >
+            <input
+              checked={decisionChoice === "approved_update"}
+              disabled={!selectedMatch}
+              name={`decision-${record.id}`}
+              onChange={() => selectDecision("approved_update")}
+              type="radio"
+            />
+            <span className={drawerStyles.reviewRadio} />
+            <span>
+              <strong>
+                Terapkan pembaruan ke {selectedMatch?.id ?? "rekam terpilih"}
+              </strong>
+              <small>
+                Perbarui rekam tujuan dengan menyimpan nilai sebelumnya dan
+                jejak sumber.
+              </small>
+            </span>
+          </label>
+        ) : null}
+        {record.candidateKind === "metadata_completion" ? (
+          <label
+            data-disabled={!selectedMatch || undefined}
+            data-selected={
+              decisionChoice === "approved_completion" || undefined
+            }
+          >
+            <input
+              checked={decisionChoice === "approved_completion"}
+              disabled={!selectedMatch}
+              name={`decision-${record.id}`}
+              onChange={() => selectDecision("approved_completion")}
+              type="radio"
+            />
+            <span className={drawerStyles.reviewRadio} />
+            <span>
+              <strong>Setujui pelengkapan metadata</strong>
+              <small>
+                Terapkan nilai atau pengecualian pada rekam resmi tujuan.
+              </small>
+            </span>
+          </label>
+        ) : null}
         <label
           data-selected={decisionChoice === "changes_requested" || undefined}
         >
@@ -265,8 +382,12 @@ export function AuditReviewDecisionSection({
           />
           <span className={drawerStyles.reviewRadio} />
           <span>
-            <strong>Tolak kandidat</strong>
-            <small>Tutup kandidat tanpa menerapkan nilainya.</small>
+            <strong>
+              {record.candidateKind === "metadata_completion"
+                ? "Tolak usulan"
+                : "Tolak kandidat"}
+            </strong>
+            <small>Tutup pengajuan tanpa menerapkan nilainya.</small>
           </span>
         </label>
       </fieldset>

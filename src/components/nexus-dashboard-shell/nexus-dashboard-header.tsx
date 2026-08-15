@@ -1,13 +1,16 @@
 "use client";
 
-import Image from "next/image";
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
+import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
+import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
 import { resetDismissedAnnouncementsForSession } from "@/components/nexus-dashboard-announcement/nexus-dashboard-announcement-session";
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
 import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
+import type { Locale } from "@/i18n/locales";
 
 export type DashboardHeaderPanel = "notifications" | "profile";
 
@@ -20,6 +23,42 @@ type NexusDashboardHeaderProps = {
   pageTitle: string;
 };
 
+type WorkspaceLanguageOption = {
+  flag: StaticImageData;
+  label: string;
+  locale: Locale;
+};
+
+type WorkspaceRoutePair = Record<Locale, string>;
+
+const workspaceLanguageOptions: WorkspaceLanguageOption[] = [
+  { flag: indonesiaFlag, label: "Bahasa Indonesia", locale: "id" },
+  { flag: unitedKingdomFlag, label: "English", locale: "en" },
+];
+
+const workspaceRoutePairs: WorkspaceRoutePair[] = [
+  { en: "/en/nexus/collection", id: "/nexus/pengumpulan" },
+  { en: "/en/nexus/collection", id: "/nexus/dashboard" },
+  { en: "/en/nexus/reviews", id: "/nexus/tinjauan" },
+  { en: "/en/nexus/collection", id: "/nexus/publikasi" },
+  { en: "/en/nexus/documents", id: "/nexus/dokumen" },
+  { en: "/en/nexus/ask-documents", id: "/nexus/tanya-dokumen" },
+  { en: "/en/nexus/extraction", id: "/nexus/ekstraksi" },
+  { en: "/en/nexus/candidates", id: "/nexus/kandidat" },
+  { en: "/en/nexus/search", id: "/nexus/pencarian" },
+];
+
+function getWorkspaceLocalizedHref(pathname: string, targetLocale: Locale) {
+  const pair = workspaceRoutePairs.find(
+    (candidate) => candidate.en === pathname || candidate.id === pathname,
+  );
+
+  return (
+    pair?.[targetLocale] ??
+    (targetLocale === "id" ? "/nexus/dashboard" : "/en/nexus/collection")
+  );
+}
+
 export function NexusDashboardHeader({
   content,
   isMobileMenuOpen,
@@ -29,6 +68,11 @@ export function NexusDashboardHeader({
   pageTitle,
 }: NexusDashboardHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const showsLanguageSwitcher = ![
+    "/en/nexus/reviews",
+    "/nexus/tinjauan",
+  ].includes(pathname);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const matches = useMemo(() => {
@@ -129,6 +173,39 @@ export function NexusDashboardHeader({
       </form>
 
       <div className={styles.headerActions}>
+        {showsLanguageSwitcher ? (
+          <nav
+            aria-label={content.languageLabel}
+            className={styles.workspaceLanguageSwitcher}
+          >
+            {workspaceLanguageOptions.map((option) => {
+              const isActive = content.locale === option.locale;
+
+              return (
+                <Link
+                  aria-current={isActive ? "page" : undefined}
+                  aria-label={option.label}
+                  data-active={isActive || undefined}
+                  href={getWorkspaceLocalizedHref(pathname, option.locale)}
+                  key={option.locale}
+                  prefetch={false}
+                  title={option.label}
+                >
+                  <span className={styles.workspaceLanguageFlag}>
+                    <Image
+                      alt=""
+                      sizes="1.5rem"
+                      src={option.flag}
+                      unoptimized
+                    />
+                  </span>
+                  <span className={styles.visuallyHidden}>{option.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        ) : null}
+
         <div className={styles.actionMenu}>
           <button
             aria-controls="nexus-notifications-panel"

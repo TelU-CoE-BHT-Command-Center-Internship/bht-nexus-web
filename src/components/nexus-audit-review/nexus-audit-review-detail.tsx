@@ -1,5 +1,9 @@
 import Image from "next/image";
-import type { AuditReviewRecord } from "@/components/nexus-audit-review/nexus-audit-review-content";
+import type {
+  AuditOfficialMatch,
+  AuditReviewField,
+  AuditReviewRecord,
+} from "@/components/nexus-audit-review/nexus-audit-review-content";
 import drawerStyles from "@/components/nexus-audit-review/nexus-audit-review-drawer.module.css";
 import {
   type AuditRuntimeState,
@@ -9,13 +13,15 @@ import {
   auditStatusTone,
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
-import { nexusReviewOwnerPortraits } from "@/components/nexus-review-summary/nexus-review-owner-portraits";
+import { nexusAuditReviewOwnerPortraits } from "@/components/nexus-audit-review/nexus-audit-review-owner-portraits";
 import { NexusWorkspaceNotice } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceTableBadge } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 
 type AuditCandidateDetailsProps = {
   indexes: ReviewSectionIndexes;
+  onSelectMatch: (matchId: string) => void;
   record: AuditReviewRecord;
+  selectedMatch?: AuditOfficialMatch;
   state: AuditRuntimeState;
 };
 
@@ -28,7 +34,7 @@ type SectionHeadingProps = {
 
 const portraitKeyByName: Record<
   string,
-  keyof typeof nexusReviewOwnerPortraits
+  keyof typeof nexusAuditReviewOwnerPortraits
 > = {
   "Dita Puspitasari": "dita",
   "Fathur Rahman": "fathur",
@@ -38,6 +44,45 @@ const portraitKeyByName: Record<
   "Salsabila Aurellia": "salsabila",
   "Suksmandhira Harimurti": "suksmandhira",
 };
+
+const preferredWideMetadataFieldIds = new Set([
+  "abstract",
+  "activity_title",
+  "authors",
+  "description",
+  "keywords",
+  "summary",
+  "title",
+]);
+
+function layoutMetadataFields(fields: AuditReviewField[]) {
+  const layout: Array<{ field: AuditReviewField; isWide: boolean }> = [];
+  let unmatchedField: (typeof layout)[number] | null = null;
+
+  for (const field of fields) {
+    const prefersWide = preferredWideMetadataFieldIds.has(field.id);
+
+    if (prefersWide) {
+      if (unmatchedField) {
+        unmatchedField.isWide = true;
+        unmatchedField = null;
+      }
+
+      layout.push({ field, isWide: true });
+      continue;
+    }
+
+    const item = { field, isWide: false };
+    layout.push(item);
+    unmatchedField = unmatchedField ? null : item;
+  }
+
+  if (unmatchedField) {
+    unmatchedField.isWide = true;
+  }
+
+  return layout;
+}
 
 export function AuditReviewSectionHeading({
   id,
@@ -82,7 +127,7 @@ function ReviewPerson({
           className={drawerStyles.reviewPersonPortrait}
           height={32}
           sizes="2rem"
-          src={nexusReviewOwnerPortraits[portraitKey]}
+          src={nexusAuditReviewOwnerPortraits[portraitKey]}
           width={32}
         />
       ) : (
@@ -148,7 +193,7 @@ function CandidateOverview({
           <dd>{record.periodLabel}</dd>
         </div>
         <div>
-          <dt>Domain Excel</dt>
+          <dt>Kelompok evaluasi</dt>
           <dd>{record.categoryLabel}</dd>
         </div>
       </dl>
@@ -179,6 +224,7 @@ function MetadataSection({
   const availableCount = fields.filter(
     (item) => item.value.trim().length > 0 && item.value !== "—",
   ).length;
+  const metadataLayout = layoutMetadataFields(fields);
 
   return (
     <section
@@ -192,17 +238,13 @@ function MetadataSection({
         title="Metadata kandidat"
       />
       <p className={drawerStyles.reviewExplanation}>
-        Bidang mengikuti jenis data pada workbook Minggu 7. Ketiadaan rekam
-        pembanding tidak membuat metadata kandidat boleh dilewati.
+        Bidang mengikuti jenis data dan kebutuhan evaluasinya. Ketiadaan rekam
+        pembanding tidak menghilangkan kewajiban memeriksa metadata kandidat.
       </p>
       <dl className={drawerStyles.reviewMetadataGrid}>
-        {fields.map((item) => {
+        {metadataLayout.map(({ field: item, isWide }) => {
           const isAvailable =
             item.value.trim().length > 0 && item.value !== "—";
-          const isWide =
-            /judul|penulis|uraian|abstrak|keterangan|kegiatan|kontrak/i.test(
-              item.label,
-            );
 
           return (
             <div
@@ -228,20 +270,23 @@ function MetadataSection({
 function MatchAssessment({
   record,
 }: Pick<AuditCandidateDetailsProps, "record">) {
-  if (!record.match) return null;
-  const exactIdentifier = record.match.verdict === "same_identifier";
+  const leadingMatch = record.matches.toSorted(
+    (first, second) => second.score - first.score,
+  )[0];
+  if (!leadingMatch) return null;
+  const exactIdentifier = leadingMatch.verdict === "same_identifier";
 
   return (
     <section
       className={drawerStyles.reviewAssessment}
-      data-tone={record.match.verdict}
+      data-tone={leadingMatch.verdict}
     >
       <div>
-        <strong>{record.match.score}%</strong>
+        <strong>{leadingMatch.score}%</strong>
         <span>skor tertinggi</span>
       </div>
       <div>
-        <span>{record.match.verdictLabel}</span>
+        <span>{leadingMatch.verdictLabel}</span>
         <h3>
           {exactIdentifier
             ? "Pengenal yang sama ditemukan pada rekam resmi"
@@ -259,10 +304,13 @@ function MatchAssessment({
 
 function OfficialMatchSection({
   indexes,
+  onSelectMatch,
   record,
-}: Pick<AuditCandidateDetailsProps, "indexes" | "record">) {
-  const exactIdentifier = record.match?.verdict === "same_identifier";
-
+  selectedMatch,
+}: Pick<
+  AuditCandidateDetailsProps,
+  "indexes" | "onSelectMatch" | "record" | "selectedMatch"
+>) {
   return (
     <section
       aria-labelledby="audit-official-match-title"
@@ -271,31 +319,55 @@ function OfficialMatchSection({
       <AuditReviewSectionHeading
         id="audit-official-match-title"
         index={indexes.match}
-        meta={record.match ? "1 rekam untuk diperiksa" : "Belum ada pembanding"}
+        meta={
+          record.matches.length > 0
+            ? `${record.matches.length} rekam untuk diperiksa`
+            : "Belum ada pembanding"
+        }
         title="Rekam resmi terkait"
       />
-      {record.match ? (
-        <label className={drawerStyles.reviewMatchCard} data-selected="true">
-          <input checked name="audit-official-match" readOnly type="radio" />
-          <span className={drawerStyles.reviewRadio} />
-          <span className={drawerStyles.reviewMatchRank}>1</span>
-          <span className={drawerStyles.reviewMatchCopy}>
-            <strong>{record.match.title}</strong>
-            <small>
-              {record.match.id} · {record.periodLabel} · data resmi terpilih
-            </small>
-            <em>
-              {exactIdentifier
-                ? "Pengenal identik; beberapa metadata perlu diperiksa."
-                : "Kemiripan tinggi ditemukan pada metadata utama."}
-            </em>
-            <b>{record.sourceLabel} + BHT Nexus</b>
-          </span>
-          <span className={drawerStyles.reviewMatchScore}>
-            <strong>{record.match.score}%</strong>
-            <small>{record.match.verdictLabel}</small>
-          </span>
-        </label>
+      {record.matches.length > 0 ? (
+        <div className={drawerStyles.reviewMatchList}>
+          {record.matches.map((match, index) => {
+            const isSelected = selectedMatch?.id === match.id;
+            const exactIdentifier = match.verdict === "same_identifier";
+
+            return (
+              <label
+                className={drawerStyles.reviewMatchCard}
+                data-selected={isSelected || undefined}
+                key={match.id}
+              >
+                <input
+                  checked={isSelected}
+                  name="audit-official-match"
+                  onChange={() => onSelectMatch(match.id)}
+                  type="radio"
+                />
+                <span className={drawerStyles.reviewRadio} />
+                <span className={drawerStyles.reviewMatchRank}>
+                  {index + 1}
+                </span>
+                <span className={drawerStyles.reviewMatchCopy}>
+                  <strong>{match.title}</strong>
+                  <small>
+                    {match.id} · {record.periodLabel} · rekam resmi
+                  </small>
+                  <em>
+                    {exactIdentifier
+                      ? "Pengenal identik; beberapa metadata perlu diperiksa."
+                      : "Kemiripan metadata perlu diverifikasi oleh pemeriksa."}
+                  </em>
+                  <b>{record.sourceLabel} + BHT Nexus</b>
+                </span>
+                <span className={drawerStyles.reviewMatchScore}>
+                  <strong>{match.score}%</strong>
+                  <small>{match.verdictLabel}</small>
+                </span>
+              </label>
+            );
+          })}
+        </div>
       ) : (
         <NexusWorkspaceNotice>
           Belum ada rekam resmi pembanding. Bukti, periode, kepemilikan, dan
@@ -310,13 +382,14 @@ function OfficialMatchSection({
 function ComparisonSection({
   indexes,
   record,
+  selectedMatch,
   state,
 }: AuditCandidateDetailsProps) {
-  if (!record.match) return null;
-  const differentCount = record.match.comparisons.filter(
-    (item) => item.statusLabel !== "Sama",
+  if (!selectedMatch) return null;
+  const differentCount = selectedMatch.comparisons.filter(
+    (item) => item.status !== "same",
   ).length;
-  const sameCount = record.match.comparisons.length - differentCount;
+  const sameCount = selectedMatch.comparisons.length - differentCount;
 
   return (
     <section
@@ -326,7 +399,7 @@ function ComparisonSection({
       <AuditReviewSectionHeading
         id="audit-comparison-title"
         index={indexes.comparison}
-        meta={`Kandidat masuk vs ${record.match.id}`}
+        meta={`Kandidat masuk vs ${selectedMatch.id}`}
         title="Bandingkan setiap bidang"
       />
       <div className={drawerStyles.reviewComparisonSummary}>
@@ -334,14 +407,12 @@ function ComparisonSection({
         <span>{sameCount} sama</span>
       </div>
       <div className={drawerStyles.reviewComparisonList}>
-        {record.match.comparisons.map((comparison) => {
-          const same = comparison.statusLabel === "Sama";
-
+        {selectedMatch.comparisons.map((comparison) => {
           return (
             <article key={comparison.fieldId}>
               <header>
                 <h4>{comparison.label}</h4>
-                <span data-tone={same ? "same" : "different"}>
+                <span data-tone={comparison.status}>
                   {comparison.statusLabel}
                 </span>
               </header>
@@ -413,6 +484,7 @@ function RevisionSection({
 function SourceEvidenceSection({
   indexes,
   record,
+  selectedMatch,
   state,
 }: AuditCandidateDetailsProps) {
   return (
@@ -441,6 +513,10 @@ function SourceEvidenceSection({
               <dt>Versi kandidat</dt>
               <dd>V{state.version}</dd>
             </div>
+            <div>
+              <dt>Diajukan oleh</dt>
+              <dd>{record.submittedBy}</dd>
+            </div>
           </dl>
           <p>
             {record.typeLabel} · {record.categoryLabel}
@@ -449,20 +525,20 @@ function SourceEvidenceSection({
         <article>
           <header>
             <strong>Rekam resmi</strong>
-            <span>{record.match ? "BHT Nexus" : "Belum tersedia"}</span>
+            <span>{selectedMatch ? "BHT Nexus" : "Belum tersedia"}</span>
           </header>
           <dl>
             <div>
               <dt>Kunci rekam</dt>
-              <dd>{record.match?.id ?? "Belum ada"}</dd>
+              <dd>{selectedMatch?.id ?? "Belum ada"}</dd>
             </div>
             <div>
               <dt>Status</dt>
-              <dd>{record.match ? "Pembanding tersedia" : "Data baru"}</dd>
+              <dd>{selectedMatch ? "Pembanding tersedia" : "Data baru"}</dd>
             </div>
           </dl>
           <p>
-            {record.match
+            {selectedMatch
               ? "Rekam resmi tidak berubah sebelum keputusan disimpan."
               : "Belum ada rekam internal yang dapat dibandingkan."}
           </p>
@@ -494,13 +570,52 @@ function SourceEvidenceSection({
         </ul>
       </div>
 
-      <div className={drawerStyles.reviewKpiCallout}>
-        <span>Keterkaitan evaluasi · {record.kpiCategory}</span>
-        <strong>{record.kpiIndicator}</strong>
-        <p>
-          <b>Bukti minimum:</b> {record.kpiEvidenceRule}
-        </p>
+      <div className={drawerStyles.reviewKpiLinks}>
+        {record.kpiLinks.map((link) => (
+          <article
+            className={drawerStyles.reviewKpiCallout}
+            key={link.indicatorId}
+          >
+            <span>
+              Keterkaitan evaluasi · {link.indicatorId} · {link.category}
+            </span>
+            <strong>{link.indicatorLabel}</strong>
+            <p>
+              <b>Bukti minimum:</b> {link.evidenceRule}
+            </p>
+          </article>
+        ))}
       </div>
+
+      <details className={drawerStyles.reviewProvenance}>
+        <summary>Detail teknis asal data</summary>
+        <dl>
+          <div>
+            <dt>Pekerjaan</dt>
+            <dd>{record.provenance.jobId}</dd>
+          </div>
+          <div>
+            <dt>Percobaan</dt>
+            <dd>{record.provenance.attempt}</dd>
+          </div>
+          <div>
+            <dt>Pengolah</dt>
+            <dd>{record.provenance.parser}</dd>
+          </div>
+          <div>
+            <dt>Diambil</dt>
+            <dd>{record.provenance.retrievedAt}</dd>
+          </div>
+          <div>
+            <dt>Kunci sumber</dt>
+            <dd>{record.provenance.sourceKey}</dd>
+          </div>
+          <div>
+            <dt>Sidik respons</dt>
+            <dd>{record.provenance.fingerprint}</dd>
+          </div>
+        </dl>
+      </details>
 
       <details className={drawerStyles.reviewHistory}>
         <summary>Riwayat dan jejak audit ({state.history.length})</summary>
@@ -524,7 +639,9 @@ function SourceEvidenceSection({
 
 export function AuditCandidateDetails({
   indexes,
+  onSelectMatch,
   record,
+  selectedMatch,
   state,
 }: AuditCandidateDetailsProps) {
   return (
@@ -542,12 +659,35 @@ export function AuditCandidateDetails({
           </div>
         </section>
       ) : null}
-      <MetadataSection indexes={indexes} record={record} state={state} />
+      <MetadataSection
+        indexes={indexes}
+        onSelectMatch={onSelectMatch}
+        record={record}
+        selectedMatch={selectedMatch}
+        state={state}
+      />
       <MatchAssessment record={record} />
-      <OfficialMatchSection indexes={indexes} record={record} />
-      <ComparisonSection indexes={indexes} record={record} state={state} />
+      <OfficialMatchSection
+        indexes={indexes}
+        onSelectMatch={onSelectMatch}
+        record={record}
+        selectedMatch={selectedMatch}
+      />
+      <ComparisonSection
+        indexes={indexes}
+        onSelectMatch={onSelectMatch}
+        record={record}
+        selectedMatch={selectedMatch}
+        state={state}
+      />
       <RevisionSection record={record} state={state} />
-      <SourceEvidenceSection indexes={indexes} record={record} state={state} />
+      <SourceEvidenceSection
+        indexes={indexes}
+        onSelectMatch={onSelectMatch}
+        record={record}
+        selectedMatch={selectedMatch}
+        state={state}
+      />
     </>
   );
 }

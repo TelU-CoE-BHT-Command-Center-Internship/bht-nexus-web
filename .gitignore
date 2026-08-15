@@ -10,11 +10,6 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-/.playwright-cli/
-/output/
-
 # next.js
 /.next/
 /out/

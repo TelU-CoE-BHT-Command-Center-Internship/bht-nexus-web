@@ -1,0 +1,81 @@
+.state {
+  display: grid;
+  width: min(100%, 48rem);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  padding: clamp(1rem, 2vw, 1.35rem);
+  border: 1px solid #dbe3ef;
+  border-left: 0.2rem solid #7398cc;
+  border-radius: 0.8rem;
+  background: #fff;
+  box-shadow: 0 0.25rem 0.8rem rgb(33 52 79 / 5%);
+}
+
+.state[data-tone="danger"] {
+  border-color: #f2c8ce;
+  border-left-color: #c92f43;
+  background: #fffafb;
+}
+
+.icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #eaf2fd;
+  color: #315f9d;
+  font-weight: 800;
+}
+
+.state[data-tone="danger"] .icon {
+  background: #fdebed;
+  color: #b32b3d;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.copy > span {
+  color: #6757d8;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.copy h3 {
+  margin: 0.2rem 0 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 1rem;
+}
+
+.copy p {
+  margin: 0.35rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 42rem) {
+  .state {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+  }
+
+  .actions > a,
+  .actions > button {
+    width: 100%;
+  }
+}
