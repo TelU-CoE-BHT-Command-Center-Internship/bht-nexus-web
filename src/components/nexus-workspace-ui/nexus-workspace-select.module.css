@@ -80,6 +80,7 @@
 
 .selectMenu {
   position: absolute;
+  max-width: calc(100vw - 2rem);
   z-index: 20;
   top: calc(100% + 0.5rem);
   left: 0;
@@ -109,13 +110,23 @@
 }
 
 .selectField[data-filter="status"] .selectMenu,
-.selectField[data-filter="publication-type"] .selectMenu,
-.selectField[data-filter="quality"] .selectMenu {
+.selectField[data-filter="completeness"] .selectMenu,
+.selectField[data-filter="quartile"] .selectMenu,
+.selectField[data-filter="sort"] .selectMenu {
   width: max(100%, 14rem);
 }
 
+/*
+ * Pilihan indikator KM memuat nama indikator sehingga lebih panjang daripada
+ * filter lain. Menu dilebarkan hanya untuk filter ini supaya teksnya terbaca
+ * penuh tanpa mengubah lebar menu pada ruang kerja lain.
+ */
+.selectField[data-filter="indicator"] .selectMenu {
+  width: max(100%, 21rem);
+}
+
 .selectField[data-filter="year"] .selectMenu {
-  width: 100%;
+  width: max(100%, 12rem);
 }
 
 .selectMenu:focus {

@@ -34,6 +34,19 @@ type NexusWorkspaceNoticeProps = {
   tone?: "danger" | "info" | "success";
 };
 
+type NexusWorkspaceEmptyStateProps = {
+  description: string;
+  onResetFilters?: () => void;
+  title: string;
+};
+
+type NexusWorkspaceResultMetaProps = {
+  isUpdating?: boolean;
+  onResetFilters?: () => void;
+  resultLabel: string;
+  updatingLabel?: string;
+};
+
 export function NexusWorkspaceButton({
   children,
   className,
@@ -113,6 +126,47 @@ export function NexusWorkspaceNotice({
     <p aria-live="polite" className={styles.notice} data-tone={tone}>
       {children}
     </p>
+  );
+}
+
+/**
+ * Baris jumlah hasil dan tombol atur ulang filter. Dipakai bersama oleh setiap
+ * ruang kerja yang menampilkan daftar hasil pencarian.
+ */
+export function NexusWorkspaceResultMeta({
+  isUpdating = false,
+  onResetFilters,
+  resultLabel,
+  updatingLabel = "Memperbarui hasil",
+}: NexusWorkspaceResultMetaProps) {
+  return (
+    <div aria-live="polite" className={styles.resultMeta}>
+      <p>{isUpdating ? updatingLabel : resultLabel}</p>
+      {onResetFilters ? (
+        <button onClick={onResetFilters} type="button">
+          Atur ulang filter
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Keadaan kosong untuk tabel ruang kerja. */
+export function NexusWorkspaceEmptyState({
+  description,
+  onResetFilters,
+  title,
+}: NexusWorkspaceEmptyStateProps) {
+  return (
+    <div className={styles.emptyState}>
+      <strong>{title}</strong>
+      <p>{description}</p>
+      {onResetFilters ? (
+        <NexusWorkspaceButton onClick={onResetFilters} type="button">
+          Atur ulang filter
+        </NexusWorkspaceButton>
+      ) : null}
+    </div>
   );
 }
 

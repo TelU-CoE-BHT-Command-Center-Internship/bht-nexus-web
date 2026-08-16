@@ -4,9 +4,13 @@ import { COE_BHT_LINKS } from "@/content/coe-bht";
 import type { Locale } from "@/i18n/locales";
 
 export type DashboardShellIconName =
+  | "academic"
+  | "activities"
   | "administration"
+  | "contracts"
   | "dashboard"
   | "documents"
+  | "intellectualProperty"
   | "members"
   | "publications"
   | "reviews"
@@ -79,16 +83,27 @@ export type NexusDashboardShellContent = {
   viewer: DashboardViewer;
 };
 
+type NavigationGroupId = "administration" | "main" | "official" | "pipeline";
+
 type NavigationDefinition = {
   activeHrefs?: Record<Locale, string[]>;
   available: Record<Locale, boolean>;
-  group: "administration" | "data" | "main";
+  group: NavigationGroupId;
   href: Record<Locale, string>;
   icon: DashboardShellIconName;
   id: string;
   label: Record<Locale, string>;
 };
 
+/**
+ * Alur data BHT Nexus: Pengumpulan dan Dokumen memasok kandidat, Tinjauan
+ * memutuskan, lalu hasilnya mendarat pada satu rumah data resmi.
+ *
+ * Grup `official` dipetakan satu-per-satu dari kategori kandidat di Tinjauan
+ * sehingga setiap keputusan reviewer selalu punya tujuan yang jelas. Hanya
+ * Publikasi yang sudah dibangun; sisanya ditandai belum tersedia agar
+ * strukturnya terbaca tanpa membuat halaman kosong.
+ */
 const navigationDefinitions: NavigationDefinition[] = [
   {
     available: { en: false, id: true },
@@ -99,36 +114,12 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Dashboard", id: "Dashboard" },
   },
   {
-    available: { en: false, id: false },
-    group: "data",
-    href: { en: "/en/nexus/members", id: "/nexus/anggota" },
-    icon: "members",
-    id: "members",
-    label: { en: "Members", id: "Anggota" },
-  },
-  {
     available: { en: true, id: true },
-    group: "data",
+    group: "pipeline",
     href: { en: "/en/nexus/collection", id: "/nexus/pengumpulan" },
     icon: "search",
     id: "collection",
     label: { en: "Collection", id: "Pengumpulan" },
-  },
-  {
-    available: { en: true, id: true },
-    group: "data",
-    href: { en: "/en/nexus/reviews", id: "/nexus/tinjauan" },
-    icon: "reviews",
-    id: "reviews",
-    label: { en: "Reviews", id: "Tinjauan" },
-  },
-  {
-    available: { en: false, id: true },
-    group: "data",
-    href: { en: "/en/nexus/publications", id: "/nexus/publikasi" },
-    icon: "publications",
-    id: "publications",
-    label: { en: "Publications", id: "Publikasi" },
   },
   {
     activeHrefs: {
@@ -140,11 +131,73 @@ const navigationDefinitions: NavigationDefinition[] = [
       id: ["/nexus/dokumen", "/nexus/tanya-dokumen", "/nexus/ekstraksi"],
     },
     available: { en: true, id: true },
-    group: "data",
+    group: "pipeline",
     href: { en: "/en/nexus/documents", id: "/nexus/dokumen" },
     icon: "documents",
     id: "documents",
     label: { en: "Documents", id: "Dokumen" },
+  },
+  {
+    available: { en: true, id: true },
+    group: "pipeline",
+    href: { en: "/en/nexus/reviews", id: "/nexus/tinjauan" },
+    icon: "reviews",
+    id: "reviews",
+    label: { en: "Reviews", id: "Tinjauan" },
+  },
+  {
+    available: { en: false, id: true },
+    group: "official",
+    href: { en: "/en/nexus/publications", id: "/nexus/publikasi" },
+    icon: "publications",
+    id: "publications",
+    label: { en: "Publications", id: "Publikasi" },
+  },
+  {
+    available: { en: false, id: false },
+    group: "official",
+    href: {
+      en: "/en/nexus/intellectual-property",
+      id: "/nexus/kekayaan-intelektual",
+    },
+    icon: "intellectualProperty",
+    id: "intellectual-property",
+    label: {
+      en: "Intellectual Property",
+      id: "Kekayaan Intelektual",
+    },
+  },
+  {
+    available: { en: false, id: false },
+    group: "official",
+    href: { en: "/en/nexus/contracts", id: "/nexus/kontrak-proposal" },
+    icon: "contracts",
+    id: "contracts",
+    label: { en: "Contracts & Proposals", id: "Kontrak & Proposal" },
+  },
+  {
+    available: { en: false, id: false },
+    group: "official",
+    href: { en: "/en/nexus/academic", id: "/nexus/akademik" },
+    icon: "academic",
+    id: "academic",
+    label: { en: "Academic", id: "Akademik" },
+  },
+  {
+    available: { en: false, id: false },
+    group: "official",
+    href: { en: "/en/nexus/activities", id: "/nexus/kegiatan" },
+    icon: "activities",
+    id: "activities",
+    label: { en: "Activities & Outreach", id: "Kegiatan & Pengabdian" },
+  },
+  {
+    available: { en: false, id: false },
+    group: "administration",
+    href: { en: "/en/nexus/members", id: "/nexus/anggota" },
+    icon: "members",
+    id: "members",
+    label: { en: "Members", id: "Anggota" },
   },
   {
     available: { en: false, id: false },
@@ -157,13 +210,19 @@ const navigationDefinitions: NavigationDefinition[] = [
 ];
 
 const groupLabels = {
-  id: { administration: "Administrasi", data: "Data & Konten", main: "Utama" },
+  id: {
+    administration: "Administrasi",
+    main: "Utama",
+    official: "Data Resmi",
+    pipeline: "Alur Data",
+  },
   en: {
     administration: "Administration",
-    data: "Data & Content",
     main: "Main",
+    official: "Official Data",
+    pipeline: "Data Pipeline",
   },
-} satisfies Record<Locale, Record<NavigationDefinition["group"], string>>;
+} satisfies Record<Locale, Record<NavigationGroupId, string>>;
 
 export const nexusDashboardPreviewViewer = {
   avatarSrc: muhammadAmmarAsyrafPhoto,
@@ -176,22 +235,22 @@ export function getNexusDashboardShellPreviewContent(
   locale: Locale = "id",
 ): NexusDashboardShellContent {
   const isId = locale === "id";
-  const navigationGroups = (["main", "data", "administration"] as const).map(
-    (group) => ({
-      id: group,
-      items: navigationDefinitions
-        .filter((item) => item.group === group)
-        .map((item) => ({
-          activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
-          available: item.available[locale],
-          href: item.href[locale],
-          icon: item.icon,
-          id: item.id,
-          label: item.label[locale],
-        })),
-      label: groupLabels[locale][group],
-    }),
-  );
+  const navigationGroups = (
+    ["main", "pipeline", "official", "administration"] as const
+  ).map((group) => ({
+    id: group,
+    items: navigationDefinitions
+      .filter((item) => item.group === group)
+      .map((item) => ({
+        activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
+        available: item.available[locale],
+        href: item.href[locale],
+        icon: item.icon,
+        id: item.id,
+        label: item.label[locale],
+      })),
+    label: groupLabels[locale][group],
+  }));
   const supportMessage = [
     isId ? "Halo Tim Dukungan BHT Nexus," : "Hello BHT Nexus Support Team,",
     "",

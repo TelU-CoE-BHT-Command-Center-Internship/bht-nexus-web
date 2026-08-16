@@ -49,6 +49,34 @@ function IconPaths({ name }: DashboardShellIconProps) {
           <path d="M14 2v5h4M9.5 12h5M9.5 16h5" />
         </>
       );
+    case "intellectualProperty":
+      return (
+        <>
+          <path d="M12 2.5 4.5 6v6.2c0 4.3 3.1 7.6 7.5 9.3 4.4-1.7 7.5-5 7.5-9.3V6L12 2.5Z" />
+          <path d="M9 11.8h6M12 8.8v6" />
+        </>
+      );
+    case "contracts":
+      return (
+        <>
+          <path d="M7 3h7l4 4v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+          <path d="M14 3v5h4M9 12.5h6M9 16h3.5" />
+        </>
+      );
+    case "academic":
+      return (
+        <>
+          <path d="M12 4 2.8 8.5 12 13l9.2-4.5L12 4Z" />
+          <path d="M6.5 10.8v4.6c0 1.6 2.5 2.9 5.5 2.9s5.5-1.3 5.5-2.9v-4.6M20.6 9v5.2" />
+        </>
+      );
+    case "activities":
+      return (
+        <>
+          <rect height="15" rx="2" width="17" x="3.5" y="5.5" />
+          <path d="M7.5 3v5M16.5 3v5M3.5 10.5h17M8 14.2h3.5M8 17.4h6.5" />
+        </>
+      );
     case "reviews":
       return (
         <>
