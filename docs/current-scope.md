@@ -6,7 +6,7 @@ Dokumen ini merangkum bagian BHT-Nexus Web yang sudah tersedia, batas implementa
 
 BHT-Nexus Web masih berada dalam pengembangan aktif. Landing page, halaman institusional, serta ruang kerja BHT Nexus sudah mempunyai fondasi visual dan interaksi yang dapat ditinjau, tetapi belum dianggap sebagai versi akhir.
 
-Data pada antarmuka ruang kerja masih berupa data terstruktur untuk pengembangan frontend. Autentikasi, hak akses, penyimpanan permanen, pekerjaan latar belakang, dan perubahan data resmi belum dihubungkan ke layanan server.
+Data pada antarmuka ruang kerja masih disediakan oleh adapter frontend. Contoh publikasi dan buku hanya memakai identitas nyata ketika halaman penerbitnya tersedia secara publik. Skenario operasional seperti kontrak, bimbingan, proposal internal, HKI, dan paten memakai identitas netral sambil mempertahankan bentuk bidang dari workbook KM 2026. Autentikasi, hak akses, penyimpanan permanen, pekerjaan latar belakang, dan perubahan data resmi belum dihubungkan ke layanan server.
 
 ## Landing page dan halaman institusional
 
@@ -44,16 +44,17 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 ### Tinjauan
 
 - Menggunakan satu antrean keputusan untuk seluruh kandidat CoE BHT.
-- Tab sumber dan opsi periode dibentuk dari data antrean yang tersedia. Fixture impor lembar kerja tersedia sebagai kontrak riset KM-17 yang dapat difilter dan ditinjau.
+- Tab sumber dan opsi periode dibentuk dari data antrean yang tersedia. Contoh berbasis workbook mencakup publikasi, HKI, paten, kontrak, bimbingan, buku, dan proposal KM 2026.
 - Filter tambahan mencakup status, jenis data, periode, dan urutan antrean.
 - Jenis data mengikuti enam kelompok kerja: publikasi dan konferensi; riset dan bisnis; pengabdian masyarakat; HKI, paten, dan inovasi; akademik dan SDM; serta aktivitas dan tata kelola.
 - Rincian kandidat menampilkan metadata sesuai jenis data, pemilik, pihak terkait, sumber, bukti, konteks evaluasi, dan riwayat audit.
-- Ketika satu atau beberapa rekam resmi pembanding tersedia, reviewer memilih pembanding lalu memeriksa skor kecocokan dan perbandingan setiap bidang.
+- Satu pembanding dapat langsung menjadi target perbandingan. Jika pembanding lebih dari satu, tidak ada target yang dipilih otomatis; reviewer wajib menentukan rekam yang hendak dibandingkan.
 - Identifier yang sama mencegah kandidat diterima sebagai data baru, tetapi tidak mengambil keputusan secara otomatis.
 - Tindakan keputusan menyesuaikan tujuan kandidat: data baru, pembaruan rekam, atau pelengkapan metadata. Menghubungkan ke rekam resmi, menerima data baru ketika aman, menyetujui perubahan, menyetujui pelengkapan, meminta perbaikan, dan menolak tidak ditampilkan sebagai satu daftar generik.
-- Rincian sumber menyediakan asal-usul data yang dapat dibuka saat diperlukan: pekerjaan, percobaan, pengolah, waktu pengambilan, kunci sumber, dan sidik respons.
+- Rincian sumber menyediakan asal-usul data saat tersedia: pekerjaan, percobaan, pengolah, waktu pengambilan, kunci sumber, dan sidik respons. Nilai teknis yang belum dihasilkan layanan server ditampilkan sebagai belum tersedia, bukan dibuat-buat oleh frontend.
 - Pengaju kandidat dicatat terpisah dari pemilik atau pihak utama agar pelaku ekstraksi tidak keliru dianggap sebagai pemilik data.
-- Satu kandidat dapat terhubung ke beberapa indikator evaluasi tanpa menggandakan rekam kandidat. Setiap kaitan memakai `indicatorId`, nomor, label, kategori, dan aturan bukti yang konsisten.
+- Identitas dan label KM-1 sampai KM-46 berada pada satu kamus yang diturunkan dari worksheet `List KM` workbook stakeholder. Rekam hanya merujuk indikator dari kamus tersebut dan dapat memiliki nol, satu, atau beberapa kaitan tanpa menggandakan data. Definisi, formula, unit, periode, target, dan realisasi baru akan dimodelkan bersama pekerjaan Monitoring/Evaluasi KM. Kandidat yang klasifikasinya belum didukung bukti ditampilkan sebagai belum dikaitkan dengan indikator evaluasi.
+- Bukti boleh memiliki rekam dan referensi tanpa URL. Dalam keadaan itu antarmuka menyatakan bahwa tautan bukti belum tersedia dan tidak mengarahkannya ke halaman umum yang bukan sumber bukti.
 - Setiap keputusan membutuhkan alasan dan tahap konfirmasi sebelum disimpan pada state frontend.
 - Kemampuan pemeriksa disediakan melalui kontrak sesi. Pada kemampuan Audit KM saat ini, permintaan perbaikan menentukan bidang dan alasan, lalu ditampilkan sebagai status baca-saja; pemeriksa tidak mengubah kandidat atas nama pihak lain. Penerimanya dinyatakan netral sampai hak akses server menentukan pihak yang berwenang.
 - Tautan rekam sesi yang sudah tidak tersedia menampilkan penjelasan dan jalan kembali ke antrean, bukan halaman kosong atau drawer tanpa isi.

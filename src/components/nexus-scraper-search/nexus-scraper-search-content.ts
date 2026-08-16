@@ -2,6 +2,10 @@ import type { AuditReviewRecord } from "@/components/nexus-audit-review/nexus-au
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  kmIndicator,
+  type NexusKmIndicatorId,
+} from "@/content/nexus-km-indicators";
 import type { Locale } from "@/i18n/locales";
 
 export type CollectionSource = "scholar" | "sinta";
@@ -54,6 +58,7 @@ export type NexusScraperSearchContent = {
   locale: Locale;
   nameLabel: string;
   namePlaceholder: string;
+  noResultsLabel: string;
   profileUrlLabel: string;
   profileUrlPlaceholder: string;
   queuedLabel: string;
@@ -64,15 +69,18 @@ export type NexusScraperSearchContent = {
   submitLabel: string;
   tableCaption: string;
   title: string;
+  waitingForServiceLabel: string;
 };
 
 type PublicationCandidateSeed = {
   candidateKind: CollectionCandidate["candidateKind"];
-  doi: string;
+  doi?: string;
   id: string;
+  indicatorId: NexusKmIndicatorId;
   owner: string;
   person: string;
   title: string;
+  typeLabel?: string;
   venue: string;
   year: number;
 };
@@ -81,9 +89,11 @@ function publicationCandidate({
   candidateKind,
   doi,
   id,
+  indicatorId,
   owner,
   person,
   title,
+  typeLabel = "Artikel jurnal",
   venue,
   year,
 }: PublicationCandidateSeed): CollectionCandidate {
@@ -95,18 +105,15 @@ function publicationCandidate({
       { id: "title", label: "Judul publikasi", value: title },
       { id: "authors", label: "Penulis", value: person },
       { id: "journal", label: "Jurnal / wadah terbit", value: venue },
-      { id: "doi", label: "DOI", value: doi },
+      { id: "doi", label: "DOI", value: doi ?? "" },
       { id: "year", label: "Tahun terbit", value: String(year) },
     ],
     id,
     kpiLinks: [
       {
-        category: "Riset",
         evidenceRule:
-          "Tautan DOI atau penerbit, daftar penulis, afiliasi CoE, dan tahun terbit.",
-        indicatorId: "KM-14",
-        indicatorLabel: "Publikasi ilmiah anggota CoE",
-        indicatorNumber: 14,
+          "Halaman penerbit, daftar penulis, afiliasi CoE, tahun terbit, dan klasifikasi publikasi yang dapat diverifikasi.",
+        indicator: kmIndicator(indicatorId),
       },
     ],
     matches: [],
@@ -120,124 +127,54 @@ function publicationCandidate({
     },
     subtitle: `${person} · ${venue}`,
     title,
-    typeLabel: "Artikel jurnal",
+    typeLabel,
   };
 }
 
 const suksmandhiraCandidates: CollectionCandidate[] = [
   publicationCandidate({
     candidateKind: "new_record",
-    doi: "10.1016/j.heliyon.2026.14521",
     id: "COL-SINTA-6712043-PUB-001",
-    owner: "Suksmandhira Harimurti",
-    person: "Suksmandhira Harimurti",
-    title: "Wearable Biosignal Monitoring for Community Primary Care",
-    venue: "Heliyon",
+    indicatorId: "KM-11",
+    owner: "CoE BHT",
+    person:
+      "Suksmandhira Harimurti; M Rivaldi Ali Septian; Khilda Afifah; Estananto",
+    title:
+      "Design of Electrochemical Biosensor Output Reader through Modelling the Electrochemical Cell System and Designing a 90nm CMOS Transimpedance Amplifier with Self-Biasing",
+    typeLabel: "Makalah konferensi",
+    venue:
+      "International Symposium on Intelligent Signal Processing and Communication Systems (ISPACS)",
     year: 2026,
   }),
   publicationCandidate({
     candidateKind: "new_record",
-    doi: "10.1109/ACCESS.2026.3112047",
     id: "COL-SINTA-6712043-PUB-002",
-    owner: "Hesty Susanti",
-    person: "Suksmandhira Harimurti; Hesty Susanti",
-    title: "Remote Cardiac Monitoring for Indonesian Rural Clinics",
-    venue: "IEEE Access",
+    indicatorId: "KM-12",
+    owner: "CoE BHT",
+    person:
+      "M Rivaldi Ali Septian; Suksmandhira Harimurti; Wahmisari Priharti; Iswahyudi Hidayat; Mohamad Ramdhani",
+    title:
+      "Publikasi pada ELKOMIKA: Jurnal Teknik Energi Elektrik, Teknik Telekomunikasi, & Teknik Elektronika",
+    venue:
+      "ELKOMIKA: Jurnal Teknik Energi Elektrik, Teknik Telekomunikasi, & Teknik Elektronika",
     year: 2026,
-  }),
-  publicationCandidate({
-    candidateKind: "record_update",
-    doi: "10.2196/48213",
-    id: "COL-SINTA-6712043-PUB-003",
-    owner: "Hesty Susanti",
-    person: "Suksmandhira Harimurti; Hesty Susanti",
-    title: "Primary Care Telemedicine Adoption in Indonesian District Clinics",
-    venue: "Journal of Medical Internet Research",
-    year: 2026,
-  }),
-  publicationCandidate({
-    candidateKind: "new_record",
-    doi: "10.3390/s26041182",
-    id: "COL-SINTA-6712043-PUB-004",
-    owner: "Suksmandhira Harimurti",
-    person: "Suksmandhira Harimurti; Rizky Hidayat",
-    title: "Low-Power ECG Acquisition for Home Monitoring",
-    venue: "Sensors",
-    year: 2026,
-  }),
-  publicationCandidate({
-    candidateKind: "new_record",
-    doi: "10.1007/s11517-026-02941-7",
-    id: "COL-SINTA-6712043-PUB-005",
-    owner: "Suksmandhira Harimurti",
-    person: "Suksmandhira Harimurti; Dita Puspitasari",
-    title: "Explainable Arrhythmia Screening from Single-Lead ECG",
-    venue: "Medical & Biological Engineering & Computing",
-    year: 2026,
-  }),
-  publicationCandidate({
-    candidateKind: "new_record",
-    doi: "10.1088/2057-1976/ad9e12",
-    id: "COL-SINTA-6712043-PUB-006",
-    owner: "Suksmandhira Harimurti",
-    person: "Suksmandhira Harimurti; Fathur Rahman",
-    title: "Biosignal Quality Assessment for Mobile Health Devices",
-    venue: "Biomedical Physics & Engineering Express",
-    year: 2025,
   }),
 ];
 
 const hestyCandidates: CollectionCandidate[] = [
   publicationCandidate({
     candidateKind: "new_record",
-    doi: "10.1016/j.compbiomed.2026.108211",
     id: "COL-SCHOLAR-HESTY-PUB-001",
-    owner: "Hesty Susanti",
-    person: "Hesty Susanti",
-    title: "Clinical Decision Support for Home Biosignal Monitoring",
-    venue: "Computers in Biology and Medicine",
+    indicatorId: "KM-12",
+    owner: "CoE BHT",
+    person: "Liana Nafisa Saftari; Hesty Susanti",
+    title:
+      "Publikasi pada Indonesian Journal of Electronics, Electromedical Engineering, and Medical Informatics",
+    venue:
+      "Indonesian Journal of Electronics, Electromedical Engineering, and Medical Informatics",
     year: 2026,
   }),
-  publicationCandidate({
-    candidateKind: "new_record",
-    doi: "10.1109/JBHI.2025.3511942",
-    id: "COL-SCHOLAR-HESTY-PUB-002",
-    owner: "Hesty Susanti",
-    person: "Hesty Susanti; Suksmandhira Harimurti",
-    title: "Multimodal Fall-Risk Assessment for Older Adults",
-    venue: "IEEE Journal of Biomedical and Health Informatics",
-    year: 2025,
-  }),
-  publicationCandidate({
-    candidateKind: "new_record",
-    doi: "10.3390/healthcare13020144",
-    id: "COL-SCHOLAR-HESTY-PUB-003",
-    owner: "Hesty Susanti",
-    person: "Hesty Susanti; Nabila Rahmawati",
-    title: "Community Health Worker Readiness for Remote Monitoring",
-    venue: "Healthcare",
-    year: 2025,
-  }),
 ];
-
-export function createLocalCollectionCandidates(
-  jobId: string,
-  person: string,
-  count: number,
-): CollectionCandidate[] {
-  return Array.from({ length: count }, (_, index) =>
-    publicationCandidate({
-      candidateKind: "new_record",
-      doi: `10.0000/preview.${jobId}.${index + 1}`,
-      id: `COL-${jobId.toUpperCase()}-PUB-${String(index + 1).padStart(3, "0")}`,
-      owner: "Belum ditetapkan",
-      person,
-      title: `Kandidat publikasi ${index + 1} · ${person}`,
-      venue: "Wadah terbit belum diverifikasi",
-      year: 2026,
-    }),
-  );
-}
 
 const seeds = [
   {
@@ -291,6 +228,7 @@ const copy = {
       "Isi nama dan URL HTTPS yang sesuai dengan sumber SINTA atau Google Scholar.",
     nameLabel: "Nama peneliti",
     namePlaceholder: "Contoh: Nama peneliti",
+    noResultsLabel: "Tidak ada hasil",
     profileUrlLabel: "URL profil publik",
     profileUrlPlaceholder:
       "https://sinta.kemdiktisaintek.go.id/authors/profile/…",
@@ -305,6 +243,7 @@ const copy = {
     submitLabel: "Mulai pengumpulan",
     tableCaption: "Status pekerjaan pengumpulan profil publik",
     title: "Pengumpulan Data",
+    waitingForServiceLabel: "Menunggu layanan",
   },
   en: {
     candidatesLabel: "candidates",
@@ -322,6 +261,7 @@ const copy = {
       "Enter a name and an HTTPS URL matching the selected SINTA or Google Scholar source.",
     nameLabel: "Researcher name",
     namePlaceholder: "Example: Researcher name",
+    noResultsLabel: "No results",
     profileUrlLabel: "Public profile URL",
     profileUrlPlaceholder:
       "https://sinta.kemdiktisaintek.go.id/authors/profile/…",
@@ -336,6 +276,7 @@ const copy = {
     submitLabel: "Start collection",
     tableCaption: "Public profile collection job status",
     title: "Data Collection",
+    waitingForServiceLabel: "Waiting for service",
   },
 } satisfies Record<Locale, Omit<NexusScraperSearchContent, "jobs" | "locale">>;
 

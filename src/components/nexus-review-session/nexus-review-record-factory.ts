@@ -1,5 +1,4 @@
 import type {
-  AuditKpiLink,
   AuditReviewField,
   AuditReviewRecord,
   AuditReviewSource,
@@ -14,26 +13,10 @@ import type { NexusRagExtractionContent } from "@/components/nexus-rag-extractio
 import type { CollectionJob } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
-type PreviewActor = { name: string; roleLabel: string };
+type FrontendActor = { name: string; roleLabel: string };
 
-function actorLabel(actor: PreviewActor) {
+function actorLabel(actor: FrontendActor) {
   return `${actor.name} · ${actor.roleLabel}`;
-}
-
-function createKpiLink(
-  indicatorId: string,
-  indicatorNumber: number,
-  category: string,
-  indicatorLabel: string,
-  evidenceRule: string,
-): AuditKpiLink {
-  return {
-    category,
-    evidenceRule,
-    indicatorId,
-    indicatorLabel,
-    indicatorNumber,
-  };
 }
 
 function createBaseRecord(
@@ -118,10 +101,7 @@ export function createCollectionReviewRecords(
         },
       ],
       provenance: {
-        attempt: 1,
-        fingerprint: `preview:${job.id}:${candidate.id}`,
         jobId: job.id,
-        parser: `${job.source}-profile-adapter@1`,
         retrievedAt: job.submittedAt,
         sourceKey: `${job.source}:${candidate.id}`,
       },
@@ -135,7 +115,7 @@ export function createExtractionReviewRecord(
   content: NexusRagExtractionContent,
   decisions: Record<string, "accepted" | "pending" | "rejected">,
   profileId: string,
-  actor: PreviewActor,
+  actor: FrontendActor,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
   const discoveredDateKey = dateKey(discoveredAt);
@@ -147,7 +127,6 @@ export function createExtractionReviewRecord(
     decisions[field.id] === "accepted" && field.source
       ? [
           {
-            href: "/nexus/dokumen",
             id: `${id}-${field.id}-evidence`,
             label: field.label,
             reference: `Halaman ${field.source.page}: ${field.source.quote}`,
@@ -166,31 +145,12 @@ export function createExtractionReviewRecord(
     evidence,
     fields: acceptedFields,
     id,
-    kpiLinks: [
-      createKpiLink(
-        "KM-17",
-        17,
-        "Riset",
-        "Kegiatan dan luaran riset",
-        "Dokumen kegiatan, tim, periode pelaksanaan, dan luaran yang dapat diverifikasi.",
-      ),
-      createKpiLink(
-        "KM-22",
-        22,
-        "Organisasi CoE",
-        "Aktivitas yang mendukung layanan CoE",
-        "Kegiatan, pihak terkait, waktu pelaksanaan, dan bukti dokumen.",
-      ),
-    ],
+    kpiLinks: [],
     matches: [],
     owner: content.candidateOwner,
     periodLabel: periodFromFields(acceptedFields),
     primaryPerson: content.candidatePrimaryParty,
     provenance: {
-      attempt: 1,
-      fingerprint: `preview:${id}:extraction`,
-      jobId: `DOC-${profileId}-${discoveredDateKey}`,
-      parser: `document-extraction-${profileId}@1`,
       retrievedAt: discoveredAt.toISOString(),
       sourceKey: `document:${content.documentTitle}`,
     },
@@ -224,7 +184,7 @@ function resolutionValue(
 export function createMetadataCompletionReviewRecord(
   publication: OfficialPublication,
   proposal: PublicationMetadataProposal,
-  actor: PreviewActor,
+  actor: FrontendActor,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
   const completionFields = publication.missingFields.map((key) => ({
@@ -247,11 +207,11 @@ export function createMetadataCompletionReviewRecord(
     status: "missing" as const,
     statusLabel: "Diajukan",
   }));
-  const evidenceHref =
+  const evidenceHref: string | undefined =
     proposal.resolutions.publisherUrl?.value ||
     (proposal.resolutions.doi?.value
       ? `https://doi.org/${proposal.resolutions.doi.value}`
-      : "/nexus/publikasi");
+      : undefined);
 
   return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
     candidateKind: "metadata_completion",
@@ -270,15 +230,7 @@ export function createMetadataCompletionReviewRecord(
     ],
     fields,
     id: proposal.id,
-    kpiLinks: [
-      createKpiLink(
-        "KM-14",
-        14,
-        "Riset",
-        "Publikasi dan konferensi",
-        "Identitas karya, sumber penerbit, metadata bibliografis, dan kepemilikan CoE.",
-      ),
-    ],
+    kpiLinks: [],
     matches: [
       {
         comparisons,
@@ -293,10 +245,6 @@ export function createMetadataCompletionReviewRecord(
     periodLabel: String(publication.year),
     primaryPerson: publication.authors[0] ?? publication.owner.name,
     provenance: {
-      attempt: 1,
-      fingerprint: `preview:${proposal.id}:proposal`,
-      jobId: proposal.id,
-      parser: "metadata-completion-form@1",
       retrievedAt: discoveredAt.toISOString(),
       sourceKey: `publication:${publication.publicId}`,
     },

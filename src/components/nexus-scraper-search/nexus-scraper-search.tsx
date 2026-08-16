@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
-import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import { createCollectionReviewRecords } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import styles from "@/components/nexus-scraper-search/nexus-scraper-search.module.css";
@@ -11,7 +10,6 @@ import type {
   CollectionSource,
   NexusScraperSearchContent,
 } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
-import { createLocalCollectionCandidates } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceButton,
@@ -205,7 +203,7 @@ export function NexusScraperSearch({
       source,
       sourceLabel,
       status: "queued",
-      statusLabel: getAutomationStatusLabel(content.locale, "queued"),
+      statusLabel: content.waitingForServiceLabel,
       submittedAt: now.toISOString(),
       submittedAtLabel: formatTimestamp(now.toISOString()),
       submittedBy: reviewSession
@@ -218,34 +216,13 @@ export function NexusScraperSearch({
     setName("");
     setProfileUrl("");
     setCurrentPage(1);
-
-    window.setTimeout(() => {
-      setJobs((current) =>
-        current.map((job) =>
-          job.id === id
-            ? {
-                ...job,
-                candidates: createLocalCollectionCandidates(
-                  job.id,
-                  job.fullName,
-                  3,
-                ),
-                status: "succeeded",
-                statusLabel: getAutomationStatusLabel(
-                  content.locale,
-                  "succeeded",
-                ),
-              }
-            : job,
-        ),
-      );
-    }, 900);
   }
 
   const rows = visibleJobs.map((job) => {
     const tone = statusTone(job.status);
+    const hasCandidates = job.candidates.length > 0;
     const action =
-      job.status === "succeeded" && content.locale === "id" ? (
+      job.status === "succeeded" && hasCandidates && content.locale === "id" ? (
         <NexusWorkspaceButton
           key={`${job.id}-action`}
           onClick={() => {
@@ -266,13 +243,17 @@ export function NexusScraperSearch({
             ? `Tinjau ${job.candidates.length} kandidat`
             : `Review ${job.candidates.length} candidates`}
         </NexusWorkspaceButton>
-      ) : job.status === "succeeded" ? (
+      ) : job.status === "succeeded" && hasCandidates ? (
         <NexusWorkspaceLinkButton
           href={content.reviewHref}
           key={`${job.id}-action`}
         >
           {content.reviewLabel}
         </NexusWorkspaceLinkButton>
+      ) : job.status === "succeeded" ? (
+        <span className={styles.noAction} key={`${job.id}-action`}>
+          {content.noResultsLabel}
+        </span>
       ) : (
         <span className={styles.noAction} key={`${job.id}-action`}>
           —

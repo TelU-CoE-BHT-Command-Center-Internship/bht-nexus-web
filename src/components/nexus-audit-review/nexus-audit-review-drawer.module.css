@@ -113,18 +113,11 @@
   gap: 0.55rem;
 }
 
-.reviewPersonPortrait,
 .reviewPersonFallback {
   width: 2rem;
   height: 2rem;
   flex: 0 0 auto;
   border-radius: 50%;
-}
-
-.reviewPersonPortrait {
-  border: 1px solid #dbe3ed;
-  background: #edf2f7;
-  object-fit: cover;
 }
 
 .reviewPersonFallback {
@@ -133,16 +126,9 @@
   justify-content: center;
   background: #e8eff8;
   color: #294f83;
-}
-
-.reviewPersonFallback svg {
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.45;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.015em;
 }
 
 .reviewPeople li > div {
@@ -723,6 +709,13 @@
   font-size: 0.6rem;
   font-weight: 750;
   text-underline-offset: 0.15rem;
+}
+
+.reviewEvidenceUnavailable {
+  color: #7a8699;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-align: right;
 }
 
 .reviewKpiCallout {
@@ -1419,6 +1412,12 @@
   .reviewEvidenceBlock a {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .reviewEvidenceUnavailable {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
   }
 
   .reviewDecisionFooter,

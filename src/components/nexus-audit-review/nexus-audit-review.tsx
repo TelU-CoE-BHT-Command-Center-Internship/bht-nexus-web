@@ -179,7 +179,7 @@ function decisionLabel(kind: AuditDecisionKind) {
 
 function actionLabel(status: AuditReviewStatus) {
   if (status === "completed") return "Lihat hasil";
-  if (status === "needs_fix") return "Lihat permintaan";
+  if (status === "needs_fix") return "Lihat status";
   return "Tinjau";
 }
 
@@ -207,9 +207,9 @@ function searchableText(record: AuditReviewRecord) {
     record.owner,
     record.primaryPerson,
     ...record.kpiLinks.flatMap((item) => [
-      item.category,
-      item.indicatorId,
-      item.indicatorLabel,
+      item.indicator.category,
+      item.indicator.id,
+      item.indicator.label,
     ]),
     ...record.fields.flatMap((item) => [item.label, item.value]),
     ...record.evidence.flatMap((item) => [item.label, item.reference]),

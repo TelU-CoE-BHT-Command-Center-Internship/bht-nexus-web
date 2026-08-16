@@ -27,8 +27,21 @@
   width: 26%;
 }
 
+.desktopTable th[data-column="source"] {
+  width: 9.5rem;
+}
+
+.desktopTable th[data-column="signal"] {
+  width: 11.25rem;
+}
+
+.desktopTable th[data-column="status"] {
+  width: 9rem;
+  text-align: center;
+}
+
 .desktopTable th[data-column="action"] {
-  width: 7.25rem;
+  width: 9.5rem;
   text-align: center;
 }
 
@@ -48,8 +61,19 @@
   white-space: normal;
 }
 
+.desktopTable td[data-column="status"],
 .desktopTable td[data-column="action"] {
   text-align: center;
+}
+
+.desktopTable th[data-column="source"],
+.desktopTable td[data-column="source"] {
+  padding-right: 1rem;
+}
+
+.desktopTable th[data-column="signal"],
+.desktopTable td[data-column="signal"] {
+  padding-left: 1rem;
 }
 
 .desktopTable tbody tr {
@@ -178,35 +202,40 @@
 .actionButton {
   display: inline-flex;
   width: 100%;
-  min-height: 2.75rem;
+  min-height: 2.8rem;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid #d8e2ef;
-  border-radius: 0.5rem;
-  background: #f2f6fb;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cfdbea;
+  border-radius: 0.625rem;
+  background: #fff;
   color: var(--color-brand-navy);
   cursor: pointer;
   transition:
     background 140ms ease,
-    border-color 140ms ease;
+    border-color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .actionButton:hover {
-  border-color: #aebfd5;
-  background: #e7eef8;
+  border-color: #9db2cd;
+  background: #f5f8fc;
+  box-shadow: 0 2px 6px rgb(10 43 82 / 8%);
 }
 
 .actionButton span {
   font-size: 0.68rem;
   font-weight: 680;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .actionButton svg,
 .mobileAction svg {
   width: 1rem;
   height: 1rem;
+  flex: 0 0 1rem;
   stroke: currentcolor;
   stroke-linecap: round;
   stroke-linejoin: round;

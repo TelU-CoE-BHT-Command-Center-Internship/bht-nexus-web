@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type {
   AuditOfficialMatch,
   AuditReviewField,
@@ -13,7 +12,6 @@ import {
   auditStatusTone,
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
-import { nexusAuditReviewOwnerPortraits } from "@/components/nexus-audit-review/nexus-audit-review-owner-portraits";
 import { NexusWorkspaceNotice } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceTableBadge } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 
@@ -30,19 +28,6 @@ type SectionHeadingProps = {
   index: string;
   meta?: string;
   title: string;
-};
-
-const portraitKeyByName: Record<
-  string,
-  keyof typeof nexusAuditReviewOwnerPortraits
-> = {
-  "Dita Puspitasari": "dita",
-  "Fathur Rahman": "fathur",
-  "Hesty Susanti": "hesty",
-  "Laily Ade Oktaviana": "laily",
-  "Muhammad Ammar Asyraf": "ammar",
-  "Salsabila Aurellia": "salsabila",
-  "Suksmandhira Harimurti": "suksmandhira",
 };
 
 const preferredWideMetadataFieldIds = new Set([
@@ -101,13 +86,22 @@ export function AuditReviewSectionHeading({
   );
 }
 
-function PersonIcon() {
-  return (
-    <svg aria-hidden="true" fill="none" viewBox="0 0 20 20">
-      <circle cx="10" cy="6.5" r="3" />
-      <path d="M4.5 16.5c.5-3 2.4-4.7 5.5-4.7s5 1.7 5.5 4.7" />
-    </svg>
+function personInitials(name: string) {
+  const nameWithoutCredentials = name.split(",", 1)[0]?.trim() ?? "";
+  const actualName = nameWithoutCredentials.replace(
+    /^(?:(?:Prof|Dr|Eng|Ir)\.?\s*)+/giu,
+    "",
   );
+  const words = actualName.match(/[\p{L}\p{N}]+/gu) ?? [];
+
+  if (words.length === 0) return "—";
+  const identityWords = words.filter(
+    (_, index) => index === 0 || index === words.length - 1,
+  );
+
+  return identityWords
+    .map((word) => word[0]?.toLocaleUpperCase("id-ID"))
+    .join("");
 }
 
 function ReviewPerson({
@@ -117,28 +111,11 @@ function ReviewPerson({
   descriptor: string;
   name: string;
 }) {
-  const portraitKey = portraitKeyByName[name];
-
   return (
     <li>
-      {portraitKey ? (
-        <Image
-          alt={`Foto ${name}`}
-          className={drawerStyles.reviewPersonPortrait}
-          height={32}
-          sizes="2rem"
-          src={nexusAuditReviewOwnerPortraits[portraitKey]}
-          width={32}
-        />
-      ) : (
-        <span
-          aria-label={`Foto ${name} belum tersedia`}
-          className={drawerStyles.reviewPersonFallback}
-          role="img"
-        >
-          <PersonIcon />
-        </span>
-      )}
+      <span aria-hidden="true" className={drawerStyles.reviewPersonFallback}>
+        {personInitials(name)}
+      </span>
       <div>
         <b>{name}</b>
         <small>{descriptor}</small>
@@ -385,7 +362,28 @@ function ComparisonSection({
   selectedMatch,
   state,
 }: AuditCandidateDetailsProps) {
-  if (!selectedMatch) return null;
+  if (!selectedMatch) {
+    if (record.matches.length < 2) return null;
+
+    return (
+      <section
+        aria-labelledby="audit-comparison-title"
+        className={drawerStyles.reviewSection}
+      >
+        <AuditReviewSectionHeading
+          id="audit-comparison-title"
+          index={indexes.comparison}
+          meta="Belum ada target terpilih"
+          title="Bandingkan setiap bidang"
+        />
+        <NexusWorkspaceNotice>
+          Pilih satu rekam resmi pada bagian sebelumnya. Perbandingan bidang dan
+          tindakan untuk menghubungkan data baru aktif setelah reviewer
+          menentukan targetnya sendiri.
+        </NexusWorkspaceNotice>
+      </section>
+    );
+  }
   const differentCount = selectedMatch.comparisons.filter(
     (item) => item.status !== "same",
   ).length;
@@ -419,7 +417,10 @@ function ComparisonSection({
               <div>
                 <div>
                   <span>Kandidat masuk</span>
-                  <p>{auditCurrentValue(record, state, comparison.fieldId)}</p>
+                  <p>
+                    {auditCurrentValue(record, state, comparison.fieldId) ||
+                      "Belum tersedia"}
+                  </p>
                 </div>
                 <div>
                   <span>Rekam resmi terpilih</span>
@@ -547,44 +548,64 @@ function SourceEvidenceSection({
 
       <div className={drawerStyles.reviewEvidenceBlock}>
         <strong>Bukti yang diperiksa</strong>
-        <ul>
-          {record.evidence.map((item) => (
-            <li key={item.id}>
-              <span
-                aria-hidden="true"
-                className={drawerStyles.reviewEvidenceIcon}
-              >
-                <EvidenceIcon />
-              </span>
-              <div>
-                <b>{item.label}</b>
-                <small>
-                  {item.sourceLabel} · {item.reference}
-                </small>
-              </div>
-              <a href={item.href} rel="noreferrer" target="_blank">
-                Buka bukti
-              </a>
-            </li>
-          ))}
-        </ul>
+        {record.evidence.length > 0 ? (
+          <ul>
+            {record.evidence.map((item) => (
+              <li key={item.id}>
+                <span
+                  aria-hidden="true"
+                  className={drawerStyles.reviewEvidenceIcon}
+                >
+                  <EvidenceIcon />
+                </span>
+                <div>
+                  <b>{item.label}</b>
+                  <small>
+                    {item.sourceLabel} · {item.reference}
+                  </small>
+                </div>
+                {item.href ? (
+                  <a href={item.href} rel="noreferrer" target="_blank">
+                    Buka bukti
+                  </a>
+                ) : (
+                  <span className={drawerStyles.reviewEvidenceUnavailable}>
+                    Belum ada tautan bukti
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <NexusWorkspaceNotice>
+            Belum ada bukti yang dilampirkan pada kandidat ini.
+          </NexusWorkspaceNotice>
+        )}
       </div>
 
       <div className={drawerStyles.reviewKpiLinks}>
-        {record.kpiLinks.map((link) => (
-          <article
-            className={drawerStyles.reviewKpiCallout}
-            key={link.indicatorId}
-          >
-            <span>
-              Keterkaitan evaluasi · {link.indicatorId} · {link.category}
-            </span>
-            <strong>{link.indicatorLabel}</strong>
-            <p>
-              <b>Bukti minimum:</b> {link.evidenceRule}
-            </p>
-          </article>
-        ))}
+        {record.kpiLinks.length > 0 ? (
+          record.kpiLinks.map((link) => (
+            <article
+              className={drawerStyles.reviewKpiCallout}
+              key={link.indicator.id}
+            >
+              <span>
+                Keterkaitan evaluasi · {link.indicator.id} ·
+                {link.indicator.category}
+              </span>
+              <strong>{link.indicator.label}</strong>
+              <p>
+                <b>Bukti minimum:</b> {link.evidenceRule}
+              </p>
+            </article>
+          ))
+        ) : (
+          <NexusWorkspaceNotice>
+            Belum dikaitkan dengan indikator evaluasi. Kandidat tetap dapat
+            ditinjau tanpa menebak klasifikasi KM yang belum didukung bukti.
+          </NexusWorkspaceNotice>
+        )}
       </div>
 
       <details className={drawerStyles.reviewProvenance}>
@@ -592,27 +613,27 @@ function SourceEvidenceSection({
         <dl>
           <div>
             <dt>Pekerjaan</dt>
-            <dd>{record.provenance.jobId}</dd>
+            <dd>{record.provenance.jobId ?? "Belum tersedia"}</dd>
           </div>
           <div>
             <dt>Percobaan</dt>
-            <dd>{record.provenance.attempt}</dd>
+            <dd>{record.provenance.attempt ?? "Belum tersedia"}</dd>
           </div>
           <div>
             <dt>Pengolah</dt>
-            <dd>{record.provenance.parser}</dd>
+            <dd>{record.provenance.parser ?? "Belum tersedia"}</dd>
           </div>
           <div>
             <dt>Diambil</dt>
-            <dd>{record.provenance.retrievedAt}</dd>
+            <dd>{record.provenance.retrievedAt ?? "Belum tersedia"}</dd>
           </div>
           <div>
             <dt>Kunci sumber</dt>
-            <dd>{record.provenance.sourceKey}</dd>
+            <dd>{record.provenance.sourceKey ?? "Belum tersedia"}</dd>
           </div>
           <div>
             <dt>Sidik respons</dt>
-            <dd>{record.provenance.fingerprint}</dd>
+            <dd>{record.provenance.fingerprint ?? "Belum tersedia"}</dd>
           </div>
         </dl>
       </details>
