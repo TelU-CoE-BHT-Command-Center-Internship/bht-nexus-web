@@ -184,6 +184,7 @@
 }
 
 .valueField input,
+.valueField select,
 .valueField textarea,
 .sourceField textarea {
   width: 100%;
@@ -203,11 +204,31 @@
   resize: vertical;
 }
 
+.valueField select {
+  min-height: 2.6rem;
+  cursor: pointer;
+}
+
 .valueField input:focus,
+.valueField select:focus,
 .valueField textarea:focus,
 .sourceField textarea:focus {
   border-color: #6c5dd3;
   box-shadow: 0 0 0 3px rgb(108 93 211 / 14%);
+}
+
+.fieldError {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--color-nexus-danger);
+  font-size: 0.64rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.valueField input[aria-invalid="true"],
+.valueField select[aria-invalid="true"] {
+  border-color: var(--color-nexus-danger);
 }
 
 .valueField small,

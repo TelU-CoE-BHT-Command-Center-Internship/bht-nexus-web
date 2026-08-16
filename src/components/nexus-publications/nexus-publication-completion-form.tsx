@@ -5,7 +5,8 @@ import { type FormEvent, useMemo, useState } from "react";
 import {
   createEmptyMetadataCompletionResolution,
   metadataCompletionFieldConfigs,
-  metadataCompletionResolutionOptions,
+  metadataCompletionResolutionChoices,
+  metadataCompletionValueError,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import styles from "@/components/nexus-publications/nexus-publication-completion-form.module.css";
 import type {
@@ -79,11 +80,29 @@ export function NexusPublicationCompletionForm({
       ) as PublicationCompletionResolutions,
     [publication.missingFields, resolutions],
   );
+  /** Kesalahan per bidang, hanya untuk nilai yang benar-benar diisi. */
+  const fieldErrors = Object.fromEntries(
+    publication.missingFields.flatMap((key) => {
+      const resolution = normalizedResolutions[key];
+
+      if (!resolution || resolution.status !== "provided") return [];
+      if (resolution.value.length === 0) return [];
+
+      const error = metadataCompletionValueError(key, resolution.value);
+
+      return error ? [[key, error] as const] : [];
+    }),
+  ) as Partial<Record<PublicationCompletionFieldKey, string>>;
   const allFieldsResolved = publication.missingFields.every((key) => {
     const resolution = normalizedResolutions[key];
 
     if (!resolution) return false;
-    if (resolution.status === "provided") return resolution.value.length > 0;
+    if (resolution.status === "provided") {
+      return (
+        resolution.value.length > 0 &&
+        metadataCompletionValueError(key, resolution.value) === null
+      );
+    }
     return resolution.reason.length >= 8;
   });
   const canPrepareSubmission =
@@ -210,6 +229,7 @@ export function NexusPublicationCompletionForm({
             const resolution =
               resolutions[field.key] ??
               createEmptyMetadataCompletionResolution();
+            const fieldError = fieldErrors[field.key];
 
             return (
               <fieldset className={styles.resolutionField} key={field.key}>
@@ -219,53 +239,93 @@ export function NexusPublicationCompletionForm({
                 </legend>
 
                 <div className={styles.resolutionOptions}>
-                  {metadataCompletionResolutionOptions.map((option) => (
-                    <label
-                      data-selected={
-                        resolution.status === option.status || undefined
-                      }
-                      key={option.status}
-                    >
-                      <input
-                        checked={resolution.status === option.status}
-                        name={`${fieldId}-status`}
-                        onChange={() =>
-                          updateResolution(field.key, {
-                            reason: "",
-                            status: option.status,
-                            value: "",
-                          })
+                  {metadataCompletionResolutionChoices(field.key).map(
+                    (option) => (
+                      <label
+                        data-selected={
+                          resolution.status === option.status || undefined
                         }
-                        type="radio"
-                        value={option.status}
-                      />
-                      <span>
-                        <strong>{option.label}</strong>
-                        <small>{option.description}</small>
-                      </span>
-                    </label>
-                  ))}
+                        key={option.status}
+                      >
+                        <input
+                          checked={resolution.status === option.status}
+                          name={`${fieldId}-status`}
+                          onChange={() =>
+                            updateResolution(field.key, {
+                              reason: "",
+                              status: option.status,
+                              value: "",
+                            })
+                          }
+                          type="radio"
+                          value={option.status}
+                        />
+                        <span>
+                          <strong>{option.label}</strong>
+                          <small>{option.description}</small>
+                        </span>
+                      </label>
+                    ),
+                  )}
                 </div>
 
                 {resolution.status === "provided" ? (
                   <label className={styles.valueField} htmlFor={fieldId}>
                     <span>Nilai yang diajukan</span>
-                    <input
-                      aria-describedby={helpId}
-                      autoComplete="off"
-                      id={fieldId}
-                      maxLength={field.key === "publisherUrl" ? 500 : 180}
-                      onChange={(event) => {
-                        const nextValue = event.currentTarget.value;
-
-                        updateResolution(field.key, { value: nextValue });
-                      }}
-                      placeholder={field.placeholder}
-                      required
-                      type={field.type}
-                      value={resolution.value}
-                    />
-                    <small id={helpId}>{field.help}</small>
+                    {field.type === "choice" ? (
+                      <select
+                        aria-describedby={helpId}
+                        id={fieldId}
+                        onChange={(event) =>
+                          updateResolution(field.key, {
+                            value: event.currentTarget.value,
+                          })
+                        }
+                        required
+                        value={resolution.value}
+                      >
+                        <option value="">{field.placeholder}</option>
+                        {field.choices?.map((choice) => (
+                          <option key={choice} value={choice}>
+                            {choice}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        aria-describedby={
+                          fieldError ? `${fieldId}-error` : helpId
+                        }
+                        aria-invalid={fieldError ? true : undefined}
+                        autoComplete="off"
+                        id={fieldId}
+                        inputMode={field.inputMode}
+                        maxLength={
+                          field.maxLength ??
+                          (field.key === "publisherUrl" ? 500 : 300)
+                        }
+                        onChange={(event) =>
+                          updateResolution(field.key, {
+                            value: event.currentTarget.value,
+                          })
+                        }
+                        placeholder={field.placeholder}
+                        required
+                        type={field.type}
+                        value={resolution.value}
+                      />
+                    )}
+                    {fieldError ? (
+                      <small
+                        className={styles.fieldError}
+                        id={`${fieldId}-error`}
+                        role="alert"
+                      >
+                        {fieldError}
+                      </small>
+                    ) : (
+                      <small id={helpId}>{field.help}</small>
+                    )}
                   </label>
                 ) : (
                   <label className={styles.valueField} htmlFor={reasonId}>

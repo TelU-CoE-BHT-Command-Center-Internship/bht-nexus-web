@@ -3,12 +3,15 @@ import type {
   AuditReviewRecord,
   AuditReviewSource,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
-import type {
-  OfficialPublication,
-  PublicationCompletionResolutions,
-  PublicationMetadataProposal,
+import {
+  type OfficialPublication,
+  type PublicationCompletionFieldKey,
+  type PublicationCompletionResolutions,
+  type PublicationMetadataProposal,
+  publicationAuthorNames,
+  publicationCompletionFieldLabels,
+  publicationDisplayTitle,
 } from "@/components/nexus-publications/nexus-publications-content";
-import { publicationCompletionFieldLabels } from "@/components/nexus-publications/nexus-publications-content";
 import type { NexusRagExtractionContent } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
 import type { CollectionJob } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -187,23 +190,69 @@ export function createMetadataCompletionReviewRecord(
   actor: FrontendActor,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
-  const completionFields = publication.missingFields.map((key) => ({
-    id: key,
-    label: publicationCompletionFieldLabels[key],
-    value: resolutionValue(proposal.resolutions, key),
-  }));
-  const fields: AuditReviewField[] = [
-    { id: "title", label: "Judul publikasi", value: publication.title },
-    { id: "authors", label: "Penulis", value: publication.authors.join("; ") },
-    { id: "venue", label: "Jurnal / wadah terbit", value: publication.venue },
-    { id: "year", label: "Tahun terbit", value: String(publication.year) },
-    ...completionFields,
+  const displayTitle = publicationDisplayTitle(publication);
+  /**
+   * Nilai resmi yang sekarang tersimpan pada rekam publikasi. Dipakai sebagai
+   * pembanding, bukan sebagai nilai kandidat.
+   */
+  const officialValues: Partial<Record<PublicationCompletionFieldKey, string>> =
+    {
+      doi: publication.doi,
+      issue: publication.issue,
+      pages: publication.pages,
+      publisherUrl: publication.publisherUrl,
+      quartile: publication.quartile,
+      title: publication.title,
+      type: publication.type,
+      year: publication.year ? String(publication.year) : undefined,
+    };
+  const proposedValues = new Map<string, string>(
+    publication.missingFields.map((key) => [
+      key,
+      resolutionValue(proposal.resolutions, key),
+    ]),
+  );
+
+  /**
+   * Satu bidang bisnis wajib memiliki tepat satu `fieldId`. Tinjauan membaca
+   * nilai dengan `fields.find(id)`, sehingga bidang ganda akan membuat nilai
+   * usulan tertutup oleh nilai resmi yang lama. Karena judul dan tahun kini
+   * dapat menjadi bidang pelengkapan, keduanya dibangun sekali saja dengan
+   * nilai usulan bila memang sedang diusulkan.
+   */
+  const canonicalFields: readonly { id: string; label: string }[] = [
+    { id: "title", label: "Judul publikasi" },
+    { id: "authors", label: "Penulis" },
+    { id: "venue", label: "Jurnal / wadah terbit" },
+    { id: "type", label: "Jenis publikasi" },
+    { id: "year", label: "Tahun terbit" },
   ];
-  const comparisons = completionFields.map((field) => ({
-    candidateValue: field.value,
-    fieldId: field.id,
-    label: field.label,
-    officialValue: "Belum tersedia",
+  const canonicalIds = new Set(canonicalFields.map((field) => field.id));
+  const canonicalValues: Record<string, string> = {
+    authors: publicationAuthorNames(publication),
+    title: publication.title,
+    type: publication.type,
+    venue: publication.venue,
+    year: officialValues.year ?? "",
+  };
+  const fields: AuditReviewField[] = [
+    ...canonicalFields.map((field) => ({
+      ...field,
+      value: proposedValues.get(field.id) ?? canonicalValues[field.id] ?? "",
+    })),
+    ...publication.missingFields
+      .filter((key) => !canonicalIds.has(key))
+      .map((key) => ({
+        id: key,
+        label: publicationCompletionFieldLabels[key],
+        value: proposedValues.get(key) ?? "",
+      })),
+  ];
+  const comparisons = publication.missingFields.map((key) => ({
+    candidateValue: proposedValues.get(key) ?? "",
+    fieldId: key,
+    label: publicationCompletionFieldLabels[key],
+    officialValue: officialValues[key] || "Belum tersedia",
     status: "missing" as const,
     statusLabel: "Diajukan",
   }));
@@ -230,33 +279,40 @@ export function createMetadataCompletionReviewRecord(
     ],
     fields,
     id: proposal.id,
-    kpiLinks: [],
+    kpiLinks: publication.kmLinks.map((link) => ({
+      evidenceRule:
+        "Metadata resmi perlu lengkap sebelum rekam dihitung pada indikator ini.",
+      indicator: link.indicator,
+    })),
     matches: [
       {
         comparisons,
         id: publication.publicId,
         score: 100,
-        title: publication.title,
+        title: displayTitle,
         verdict: "strong",
         verdictLabel: "Rekam tujuan",
       },
     ],
-    owner: publication.owner.name,
-    periodLabel: String(publication.year),
-    primaryPerson: publication.authors[0] ?? publication.owner.name,
+    // Pemilik data belum ditetapkan oleh kebijakan peran; penulis pertama
+    // bukan pemilik data, dan keberadaan rekam di registry CoE BHT belum
+    // membuktikan kepemilikannya.
+    owner: "Belum ditetapkan",
+    periodLabel: publication.evaluationPeriod,
+    primaryPerson: publication.authors[0]?.name ?? "Belum ditetapkan",
     provenance: {
       retrievedAt: discoveredAt.toISOString(),
       sourceKey: `publication:${publication.publicId}`,
     },
     signal: {
-      primary: `${completionFields.length} bidang diajukan`,
+      primary: `${publication.missingFields.length} bidang diajukan`,
       secondary: `Melengkapi ${publication.publicId}`,
       tone: "info",
     },
     source: "manual",
     sourceLabel: "Usulan manual",
     subtitle: `${publication.publicId} · pelengkapan metadata`,
-    title: publication.title,
+    title: displayTitle,
     typeLabel: "Pelengkapan metadata publikasi",
   });
 }

@@ -5,13 +5,16 @@ import Link from "next/link";
 import badgeStyles from "@/components/nexus-publications/nexus-publication-badges.module.css";
 import { NexusPublicationCompletionForm } from "@/components/nexus-publications/nexus-publication-completion-form";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
-import type {
-  OfficialPublication,
-  PublicationCompletionFieldKey,
-  PublicationCompletionResolutions,
-  PublicationMetadataProposal,
+import {
+  type OfficialPublication,
+  type PublicationCompletionFieldKey,
+  type PublicationCompletionResolutions,
+  type PublicationMetadataProposal,
+  publicationAuthorNames,
+  publicationCompletionFieldLabels,
+  publicationDisplayTitle,
+  publicationQuartileLabel,
 } from "@/components/nexus-publications/nexus-publications-content";
-import { publicationCompletionFieldLabels } from "@/components/nexus-publications/nexus-publications-content";
 import { NexusPublicationsIcon } from "@/components/nexus-publications/nexus-publications-icons";
 import { getPublicationSourceId } from "@/components/nexus-publications/nexus-publications-utils";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -25,6 +28,15 @@ type NexusPublicationDetailProps = {
   ) => void;
   proposal?: PublicationMetadataProposal;
   publication: OfficialPublication;
+};
+
+type PublicationMetadataItem = {
+  href?: string;
+  key: string;
+  label: string;
+  missingFieldKey?: PublicationCompletionFieldKey;
+  value: string;
+  wide?: boolean;
 };
 
 function ArrowIcon() {
@@ -44,43 +56,43 @@ function MetaItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-type PublicationMetadataItem = {
-  key: string;
-  label: string;
-  missingFieldKey?: PublicationCompletionFieldKey;
-  value: string;
-  wide?: boolean;
-};
+function kmLinkLabel(publication: OfficialPublication) {
+  if (publication.kmLinks.length === 0) return "Belum dikaitkan";
+  return publication.kmLinks.map((link) => link.indicator.id).join(", ");
+}
 
-const completionFieldOrder: readonly PublicationCompletionFieldKey[] = [
+/**
+ * Bidang opsional hanya tampil ketika nilainya ada atau ketika bidang tersebut
+ * memang ditandai belum selesai, agar rincian tidak dipenuhi baris kosong.
+ */
+const optionalFieldOrder: readonly PublicationCompletionFieldKey[] = [
+  "doi",
   "issue",
   "pages",
-  "doi",
-  "publisherUrl",
 ];
 
-function getPublicationMetadataItems(
+function getMetadataItems(
   publication: OfficialPublication,
 ): PublicationMetadataItem[] {
-  const completionValues: Record<PublicationCompletionFieldKey, string> = {
-    doi: publication.doi ?? "",
-    issue: publication.issue ?? "",
-    pages: publication.pages ?? "",
-    publisherUrl: publication.publisherUrl ?? "",
-  };
-  const optionalItems = completionFieldOrder.flatMap<PublicationMetadataItem>(
+  const isMissing = (key: PublicationCompletionFieldKey) =>
+    publication.missingFields.includes(key);
+  const optionalValues: Partial<Record<PublicationCompletionFieldKey, string>> =
+    {
+      doi: publication.doi,
+      issue: publication.issue,
+      pages: publication.pages,
+    };
+  const optionalItems = optionalFieldOrder.flatMap<PublicationMetadataItem>(
     (key) => {
-      const value = completionValues[key];
+      const value = optionalValues[key];
 
-      if (!value && !publication.missingFields.includes(key)) return [];
+      if (!value && !isMissing(key)) return [];
 
       return [
         {
           key,
           label: publicationCompletionFieldLabels[key],
-          missingFieldKey: publication.missingFields.includes(key)
-            ? key
-            : undefined,
+          missingFieldKey: isMissing(key) ? key : undefined,
           value: value || "Belum tersedia",
         },
       ];
@@ -91,28 +103,53 @@ function getPublicationMetadataItems(
     {
       key: "title",
       label: "Judul",
-      value: publication.title,
+      missingFieldKey: isMissing("title") ? "title" : undefined,
+      value: publication.title || "Belum tercatat pada sumber",
       wide: true,
     },
     {
       key: "authors",
       label: "Penulis",
-      value: publication.authors.join("; "),
+      value: publicationAuthorNames(publication),
       wide: true,
     },
-    { key: "type", label: "Jenis publikasi", value: publication.type },
-    { key: "year", label: "Tahun", value: String(publication.year) },
     {
       key: "venue",
-      label: "Jurnal / prosiding / penerbit",
+      label: "Nama jurnal / prosiding",
       value: publication.venue,
+      wide: true,
+    },
+    {
+      key: "type",
+      label: "Jenis publikasi",
+      missingFieldKey: isMissing("type") ? "type" : undefined,
+      value: publication.type,
+    },
+    {
+      key: "year",
+      label: "Tahun terbit",
+      missingFieldKey: isMissing("year") ? "year" : undefined,
+      value: publication.year ? String(publication.year) : "Belum tercatat",
     },
     ...optionalItems,
-    { key: "owner", label: "Pemilik", value: publication.owner.name },
     {
-      key: "sources",
-      label: "Sumber pembentuk",
-      value: publication.provenance.map((source) => source.source).join(" + "),
+      key: "quartile",
+      label: "Kuartil jurnal",
+      missingFieldKey: isMissing("quartile") ? "quartile" : undefined,
+      value: publicationQuartileLabel(publication),
+    },
+    {
+      key: "evaluationPeriod",
+      label: "Periode evaluasi KM",
+      value: publication.evaluationPeriod,
+    },
+    {
+      href: publication.publisherUrl,
+      key: "publisherUrl",
+      label: "Tautan penerbit",
+      missingFieldKey: isMissing("publisherUrl") ? "publisherUrl" : undefined,
+      value: publication.publisherUrl ?? "Belum tersedia",
+      wide: true,
     },
   ];
 }
@@ -137,12 +174,15 @@ export function NexusPublicationDetail({
   proposal,
   publication,
 }: NexusPublicationDetailProps) {
-  const metadataItems = getPublicationMetadataItems(publication);
+  const metadataItems = getMetadataItems(publication);
+  const displayTitle = publicationDisplayTitle(publication);
+  const isTopQuartile =
+    publication.quartile === "Q1" || publication.quartile === "Q2";
 
   return (
     <NexusWorkspaceDrawer
       closeLabel="Tutup rincian publikasi"
-      description="Telusuri metadata resmi, sumber pembentuk, dan keputusan tinjauannya."
+      description="Telusuri metadata karya, klasifikasi KM, sumber pembentuk, dan keputusan tinjauannya."
       eyebrow={publication.publicId}
       onClose={onClose}
       steps={[
@@ -171,14 +211,22 @@ export function NexusPublicationDetail({
           </div>
           <time>Diperbarui {publication.updatedAt}</time>
         </div>
-        <h3 id="publication-overview-title">{publication.title}</h3>
-        <p>{publication.authors.join("; ")}</p>
+        <h3 id="publication-overview-title">{displayTitle}</h3>
+        <p>{publicationAuthorNames(publication)}</p>
 
         <dl className={styles.metaGrid}>
           <MetaItem label="Jenis" value={publication.type} />
-          <MetaItem label="Tahun" value={String(publication.year)} />
-          <MetaItem label="Pemilik" value={publication.owner.name} />
-          <MetaItem label="DOI" value={publication.doi ?? "Belum tersedia"} />
+          <MetaItem
+            label="Tahun terbit"
+            value={
+              publication.year ? String(publication.year) : "Belum tercatat"
+            }
+          />
+          <MetaItem
+            label="Kuartil"
+            value={publicationQuartileLabel(publication)}
+          />
+          <MetaItem label="Indikator KM" value={kmLinkLabel(publication)} />
         </dl>
       </section>
 
@@ -188,7 +236,7 @@ export function NexusPublicationDetail({
           <div>
             <strong>Metadata resmi masih perlu dilengkapi</strong>
             <p>
-              Bidang yang belum tersedia:{" "}
+              Bidang yang belum selesai:{" "}
               {publication.missingFields
                 .map((field) => publicationCompletionFieldLabels[field])
                 .join(", ")}
@@ -205,9 +253,9 @@ export function NexusPublicationDetail({
         <div className={styles.sectionHeading}>
           <div>
             <span className={styles.sectionIndex}>01</span>
-            <h3 id="publication-metadata-title">Metadata utama</h3>
+            <h3 id="publication-metadata-title">Metadata karya</h3>
           </div>
-          <p>Identitas rekam resmi yang ditampilkan</p>
+          <p>Identitas bibliografis rekam resmi</p>
         </div>
         <dl
           aria-label="Ringkasan rekam resmi"
@@ -237,9 +285,8 @@ export function NexusPublicationDetail({
             >
               <dt>{item.label}</dt>
               <dd>
-                {item.key === "publisherUrl" &&
-                item.value !== "Belum tersedia" ? (
-                  <a href={item.value} rel="noreferrer" target="_blank">
+                {item.href ? (
+                  <a href={item.href} rel="noreferrer" target="_blank">
                     {item.value}
                   </a>
                 ) : (
@@ -249,6 +296,103 @@ export function NexusPublicationDetail({
             </div>
           ))}
         </dl>
+      </section>
+
+      <section
+        aria-labelledby="publication-classification-title"
+        className={styles.detailSection}
+      >
+        <div className={styles.sectionHeading}>
+          <div>
+            <span className={styles.sectionIndex}>02</span>
+            <h3 id="publication-classification-title">Klasifikasi pelaporan</h3>
+          </div>
+          <p>Kuartil dan keterkaitan indikator KM</p>
+        </div>
+
+        <p className={styles.classificationExplanation}>
+          Klasifikasi hanya menentukan bagaimana publikasi dilaporkan. Rekam ini
+          tetap menjadi data resmi walaupun belum dikaitkan dengan indikator KM
+          mana pun.
+        </p>
+
+        <ul className={styles.kmLinkList}>
+          {publication.kmLinks.length === 0 ? (
+            <li data-empty="true">
+              <strong>Belum dikaitkan dengan indikator KM</strong>
+              <small>
+                Keterkaitan indikator dapat ditetapkan melalui Tinjauan ketika
+                klasifikasinya sudah dipastikan.
+              </small>
+            </li>
+          ) : (
+            publication.kmLinks.map((link) => (
+              <li key={link.indicator.id}>
+                <strong>
+                  {link.indicator.id} · {link.indicator.label}
+                </strong>
+                <small>
+                  {link.indicator.category} — {link.note}
+                </small>
+              </li>
+            ))
+          )}
+        </ul>
+
+        <aside
+          aria-label="Kuartil jurnal"
+          className={styles.quartilePanel}
+          data-tone={
+            !publication.quartileApplies
+              ? "neutral"
+              : publication.quartile
+                ? isTopQuartile
+                  ? "success"
+                  : "info"
+                : "missing"
+          }
+        >
+          <div className={styles.quartileValue}>
+            <span>Kuartil jurnal</span>
+            <strong>
+              {publication.quartileApplies
+                ? (publication.quartile ?? "—")
+                : "N/A"}
+            </strong>
+            <small>
+              {publication.quartileApplies
+                ? publication.quartile
+                  ? isTopQuartile
+                    ? "termasuk setara Q1/Q2"
+                    : "termasuk selain Q1/Q2"
+                  : "belum diverifikasi"
+                : publication.type === "Belum diklasifikasikan"
+                  ? "menunggu bentuk karya dipastikan"
+                  : "tidak berlaku untuk jenis karya ini"}
+            </small>
+          </div>
+          <dl className={styles.quartileProvenance}>
+            <div>
+              <dt>Sumber kuartil</dt>
+              <dd>{publication.quartileSource ?? "Belum ditetapkan"}</dd>
+            </div>
+            <div>
+              <dt>Nilai pada sumber</dt>
+              <dd>{publication.sourceReportedQuartile ?? "Tidak tercatat"}</dd>
+            </div>
+          </dl>
+          <p>
+            Kuartil tidak tersedia di Google Scholar sehingga perlu diperiksa
+            pada SCImago (SJR) atau Scopus. Nilainya dipakai saat pelaporan
+            untuk memisahkan jurnal setara Q1/Q2 dari selain itu.
+            {!publication.quartileApplies && publication.sourceReportedQuartile
+              ? publication.type === "Belum diklasifikasikan"
+                ? ` Sumber mencatat ${publication.sourceReportedQuartile} pada kolom Level Jurnal, tetapi nilai itu belum diperlakukan sebagai kuartil jurnal sampai bentuk karyanya diverifikasi.`
+                : ` Sumber mencatat ${publication.sourceReportedQuartile} pada kolom Level Jurnal, tetapi kuartil jurnal tidak berlaku untuk ${publication.type.toLocaleLowerCase("id-ID")}.`
+              : ""}
+          </p>
+        </aside>
+
         <aside
           aria-label="Metrik sitasi publikasi"
           className={styles.citationMetric}
@@ -259,7 +403,7 @@ export function NexusPublicationDetail({
             <strong>{publication.citations ?? "—"}</strong>
             <small>
               {publication.citations === null
-                ? "Angka belum tersedia"
+                ? "Angka belum tersinkron"
                 : "sitasi tercatat"}
             </small>
           </div>
@@ -287,7 +431,7 @@ export function NexusPublicationDetail({
       >
         <div className={styles.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>02</span>
+            <span className={styles.sectionIndex}>03</span>
             <h3 id="publication-completeness-title">Kelengkapan metadata</h3>
           </div>
           <p>
@@ -318,7 +462,7 @@ export function NexusPublicationDetail({
 
             return (
               <li data-status={status} key={item.key}>
-                <span className={styles.completenessMarker} aria-hidden="true">
+                <span aria-hidden="true" className={styles.completenessMarker}>
                   {status === "available"
                     ? "✓"
                     : status === "pending"
@@ -348,24 +492,36 @@ export function NexusPublicationDetail({
       >
         <div className={styles.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>03</span>
-            <h3 id="publication-members-title">Anggota BHT terkait</h3>
+            <span className={styles.sectionIndex}>04</span>
+            <h3 id="publication-members-title">Penulis</h3>
           </div>
-          <p>{publication.bhtMembers.length} anggota terhubung</p>
+          <p>{publication.authors.length} penulis tercatat</p>
         </div>
+        <p className={styles.authorsNote}>
+          Urutan penulis mengikuti pencatatan sumber. Kepemilikan data dan hak
+          perbaikan rekam ditetapkan terpisah oleh pengaturan peran, bukan oleh
+          urutan penulis. Nama kolom penulis pada sumbernya dicatat di bagian
+          Sumber dan jejak data.
+        </p>
         <div className={styles.memberGrid}>
-          {publication.bhtMembers.map((member) => (
-            <article className={styles.memberCard} key={member.id}>
-              <Image
-                alt={`Foto ${member.name}`}
-                height={40}
-                sizes="2.5rem"
-                src={member.avatarSrc}
-                width={40}
-              />
+          {publication.authors.map((author, index) => (
+            <article className={styles.memberCard} key={author.id}>
+              {author.avatarSrc ? (
+                <Image
+                  alt=""
+                  height={40}
+                  sizes="2.5rem"
+                  src={author.avatarSrc}
+                  width={40}
+                />
+              ) : (
+                <span aria-hidden="true" className={styles.memberInitials}>
+                  {author.initials}
+                </span>
+              )}
               <div>
-                <strong>{member.name}</strong>
-                <span>{member.role}</span>
+                <strong>{author.name}</strong>
+                <span>Penulis ke-{index + 1}</span>
               </div>
             </article>
           ))}
@@ -378,7 +534,7 @@ export function NexusPublicationDetail({
       >
         <div className={styles.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>04</span>
+            <span className={styles.sectionIndex}>05</span>
             <h3 id="publication-sources-title">Sumber dan jejak data</h3>
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
@@ -405,14 +561,37 @@ export function NexusPublicationDetail({
               </header>
               <dl>
                 <div>
-                  <dt>Kunci sumber</dt>
+                  <dt>Lokasi sumber</dt>
                   <dd>{source.identifier}</dd>
                 </div>
                 <div>
                   <dt>Diambil</dt>
                   <dd>{source.capturedAt}</dd>
                 </div>
+                {source.authorColumn ? (
+                  <div>
+                    <dt>Kolom penulis pada sumber</dt>
+                    <dd>{source.authorColumn}</dd>
+                  </div>
+                ) : null}
+                {source.sourceUrl ? (
+                  <div>
+                    <dt>URL sumber</dt>
+                    <dd>
+                      <a
+                        href={source.sourceUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {source.sourceUrl}
+                      </a>
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
+              {source.note ? (
+                <p className={styles.provenanceNote}>{source.note}</p>
+              ) : null}
             </article>
           ))}
         </div>
@@ -424,7 +603,7 @@ export function NexusPublicationDetail({
       >
         <div className={styles.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>05</span>
+            <span className={styles.sectionIndex}>06</span>
             <h3 id="publication-review-title">Keputusan tinjauan</h3>
           </div>
           <p>Riwayat keputusan tersimpan</p>
