@@ -17,13 +17,14 @@ Worker pengumpulan, pemrosesan dokumen, dan ekstraksi tidak boleh menulis langsu
 
 ## Navigasi
 
-Navigasi Indonesia memakai lima tujuan utama:
+Navigasi Indonesia dikelompokkan mengikuti perjalanan datanya:
 
-- Dashboard
-- Pengumpulan
-- Tinjauan
-- Publikasi
-- Dokumen
+- **Utama** — Dashboard.
+- **Alur Data** — Pengumpulan, Dokumen, dan Tinjauan. Ketiganya adalah jalur kandidat sebelum menjadi data resmi.
+- **Data Resmi** — Publikasi sebagai rumah data resmi yang sudah tersedia, diikuti rumah domain lain yang ditandai belum tersedia.
+- **Administrasi** — Anggota dan Administrasi, keduanya belum tersedia.
+
+Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum tersedia, dan tidak dapat diklik. Pendekatan ini dipilih agar keputusan di Tinjauan selalu mempunyai tujuan yang jelas tanpa membuat halaman kosong.
 
 Dokumen mempunyai navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi. Ketiganya tidak menjadi tiga kategori teknologi terpisah di sidebar.
 

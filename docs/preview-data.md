@@ -8,7 +8,7 @@ Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di rep
 |---|---|---|
 | Shell workspace | `getNexusDashboardShellPreviewContent` | navigasi, notifikasi, identitas tampilan, dan tautan bantuan |
 | Dashboard | folder `nexus-dashboard-*` | metrik, aktivitas, program, dan pengumuman |
-| Publikasi | `getNexusPublicationsContent` | filter, rincian, sitasi, dan pengajuan pelengkapan |
+| Publikasi | `getNexusPublicationsContent` | daftar seluruh rekam resmi, filter indikator KM, kuartil, tahun terbit, kelengkapan, rincian, sitasi, dan pengajuan pelengkapan |
 | Pengumpulan | `getNexusScraperSearchContent` | validasi host publik, status pekerjaan, daftar kandidat individual, dan pengiriman seluruh kandidat ke sesi Tinjauan |
 | Tinjauan Indonesia | `getNexusAuditReviewContent` | satu antrean lintas-domain termasuk impor lembar kerja, filter sumber dan jenis data, metadata adaptif, pembanding, bukti, keputusan, status koreksi, versi, dan riwayat |
 | Tinjauan Inggris | route `/en/nexus/reviews` | pemberitahuan bahwa terjemahan belum tersedia; tidak menjalankan alur lama yang berbeda |
@@ -18,6 +18,8 @@ Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di rep
 | State Tinjauan lintas halaman | `NexusReviewSessionProvider` dan factory rekam di `nexus-review-session` | identitas pemeriksa, kemampuan presentasi, serta kandidat dari Pengumpulan, Ekstraksi, dan pelengkapan Publikasi selama sesi frontend |
 
 Transisi lokal sengaja deterministik agar loading, success, failure, empty, filter, dan keputusan dapat diperiksa tanpa layanan eksternal. State lintas halaman memakai provider pada layout ruang kerja; memuat ulang penuh tetap mengembalikan keadaan awal. Pengajuan pekerjaan baru tidak mengarang hasil pengumpulan ketika scraper belum terhubung.
+
+Model Publikasi memisahkan bentuk karya, klasifikasi pelaporan, dan metrik luar. `type` adalah metadata bibliografis dan tidak pernah diturunkan dari indikator KM; `kmLinks` boleh kosong; `quartile` hanya terisi untuk artikel jurnal, sedangkan nilai kolom sumber untuk bentuk karya lain disimpan pada `sourceReportedQuartile` tanpa pernah diklaim sebagai kuartil terverifikasi. `year` adalah tahun terbit dan terpisah dari `evaluationPeriod`. Setiap entri asal-usul data menyimpan rentang baris sumbernya, dan perbedaan antarbaris disimpan sebagai catatan, bukan dihapus. Rekam yang bentuk karyanya belum dapat dipastikan tidak dinyatakan lengkap.
 
 Model Tinjauan sudah memisahkan `candidateKind`, `submittedBy`, pemilik, dan pihak utama. Identitas serta label KM-1 sampai KM-46 hanya berasal dari `src/content/nexus-km-indicators.ts`, berdasarkan worksheet `List KM` pada workbook KM 2026; metadata Monitoring/Evaluasi KM yang belum dipakai tidak dimodelkan lebih awal. Kaitan indikator, URL bukti, dan bidang provenance boleh kosong; ketiadaan data tidak diisi dengan tautan umum, DOI, fingerprint, atau klasifikasi buatan. Contoh publikasi atau buku dapat memakai identitas nyata jika sumber penerbitnya publik, sedangkan kontrak, bimbingan, proposal internal, HKI, paten, dan bukti privat memakai identitas netral. Status perbandingan memakai nilai mesin yang stabil dan waktu aksi interaktif dibuat saat aksi terjadi. Kemampuan `canReview` serta `canSubmitCorrection` adalah bentuk data dari batas server; nilainya saat ini hanya mengatur presentasi frontend dan bukan pengamanan browser.
 
@@ -49,6 +51,7 @@ Jangan menambahkan URL API spekulatif ke komponen. Tempatkan pemanggilan jaringa
 - jawaban tanpa bukti dikembalikan sebagai tidak didukung;
 - isi dokumen, data personal, catatan administratif, dan nilai sensitif tidak boleh dimasukkan sebagai data frontend publik;
 - identitas nyata hanya dipakai ketika baris sumbernya dapat diverifikasi; skenario sintetis wajib memakai identitas netral dan tidak memakai foto anggota;
+- karya nyata yang tautan buktinya tidak dapat diverifikasi tidak dipertahankan sebagai data pengembangan publik, dan tautan sumber yang terbukti menunjuk karya lain tidak dipakai sebagai bukti;
 - audit permanen dibuat di server, bukan dipercaya dari state browser.
 
 ## Urutan migrasi

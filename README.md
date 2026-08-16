@@ -42,7 +42,7 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Halaman institusional lanjutan dan konten final | Dalam pengembangan |
 | Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
 | Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
-| Halaman Publikasi BHT Nexus | Tersedia dan responsif; rincian memperlihatkan metadata resmi serta keadaan kelengkapannya, sedangkan bidang yang belum selesai dapat menerima usulan nilai atau pengecualian berbasis sumber tanpa langsung menimpa data resmi |
+| Halaman Publikasi BHT Nexus | Tersedia dan responsif; daftar dan rincian membedakan metadata resmi, jenis karya, kuartil jurnal, nilai yang hanya tercatat pada sumber, sitasi, serta jejak tinjauan. Metadata yang belum lengkap diajukan kembali ke Tinjauan dan tidak langsung mengubah rekam resmi |
 | Halaman Pengumpulan BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan, dan membuat satu rekam Tinjauan untuk setiap kandidat yang ditemukan |
 | Halaman Tinjauan BHT Nexus | Alur Indonesia tersedia dan responsif; seluruh kandidat berada dalam satu antrean, identitas serta label KM-1 sampai KM-46 mengikuti workbook stakeholder, data yang belum diketahui tidak ditebak, dan metadata, bukti, pembanding, asal-usul data, serta keputusan menyesuaikan tujuan kandidat. Terjemahan Inggris belum tersedia dan dinyatakan apa adanya pada route Inggris |
 | Ruang kerja Dokumen BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; mencakup pustaka, tanya jawab bersitasi yang menolak jawaban tanpa dukungan, serta ekstraksi kandidat per bidang sebelum diteruskan ke Tinjauan |
@@ -152,11 +152,13 @@ Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan infor
 
 ### Ruang Kerja BHT Nexus
 
-Ruang kerja menyediakan Dashboard, Pengumpulan, Tinjauan, Publikasi, dan Dokumen dalam shell responsif yang konsisten. Tinjauan menjadi satu antrean keputusan manusia untuk kandidat lintas-domain. Metadata, bukti, pilihan pembanding, kaitan evaluasi, asal-usul data, dan tindakan menyesuaikan apakah kandidat merupakan data baru, pembaruan rekam, atau pelengkapan metadata.
+Ruang kerja menyediakan Dashboard, Pengumpulan, Tinjauan, Publikasi, dan Dokumen dalam shell responsif yang konsisten. Navigasinya dikelompokkan mengikuti perjalanan data: Pengumpulan, Dokumen, dan Tinjauan berada pada kelompok alur data, sedangkan Publikasi menjadi rumah data resmi yang sudah tersedia. Rumah data resmi untuk domain lain ditandai belum tersedia agar arah pengembangannya terbaca tanpa membuat halaman kosong.
+
+Tinjauan menjadi satu antrean keputusan manusia untuk kandidat lintas-domain. Metadata, bukti, pilihan pembanding, kaitan evaluasi, asal-usul data, dan tindakan menyesuaikan apakah kandidat merupakan data baru, pembaruan rekam, atau pelengkapan metadata.
 
 Pada ruang kerja Indonesia, setiap hasil bisnis dari Pengumpulan, bidang yang diterima dari Ekstraksi Dokumen, dan usulan pelengkapan Publikasi benar-benar dibuat sebagai rekam Tinjauan dan dibuka kembali melalui identitas rekamnya selama sesi frontend. Identitas pekerjaan Pengumpulan tetap disimpan sebagai jejak sumber, bukan dijadikan satu kandidat gabungan. Perpindahan ini tetap bersifat lokal sampai endpoint staging dan penyimpanan server tersedia. Route Tinjauan Inggris menampilkan keadaan belum tersedia secara jujur dan pemindah bahasa disembunyikan pada alur ini sampai terjemahannya mempunyai kemampuan yang setara.
 
-Data saat ini masih bersifat lokal dan deterministik untuk memvalidasi presentasi serta interaksi frontend. Autentikasi, hak akses, penyimpanan permanen, worker, dan perubahan data resmi tetap menunggu integrasi layanan server.
+Data saat ini masih bersifat lokal dan deterministik untuk memvalidasi presentasi serta interaksi frontend. Autentikasi, hak akses, penyimpanan permanen, worker, dan perubahan data resmi tetap menunggu integrasi layanan server. Struktur adapter dan state frontend dipertahankan sebagai batas integrasi agar sumber data server nantinya dapat menggantikan data pengembangan tanpa membongkar alur utama antarmuka.
 
 Inventaris kemampuan per halaman, batas implementasi, dan prioritas pengembangan berikutnya dijelaskan di [cakupan produk saat ini](docs/current-scope.md).
 
