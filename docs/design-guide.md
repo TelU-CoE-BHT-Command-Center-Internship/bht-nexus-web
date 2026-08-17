@@ -10,7 +10,7 @@ Ruang kerja mengikuti alur berikut:
 2. Setiap hasil bisnis dari pekerjaan menjadi **kandidat individual**, bukan data resmi. Identitas pekerjaan hanya menjadi provenance untuk seluruh hasilnya.
 3. **Tinjauan** adalah satu-satunya antrean keputusan manusia.
 4. Kandidat yang diterima atau dihubungkan baru dapat dipromosikan oleh layanan server menjadi data resmi.
-5. **Publikasi** menampilkan rekam resmi dan mengajukan pelengkapan metadata kembali ke Tinjauan.
+5. Rumah **Data Resmi** menampilkan rekam yang sudah lolos dan mengajukan pelengkapan metadata kembali ke Tinjauan.
 6. **Dokumen** mengelola pustaka, pencarian bersitasi, dan ekstraksi kandidat. Hasil ekstraksi juga berakhir di Tinjauan.
 
 Worker pengumpulan, pemrosesan dokumen, dan ekstraksi tidak boleh menulis langsung ke tabel resmi.
@@ -21,7 +21,7 @@ Navigasi Indonesia dikelompokkan mengikuti perjalanan datanya:
 
 - **Utama** — Dashboard.
 - **Alur Data** — Pengumpulan, Dokumen, dan Tinjauan. Ketiganya adalah jalur kandidat sebelum menjadi data resmi.
-- **Data Resmi** — Publikasi sebagai rumah data resmi yang sudah tersedia, diikuti rumah domain lain yang ditandai belum tersedia.
+- **Data Resmi** — Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian sebagai rumah data resmi yang sudah tersedia.
 - **Administrasi** — Anggota dan Administrasi, keduanya belum tersedia.
 
 Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum tersedia, dan tidak dapat diklik. Pendekatan ini dipilih agar keputusan di Tinjauan selalu mempunyai tujuan yang jelas tanpa membuat halaman kosong.
@@ -46,7 +46,23 @@ Gunakan komponen di `src/components/nexus-workspace-ui` untuk struktur lintas-fi
 - `NexusWorkspaceCard`, `NexusWorkspaceField`, `NexusWorkspaceButton`, dan `NexusWorkspaceNotice` untuk formulir serta umpan balik;
 - `NexusWorkspaceLoading` untuk skeleton halaman penuh yang menyerupai struktur halaman akhir.
 
-Logika fitur, isi, dan CSS yang hanya berlaku pada satu domain tetap berada di folder fitur tersebut.
+Rumah data resmi memakai satu bahasa desain rincian bersama, bukan salinan per halaman:
+
+- `nexus-workspace-detail.module.css` untuk kerangka drawer, yaitu ringkasan atas, seksi bernomor, daftar kelengkapan metadata, jejak sumber, dan keputusan tinjauan;
+- `nexus-workspace-badges.module.css` untuk penanda rekam resmi, kelengkapan, dan sumber pembentuk;
+- `nexus-workspace-icons.tsx` untuk ikon kerangka drawer yang bentuknya harus sama di semua domain. Ikon khas satu domain tetap tinggal di komponen ikon domain tersebut.
+
+Nilai pada berkas tersebut mengikuti Publikasi sebagai rujukan, sehingga rumah data resmi berikutnya tampil seragam tanpa menulis ulang gaya.
+
+### Lebar tabel dan kolom
+
+Lebar tabel serta lebar kolom pada `nexus-workspace-records.module.css` ditulis dengan `:where()` sehingga spesifisitasnya nol. Tanpa itu aturan bersama dan aturan halaman mempunyai spesifisitas sama, dan yang dimuat belakangan menang secara kebetulan; akibatnya setiap penyetelan kolom di halaman gagal tanpa pesan apa pun.
+
+Kolom `primary` sengaja tidak diberi lebar. Dengan `table-layout: fixed`, kolom tanpa lebar menyerap sisa ruang, sehingga judul tidak pernah tergencet ketika kolom lain bertambah. Kolom lain diberi lebar sesuai isi terpanjangnya yang diukur di peramban, bukan diperkirakan.
+
+Badge di dalam sel dibatasi `max-width: 100%` dan boleh membungkus. Badge yang tidak boleh membungkus akan keluar dari selnya dan menabrak kolom sebelah, sedangkan memotongnya dengan elipsis justru menyembunyikan status. Lebar kolom filter mengikuti aturan yang sama: lantainya diukur dari kontrol terpanjang, lalu turun ke tiga kolom sebelum menjadi satu kolom.
+
+Logika fitur, isi, dan CSS yang hanya berlaku pada satu domain tetap berada di folder fitur tersebut. Untuk Publikasi yang tersisa hanya panel kuartil, metrik sitasi, dan kartu anggota.
 
 Tinjauan Indonesia memakai satu antrean untuk seluruh kandidat. Tab memfilter sumber, sedangkan status, jenis data, periode, dan urutan berada pada kontrol filter. Perbedaan domain mengubah metadata, bukti minimum, serta konteks evaluasi di dalam drawer; perbedaan tersebut tidak membuat antrean atau pola keputusan baru.
 
@@ -68,7 +84,7 @@ Token ruang kerja berada di `src/app/globals.css`. Gunakan:
 
 Jangan menyampaikan status hanya dengan warna. Selalu sertakan label teks. Jalankan `npm run validate:contrast` setelah menambah atau mengubah pasangan token.
 
-Scrollbar tetap terlihat. Area tabel boleh bergulir horizontal pada layar sempit, sedangkan tabel operasional baru harus berubah menjadi baris bertumpuk pada lebar sekitar 42 rem.
+Scrollbar tetap terlihat. Tabel operasional berubah menjadi kartu dua kolom pada lebar tablet sampai 68 rem dan satu kolom sampai 48 rem. Pola ini menjaga judul, metadata, status, dan aksi tetap terbaca tanpa gulir horizontal; tabel desktop tetap dipakai pada ruang yang cukup.
 
 ## Interaksi dan keadaan
 

@@ -21,7 +21,7 @@ Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfo
 
 ## Status Saat Ini
 
-Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk, dashboard, Pengumpulan, Tinjauan, Publikasi, dan Dokumen juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
+Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk, dashboard, Pengumpulan, Tinjauan, Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Kegiatan & Pengabdian, dan Dokumen juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
 
 Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi berita, kegiatan, dan mitra masih akan dilengkapi atau disesuaikan setelah tim mengonfirmasi data resminya.
 
@@ -43,6 +43,10 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Antarmuka masuk BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; autentikasi belum dihubungkan |
 | Dashboard BHT Nexus | Tersedia dan responsif; metrik serta aktivitas masih menggunakan data terstruktur untuk pengembangan antarmuka |
 | Halaman Publikasi BHT Nexus | Tersedia dan responsif; daftar dan rincian membedakan metadata resmi, jenis karya, kuartil jurnal, nilai yang hanya tercatat pada sumber, sitasi, serta jejak tinjauan. Metadata yang belum lengkap diajukan kembali ke Tinjauan dan tidak langsung mengubah rekam resmi |
+| Halaman Kekayaan Intelektual BHT Nexus | Tersedia dan responsif; memuat hak cipta dan paten resmi beserta nomor pencatatan, keberadaan dokumen pendaftaran, dan keterkaitan indikator KM. Baris sumber yang menduplikasi rekam yang sama digabungkan tanpa menghilangkan jejak asalnya |
+| Halaman Kontrak & Proposal BHT Nexus | Tersedia; memisahkan status kontrak dan proposal dalam satu rumah data resmi, mencakup KM-17 sampai KM-19 serta KM-37 sampai KM-39, dan meneruskan usulan pelengkapan metadata ke Tinjauan |
+| Halaman Akademik BHT Nexus | Tersedia dan responsif; memuat bimbingan doktor, bimbingan magister, dan magang mahasiswa beserta pembimbing, bukti kegiatan, dan keterkaitan indikator KM. Bimbingan dengan lebih dari satu pembimbing dihitung sebagai satu kegiatan, dan identitas mahasiswa diganti penanda rekam |
+| Halaman Kegiatan & Pengabdian BHT Nexus | Tersedia dan responsif; memuat keterlibatan unit bisnis, pembinaan komunitas, konferensi internasional, layanan non-riset, pengabdian masyarakat, proposal pengabdian, dan pengelolaan jurnal nasional untuk KM-20 sampai KM-27. Metadata yang belum lengkap diajukan ke Tinjauan tanpa langsung mengubah rekam resmi |
 | Halaman Pengumpulan BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan, dan membuat satu rekam Tinjauan untuk setiap kandidat yang ditemukan |
 | Halaman Tinjauan BHT Nexus | Alur Indonesia tersedia dan responsif; seluruh kandidat berada dalam satu antrean, identitas serta label KM-1 sampai KM-46 mengikuti workbook stakeholder, data yang belum diketahui tidak ditebak, dan metadata, bukti, pembanding, asal-usul data, serta keputusan menyesuaikan tujuan kandidat. Terjemahan Inggris belum tersedia dan dinyatakan apa adanya pada route Inggris |
 | Ruang kerja Dokumen BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; mencakup pustaka, tanya jawab bersitasi yang menolak jawaban tanpa dukungan, serta ekstraksi kandidat per bidang sebelum diteruskan ke Tinjauan |
@@ -104,7 +108,7 @@ Pada tahap ini, hubungan tersebut masih menjadi arah pengembangan. Web belum men
 └── tsconfig.json       # aturan TypeScript
 ```
 
-Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan interaksi dapat diperbarui tanpa membuat halaman utama sulit dirawat. Folder baru ditambahkan ketika benar-benar dibutuhkan. Komponen antarmuka yang benar-benar dipakai lintas fitur ruang kerja berada di `nexus-workspace-ui`, sedangkan aturan bentuk data pelengkapan metadata yang dipakai bersama oleh Publikasi dan Tinjauan berada di `nexus-metadata-completion`. Logika serta gaya yang hanya berlaku untuk satu fitur tetap disimpan di folder fiturnya.
+Komponen dipisahkan berdasarkan bagian tampilan supaya isi, presentasi, dan interaksi dapat diperbarui tanpa membuat halaman utama sulit dirawat. Folder baru ditambahkan ketika benar-benar dibutuhkan. Komponen antarmuka yang benar-benar dipakai lintas fitur ruang kerja berada di `nexus-workspace-ui`, sedangkan bentuk data dan formulir pelengkapan metadata yang dipakai bersama oleh setiap rumah data resmi berada di `nexus-metadata-completion`. Logika serta gaya yang hanya berlaku untuk satu fitur tetap disimpan di folder fiturnya.
 
 Palet dasar ruang kerja BHT Nexus—permukaan, teks, garis, aksen, serta warna status utama—didefinisikan sebagai token CSS di `src/app/globals.css`. Variasi yang hanya memiliki makna pada satu komponen tetap lokal agar daftar token tidak menjadi kumpulan warna tanpa konteks.
 
@@ -126,6 +130,9 @@ Inventaris fitur, alur kandidat, dan batas implementasi terbaru tersedia di [cak
 | `/nexus/pengumpulan` | Indonesia | Pekerjaan pengumpulan profil publik SINTA atau Google Scholar |
 | `/en/nexus/collection` | Inggris | Pekerjaan pengumpulan profil publik SINTA atau Google Scholar |
 | `/nexus/publikasi` | Indonesia | Daftar publikasi resmi beserta metadata, sumber, dan riwayat tinjauannya |
+| `/nexus/kekayaan-intelektual` | Indonesia | Daftar hak cipta dan paten resmi beserta nomor pencatatan dan dokumennya |
+| `/nexus/kontrak-proposal` | Indonesia | Daftar kontrak dan proposal resmi beserta pihak, skema, bukti, dan indikator KM |
+| `/nexus/akademik` | Indonesia | Daftar bimbingan doktor, bimbingan magister, dan magang mahasiswa resmi |
 | `/nexus/tinjauan` | Indonesia | Satu antrean Tinjauan untuk publikasi, pelengkapan metadata, serta kandidat lintas-domain |
 | `/en/nexus/reviews` | Inggris | Pemberitahuan bahwa terjemahan Tinjauan belum tersedia, dengan tautan ke alur Indonesia |
 | `/nexus/dokumen` | Indonesia | Pustaka dan status pemrosesan dokumen |
@@ -152,11 +159,11 @@ Landing page akan terus dilengkapi secara bertahap, termasuk penyempurnaan infor
 
 ### Ruang Kerja BHT Nexus
 
-Ruang kerja menyediakan Dashboard, Pengumpulan, Tinjauan, Publikasi, dan Dokumen dalam shell responsif yang konsisten. Navigasinya dikelompokkan mengikuti perjalanan data: Pengumpulan, Dokumen, dan Tinjauan berada pada kelompok alur data, sedangkan Publikasi menjadi rumah data resmi yang sudah tersedia. Rumah data resmi untuk domain lain ditandai belum tersedia agar arah pengembangannya terbaca tanpa membuat halaman kosong.
+Ruang kerja menyediakan Dashboard, Pengumpulan, Tinjauan, Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Kegiatan & Pengabdian, dan Dokumen dalam shell responsif yang konsisten. Navigasinya dikelompokkan mengikuti perjalanan data: Pengumpulan, Dokumen, dan Tinjauan berada pada kelompok alur data; lima halaman domain menjadi rumah data resmi yang sudah tersedia. Tujuan yang belum dibangun tetap ditandai belum tersedia agar arah pengembangannya terbaca tanpa membuat halaman kosong.
 
 Tinjauan menjadi satu antrean keputusan manusia untuk kandidat lintas-domain. Metadata, bukti, pilihan pembanding, kaitan evaluasi, asal-usul data, dan tindakan menyesuaikan apakah kandidat merupakan data baru, pembaruan rekam, atau pelengkapan metadata.
 
-Pada ruang kerja Indonesia, setiap hasil bisnis dari Pengumpulan, bidang yang diterima dari Ekstraksi Dokumen, dan usulan pelengkapan Publikasi benar-benar dibuat sebagai rekam Tinjauan dan dibuka kembali melalui identitas rekamnya selama sesi frontend. Identitas pekerjaan Pengumpulan tetap disimpan sebagai jejak sumber, bukan dijadikan satu kandidat gabungan. Perpindahan ini tetap bersifat lokal sampai endpoint staging dan penyimpanan server tersedia. Route Tinjauan Inggris menampilkan keadaan belum tersedia secara jujur dan pemindah bahasa disembunyikan pada alur ini sampai terjemahannya mempunyai kemampuan yang setara.
+Pada ruang kerja Indonesia, setiap hasil bisnis dari Pengumpulan, bidang yang diterima dari Ekstraksi Dokumen, dan usulan pelengkapan dari seluruh rumah data resmi benar-benar dibuat sebagai rekam Tinjauan dan dibuka kembali melalui identitas rekamnya selama sesi frontend. Identitas pekerjaan Pengumpulan tetap disimpan sebagai jejak sumber, bukan dijadikan satu kandidat gabungan. Perpindahan ini tetap bersifat lokal sampai endpoint staging dan penyimpanan server tersedia. Route Tinjauan Inggris menampilkan keadaan belum tersedia secara jujur dan pemindah bahasa disembunyikan pada alur ini sampai terjemahannya mempunyai kemampuan yang setara.
 
 Data saat ini masih bersifat lokal dan deterministik untuk memvalidasi presentasi serta interaksi frontend. Autentikasi, hak akses, penyimpanan permanen, worker, dan perubahan data resmi tetap menunggu integrasi layanan server. Struktur adapter dan state frontend dipertahankan sebagai batas integrasi agar sumber data server nantinya dapat menggantikan data pengembangan tanpa membongkar alur utama antarmuka.
 

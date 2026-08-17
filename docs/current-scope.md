@@ -75,6 +75,43 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Usulan tidak langsung mengubah rekam resmi dan selalu diteruskan ke Tinjauan beserta kaitan indikator KM-nya.
 - Setelah dikirim, usulan tersedia sebagai kandidat pelengkapan metadata pada Tinjauan di sesi yang sama.
 
+### Kekayaan Intelektual
+
+- Rumah data resmi untuk hak cipta dan paten yang sudah lolos Tinjauan (KM-15 dan KM-16).
+- Bentuk perlindungan merupakan metadata rekam tersendiri dan tidak diturunkan dari indikator KM, karena paten juga termasuk kekayaan intelektual.
+- Nomor pencatatan ditandai sebagai bidang yang belum selesai ketika sumber belum mencatatnya, sesuai definisi indikator yang baru menghitung pengajuan setelah memperoleh nomor registrasi.
+- Dokumen pendaftaran membedakan tiga keadaan: tersedia publik, tersimpan pada penyimpanan internal, dan belum tercatat. Dokumen internal bukan metadata yang hilang sehingga tidak ditandai perlu dilengkapi.
+- Baris sumber yang menduplikasi rekam yang sama digabungkan menjadi satu data resmi dengan seluruh jejak sumbernya tetap tersimpan, agar satu pengajuan tidak terhitung dua kali.
+- Tahun pengajuan yang berada di luar periode evaluasi berjalan dipertahankan apa adanya dan ditandai sebagai perbedaan yang perlu dikonfirmasi.
+- Usulan pelengkapan memakai alur yang sama dengan Publikasi dan selalu diteruskan ke Tinjauan beserta kaitan indikator KM-nya.
+
+### Kontrak & Proposal
+
+- Rumah data resmi menggabungkan pencarian kontrak dan proposal tanpa mencampur maknanya: proposal tetap berstatus pengajuan, sedangkan kontrak menyatakan hubungan yang sudah terbentuk.
+- Cakupan indikator saat ini adalah kontrak riset nasional, kontrak riset internasional, kontrak bisnis komersialisasi, proposal riset nasional, proposal riset internasional, dan proposal non-riset (KM-17–KM-19 serta KM-37–KM-39).
+- Bidang mengikuti kebutuhan workbook: judul, pengusul atau penanggung jawab, skema, mitra, pemberi hibah, tanggal kontrak bila relevan, serta lokasi bukti.
+- Contoh operasional memakai identitas netral dan tidak memasukkan judul, mitra, pihak kontrak, atau tautan penyimpanan privat dari workbook internal ke repository publik.
+- Bukti internal dibedakan dari bukti yang belum tercatat. Pelengkapan bidang yang benar-benar kosong diteruskan ke antrean Tinjauan pada kategori Riset & bisnis.
+
+### Akademik
+
+- Rumah data resmi untuk bimbingan doktor, bimbingan magister, dan magang mahasiswa yang sudah lolos Tinjauan (KM-28 sampai KM-30).
+- Bentuk kegiatan merupakan metadata rekam tersendiri dan tidak diturunkan dari indikator KM. Buku (KM-33) berkategori Akademik pada kamus KM, tetapi rekamnya tetap berada di Publikasi karena bentuknya karya terbit.
+- Baris bimbingan dengan promotor dan ko-promotor untuk mahasiswa serta topik yang sama digabungkan menjadi satu kegiatan resmi, agar satu bimbingan tidak terhitung dua kali.
+- Data pengembangan memakai penanda mahasiswa, pembimbing, dan topik yang netral. Identitas lengkap nantinya mengikuti hak akses serta payload dari layanan server, bukan ditanamkan di frontend publik.
+- Bukti membedakan keadaan tersimpan internal dan belum tercatat. URL penyimpanan privat tidak dimasukkan ke repository; bukti yang benar-benar belum tercatat tetap menjadi pekerjaan pelengkapan.
+- Kartu Indikator Terisi menyatakan berapa indikator akademik yang sudah mempunyai rekam, sehingga indikator yang belum mempunyai satu pun baris kegiatan tidak hilang dari pandangan.
+- Usulan pelengkapan memakai alur yang sama dengan Publikasi dan diteruskan ke Tinjauan pada kategori Akademik & SDM.
+
+### Kegiatan & Pengabdian
+
+- Rumah data resmi untuk keterlibatan unit bisnis, pembinaan UMKM atau komunitas, pengelolaan konferensi internasional, kontrak non-riset, community services, proposal pengabdian, kegiatan pengabdian, dan pengelolaan jurnal nasional (KM-20 sampai KM-27).
+- Setiap indikator mempertahankan bentuk kegiatan serta bidangnya sendiri. Rekam bisnis, komunitas, konferensi, layanan non-riset, pengabdian, proposal, dan jurnal tidak dilebur menjadi satu skema kegiatan generik.
+- Bidang mengikuti kebutuhan worksheet sumber: pihak utama, unit bisnis atau komunitas, tanggal dan tempat acara, skema, tim pelaksana, masyarakat sasaran, dana, serta metadata jurnal sesuai jenis rekamnya.
+- Contoh operasional memakai identitas, judul, organisasi, dan nilai dana yang netral. Keberadaan bukti internal boleh dicatat, tetapi URL penyimpanan privat dan rincian operasional stakeholder tidak dimasukkan ke repository publik.
+- Bukti internal dibedakan dari bukti yang belum tercatat. Bidang yang benar-benar kosong dapat dilengkapi melalui formulir bersama dan diteruskan ke Tinjauan pada kategori Bisnis atau Pengabdian masyarakat tanpa langsung mengubah data resmi.
+- Tabel desktop berubah menjadi kartu dua kolom pada layar tablet dan satu kolom pada ponsel agar label, metadata, status, serta aksi tetap terbaca tanpa gulir horizontal.
+
 ### Dokumen
 
 - Pustaka menerima PDF atau DOCX hingga 25 MB pada sesi frontend.
@@ -95,6 +132,9 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/tinjauan` | Tinjauan kandidat sebelum menjadi data resmi |
 | `/en/nexus/reviews` | Keadaan jujur bahwa terjemahan Tinjauan belum tersedia |
 | `/nexus/publikasi` | Daftar dan rincian publikasi resmi |
+| `/nexus/kekayaan-intelektual` | Daftar dan rincian hak cipta serta paten resmi |
+| `/nexus/kontrak-proposal` | Daftar dan rincian kontrak serta proposal resmi |
+| `/nexus/akademik` | Daftar dan rincian bimbingan serta magang mahasiswa resmi |
 | `/nexus/dokumen` dan `/en/nexus/documents` | Pustaka dokumen |
 | `/nexus/tanya-dokumen` dan `/en/nexus/ask-documents` | Tanya jawab bersitasi |
 | `/nexus/ekstraksi` dan `/en/nexus/extraction` | Ekstraksi kandidat dari dokumen |
