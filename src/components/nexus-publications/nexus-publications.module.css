@@ -1,6 +1,13 @@
+/*
+ * Baris filter mengikuti lebar ruang kerja, bukan lebar layar. Lebar yang
+ * tersedia berubah ketika sidebar dibuka atau diciutkan, sehingga ambang
+ * berbasis layar membuat enam kolom tetap dipasang walaupun ruangnya sudah
+ * tidak cukup dan barisnya meluber keluar kolom.
+ */
 .catalog {
   min-width: 0;
   margin-top: clamp(1.7rem, 2.2vw, 2.15rem);
+  container-type: inline-size;
 }
 
 .toolbar {
@@ -98,7 +105,8 @@
  * 11,5rem; di bawah itu labelnya terpotong. Ambangnya diukur di peramban,
  * lalu turun ke tiga kolom yang masih lega sebelum menjadi satu kolom.
  */
-@media (max-width: 90rem) {
+/* Enam kolom membutuhkan ruang 78rem; di bawah itu turun ke tiga kolom. */
+@container (max-width: 78rem) {
   .toolbar {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -108,16 +116,18 @@
   }
 }
 
-@media (max-width: 42rem) {
-  .catalog {
-    margin-top: 1.5rem;
-  }
-
+@container (max-width: 40rem) {
   .toolbar {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .toolbar > :first-child {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 42rem) {
+  .catalog {
+    margin-top: 1.5rem;
   }
 }
