@@ -2,34 +2,47 @@
 
 import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";
+import styles from "@/components/nexus-metadata-completion/nexus-metadata-completion-form.module.css";
 import {
   createEmptyMetadataCompletionResolution,
+  type MetadataCompletionFieldKey,
+  type MetadataCompletionResolution,
+  type MetadataCompletionResolutions,
   metadataCompletionFieldConfigs,
+  metadataCompletionFieldLabels,
   metadataCompletionResolutionChoices,
   metadataCompletionValueError,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import styles from "@/components/nexus-publications/nexus-publication-completion-form.module.css";
-import type {
-  OfficialPublication,
-  PublicationCompletionFieldKey,
-  PublicationCompletionResolution,
-  PublicationCompletionResolutions,
-  PublicationMetadataProposal,
-} from "@/components/nexus-publications/nexus-publications-content";
-import { publicationCompletionFieldLabels } from "@/components/nexus-publications/nexus-publications-content";
 
-type NexusPublicationCompletionFormProps = {
-  onClose: () => void;
-  onSubmitProposal: (
-    publicationId: string,
-    resolutions: PublicationCompletionResolutions,
-    note: string,
-  ) => void;
-  proposal?: PublicationMetadataProposal;
-  publication: OfficialPublication;
+/**
+ * Usulan pelengkapan metadata yang sedang menunggu tinjauan. Bentuknya sama
+ * untuk seluruh rumah data resmi supaya alurnya tidak bercabang per domain.
+ */
+export type MetadataCompletionProposal = {
+  id: string;
+  note: string;
+  recordId: string;
+  resolutions: MetadataCompletionResolutions;
+  status: "waiting-review";
+  submittedAt: string;
+  submittedBy: string;
 };
 
-function getResolutionResult(resolution: PublicationCompletionResolution) {
+type NexusMetadataCompletionFormProps = {
+  /** Nomor urut seksi pada drawer tempat form ini dipasang. */
+  sectionIndex: string;
+  missingFields: readonly MetadataCompletionFieldKey[];
+  onClose: () => void;
+  onSubmitProposal: (
+    recordId: string,
+    resolutions: MetadataCompletionResolutions,
+    note: string,
+  ) => void;
+  proposal?: MetadataCompletionProposal;
+  recordId: string;
+};
+
+function getResolutionResult(resolution: MetadataCompletionResolution) {
   if (resolution.status === "provided") return resolution.value;
   if (resolution.status === "not-available") {
     return `Memang tidak tersedia · ${resolution.reason}`;
@@ -45,31 +58,32 @@ function SuccessIcon() {
   );
 }
 
-export function NexusPublicationCompletionForm({
+export function NexusMetadataCompletionForm({
+  sectionIndex,
+  missingFields,
   onClose,
   onSubmitProposal,
   proposal,
-  publication,
-}: NexusPublicationCompletionFormProps) {
-  const [resolutions, setResolutions] =
-    useState<PublicationCompletionResolutions>(
-      () =>
-        Object.fromEntries(
-          publication.missingFields.map((key) => [
-            key,
-            createEmptyMetadataCompletionResolution(),
-          ]),
-        ) as PublicationCompletionResolutions,
-    );
+  recordId,
+}: NexusMetadataCompletionFormProps) {
+  const [resolutions, setResolutions] = useState<MetadataCompletionResolutions>(
+    () =>
+      Object.fromEntries(
+        missingFields.map((key) => [
+          key,
+          createEmptyMetadataCompletionResolution(),
+        ]),
+      ) as MetadataCompletionResolutions,
+  );
   const [sourceNote, setSourceNote] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const fields = publication.missingFields.map(
+  const fields = missingFields.map(
     (key) => metadataCompletionFieldConfigs[key],
   );
   const normalizedResolutions = useMemo(
     () =>
       Object.fromEntries(
-        publication.missingFields.map((key) => [
+        missingFields.map((key) => [
           key,
           {
             reason: resolutions[key]?.reason.trim() ?? "",
@@ -77,12 +91,12 @@ export function NexusPublicationCompletionForm({
             value: resolutions[key]?.value.trim() ?? "",
           },
         ]),
-      ) as PublicationCompletionResolutions,
-    [publication.missingFields, resolutions],
+      ) as MetadataCompletionResolutions,
+    [missingFields, resolutions],
   );
   /** Kesalahan per bidang, hanya untuk nilai yang benar-benar diisi. */
   const fieldErrors = Object.fromEntries(
-    publication.missingFields.flatMap((key) => {
+    missingFields.flatMap((key) => {
       const resolution = normalizedResolutions[key];
 
       if (!resolution || resolution.status !== "provided") return [];
@@ -92,8 +106,8 @@ export function NexusPublicationCompletionForm({
 
       return error ? [[key, error] as const] : [];
     }),
-  ) as Partial<Record<PublicationCompletionFieldKey, string>>;
-  const allFieldsResolved = publication.missingFields.every((key) => {
+  ) as Partial<Record<MetadataCompletionFieldKey, string>>;
+  const allFieldsResolved = missingFields.every((key) => {
     const resolution = normalizedResolutions[key];
 
     if (!resolution) return false;
@@ -109,8 +123,8 @@ export function NexusPublicationCompletionForm({
     allFieldsResolved && sourceNote.trim().length >= 8;
 
   const updateResolution = (
-    key: PublicationCompletionFieldKey,
-    update: Partial<PublicationCompletionResolution>,
+    key: MetadataCompletionFieldKey,
+    update: Partial<MetadataCompletionResolution>,
   ) => {
     setResolutions((currentResolutions) => ({
       ...currentResolutions,
@@ -131,7 +145,7 @@ export function NexusPublicationCompletionForm({
 
   const confirmSubmission = () => {
     if (!canPrepareSubmission) return;
-    onSubmitProposal(publication.id, normalizedResolutions, sourceNote.trim());
+    onSubmitProposal(recordId, normalizedResolutions, sourceNote.trim());
   };
 
   if (proposal) {
@@ -149,9 +163,9 @@ export function NexusPublicationCompletionForm({
             Usulan pelengkapan metadata sudah dikirim
           </h3>
           <p>
-            Data resmi belum ditimpa. Status publikasi tetap Perlu dilengkapi
-            sampai pemeriksa menyetujui usulan dan memastikan seluruh bidang
-            yang perlu diperiksa sudah diselesaikan.
+            Data resmi belum ditimpa. Status rekam tetap Perlu dilengkapi sampai
+            pemeriksa menyetujui usulan dan memastikan seluruh bidang yang perlu
+            diperiksa sudah diselesaikan.
           </p>
           <dl>
             <div>
@@ -162,9 +176,9 @@ export function NexusPublicationCompletionForm({
               <dt>Diajukan oleh</dt>
               <dd>{proposal.submittedBy}</dd>
             </div>
-            {publication.missingFields.map((key) => (
+            {missingFields.map((key) => (
               <div key={key}>
-                <dt>{publicationCompletionFieldLabels[key]}</dt>
+                <dt>{metadataCompletionFieldLabels[key]}</dt>
                 <dd>
                   {proposal.resolutions[key]
                     ? getResolutionResult(proposal.resolutions[key])
@@ -204,10 +218,10 @@ export function NexusPublicationCompletionForm({
     >
       <header className={styles.heading}>
         <div>
-          <span className={styles.headingIndex}>06</span>
+          <span className={styles.headingIndex}>{sectionIndex}</span>
           <h3 id="completion-proposal-title">Ajukan pelengkapan metadata</h3>
         </div>
-        <p>{publication.missingFields.length} bidang perlu diselesaikan</p>
+        <p>{missingFields.length} bidang perlu diselesaikan</p>
       </header>
 
       <div className={styles.explanation}>
@@ -223,7 +237,7 @@ export function NexusPublicationCompletionForm({
       <form className={styles.form} onSubmit={prepareSubmission}>
         <div className={styles.fieldGrid}>
           {fields.map((field) => {
-            const fieldId = `${publication.id}-${field.key}-completion`;
+            const fieldId = `${recordId}-${field.key}-completion`;
             const helpId = `${fieldId}-help`;
             const reasonId = `${fieldId}-reason`;
             const resolution =
@@ -234,7 +248,7 @@ export function NexusPublicationCompletionForm({
             return (
               <fieldset className={styles.resolutionField} key={field.key}>
                 <legend>
-                  {publicationCompletionFieldLabels[field.key]}{" "}
+                  {metadataCompletionFieldLabels[field.key]}{" "}
                   <em>perlu diselesaikan</em>
                 </legend>
 
@@ -301,8 +315,7 @@ export function NexusPublicationCompletionForm({
                         id={fieldId}
                         inputMode={field.inputMode}
                         maxLength={
-                          field.maxLength ??
-                          (field.key === "publisherUrl" ? 500 : 300)
+                          field.maxLength ?? (field.type === "url" ? 500 : 300)
                         }
                         onChange={(event) =>
                           updateResolution(field.key, {
@@ -371,7 +384,7 @@ export function NexusPublicationCompletionForm({
               setSourceNote(event.currentTarget.value);
               setShowConfirmation(false);
             }}
-            placeholder="Contoh: Nilai diperiksa pada halaman penerbit berikut dan sesuai dengan PDF artikel: …"
+            placeholder="Contoh: Nilai diperiksa pada dokumen sumber berikut dan sesuai dengan berkas aslinya: …"
             required
             rows={4}
             value={sourceNote}

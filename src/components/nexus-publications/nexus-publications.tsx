@@ -18,7 +18,6 @@ import { NexusPublicationsIcon } from "@/components/nexus-publications/nexus-pub
 import {
   getPublicationSourceId,
   getPublicationSourceTabs,
-  normalizePublicationSearch,
   type PublicationSourceId,
   publicationHasSource,
 } from "@/components/nexus-publications/nexus-publications-utils";
@@ -33,6 +32,7 @@ import {
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -186,7 +186,7 @@ function matchesYearFilter(publication: OfficialPublication, value: string) {
 }
 
 function searchableText(publication: OfficialPublication) {
-  return normalizePublicationSearch(
+  return normalizeWorkspaceSearch(
     [
       publicationDisplayTitle(publication),
       publication.publicId,
@@ -360,7 +360,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
     sourceTabs.find((source) => source.id === activeSourceId) ?? sourceTabs[0];
 
   const filteredPublications = useMemo(() => {
-    const needle = normalizePublicationSearch(deferredSearchQuery);
+    const needle = normalizeWorkspaceSearch(deferredSearchQuery);
     const matching = content.records.filter(
       (publication) =>
         publicationHasSource(
@@ -436,7 +436,6 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
       : "tanpa filter tambahan",
-    content.updatedAt.replace(/^Diperbarui /, "diperbarui "),
   ].join(" · ");
 
   const hasActiveFilters =
@@ -475,7 +474,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
     const proposal: PublicationMetadataProposal = {
       id: `PLG-2026-${String(Object.keys(completionProposals).length + 1).padStart(5, "0")}`,
       note,
-      publicationId,
+      recordId: publicationId,
       resolutions,
       status: "waiting-review",
       submittedAt: "Baru saja",

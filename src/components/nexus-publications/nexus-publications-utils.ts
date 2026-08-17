@@ -51,11 +51,3 @@ export function getPublicationSourceTabs(
       .filter((tab) => tab.count > 0),
   ];
 }
-
-export function normalizePublicationSearch(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase("id-ID")
-    .trim();
-}

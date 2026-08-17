@@ -1,8 +1,30 @@
+import {
+  type AcademicProposal,
+  academicDisplayTitle,
+  academicMentorNames,
+  type OfficialAcademicRecord,
+} from "@/components/nexus-academic/nexus-academic-content";
+import {
+  type ActivityProposal,
+  activityDisplayTitle,
+  type OfficialActivityRecord,
+} from "@/components/nexus-activities/nexus-activities-content";
 import type {
   AuditReviewField,
   AuditReviewRecord,
   AuditReviewSource,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
+import {
+  type ContractProposalProposal,
+  contractProposalDisplayTitle,
+  type OfficialContractProposalRecord,
+} from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
+import type {
+  IntellectualPropertyProposal,
+  OfficialIntellectualProperty,
+} from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
+import { intellectualPropertyCreatorNames } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
+import { metadataCompletionFieldLabels } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
   type OfficialPublication,
   type PublicationCompletionFieldKey,
@@ -314,5 +336,487 @@ export function createMetadataCompletionReviewRecord(
     subtitle: `${publication.publicId} · pelengkapan metadata`,
     title: displayTitle,
     typeLabel: "Pelengkapan metadata publikasi",
+  });
+}
+
+export function createAcademicCompletionReviewRecord(
+  record: OfficialAcademicRecord,
+  proposal: AcademicProposal,
+  actor: FrontendActor,
+): AuditReviewRecord {
+  const discoveredAt = new Date();
+  const displayTitle = academicDisplayTitle(record);
+  const officialValues: Partial<Record<string, string>> = {
+    evidenceUrl: record.evidenceUrl,
+    programStudy: record.programStudy,
+    title: record.title,
+    year: record.year ? String(record.year) : undefined,
+  };
+  const proposedValues = new Map<string, string>(
+    record.missingFields.map((key) => [
+      key,
+      resolutionValue(proposal.resolutions, key),
+    ]),
+  );
+
+  // Satu bidang bisnis tetap satu fieldId, sama seperti pelengkapan Publikasi.
+  const canonicalFields: readonly { id: string; label: string }[] = [
+    { id: "title", label: "Topik riset / nama kegiatan" },
+    { id: "mentors", label: "Pembimbing" },
+    { id: "activity", label: "Bentuk kegiatan" },
+    { id: "programStudy", label: "Program studi" },
+    { id: "year", label: "Tahun kegiatan" },
+  ];
+  const canonicalIds = new Set(canonicalFields.map((field) => field.id));
+  const canonicalValues: Record<string, string> = {
+    activity: record.activity,
+    mentors: academicMentorNames(record),
+    programStudy: record.programStudy ?? "",
+    title: record.title,
+    year: officialValues.year ?? "",
+  };
+  const fields: AuditReviewField[] = [
+    ...canonicalFields.map((field) => ({
+      ...field,
+      value: proposedValues.get(field.id) ?? canonicalValues[field.id] ?? "",
+    })),
+    ...record.missingFields
+      .filter((key) => !canonicalIds.has(key))
+      .map((key) => ({
+        id: key,
+        label: metadataCompletionFieldLabels[key],
+        value: proposedValues.get(key) ?? "",
+      })),
+  ];
+  const comparisons = record.missingFields.map((key) => ({
+    candidateValue: proposedValues.get(key) ?? "",
+    fieldId: key,
+    label: metadataCompletionFieldLabels[key],
+    officialValue: officialValues[key] || "Belum tersedia",
+    status: "missing" as const,
+    statusLabel: "Diajukan",
+  }));
+
+  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
+    candidateKind: "metadata_completion",
+    category: "academic_hr",
+    categoryLabel: "Akademik & SDM",
+    discoveredAt: discoveredAt.toISOString(),
+    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+    evidence: [
+      {
+        href: proposal.resolutions.evidenceUrl?.value || undefined,
+        id: `${proposal.id}-source`,
+        label: "Dasar usulan pelengkapan",
+        reference: proposal.note,
+        sourceLabel: "Usulan pengelola",
+      },
+    ],
+    fields,
+    id: proposal.id,
+    kpiLinks: record.kmLinks.map((link) => ({
+      evidenceRule:
+        "Kegiatan baru dihitung pada indikator ini setelah bukti kegiatannya dapat diperiksa.",
+      indicator: link.indicator,
+    })),
+    matches: [
+      {
+        comparisons,
+        id: record.publicId,
+        score: 100,
+        title: displayTitle,
+        verdict: "strong",
+        verdictLabel: "Rekam tujuan",
+      },
+    ],
+    owner: "Belum ditetapkan",
+    periodLabel: record.evaluationPeriod,
+    // Mahasiswa tidak dipakai sebagai pihak utama karena identitasnya tidak
+    // dipublikasikan; pembimbing pertama adalah pihak yang dapat dihubungi.
+    primaryPerson: record.mentors[0]?.name ?? "Belum ditetapkan",
+    provenance: {
+      retrievedAt: discoveredAt.toISOString(),
+      sourceKey: `academic:${record.publicId}`,
+    },
+    signal: {
+      primary: `${record.missingFields.length} bidang diajukan`,
+      secondary: `Melengkapi ${record.publicId}`,
+      tone: "info",
+    },
+    source: "manual",
+    sourceLabel: "Usulan manual",
+    subtitle: `${record.publicId} · pelengkapan metadata`,
+    title: displayTitle,
+    typeLabel: "Pelengkapan metadata kegiatan akademik",
+  });
+}
+
+export function createActivityCompletionReviewRecord(
+  record: OfficialActivityRecord,
+  proposal: ActivityProposal,
+  actor: FrontendActor,
+): AuditReviewRecord {
+  const discoveredAt = new Date();
+  const displayTitle = activityDisplayTitle(record);
+  const officialValues: Partial<Record<string, string>> = {
+    evidenceUrl: record.evidenceUrl,
+    title: record.title,
+  };
+  const proposedValues = new Map<string, string>(
+    record.missingFields.map((key) => [
+      key,
+      resolutionValue(proposal.resolutions, key),
+    ]),
+  );
+  const canonicalFields: readonly { id: string; label: string }[] = [
+    { id: "title", label: "Nama kegiatan / program" },
+    { id: "kind", label: "Jenis rekam" },
+    { id: "primaryParty", label: "Pihak utama" },
+    ...(record.organization
+      ? [{ id: "organization", label: "Unit bisnis / komunitas" }]
+      : []),
+    ...(record.role ? [{ id: "role", label: "Keterlibatan sebagai" }] : []),
+    ...(record.scheme ? [{ id: "scheme", label: "Skema / program" }] : []),
+    ...(record.team ? [{ id: "team", label: "Tim pelaksana" }] : []),
+    ...(record.targetGroup
+      ? [{ id: "targetGroup", label: "Masyarakat / mitra sasaran" }]
+      : []),
+    ...(record.funding ? [{ id: "funding", label: "Dana tercatat" }] : []),
+    ...(record.eventDate
+      ? [{ id: "eventDate", label: "Tanggal kegiatan" }]
+      : []),
+    ...(record.location ? [{ id: "location", label: "Tempat" }] : []),
+    ...(record.journalVolume
+      ? [{ id: "journalVolume", label: "Volume pada periode sumber" }]
+      : []),
+    ...(record.issn ? [{ id: "issn", label: "ISSN" }] : []),
+    ...(record.publicationFrequency
+      ? [{ id: "publicationFrequency", label: "Frekuensi terbit" }]
+      : []),
+  ];
+  const canonicalIds = new Set(canonicalFields.map((field) => field.id));
+  const canonicalValues: Record<string, string> = {
+    eventDate: record.eventDate ?? "",
+    funding: record.funding ?? "",
+    issn: record.issn ?? "",
+    journalVolume: record.journalVolume ?? "",
+    kind: record.kind,
+    location: record.location ?? "",
+    organization: record.organization ?? "",
+    primaryParty: record.primaryParty,
+    publicationFrequency: record.publicationFrequency ?? "",
+    role: record.role ?? "",
+    scheme: record.scheme ?? "",
+    targetGroup: record.targetGroup ?? "",
+    team: record.team ?? "",
+    title: record.title,
+  };
+  const fields: AuditReviewField[] = [
+    ...canonicalFields.map((field) => ({
+      ...field,
+      value: proposedValues.get(field.id) ?? canonicalValues[field.id] ?? "",
+    })),
+    ...record.missingFields
+      .filter((key) => !canonicalIds.has(key))
+      .map((key) => ({
+        id: key,
+        label: metadataCompletionFieldLabels[key],
+        value: proposedValues.get(key) ?? "",
+      })),
+  ];
+  const comparisons = record.missingFields.map((key) => ({
+    candidateValue: proposedValues.get(key) ?? "",
+    fieldId: key,
+    label: metadataCompletionFieldLabels[key],
+    officialValue: officialValues[key] || "Belum tersedia",
+    status: "missing" as const,
+    statusLabel: "Diajukan",
+  }));
+
+  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
+    candidateKind: "metadata_completion",
+    category:
+      record.group === "Bisnis" ? "research_business" : "community_service",
+    categoryLabel:
+      record.group === "Bisnis" ? "Riset & bisnis" : "Pengabdian masyarakat",
+    discoveredAt: discoveredAt.toISOString(),
+    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+    evidence: [
+      {
+        href: proposal.resolutions.evidenceUrl?.value || undefined,
+        id: `${proposal.id}-source`,
+        label: "Dasar usulan pelengkapan",
+        reference: proposal.note,
+        sourceLabel: "Usulan pengelola",
+      },
+    ],
+    fields,
+    id: proposal.id,
+    kpiLinks: record.kmLinks.map((link) => ({
+      evidenceRule:
+        "Kegiatan baru dihitung setelah jenis, pihak terkait, dan bukti pelaksanaannya dapat diperiksa.",
+      indicator: link.indicator,
+    })),
+    matches: [
+      {
+        comparisons,
+        id: record.publicId,
+        score: 100,
+        title: displayTitle,
+        verdict: "strong",
+        verdictLabel: "Rekam tujuan",
+      },
+    ],
+    owner: record.ownerUnit,
+    periodLabel: record.evaluationPeriod,
+    primaryPerson: record.primaryParty,
+    provenance: {
+      retrievedAt: discoveredAt.toISOString(),
+      sourceKey: `activity:${record.publicId}`,
+    },
+    signal: {
+      primary: `${record.missingFields.length} bidang diajukan`,
+      secondary: `Melengkapi ${record.publicId}`,
+      tone: "info",
+    },
+    source: "manual",
+    sourceLabel: "Usulan manual",
+    subtitle: `${record.publicId} · pelengkapan metadata`,
+    title: displayTitle,
+    typeLabel: "Pelengkapan metadata kegiatan atau pengabdian",
+  });
+}
+
+export function createContractProposalCompletionReviewRecord(
+  record: OfficialContractProposalRecord,
+  proposal: ContractProposalProposal,
+  actor: FrontendActor,
+): AuditReviewRecord {
+  const discoveredAt = new Date();
+  const displayTitle = contractProposalDisplayTitle(record);
+  const officialValues: Partial<Record<string, string>> = {
+    applicant: record.applicant,
+    contractEnd: record.contractEnd,
+    contractStart: record.contractStart,
+    evidenceUrl: record.evidenceUrl,
+    funder: record.funder,
+    scheme: record.scheme,
+    title: record.title,
+  };
+  const proposedValues = new Map<string, string>(
+    record.missingFields.map((key) => [
+      key,
+      resolutionValue(proposal.resolutions, key),
+    ]),
+  );
+  const canonicalFields: readonly { id: string; label: string }[] = [
+    { id: "title", label: "Judul kontrak / proposal" },
+    { id: "kind", label: "Jenis rekam" },
+    { id: "applicant", label: "Pengusul / penanggung jawab" },
+    ...(record.kind === "Kontrak Bisnis Komersialisasi"
+      ? []
+      : [{ id: "scheme", label: "Skema / program" }]),
+    { id: "partner", label: "Mitra" },
+    ...(record.group === "Proposal"
+      ? [{ id: "funder", label: "Instansi pemberi hibah" }]
+      : []),
+    ...(record.kind === "Kontrak Bisnis Komersialisasi"
+      ? [
+          { id: "contractStart", label: "Tanggal mulai kontrak" },
+          { id: "contractEnd", label: "Tanggal selesai kontrak" },
+        ]
+      : []),
+  ];
+  const canonicalIds = new Set(canonicalFields.map((field) => field.id));
+  const canonicalValues: Record<string, string> = {
+    applicant: record.applicant,
+    contractEnd: record.contractEnd ?? "",
+    contractStart: record.contractStart ?? "",
+    funder: record.funder ?? "",
+    kind: record.kind,
+    partner: record.partner ?? "",
+    scheme: record.scheme ?? "",
+    title: record.title,
+  };
+  const fields: AuditReviewField[] = [
+    ...canonicalFields.map((field) => ({
+      ...field,
+      value: proposedValues.get(field.id) ?? canonicalValues[field.id] ?? "",
+    })),
+    ...record.missingFields
+      .filter((key) => !canonicalIds.has(key))
+      .map((key) => ({
+        id: key,
+        label: metadataCompletionFieldLabels[key],
+        value: proposedValues.get(key) ?? "",
+      })),
+  ];
+  const comparisons = record.missingFields.map((key) => ({
+    candidateValue: proposedValues.get(key) ?? "",
+    fieldId: key,
+    label: metadataCompletionFieldLabels[key],
+    officialValue: officialValues[key] || "Belum tersedia",
+    status: "missing" as const,
+    statusLabel: "Diajukan",
+  }));
+
+  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
+    candidateKind: "metadata_completion",
+    category: "research_business",
+    categoryLabel: "Riset & bisnis",
+    discoveredAt: discoveredAt.toISOString(),
+    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+    evidence: [
+      {
+        href: proposal.resolutions.evidenceUrl?.value || undefined,
+        id: `${proposal.id}-source`,
+        label: "Dasar usulan pelengkapan",
+        reference: proposal.note,
+        sourceLabel: "Usulan pengelola",
+      },
+    ],
+    fields,
+    id: proposal.id,
+    kpiLinks: record.kmLinks.map((link) => ({
+      evidenceRule:
+        "Rekam baru dihitung pada indikator ini setelah jenis, pihak terkait, dan bukti pengajuan atau kontraknya dapat diperiksa.",
+      indicator: link.indicator,
+    })),
+    matches: [
+      {
+        comparisons,
+        id: record.publicId,
+        score: 100,
+        title: displayTitle,
+        verdict: "strong",
+        verdictLabel: "Rekam tujuan",
+      },
+    ],
+    owner: record.ownerUnit,
+    periodLabel: record.evaluationPeriod,
+    primaryPerson: record.applicant || "Belum ditetapkan",
+    provenance: {
+      retrievedAt: discoveredAt.toISOString(),
+      sourceKey: `contract-proposal:${record.publicId}`,
+    },
+    signal: {
+      primary: `${record.missingFields.length} bidang diajukan`,
+      secondary: `Melengkapi ${record.publicId}`,
+      tone: "info",
+    },
+    source: "manual",
+    sourceLabel: "Usulan manual",
+    subtitle: `${record.publicId} · pelengkapan metadata`,
+    title: displayTitle,
+    typeLabel: "Pelengkapan metadata kontrak atau proposal",
+  });
+}
+
+export function createIntellectualPropertyCompletionReviewRecord(
+  record: OfficialIntellectualProperty,
+  proposal: IntellectualPropertyProposal,
+  actor: FrontendActor,
+): AuditReviewRecord {
+  const discoveredAt = new Date();
+  const officialValues: Partial<Record<string, string>> = {
+    documentUrl: record.documentUrl,
+    protectionType: record.protection,
+    registrationNumber: record.registrationNumber,
+    title: record.title,
+    year: record.year ? String(record.year) : undefined,
+  };
+  const proposedValues = new Map<string, string>(
+    record.missingFields.map((key) => [
+      key,
+      resolutionValue(proposal.resolutions, key),
+    ]),
+  );
+
+  // Satu bidang bisnis tetap satu fieldId, sama seperti pelengkapan Publikasi.
+  const canonicalFields: readonly { id: string; label: string }[] = [
+    { id: "title", label: "Judul karya" },
+    { id: "creators", label: "Pencipta / inventor" },
+    { id: "protectionType", label: "Jenis perlindungan" },
+    { id: "registrationNumber", label: "Nomor pencatatan" },
+    { id: "year", label: "Tahun pengajuan" },
+  ];
+  const canonicalIds = new Set(canonicalFields.map((field) => field.id));
+  const canonicalValues: Record<string, string> = {
+    creators: intellectualPropertyCreatorNames(record),
+    protectionType: record.protection,
+    registrationNumber: record.registrationNumber ?? "",
+    title: record.title,
+    year: officialValues.year ?? "",
+  };
+  const fields: AuditReviewField[] = [
+    ...canonicalFields.map((field) => ({
+      ...field,
+      value: proposedValues.get(field.id) ?? canonicalValues[field.id] ?? "",
+    })),
+    ...record.missingFields
+      .filter((key) => !canonicalIds.has(key))
+      .map((key) => ({
+        id: key,
+        label: metadataCompletionFieldLabels[key],
+        value: proposedValues.get(key) ?? "",
+      })),
+  ];
+  const comparisons = record.missingFields.map((key) => ({
+    candidateValue: proposedValues.get(key) ?? "",
+    fieldId: key,
+    label: metadataCompletionFieldLabels[key],
+    officialValue: officialValues[key] || "Belum tersedia",
+    status: "missing" as const,
+    statusLabel: "Diajukan",
+  }));
+
+  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
+    candidateKind: "metadata_completion",
+    category: "innovation_ip",
+    categoryLabel: "Inovasi & HKI",
+    discoveredAt: discoveredAt.toISOString(),
+    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+    evidence: [
+      {
+        id: `${proposal.id}-source`,
+        label: "Dasar usulan pelengkapan",
+        reference: proposal.note,
+        sourceLabel: "Usulan pengelola",
+      },
+    ],
+    fields,
+    id: proposal.id,
+    kpiLinks: record.kmLinks.map((link) => ({
+      evidenceRule:
+        "Indikator baru menghitung pengajuan yang sudah memperoleh nomor registrasi beserta dokumen pendaftarannya.",
+      indicator: link.indicator,
+    })),
+    matches: [
+      {
+        comparisons,
+        id: record.publicId,
+        score: 100,
+        title: record.title,
+        verdict: "strong",
+        verdictLabel: "Rekam tujuan",
+      },
+    ],
+    owner: "Belum ditetapkan",
+    periodLabel: record.evaluationPeriod,
+    primaryPerson: record.creators[0]?.name ?? "Belum ditetapkan",
+    provenance: {
+      retrievedAt: discoveredAt.toISOString(),
+      sourceKey: `intellectual-property:${record.publicId}`,
+    },
+    signal: {
+      primary: `${record.missingFields.length} bidang diajukan`,
+      secondary: `Melengkapi ${record.publicId}`,
+      tone: "info",
+    },
+    source: "manual",
+    sourceLabel: "Usulan manual",
+    subtitle: `${record.publicId} · pelengkapan metadata`,
+    title: record.title,
+    typeLabel: "Pelengkapan metadata kekayaan intelektual",
   });
 }

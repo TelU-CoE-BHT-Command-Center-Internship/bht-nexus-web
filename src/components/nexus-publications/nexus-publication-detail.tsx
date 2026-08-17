@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import badgeStyles from "@/components/nexus-publications/nexus-publication-badges.module.css";
-import { NexusPublicationCompletionForm } from "@/components/nexus-publications/nexus-publication-completion-form";
+import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
 import {
   type OfficialPublication,
@@ -17,6 +16,8 @@ import {
 } from "@/components/nexus-publications/nexus-publications-content";
 import { NexusPublicationsIcon } from "@/components/nexus-publications/nexus-publications-icons";
 import { getPublicationSourceId } from "@/components/nexus-publications/nexus-publications-utils";
+import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
+import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 
 type NexusPublicationDetailProps = {
@@ -49,7 +50,7 @@ function ArrowIcon() {
 
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className={styles.metaItem}>
+    <div className={detail.metaItem}>
       <dt>{label}</dt>
       <dd>{value}</dd>
     </div>
@@ -194,9 +195,9 @@ export function NexusPublicationDetail({
     >
       <section
         aria-labelledby="publication-overview-title"
-        className={styles.overview}
+        className={detail.overview}
       >
-        <div className={styles.overviewTop}>
+        <div className={detail.overviewTop}>
           <div>
             <span className={badgeStyles.officialBadge}>
               <NexusPublicationsIcon name="check" />
@@ -214,7 +215,7 @@ export function NexusPublicationDetail({
         <h3 id="publication-overview-title">{displayTitle}</h3>
         <p>{publicationAuthorNames(publication)}</p>
 
-        <dl className={styles.metaGrid}>
+        <dl className={detail.metaGrid}>
           <MetaItem label="Jenis" value={publication.type} />
           <MetaItem
             label="Tahun terbit"
@@ -231,7 +232,7 @@ export function NexusPublicationDetail({
       </section>
 
       {publication.missingFields.length > 0 ? (
-        <aside className={styles.completenessNotice}>
+        <aside className={detail.completenessNotice}>
           <NexusPublicationsIcon name="alert" />
           <div>
             <strong>Metadata resmi masih perlu dilengkapi</strong>
@@ -248,11 +249,11 @@ export function NexusPublicationDetail({
 
       <section
         aria-labelledby="publication-metadata-title"
-        className={styles.detailSection}
+        className={detail.detailSection}
       >
-        <div className={styles.sectionHeading}>
+        <div className={detail.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>01</span>
+            <span className={detail.sectionIndex}>01</span>
             <h3 id="publication-metadata-title">Metadata karya</h3>
           </div>
           <p>Identitas bibliografis rekam resmi</p>
@@ -261,25 +262,22 @@ export function NexusPublicationDetail({
           aria-label="Ringkasan rekam resmi"
           className={styles.metadataSummary}
         >
-          <div className={styles.metadataId}>
+          <div>
             <dt>ID publikasi</dt>
             <dd>{publication.publicId}</dd>
           </div>
-          <div
-            className={styles.metadataQuality}
-            data-quality={publication.quality}
-          >
+          <div data-quality={publication.quality}>
             <dt>Kelengkapan</dt>
             <dd>{publication.quality}</dd>
           </div>
         </dl>
         <dl
           aria-label="Detail metadata resmi"
-          className={styles.metadataDetails}
+          className={detail.metadataDetails}
         >
           {metadataItems.map((item) => (
             <div
-              className={item.wide ? styles.wideMetadata : undefined}
+              className={item.wide ? detail.wideMetadata : undefined}
               data-missing={item.missingFieldKey ? "true" : undefined}
               key={item.key}
             >
@@ -300,23 +298,23 @@ export function NexusPublicationDetail({
 
       <section
         aria-labelledby="publication-classification-title"
-        className={styles.detailSection}
+        className={detail.detailSection}
       >
-        <div className={styles.sectionHeading}>
+        <div className={detail.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>02</span>
+            <span className={detail.sectionIndex}>02</span>
             <h3 id="publication-classification-title">Klasifikasi pelaporan</h3>
           </div>
           <p>Kuartil dan keterkaitan indikator KM</p>
         </div>
 
-        <p className={styles.classificationExplanation}>
+        <p className={detail.explanation}>
           Klasifikasi hanya menentukan bagaimana publikasi dilaporkan. Rekam ini
           tetap menjadi data resmi walaupun belum dikaitkan dengan indikator KM
           mana pun.
         </p>
 
-        <ul className={styles.kmLinkList}>
+        <ul className={detail.kmLinkList}>
           {publication.kmLinks.length === 0 ? (
             <li data-empty="true">
               <strong>Belum dikaitkan dengan indikator KM</strong>
@@ -427,11 +425,11 @@ export function NexusPublicationDetail({
 
       <section
         aria-labelledby="publication-completeness-title"
-        className={styles.detailSection}
+        className={detail.detailSection}
       >
-        <div className={styles.sectionHeading}>
+        <div className={detail.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>03</span>
+            <span className={detail.sectionIndex}>03</span>
             <h3 id="publication-completeness-title">Kelengkapan metadata</h3>
           </div>
           <p>
@@ -441,14 +439,14 @@ export function NexusPublicationDetail({
           </p>
         </div>
 
-        <p className={styles.completenessExplanation}>
+        <p className={detail.explanation}>
           Status Lengkap hanya dapat diberikan setelah setiap bidang yang perlu
           diperiksa telah berisi nilai, atau pengecualian “tidak tersedia” /
           “tidak berlaku” telah disetujui. “Belum ditemukan” tetap berarti belum
           selesai.
         </p>
 
-        <ul className={styles.completenessList}>
+        <ul className={detail.completenessList}>
           {metadataItems.map((item) => {
             const isPending = Boolean(item.missingFieldKey && proposal);
             const status = item.missingFieldKey
@@ -462,18 +460,18 @@ export function NexusPublicationDetail({
 
             return (
               <li data-status={status} key={item.key}>
-                <span aria-hidden="true" className={styles.completenessMarker}>
+                <span aria-hidden="true" className={detail.completenessMarker}>
                   {status === "available"
                     ? "✓"
                     : status === "pending"
                       ? "↗"
                       : "?"}
                 </span>
-                <span className={styles.completenessCopy}>
+                <span className={detail.completenessCopy}>
                   <strong>{item.label}</strong>
                   <small>{resolutionSummary ?? item.value}</small>
                 </span>
-                <span className={styles.completenessStatus}>
+                <span className={detail.completenessStatus}>
                   {status === "available"
                     ? "Tersedia"
                     : status === "pending"
@@ -488,16 +486,16 @@ export function NexusPublicationDetail({
 
       <section
         aria-labelledby="publication-members-title"
-        className={styles.detailSection}
+        className={detail.detailSection}
       >
-        <div className={styles.sectionHeading}>
+        <div className={detail.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>04</span>
+            <span className={detail.sectionIndex}>04</span>
             <h3 id="publication-members-title">Penulis</h3>
           </div>
           <p>{publication.authors.length} penulis tercatat</p>
         </div>
-        <p className={styles.authorsNote}>
+        <p className={detail.explanation}>
           Urutan penulis mengikuti pencatatan sumber. Kepemilikan data dan hak
           perbaikan rekam ditetapkan terpisah oleh pengaturan peran, bukan oleh
           urutan penulis. Nama kolom penulis pada sumbernya dicatat di bagian
@@ -530,23 +528,23 @@ export function NexusPublicationDetail({
 
       <section
         aria-labelledby="publication-sources-title"
-        className={styles.detailSection}
+        className={detail.detailSection}
       >
-        <div className={styles.sectionHeading}>
+        <div className={detail.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>05</span>
+            <span className={detail.sectionIndex}>05</span>
             <h3 id="publication-sources-title">Sumber dan jejak data</h3>
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
-        <div className={styles.provenanceGrid}>
+        <div className={detail.provenanceGrid}>
           {publication.provenance.map((source) => (
             <article
-              className={styles.provenanceCard}
+              className={detail.provenanceCard}
               key={`${source.source}-${source.identifier}`}
             >
               <header>
-                <span className={styles.sourceIcon}>
+                <span className={detail.sourceIcon}>
                   <NexusPublicationsIcon name="database" />
                 </span>
                 <div>
@@ -590,7 +588,7 @@ export function NexusPublicationDetail({
                 ) : null}
               </dl>
               {source.note ? (
-                <p className={styles.provenanceNote}>{source.note}</p>
+                <p className={detail.provenanceNote}>{source.note}</p>
               ) : null}
             </article>
           ))}
@@ -599,17 +597,17 @@ export function NexusPublicationDetail({
 
       <section
         aria-labelledby="publication-review-title"
-        className={styles.reviewSection}
+        className={detail.reviewSection}
       >
-        <div className={styles.sectionHeading}>
+        <div className={detail.sectionHeading}>
           <div>
-            <span className={styles.sectionIndex}>06</span>
+            <span className={detail.sectionIndex}>06</span>
             <h3 id="publication-review-title">Keputusan tinjauan</h3>
           </div>
           <p>Riwayat keputusan tersimpan</p>
         </div>
-        <div className={styles.reviewDecision}>
-          <span className={styles.reviewCheck}>
+        <div className={detail.reviewDecision}>
+          <span className={detail.reviewCheck}>
             <NexusPublicationsIcon name="check" />
           </span>
           <div>
@@ -622,7 +620,7 @@ export function NexusPublicationDetail({
           </div>
         </div>
         <Link
-          className={styles.reviewLink}
+          className={detail.reviewLink}
           href="/nexus/tinjauan"
           prefetch={false}
         >
@@ -631,11 +629,13 @@ export function NexusPublicationDetail({
       </section>
 
       {publication.missingFields.length > 0 ? (
-        <NexusPublicationCompletionForm
+        <NexusMetadataCompletionForm
+          missingFields={publication.missingFields}
           onClose={onClose}
           onSubmitProposal={onSubmitCompletionProposal}
           proposal={proposal}
-          publication={publication}
+          recordId={publication.id}
+          sectionIndex="07"
         />
       ) : null}
     </NexusWorkspaceDrawer>

@@ -1,17 +1,30 @@
 /**
- * Bidang metadata kanonis yang boleh diusulkan lewat alur pelengkapan.
+ * Kosakata bidang metadata yang boleh diusulkan lewat alur pelengkapan.
  *
- * Daftar ini mengikuti metadata publikasi pada SRS (judul, tahun, DOI,
- * penomoran terbit, dan tautan sumber resmi) lalu diperluas oleh kebutuhan
- * pelaporan KM 2026 (kuartil jurnal). Workbook KM memperkaya daftar ini,
- * bukan menggantikannya.
+ * Satu kosakata dipakai bersama seluruh rumah data resmi supaya bentuk usulan,
+ * aturan pengecualian, dan tampilannya tidak bercabang per domain. Bidang yang
+ * maknanya berbeda antar domain memakai kunci berbeda, bukan kunci yang sama
+ * dengan arti ganda.
+ *
+ * Judul, tahun, dan tautan mengikuti metadata pada SRS; kuartil dan nomor
+ * pencatatan mengikuti kebutuhan pelaporan KM 2026.
  */
 export type MetadataCompletionFieldKey =
+  | "applicant"
+  | "contractEnd"
+  | "contractStart"
+  | "documentUrl"
   | "doi"
+  | "evidenceUrl"
+  | "funder"
   | "issue"
   | "pages"
+  | "programStudy"
+  | "protectionType"
   | "publisherUrl"
   | "quartile"
+  | "registrationNumber"
+  | "scheme"
   | "title"
   | "type"
   | "year";
@@ -43,8 +56,27 @@ export type MetadataCompletionFieldConfig = {
   type: "choice" | "text" | "url";
 };
 
-/** Tahun terbit paling awal yang masih masuk akal untuk arsip CoE. */
+/** Tahun paling awal yang masih masuk akal untuk arsip CoE. */
 const EARLIEST_PUBLICATION_YEAR = 1900;
+
+/** Tautan hanya diterima bila lengkap dan memakai skema web. */
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isIsoDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const date = new Date(`${value}T00:00:00Z`);
+  return (
+    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
+}
 
 /**
  * Pesan kesalahan untuk nilai yang diajukan, atau `null` bila sudah sah.
@@ -61,19 +93,40 @@ export function metadataCompletionValueError(
 
   if (key === "year") {
     if (!/^\d{4}$/.test(trimmed)) {
-      return "Tahun terbit harus berupa empat digit angka, contoh 2026.";
+      return "Tahun harus berupa empat digit angka, contoh 2026.";
     }
 
     const year = Number(trimmed);
     const latest = new Date().getFullYear() + 1;
 
     if (year < EARLIEST_PUBLICATION_YEAR || year > latest) {
-      return `Tahun terbit harus antara ${EARLIEST_PUBLICATION_YEAR} dan ${latest}.`;
+      return `Tahun harus antara ${EARLIEST_PUBLICATION_YEAR} dan ${latest}.`;
     }
+  }
+
+  if (
+    (key === "contractStart" || key === "contractEnd") &&
+    !isIsoDate(trimmed)
+  ) {
+    return "Tanggal harus memakai format YYYY-MM-DD, contoh 2026-08-17.";
+  }
+
+  if (
+    metadataCompletionFieldConfigs[key].type === "url" &&
+    !isHttpUrl(trimmed)
+  ) {
+    return "Tautan harus lengkap dan diawali http:// atau https://.";
   }
 
   if (key === "quartile" && !/^Q[1-4]$/.test(trimmed)) {
     return "Pilih salah satu kuartil Q1 sampai Q4.";
+  }
+
+  if (
+    key === "protectionType" &&
+    !metadataCompletionProtectionChoices.some((choice) => choice === trimmed)
+  ) {
+    return "Pilih salah satu bentuk perlindungan yang tersedia.";
   }
 
   if (
@@ -90,15 +143,33 @@ export const metadataCompletionFieldLabels: Record<
   MetadataCompletionFieldKey,
   string
 > = {
+  applicant: "Nama pengusul / penanggung jawab",
+  contractEnd: "Tanggal selesai kontrak",
+  contractStart: "Tanggal mulai kontrak",
   doi: "DOI",
+  evidenceUrl: "Tautan bukti kegiatan",
+  funder: "Instansi pemberi hibah",
   issue: "Nomor terbit",
   pages: "Halaman / nomor artikel",
+  programStudy: "Program studi",
+  documentUrl: "Tautan dokumen pendaftaran",
+  protectionType: "Jenis perlindungan",
   publisherUrl: "Tautan penerbit",
+  registrationNumber: "Nomor pencatatan",
+  scheme: "Skema / program",
   quartile: "Kuartil jurnal",
-  title: "Judul publikasi",
+  title: "Judul",
   type: "Jenis publikasi",
-  year: "Tahun terbit",
+  year: "Tahun",
 };
+
+/** Bentuk perlindungan kekayaan intelektual yang boleh dipilih. */
+export const metadataCompletionProtectionChoices = [
+  "Hak Cipta",
+  "Paten",
+  "Merek",
+  "Desain Industri",
+] as const;
 
 /** Bentuk karya yang boleh dipilih sebagai nilai akhir. */
 export const metadataCompletionTypeChoices = [
@@ -111,10 +182,42 @@ export const metadataCompletionFieldConfigs: Record<
   MetadataCompletionFieldKey,
   MetadataCompletionFieldConfig
 > = {
+  applicant: {
+    help: "Gunakan nama pengusul atau penanggung jawab yang tercatat pada dokumen sumber.",
+    key: "applicant",
+    placeholder: "Nama pengusul atau penanggung jawab",
+    type: "text",
+  },
+  contractEnd: {
+    help: "Gunakan tanggal selesai yang tertulis pada kontrak dengan format YYYY-MM-DD.",
+    key: "contractEnd",
+    maxLength: 10,
+    placeholder: "2026-12-31",
+    type: "text",
+  },
+  contractStart: {
+    help: "Gunakan tanggal mulai yang tertulis pada kontrak dengan format YYYY-MM-DD.",
+    key: "contractStart",
+    maxLength: 10,
+    placeholder: "2026-01-01",
+    type: "text",
+  },
   doi: {
     help: "Masukkan DOI tanpa https://doi.org/. DOI dipakai untuk mengenali publikasi yang sama dari sumber berbeda.",
     key: "doi",
     placeholder: "10.xxxx/xxxxx",
+    type: "text",
+  },
+  evidenceUrl: {
+    help: "Gunakan tautan bukti yang dapat dibuka oleh pemeriksa, misalnya kontrak, proposal, surat tugas, lembar pengesahan, atau berkas laporan.",
+    key: "evidenceUrl",
+    placeholder: "https://penyimpanan.example/bukti",
+    type: "url",
+  },
+  funder: {
+    help: "Gunakan nama instansi pemberi hibah sebagaimana tercatat pada proposal atau surat pengumuman.",
+    key: "funder",
+    placeholder: "Nama instansi pemberi hibah",
     type: "text",
   },
   issue: {
@@ -127,6 +230,37 @@ export const metadataCompletionFieldConfigs: Record<
     help: "Gunakan rentang halaman atau nomor artikel dari penerbit.",
     key: "pages",
     placeholder: "Contoh: 115–128 atau e10452",
+    type: "text",
+  },
+  documentUrl: {
+    help: "Gunakan tautan dokumen pendaftaran atau penerimaan yang dapat dibuka oleh pemeriksa. Dokumen yang hanya tersimpan pada penyimpanan internal tidak perlu ditautkan di sini.",
+    key: "documentUrl",
+    placeholder: "https://penyimpanan.example/dokumen",
+    type: "url",
+  },
+  programStudy: {
+    help: "Tulis nama program studi seperti yang tercatat pada data akademik mahasiswa, contoh S2 Teknik Elektro.",
+    key: "programStudy",
+    placeholder: "Contoh: S1 Teknik Komputer",
+    type: "text",
+  },
+  protectionType: {
+    choices: metadataCompletionProtectionChoices,
+    help: "Tentukan bentuk perlindungan sesuai dokumen pendaftarannya.",
+    key: "protectionType",
+    placeholder: "Pilih jenis perlindungan",
+    type: "choice",
+  },
+  registrationNumber: {
+    help: "Gunakan nomor yang tertera pada bukti pencatatan atau pendaftaran. Indikator KM baru menghitung pengajuan yang sudah memperoleh nomor registrasi.",
+    key: "registrationNumber",
+    placeholder: "Contoh: REG-2026-001",
+    type: "text",
+  },
+  scheme: {
+    help: "Gunakan nama skema atau program persis seperti yang tercantum pada kontrak atau proposal.",
+    key: "scheme",
+    placeholder: "Nama skema atau program",
     type: "text",
   },
   publisherUrl: {
@@ -143,9 +277,9 @@ export const metadataCompletionFieldConfigs: Record<
     type: "choice",
   },
   title: {
-    help: "Salin judul persis seperti yang tertulis pada halaman penerbit.",
+    help: "Salin judul persis seperti yang tertulis pada sumber resminya.",
     key: "title",
-    placeholder: "Judul lengkap artikel",
+    placeholder: "Judul lengkap rekam",
     type: "text",
   },
   type: {
@@ -156,7 +290,7 @@ export const metadataCompletionFieldConfigs: Record<
     type: "choice",
   },
   year: {
-    help: "Gunakan tahun terbit karya, bukan tahun periode evaluasi KM. Isi empat digit angka.",
+    help: "Gunakan tahun yang melekat pada rekam ini, bukan tahun periode evaluasi KM. Isi empat digit angka.",
     inputMode: "numeric",
     key: "year",
     maxLength: 4,
@@ -188,13 +322,20 @@ export const metadataCompletionResolutionOptions: readonly {
 ];
 
 /**
- * Judul, tahun terbit, dan jenis publikasi selalu ada pada sebuah karya.
+ * Bidang identitas utama selalu melekat pada jenis rekam yang memakainya.
  * Nilainya bisa belum ditemukan, tetapi tidak pernah "tidak berlaku", jadi
  * pilihan itu tidak ditawarkan agar pengecualian tidak dipakai sebagai jalan
- * pintas. Bidang lain tetap boleh dinyatakan tidak berlaku, termasuk kuartil
- * yang memang tidak dimiliki setiap jurnal.
+ * pintas. Bidang kontekstual tetap boleh dinyatakan tidak berlaku.
  */
 const alwaysApplicableFields: readonly MetadataCompletionFieldKey[] = [
+  "applicant",
+  "contractEnd",
+  "contractStart",
+  "evidenceUrl",
+  "funder",
+  "programStudy",
+  "protectionType",
+  "scheme",
   "title",
   "type",
   "year",

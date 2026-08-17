@@ -266,7 +266,29 @@
 
 .navItem[data-planned="true"] {
   cursor: default;
-  opacity: 0.82;
+  opacity: 0.62;
+}
+
+/*
+ * Penanda tertulis dipakai karena perbedaan warna saja tidak cukup: pada
+ * layar sentuh tidak ada hover, sehingga tooltip tidak pernah terbaca.
+ */
+.navPlannedCopy {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+  justify-items: start;
+}
+
+.navPlanned {
+  padding: 0.1rem 0.38rem;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .navIcon {
@@ -372,6 +394,7 @@
 .shell[data-sidebar-collapsed="true"] .brandCopy,
 .shell[data-sidebar-collapsed="true"] .navGroupLabel,
 .shell[data-sidebar-collapsed="true"] .navLabel,
+.shell[data-sidebar-collapsed="true"] .navPlannedCopy,
 .shell[data-sidebar-collapsed="true"] .supportCopy {
   display: none;
 }
@@ -985,6 +1008,10 @@
   .shell[data-sidebar-collapsed="true"] .navGroupLabel,
   .shell[data-sidebar-collapsed="true"] .navLabel {
     display: block;
+  }
+
+  .shell[data-sidebar-collapsed="true"] .navPlannedCopy {
+    display: grid;
   }
 
   .shell[data-sidebar-collapsed="true"] .supportCopy {

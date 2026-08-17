@@ -85,6 +85,24 @@ export function NexusDashboardSidebar({
                     <span className={styles.navLabel}>{item.label}</span>
                   </>
                 );
+                /*
+                 * Penanda diletakkan di bawah label, bukan di sampingnya:
+                 * lebar sidebar hanya pas untuk label terpanjang, sehingga
+                 * penanda sebaris akan memotong tulisannya.
+                 */
+                const plannedContent = (
+                  <>
+                    <span className={styles.navIcon}>
+                      <DashboardShellIcon name={item.icon} />
+                    </span>
+                    <span className={styles.navPlannedCopy}>
+                      <span className={styles.navLabel}>{item.label}</span>
+                      <span aria-hidden="true" className={styles.navPlanned}>
+                        {content.plannedBadgeLabel}
+                      </span>
+                    </span>
+                  </>
+                );
 
                 return item.available ? (
                   <Link
@@ -114,7 +132,7 @@ export function NexusDashboardSidebar({
                     }
                     type="button"
                   >
-                    {itemContent}
+                    {plannedContent}
                   </button>
                 );
               })}

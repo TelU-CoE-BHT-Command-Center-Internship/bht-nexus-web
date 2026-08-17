@@ -5,9 +5,23 @@
 
 .desktopTable table {
   width: 100%;
-  min-width: 60rem;
   border-collapse: collapse;
   table-layout: fixed;
+}
+
+/*
+ * Lebar tabel dan lebar kolom di bawah ini adalah nilai bawaan. Keduanya
+ * ditulis dengan `:where()` supaya spesifisitasnya nol, sehingga stylesheet
+ * halaman dapat menyetel kolomnya sendiri. Tanpa itu aturan bersama dan
+ * aturan halaman berspesifisitas sama, dan yang dimuat belakangan menang
+ * secara kebetulan.
+ *
+ * Kolom `primary` sengaja tidak diberi lebar: dengan `table-layout: fixed`
+ * kolom tanpa lebar menyerap sisa ruang, sehingga judul tidak pernah
+ * tergencet ketika kolom lain bertambah.
+ */
+.desktopTable :where(table) {
+  min-width: 64rem;
 }
 
 .desktopTable th {
@@ -23,26 +37,28 @@
   white-space: nowrap;
 }
 
-.desktopTable th[data-column="primary"] {
-  width: 26%;
-}
-
-.desktopTable th[data-column="source"] {
+.desktopTable :where(th[data-column="source"]) {
   width: 9.5rem;
 }
 
-.desktopTable th[data-column="signal"] {
+.desktopTable :where(th[data-column="signal"]) {
   width: 11.25rem;
 }
 
 .desktopTable th[data-column="status"] {
-  width: 9rem;
   text-align: center;
 }
 
+.desktopTable :where(th[data-column="status"]) {
+  width: 9rem;
+}
+
 .desktopTable th[data-column="action"] {
-  width: 9.5rem;
   text-align: center;
+}
+
+.desktopTable :where(th[data-column="action"]) {
+  width: 9.5rem;
 }
 
 .desktopTable td,
@@ -132,8 +148,15 @@
   color: #5b4fd6;
 }
 
+/*
+ * Badge dibatasi selebar selnya dan boleh membungkus. Dengan `nowrap` sebuah
+ * label panjang akan keluar dari sel dan menabrak kolom sebelahnya, sedangkan
+ * memotongnya dengan elipsis justru menyembunyikan status. Lebar kolom pada
+ * setiap halaman disetel agar label yang lazim tetap muat satu baris.
+ */
 .badge {
   display: inline-flex;
+  max-width: 100%;
   align-items: center;
   padding: 0.28rem 0.5rem;
   border-radius: 999px;
@@ -142,7 +165,7 @@
   font-size: 0.675rem;
   font-weight: 650;
   line-height: 1.25;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .badge[data-tone="success"] {
@@ -349,7 +372,13 @@
   }
 }
 
-@media (max-width: 48rem) {
+/*
+ * Tabel workspace memuat tujuh sampai delapan kolom. Pada Surface dan iPad,
+ * ruang efektif makin sempit setelah navigasi sehingga scroll horizontal
+ * membuat label terpotong dan kolom aksi tersembunyi. Kartu mempertahankan
+ * informasi inti dan memindahkan rincian sekunder ke drawer yang sama.
+ */
+@media (max-width: 68rem) {
   .desktopTable {
     display: none;
   }
@@ -357,12 +386,20 @@
   .mobileList,
   .mobileLoading {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
     padding: 0.75rem;
   }
 
   .mobileLoading > span {
     height: 13rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  .mobileList,
+  .mobileLoading {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

@@ -13,6 +13,7 @@ import {
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import { NexusWorkspaceNotice } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspaceTableBadge } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 
 type AuditCandidateDetailsProps = {
@@ -84,24 +85,6 @@ export function AuditReviewSectionHeading({
       {meta ? <p>{meta}</p> : null}
     </div>
   );
-}
-
-function personInitials(name: string) {
-  const nameWithoutCredentials = name.split(",", 1)[0]?.trim() ?? "";
-  const actualName = nameWithoutCredentials.replace(
-    /^(?:(?:Prof|Dr|Eng|Ir)\.?\s*)+/giu,
-    "",
-  );
-  const words = actualName.match(/[\p{L}\p{N}]+/gu) ?? [];
-
-  if (words.length === 0) return "—";
-  const identityWords = words.filter(
-    (_, index) => index === 0 || index === words.length - 1,
-  );
-
-  return identityWords
-    .map((word) => word[0]?.toLocaleUpperCase("id-ID"))
-    .join("");
 }
 
 function ReviewPerson({

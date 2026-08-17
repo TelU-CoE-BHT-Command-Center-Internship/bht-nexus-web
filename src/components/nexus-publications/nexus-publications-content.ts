@@ -6,13 +6,13 @@ import lailyAdeOktavianaPhoto from "@/assets/members/laily-ade-oktaviana.webp";
 import miftadiSudjaiPhoto from "@/assets/members/miftadi-sudjai.webp";
 import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
 import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
+import type { MetadataCompletionProposal } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import {
   type MetadataCompletionFieldKey,
-  type MetadataCompletionResolution,
-  type MetadataCompletionResolutionStatus,
   type MetadataCompletionResolutions,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   kmIndicator,
   type NexusKmIndicator,
@@ -25,7 +25,7 @@ import {
  * bisa berbeda — definisi KM-13 mencakup book chapter, dan ada baris KM-13
  * yang wadah terbitnya justru prosiding konferensi.
  */
-export type PublicationType =
+type PublicationType =
   | "Artikel Jurnal"
   | "Belum diklasifikasikan"
   | "Buku / Book Chapter"
@@ -44,14 +44,11 @@ export type PublicationIndicatorId =
   | "KM-14"
   | "KM-33";
 
-export type PublicationQuartile = "Q1" | "Q2" | "Q3" | "Q4";
+type PublicationQuartile = "Q1" | "Q2" | "Q3" | "Q4";
 
-export type PublicationQuality = "Lengkap" | "Perlu dilengkapi";
+type PublicationQuality = "Lengkap" | "Perlu dilengkapi";
 
 export type PublicationCompletionFieldKey = MetadataCompletionFieldKey;
-export type PublicationCompletionResolutionStatus =
-  MetadataCompletionResolutionStatus;
-export type PublicationCompletionResolution = MetadataCompletionResolution;
 export type PublicationCompletionResolutions = MetadataCompletionResolutions;
 
 export const publicationCompletionFieldLabels: Record<
@@ -59,15 +56,7 @@ export const publicationCompletionFieldLabels: Record<
   string
 > = metadataCompletionFieldLabels;
 
-export type PublicationMetadataProposal = {
-  id: string;
-  note: string;
-  publicationId: string;
-  resolutions: PublicationCompletionResolutions;
-  status: "waiting-review";
-  submittedAt: string;
-  submittedBy: string;
-};
+export type PublicationMetadataProposal = MetadataCompletionProposal;
 
 export const publicationSourceNames = [
   "Workbook KM 2026",
@@ -78,9 +67,9 @@ export const publicationSourceNames = [
 
 export type PublicationSourceName = (typeof publicationSourceNames)[number];
 
-export type PublicationCitationProvider = "Google Scholar" | "SINTA";
+type PublicationCitationProvider = "Google Scholar" | "SINTA";
 
-export type PublicationAuthor = {
+type PublicationAuthor = {
   avatarSrc?: ImageProps["src"];
   id: string;
   initials: string;
@@ -96,7 +85,7 @@ export type PublicationAuthor = {
  * - `note` merekam ketidakcocokan antar-sumber supaya asal data tetap jujur
  *   setelah beberapa baris direkonsiliasi menjadi satu rekam resmi.
  */
-export type PublicationProvenance = {
+type PublicationProvenance = {
   /** Nama kolom penulis pada sumber, yang belum tentu sama dengan label kanonis. */
   authorColumn?: string;
   capturedAt: string;
@@ -111,7 +100,7 @@ export type PublicationProvenance = {
  * publikasi tetap sah sebagai data resmi walaupun belum dikaitkan dengan
  * indikator mana pun. Klasifikasi KM tidak menentukan keberadaan publikasi.
  */
-export type PublicationKmLink = {
+type PublicationKmLink = {
   indicator: NexusKmIndicator;
   note: string;
 };
@@ -877,18 +866,15 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-function initialsOf(name: string) {
-  const words = name.split(/\s+/).filter(Boolean);
-  const first = words[0]?.[0] ?? "";
-  const last = words.length > 1 ? (words.at(-1)?.[0] ?? "") : "";
-
-  return `${first}${last}`.toLocaleUpperCase("id-ID");
-}
-
 function toAuthor(name: string): PublicationAuthor {
   const id = slugify(name);
 
-  return { avatarSrc: memberPhotos[id], id, initials: initialsOf(name), name };
+  return {
+    avatarSrc: memberPhotos[id],
+    id,
+    initials: personInitials(name),
+    name,
+  };
 }
 
 /**

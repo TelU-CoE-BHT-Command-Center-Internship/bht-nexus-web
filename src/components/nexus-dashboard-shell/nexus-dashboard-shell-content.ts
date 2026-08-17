@@ -69,6 +69,7 @@ export type NexusDashboardShellContent = {
   notifications: DashboardNotification[];
   notificationsTitle: string;
   openMenuLabel: string;
+  plannedBadgeLabel: string;
   plannedFeatureLabel: string;
   profileLabel: string;
   searchEmptyLabel: string;
@@ -100,9 +101,10 @@ type NavigationDefinition = {
  * memutuskan, lalu hasilnya mendarat pada satu rumah data resmi.
  *
  * Grup `official` dipetakan satu-per-satu dari kategori kandidat di Tinjauan
- * sehingga setiap keputusan reviewer selalu punya tujuan yang jelas. Hanya
- * Publikasi yang sudah dibangun; sisanya ditandai belum tersedia agar
- * strukturnya terbaca tanpa membuat halaman kosong.
+ * sehingga setiap keputusan reviewer selalu punya tujuan yang jelas. Publikasi,
+ * Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan &
+ * Pengabdian sudah dibangun; sisanya ditandai belum tersedia agar strukturnya
+ * terbaca tanpa membuat halaman kosong.
  */
 const navigationDefinitions: NavigationDefinition[] = [
   {
@@ -154,7 +156,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Publications", id: "Publikasi" },
   },
   {
-    available: { en: false, id: false },
+    available: { en: false, id: true },
     group: "official",
     href: {
       en: "/en/nexus/intellectual-property",
@@ -168,7 +170,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     },
   },
   {
-    available: { en: false, id: false },
+    available: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/contracts", id: "/nexus/kontrak-proposal" },
     icon: "contracts",
@@ -176,7 +178,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Contracts & Proposals", id: "Kontrak & Proposal" },
   },
   {
-    available: { en: false, id: false },
+    available: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/academic", id: "/nexus/akademik" },
     icon: "academic",
@@ -184,7 +186,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Academic", id: "Akademik" },
   },
   {
-    available: { en: false, id: false },
+    available: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/activities", id: "/nexus/kegiatan" },
     icon: "activities",
@@ -306,6 +308,7 @@ export function getNexusDashboardShellPreviewContent(
     ],
     notificationsTitle: isId ? "Notifikasi" : "Notifications",
     openMenuLabel: isId ? "Buka navigasi" : "Open navigation",
+    plannedBadgeLabel: isId ? "Segera" : "Planned",
     plannedFeatureLabel: isId
       ? "Fitur ini akan dibangun pada tahap berikutnya"
       : "This feature is planned for a later stage",
@@ -316,7 +319,7 @@ export function getNexusDashboardShellPreviewContent(
     searchItems,
     searchLabel: isId ? "Cari di BHT Nexus" : "Search BHT Nexus",
     searchPlaceholder: isId
-      ? "Cari pengumpulan, tinjauan, publikasi, atau dokumen"
+      ? "Cari pengumpulan, tinjauan, publikasi, kontrak, kegiatan, atau dokumen"
       : "Search collection, reviews, publications, or documents",
     signOutHref: isId ? "/nexus/masuk" : "/en/nexus/sign-in",
     signOutLabel: isId ? "Keluar" : "Sign out",

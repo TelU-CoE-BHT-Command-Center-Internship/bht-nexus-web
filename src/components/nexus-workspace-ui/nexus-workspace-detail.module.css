@@ -1,0 +1,597 @@
+/*
+ * Bahasa desain rincian untuk rumah data resmi (Publikasi, Kekayaan
+ * Intelektual, dan berikutnya). Berisi kerangka drawer: ringkasan atas, seksi
+ * bernomor, daftar kelengkapan metadata, jejak sumber, serta keputusan
+ * tinjauan. Gaya khas satu domain tetap tinggal di stylesheet domain itu.
+ */
+
+.overview,
+.detailSection,
+.reviewSection {
+  border: 1px solid var(--color-nexus-border-soft);
+  border-radius: 0.75rem;
+  background: var(--color-nexus-surface);
+  box-shadow: 0 1px 2px rgb(16 24 40 / 3%);
+}
+
+.overview {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+}
+
+.overviewTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.overviewTop > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.overviewTop time {
+  color: #8a91a1;
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.overview h3 {
+  margin: 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+}
+
+.overview > p {
+  margin: -0.25rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0.15rem 0 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid #eef0f4;
+}
+
+.metaItem {
+  min-width: 0;
+}
+
+.metaItem dt,
+.metadataDetails dt,
+.provenanceCard dt {
+  margin-bottom: 0.15rem;
+  color: var(--color-nexus-text-subtle);
+  font-size: 0.61rem;
+}
+
+.metaItem dd {
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-nexus-text-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.completenessNotice {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #f2ddbd;
+  border-left: 4px solid #ee8c28;
+  border-radius: 0.65rem;
+  background: #fffbf3;
+}
+
+.completenessNotice > svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0.05rem auto 0;
+  color: #a85810;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.55;
+}
+
+.completenessNotice strong {
+  color: #7a4511;
+  font-size: 0.74rem;
+}
+
+.completenessNotice p {
+  margin: 0.18rem 0 0;
+  color: #7b634c;
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
+
+.detailSection,
+.reviewSection {
+  padding: 1rem;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.sectionHeading > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sectionHeading h3 {
+  margin: 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.sectionHeading > p {
+  margin: 0;
+  color: #8a91a1;
+  font-size: 0.62rem;
+  text-align: right;
+}
+
+.sectionIndex {
+  display: inline-flex;
+  width: 1.65rem;
+  height: 1.45rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.4rem;
+  background: #f2f0ff;
+  color: var(--color-nexus-accent);
+  font-size: 0.6rem;
+  font-weight: 750;
+}
+
+.metadataDetails {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.metadataDetails > div {
+  min-width: 0;
+  min-height: 4.1rem;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.55rem;
+  background: var(--color-nexus-surface);
+}
+
+.metadataDetails dd,
+.provenanceCard dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--color-nexus-text-soft);
+  font-size: 0.68rem;
+  font-weight: 620;
+  line-height: 1.45;
+}
+
+.metadataDetails a {
+  color: var(--color-brand-navy);
+  overflow-wrap: anywhere;
+}
+
+.metadataDetails > div[data-missing="true"] {
+  border-color: #f0d7b1;
+  background: #fffaf2;
+}
+
+.metadataDetails > div[data-missing="true"] dd {
+  color: #9a6400;
+}
+
+.metadataDetails .wideMetadata {
+  grid-column: 1 / -1;
+}
+
+.metadataDetails > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.provenanceNote {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-top: 1px solid var(--color-nexus-border);
+  color: var(--color-nexus-text-muted);
+  font-size: 0.66rem;
+  line-height: 1.55;
+}
+
+.explanation,
+.explanationTrailing {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-left: 3px solid #7b6ed8;
+  border-radius: 0.4rem;
+  background: #f8f7ff;
+  color: #5f6375;
+  font-size: 0.66rem;
+  line-height: 1.55;
+}
+
+.kmLinkList {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kmLinkList li {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #d6e2f2;
+  border-radius: 0.55rem;
+  background: #f7faff;
+}
+
+.kmLinkList li[data-empty="true"] {
+  border-color: var(--color-nexus-border);
+  background: var(--color-nexus-surface-subtle);
+}
+
+.kmLinkList strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.kmLinkList small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+.completenessList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.completenessList li {
+  display: grid;
+  grid-template-columns: 1.65rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid #dce9e3;
+  border-radius: 0.55rem;
+  background: #f7fcf9;
+}
+
+.completenessList li[data-status="missing"] {
+  border-color: #f0d7b1;
+  background: #fffaf2;
+}
+
+.completenessList li[data-status="pending"] {
+  border-color: #d9d3fa;
+  background: #f9f8ff;
+}
+
+.completenessMarker {
+  display: grid;
+  width: 1.55rem;
+  height: 1.55rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #dff4e9;
+  color: var(--color-nexus-success);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+li[data-status="missing"] .completenessMarker {
+  background: #fff0d6;
+  color: #9a6400;
+}
+
+li[data-status="pending"] .completenessMarker {
+  background: #ece9ff;
+  color: #6255ce;
+}
+
+.completenessCopy {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.completenessCopy strong {
+  color: var(--color-nexus-text);
+  font-size: 0.68rem;
+}
+
+.completenessCopy small {
+  overflow-wrap: anywhere;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.6rem;
+  line-height: 1.45;
+}
+
+.completenessStatus {
+  padding: 0.22rem 0.42rem;
+  border-radius: 999px;
+  background: #e4f5ec;
+  color: var(--color-nexus-success);
+  font-size: 0.56rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+li[data-status="missing"] .completenessStatus {
+  background: #fff0d6;
+  color: #8a5900;
+}
+
+li[data-status="pending"] .completenessStatus {
+  background: #ebe8ff;
+  color: var(--color-nexus-accent);
+}
+
+.provenanceCard a {
+  overflow-wrap: anywhere;
+  color: var(--color-brand-navy);
+}
+
+.provenanceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.provenanceCard {
+  overflow: hidden;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.65rem;
+  background: var(--color-nexus-surface);
+}
+
+.provenanceCard header {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #edf0f5;
+  background: var(--color-nexus-surface-subtle);
+}
+
+.sourceIcon {
+  display: grid;
+  width: 2.15rem;
+  height: 2.15rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #eaf1fc;
+  color: #315ca8;
+}
+
+.sourceIcon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  stroke: currentcolor;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.provenanceCard header > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.provenanceCard header strong {
+  color: var(--color-nexus-text);
+  font-size: 0.72rem;
+}
+
+.provenanceCard header > div > span {
+  flex: 0 0 auto;
+  font-size: 0.58rem;
+}
+
+.provenanceCard dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.75rem;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.reviewDecision {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid #cfeadf;
+  border-radius: 0.65rem;
+  background: #f3fbf7;
+}
+
+.reviewCheck {
+  display: grid;
+  width: 2.15rem;
+  height: 2.15rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #dff4ea;
+  color: #087a58;
+}
+
+.reviewCheck svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.reviewDecision strong {
+  color: #1d4f3f;
+  font-size: 0.74rem;
+}
+
+.reviewDecision p {
+  margin: 0.18rem 0 0.35rem;
+  color: #526c63;
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
+
+.reviewDecision small {
+  color: #718a81;
+  font-size: 0.59rem;
+  line-height: 1.45;
+}
+
+.reviewLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  color: var(--color-brand-navy);
+  font-size: 0.7rem;
+  font-weight: 680;
+  text-decoration: none;
+}
+
+.reviewLink:hover {
+  text-decoration: underline;
+}
+
+.reviewLink svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+@media (max-width: 48rem) {
+  .metaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 44rem) {
+  .completenessList,
+  .provenanceGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 36rem) {
+  .overviewTop,
+  .sectionHeading {
+    align-items: flex-start;
+  }
+
+  .sectionHeading {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .sectionHeading > p {
+    padding-left: 2.15rem;
+    text-align: left;
+  }
+
+  .metaGrid,
+  .metadataDetails {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metadataDetails .wideMetadata {
+    grid-column: span 1;
+  }
+
+  .completenessList li {
+    grid-template-columns: 1.65rem minmax(0, 1fr);
+  }
+
+  .completenessStatus {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 30rem) {
+  .overviewTop {
+    display: grid;
+  }
+
+  .overviewTop time {
+    white-space: normal;
+  }
+
+  .provenanceCard header > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .provenanceCard dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 25rem) {
+  .metaGrid,
+  .metadataDetails {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metadataDetails .wideMetadata {
+    grid-column: span 1;
+  }
+
+  .completenessList li {
+    grid-template-columns: 1.65rem minmax(0, 1fr);
+  }
+
+  .completenessStatus {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+.explanationTrailing {
+  margin: 0.75rem 0 0;
+}
