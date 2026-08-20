@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { NexusRagQa } from "@/components/nexus-rag-qa/nexus-rag-qa";
-import { getNexusRagQaContent } from "@/components/nexus-rag-qa/nexus-rag-qa-content";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Document Q&A",
@@ -9,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function DocumentQuestionsPage() {
-  return <NexusRagQa content={getNexusRagQaContent("en")} />;
+  redirect("/en/nexus/coming-soon");
 }

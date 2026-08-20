@@ -169,6 +169,7 @@ export function NexusRagLibrary({
     }
     const now = new Date();
     const next: RagDocument = {
+      capabilities: [],
       fileLabel: `${extension.toLocaleUpperCase()} · ${(file.size / (1024 * 1024)).toFixed(1)} MB`,
       id: `local-${now.getTime()}`,
       indexedAt: now.toISOString(),
@@ -189,18 +190,28 @@ export function NexusRagLibrary({
 
   const rows = visibleDocuments.map((document) => {
     const tone = statusTone(document.status);
+    const questionHref = `${
+      content.locale === "id"
+        ? "/nexus/tanya-dokumen"
+        : "/en/nexus/ask-documents"
+    }?document=${encodeURIComponent(document.id)}`;
+    const extractionHref = `${
+      content.locale === "id" ? "/nexus/ekstraksi" : "/en/nexus/extraction"
+    }?document=${encodeURIComponent(document.id)}`;
     const action =
-      document.status === "succeeded" ? (
-        <NexusWorkspaceLinkButton
-          href={
-            content.locale === "id"
-              ? "/nexus/tanya-dokumen"
-              : "/en/nexus/ask-documents"
-          }
-          key={`${document.id}-action`}
-        >
-          {content.locale === "id" ? "Tanya dokumen" : "Ask document"}
-        </NexusWorkspaceLinkButton>
+      document.status === "succeeded" && document.capabilities.length > 0 ? (
+        <span className={styles.documentActions} key={`${document.id}-action`}>
+          {document.capabilities.includes("qa") ? (
+            <NexusWorkspaceLinkButton href={questionHref}>
+              {content.locale === "id" ? "Tanya" : "Ask"}
+            </NexusWorkspaceLinkButton>
+          ) : null}
+          {document.capabilities.includes("extraction") ? (
+            <NexusWorkspaceLinkButton href={extractionHref}>
+              {content.locale === "id" ? "Ekstrak" : "Extract"}
+            </NexusWorkspaceLinkButton>
+          ) : null}
+        </span>
       ) : (
         <span className={styles.noAction} key={`${document.id}-action`}>
           —

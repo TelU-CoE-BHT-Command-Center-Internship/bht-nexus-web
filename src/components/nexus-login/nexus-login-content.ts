@@ -66,7 +66,7 @@ const nexusLoginContent = {
     backShortLabel: "CoE BHT website",
     emailLabel: "Email",
     emailPlaceholder: "name@telkomuniversity.ac.id",
-    destinationHref: "/en/nexus/documents",
+    destinationHref: "/en/nexus/coming-soon",
     forgotPasswordHref: `${COE_BHT_LINKS.email}?subject=BHT%20Nexus%20password%20help`,
     forgotPasswordLabel: "Forgot your password?",
     formDescription:

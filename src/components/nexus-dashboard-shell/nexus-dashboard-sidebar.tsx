@@ -104,7 +104,7 @@ export function NexusDashboardSidebar({
                   </>
                 );
 
-                return item.available ? (
+                return item.implemented ? (
                   <Link
                     aria-current={isActive ? "page" : undefined}
                     className={styles.navItem}

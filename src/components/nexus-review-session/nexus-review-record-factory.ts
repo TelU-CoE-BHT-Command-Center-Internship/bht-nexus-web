@@ -95,19 +95,6 @@ function periodFromFields(fields: readonly AuditReviewField[]) {
   return periodValue?.match(/20\d{2}/)?.[0] ?? "2026";
 }
 
-function dateKey(value: Date) {
-  const parts = new Intl.DateTimeFormat("en", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: "Asia/Jakarta",
-    year: "numeric",
-  }).formatToParts(value);
-  const valueFor = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((part) => part.type === type)?.value ?? "";
-
-  return `${valueFor("year")}${valueFor("month")}${valueFor("day")}`;
-}
-
 export function createCollectionReviewRecords(
   job: CollectionJob,
 ): AuditReviewRecord[] {
@@ -142,10 +129,9 @@ export function createExtractionReviewRecord(
   decisions: Record<string, "accepted" | "pending" | "rejected">,
   profileId: string,
   actor: FrontendActor,
+  id: string,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
-  const discoveredDateKey = dateKey(discoveredAt);
-  const id = `EXT-${profileId.toUpperCase()}-${discoveredDateKey}-001`;
   const acceptedFields = content.fields
     .filter((field) => decisions[field.id] === "accepted")
     .map(({ id: fieldId, label, value }) => ({ id: fieldId, label, value }));
@@ -178,10 +164,10 @@ export function createExtractionReviewRecord(
     primaryPerson: content.candidatePrimaryParty,
     provenance: {
       retrievedAt: discoveredAt.toISOString(),
-      sourceKey: `document:${content.documentTitle}`,
+      sourceKey: `document:${content.documentId}`,
     },
     signal: {
-      primary: `${acceptedFields.length} bidang diterima dari dokumen`,
+      primary: `${acceptedFields.length} bidang disertakan dari dokumen`,
       secondary: `${content.fields.length - acceptedFields.length} bidang tidak diteruskan`,
       tone: "waiting",
     },
@@ -626,7 +612,7 @@ export function createContractProposalCompletionReviewRecord(
     { id: "kind", label: "Jenis rekam" },
     ...(record.kind === "Kontrak Bisnis Komersialisasi"
       ? []
-      : [{ id: "applicant", label: "Pengusul / penanggung jawab" }]),
+      : [{ id: "applicant", label: "Nama / unit terkait" }]),
     ...(record.kind === "Kontrak Bisnis Komersialisasi"
       ? []
       : [{ id: "scheme", label: "Skema / program" }]),

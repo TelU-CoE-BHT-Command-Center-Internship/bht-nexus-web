@@ -28,7 +28,11 @@ Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum
 
 Dokumen mempunyai navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi. Ketiganya tidak menjadi tiga kategori teknologi terpisah di sidebar.
 
-Antarmuka Inggris menyediakan alur yang sudah mempunyai konten Inggris: Collection, Reviews, dan Documents. Halaman Inggris tidak menampilkan tujuan Indonesia yang belum diterjemahkan.
+Ruang kerja Inggris ditahan pada satu halaman status sampai alur Indonesia selesai. Route Inggris lama diarahkan ke halaman tersebut dan tidak boleh menampilkan fitur parsial sebagai kemampuan yang sudah siap.
+
+## Tipografi
+
+Antarmuka memakai Inter Variable 100–900 dari Google Fonts melalui paket `@fontsource-variable/inter`. Subset Latin dimuat sekali lewat `next/font/local` di `src/app/fonts.ts`, sehingga bentuk huruf tetap konsisten tanpa permintaan jaringan ke Google saat development maupun ketika aplikasi digunakan.
 
 ## Struktur halaman
 
@@ -121,7 +125,7 @@ Target minimum:
 
 Jangan mencampur konten Indonesia ke halaman Inggris kecuali judul dokumen atau kutipan sumber memang berasal dari dokumen berbahasa Indonesia. Jalur bahasa harus mempertahankan bahasa ketika pengguna berpindah di dalam workspace.
 
-Pemindah bahasa di header memakai bendera Indonesia dan Inggris dengan penanda aktif yang sama seperti landing page. Tautannya harus menuju padanan route terdekat yang memang tersedia; jangan menampilkan tujuan yang belum mempunyai halaman terjemahan. Karena Tinjauan Inggris belum setara, pemindah bahasa tidak ditampilkan pada Tinjauan dan route Inggrisnya memberi pemberitahuan yang jelas.
+Pemindah bahasa di header memakai bendera Indonesia dan Inggris dengan penanda aktif yang sama seperti landing page dan selalu tampil pada seluruh route workspace. Selama ruang kerja Inggris belum lengkap, pilihan Inggris menuju satu halaman status pembangunan; pilihan Indonesia dari halaman tersebut kembali ke Dashboard. Dengan demikian pola header tetap konsisten tanpa mengarang padanan fitur yang belum tersedia.
 
 ## Batas implementasi saat ini
 

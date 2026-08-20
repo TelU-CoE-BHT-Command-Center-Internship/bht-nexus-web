@@ -14,7 +14,12 @@ export type { AuditRuntimeState };
 export type AuditReviewDrawerProps = {
   capabilities: NexusReviewCapabilities;
   onClose: () => void;
-  onDecide: (kind: AuditDecisionKind, note: string, fieldIds: string[]) => void;
+  onDecide: (
+    kind: AuditDecisionKind,
+    note: string,
+    fieldIds: string[],
+    targetRecordId?: string,
+  ) => void;
   onResubmit: (values: Record<string, string>, evidenceNote: string) => void;
   record: AuditReviewRecord;
   state: AuditRuntimeState;

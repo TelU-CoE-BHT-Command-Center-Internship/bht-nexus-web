@@ -1,18 +1,10 @@
-import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
-import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
-import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  getNexusDocumentRecords,
+  type NexusDocumentRecord,
+} from "@/components/nexus-document-workspace/nexus-document-content";
 import type { Locale } from "@/i18n/locales";
 
-export type RagDocument = {
-  fileLabel: string;
-  id: string;
-  indexedAt: string;
-  indexedLabel: string;
-  ownerUnit: string;
-  status: AutomationJobStatus;
-  statusLabel: string;
-  title: string;
-};
+export type RagDocument = NexusDocumentRecord;
 
 export type NexusRagLibraryContent = {
   columns: {
@@ -30,60 +22,6 @@ export type NexusRagLibraryContent = {
   uploadNote: string;
   uploadSuccessLabel: string;
 };
-
-const documentSeeds = [
-  {
-    fileLabel: { en: "PDF · 18 pages", id: "PDF · 18 halaman" },
-    id: "pedoman-metadata-publikasi",
-    indexedAt: "2026-08-12T09:12",
-    ownerUnit: { en: "Data Management", id: "Pengelolaan Data" },
-    status: "succeeded",
-    title: {
-      en: "Publication Metadata Guide",
-      id: "Pedoman Metadata Publikasi",
-    },
-  },
-  {
-    fileLabel: { en: "PDF · 10 pages", id: "PDF · 10 halaman" },
-    id: "ringkasan-kegiatan-telemedisin",
-    indexedAt: "2026-08-12T08:05",
-    ownerUnit: { en: "Research", id: "Riset" },
-    status: "running",
-    title: {
-      en: "Primary Care Telemedicine Activity Summary",
-      id: "Ringkasan Kegiatan Telemedisin Layanan Primer",
-    },
-  },
-  {
-    fileLabel: { en: "DOCX · 7 pages", id: "DOCX · 7 halaman" },
-    id: "profil-riset-laboratorium",
-    indexedAt: "2026-08-12T08:03",
-    ownerUnit: { en: "Research", id: "Riset" },
-    status: "queued",
-    title: {
-      en: "Laboratory Research Profile",
-      id: "Profil Riset Laboratorium",
-    },
-  },
-  {
-    fileLabel: { en: "PDF · 24 pages", id: "PDF · 24 halaman" },
-    id: "rekap-publikasi-tahunan",
-    indexedAt: "2026-08-11T19:22",
-    ownerUnit: { en: "Data Management", id: "Pengelolaan Data" },
-    status: "retrying",
-    title: {
-      en: "Annual Publication Summary",
-      id: "Rekap Publikasi Tahunan",
-    },
-  },
-] satisfies Array<{
-  fileLabel: Record<Locale, string>;
-  id: string;
-  indexedAt: string;
-  ownerUnit: Record<Locale, string>;
-  status: AutomationJobStatus;
-  title: Record<Locale, string>;
-}>;
 
 const libraryCopy = {
   id: {
@@ -126,16 +64,7 @@ export function getNexusRagLibraryContent(
 ): NexusRagLibraryContent {
   return {
     ...libraryCopy[locale],
-    documents: documentSeeds.map((seed) => ({
-      fileLabel: seed.fileLabel[locale],
-      id: seed.id,
-      indexedAt: seed.indexedAt,
-      indexedLabel: formatTimestamp(seed.indexedAt),
-      ownerUnit: seed.ownerUnit[locale],
-      status: seed.status,
-      statusLabel: getAutomationStatusLabel(locale, seed.status),
-      title: seed.title[locale],
-    })),
+    documents: getNexusDocumentRecords(locale),
     locale,
   };
 }

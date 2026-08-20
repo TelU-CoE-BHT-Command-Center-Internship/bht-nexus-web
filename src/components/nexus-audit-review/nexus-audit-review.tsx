@@ -11,7 +11,9 @@ import type {
   AuditReviewStatus,
   NexusAuditReviewContent,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
+import { auditCurrentValue } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import {
+  type AuditRuntimeState,
   initialAuditRuntimeState,
   useNexusReviewSession,
 } from "@/components/nexus-review-session/nexus-review-session";
@@ -185,7 +187,7 @@ function actionLabel(status: AuditReviewStatus) {
   return "Tinjau";
 }
 
-function searchableText(record: AuditReviewRecord) {
+function searchableText(record: AuditReviewRecord, state: AuditRuntimeState) {
   return [
     record.title,
     record.subtitle,
@@ -198,7 +200,10 @@ function searchableText(record: AuditReviewRecord) {
       item.indicator.id,
       item.indicator.label,
     ]),
-    ...record.fields.flatMap((item) => [item.label, item.value]),
+    ...record.fields.flatMap((item) => [
+      item.label,
+      auditCurrentValue(record, state, item.id),
+    ]),
     ...record.evidence.flatMap((item) => [item.label, item.reference]),
   ]
     .join(" ")
@@ -306,13 +311,16 @@ export function NexusAuditReview({
   const filtered = useMemo(() => {
     const needle = deferredQuery.trim().toLocaleLowerCase("id-ID");
     const next = records.filter((record) => {
-      const effectiveStatus = runtime[record.id]?.status ?? record.status;
+      const recordState =
+        runtime[record.id] ?? initialAuditRuntimeState(record);
+      const effectiveStatus = recordState.status;
       return (
         (source === "all" || record.source === source) &&
         (status === "all" || effectiveStatus === status) &&
         (category === "all" || record.category === category) &&
         (period === "all" || record.periodLabel === period) &&
-        (needle.length === 0 || searchableText(record).includes(needle))
+        (needle.length === 0 ||
+          searchableText(record, recordState).includes(needle))
       );
     });
 
@@ -362,6 +370,7 @@ export function NexusAuditReview({
     kind: AuditDecisionKind,
     note: string,
     fieldIds: string[],
+    targetRecordId?: string,
   ) => {
     const label = decisionLabel(kind);
     const timeLabel = formatAuditTimestamp();
@@ -372,6 +381,7 @@ export function NexusAuditReview({
         kind,
         label,
         note,
+        targetRecordId,
         timeLabel,
       },
       fixRequest:
@@ -584,9 +594,9 @@ export function NexusAuditReview({
               Kembali ke antrean
             </NexusWorkspaceLinkButton>
           }
-          description="Data yang dibuat dari alur frontend sementara dapat hilang setelah halaman dimuat ulang. Kembali ke antrean untuk melanjutkan."
-          eyebrow="Sesi tinjauan"
-          title="Data tinjauan tidak tersedia pada sesi ini"
+          description="Silakan kembali ke antrean dan pilih data yang ingin Anda tinjau."
+          eyebrow="Tinjauan tidak ditemukan"
+          title="Data tinjauan ini tidak tersedia"
         />
       </NexusWorkspacePage>
     );
@@ -761,8 +771,8 @@ export function NexusAuditReview({
           key={`${selected.id}-${selectedState.status}-${selectedState.version}-${selectedState.decision?.kind ?? "open"}`}
           capabilities={reviewSession.capabilities}
           onClose={() => setOpenId(null)}
-          onDecide={(kind, note, fieldIds) =>
-            decide(selected, kind, note, fieldIds)
+          onDecide={(kind, note, fieldIds, targetRecordId) =>
+            decide(selected, kind, note, fieldIds, targetRecordId)
           }
           onResubmit={(values, evidenceNote) =>
             resubmit(selected, values, evidenceNote)

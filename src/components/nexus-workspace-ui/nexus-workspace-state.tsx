@@ -46,7 +46,7 @@ export function NexusWorkspaceNoAccess({
           {returnLabel}
         </NexusWorkspaceLinkButton>
       }
-      description="Hak akses ditentukan oleh layanan server dan tidak diputuskan ulang di browser. Data resmi tetap aman dan tidak berubah."
+      description="Akun Anda belum memiliki izin untuk membuka data ini. Silakan kembali atau hubungi pengelola jika Anda memerlukan akses."
       eyebrow="Akses dibatasi"
       title="Anda tidak memiliki akses untuk meninjau data ini"
       tone="danger"

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function SearchRedirectPage() {
-  redirect("/en/nexus/collection");
+  redirect("/en/nexus/coming-soon");
 }

@@ -12,7 +12,14 @@ import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-work
 export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
   const { onClose, record, state } = props;
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(
-    record.matches.length === 1 ? record.matches[0].id : null,
+    state.decision?.targetRecordId &&
+      record.matches.some(
+        (match) => match.id === state.decision?.targetRecordId,
+      )
+      ? state.decision.targetRecordId
+      : record.matches.length === 1
+        ? record.matches[0].id
+        : null,
   );
   const selectedMatch = record.matches.find(
     (match) => match.id === selectedMatchId,

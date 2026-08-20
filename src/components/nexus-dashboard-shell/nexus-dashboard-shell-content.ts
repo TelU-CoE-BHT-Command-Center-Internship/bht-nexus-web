@@ -18,7 +18,8 @@ export type DashboardShellIconName =
 
 export type DashboardNavigationItem = {
   activeHrefs: string[];
-  available: boolean;
+  /** Menandai route yang sudah dibangun, bukan izin akses pengguna. */
+  implemented: boolean;
   href: string;
   icon: DashboardShellIconName;
   id: string;
@@ -67,6 +68,7 @@ export type NexusDashboardShellContent = {
   navigationGroups: DashboardNavigationGroup[];
   notificationLabel: string;
   notifications: DashboardNotification[];
+  notificationsEmptyLabel: string;
   notificationsTitle: string;
   openMenuLabel: string;
   plannedBadgeLabel: string;
@@ -88,7 +90,7 @@ type NavigationGroupId = "administration" | "main" | "official" | "pipeline";
 
 type NavigationDefinition = {
   activeHrefs?: Record<Locale, string[]>;
-  available: Record<Locale, boolean>;
+  implemented: Record<Locale, boolean>;
   group: NavigationGroupId;
   href: Record<Locale, string>;
   icon: DashboardShellIconName;
@@ -108,7 +110,7 @@ type NavigationDefinition = {
  */
 const navigationDefinitions: NavigationDefinition[] = [
   {
-    available: { en: false, id: true },
+    implemented: { en: false, id: true },
     group: "main",
     href: { en: "/en/nexus", id: "/nexus/dashboard" },
     icon: "dashboard",
@@ -116,7 +118,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Dashboard", id: "Dashboard" },
   },
   {
-    available: { en: true, id: true },
+    implemented: { en: false, id: true },
     group: "pipeline",
     href: { en: "/en/nexus/collection", id: "/nexus/pengumpulan" },
     icon: "search",
@@ -132,7 +134,7 @@ const navigationDefinitions: NavigationDefinition[] = [
       ],
       id: ["/nexus/dokumen", "/nexus/tanya-dokumen", "/nexus/ekstraksi"],
     },
-    available: { en: true, id: true },
+    implemented: { en: false, id: true },
     group: "pipeline",
     href: { en: "/en/nexus/documents", id: "/nexus/dokumen" },
     icon: "documents",
@@ -140,7 +142,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Documents", id: "Dokumen" },
   },
   {
-    available: { en: true, id: true },
+    implemented: { en: false, id: true },
     group: "pipeline",
     href: { en: "/en/nexus/reviews", id: "/nexus/tinjauan" },
     icon: "reviews",
@@ -148,7 +150,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Reviews", id: "Tinjauan" },
   },
   {
-    available: { en: false, id: true },
+    implemented: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/publications", id: "/nexus/publikasi" },
     icon: "publications",
@@ -156,7 +158,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Publications", id: "Publikasi" },
   },
   {
-    available: { en: false, id: true },
+    implemented: { en: false, id: true },
     group: "official",
     href: {
       en: "/en/nexus/intellectual-property",
@@ -170,7 +172,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     },
   },
   {
-    available: { en: false, id: true },
+    implemented: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/contracts", id: "/nexus/kontrak-proposal" },
     icon: "contracts",
@@ -178,7 +180,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Contracts & Proposals", id: "Kontrak & Proposal" },
   },
   {
-    available: { en: false, id: true },
+    implemented: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/academic", id: "/nexus/akademik" },
     icon: "academic",
@@ -186,7 +188,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Academic", id: "Akademik" },
   },
   {
-    available: { en: false, id: true },
+    implemented: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/activities", id: "/nexus/kegiatan" },
     icon: "activities",
@@ -194,7 +196,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Activities & Outreach", id: "Kegiatan & Pengabdian" },
   },
   {
-    available: { en: false, id: false },
+    implemented: { en: false, id: false },
     group: "administration",
     href: { en: "/en/nexus/members", id: "/nexus/anggota" },
     icon: "members",
@@ -202,7 +204,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Members", id: "Anggota" },
   },
   {
-    available: { en: false, id: false },
+    implemented: { en: false, id: false },
     group: "administration",
     href: { en: "/en/nexus/administration", id: "/nexus/administrasi" },
     icon: "administration",
@@ -245,7 +247,7 @@ export function getNexusDashboardShellPreviewContent(
       .filter((item) => item.group === group)
       .map((item) => ({
         activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
-        available: item.available[locale],
+        implemented: item.implemented[locale],
         href: item.href[locale],
         icon: item.icon,
         id: item.id,
@@ -268,7 +270,7 @@ export function getNexusDashboardShellPreviewContent(
   ].join("\n");
   const searchItems: DashboardSearchItem[] = navigationGroups.flatMap((group) =>
     group.items
-      .filter((item) => item.available)
+      .filter((item) => item.implemented)
       .map((item) => ({
         description: isId ? `Buka halaman ${item.label}` : `Open ${item.label}`,
         href: item.href,
@@ -287,7 +289,7 @@ export function getNexusDashboardShellPreviewContent(
     expandMenuLabel: isId ? "Perluas navigasi" : "Expand navigation",
     helpHref: `${COE_BHT_LINKS.email}?subject=${isId ? "Bantuan%20BHT%20Nexus" : "BHT%20Nexus%20help"}`,
     helpLabel: isId ? "Bantuan BHT Nexus" : "BHT Nexus help",
-    homeHref: isId ? "/nexus/dashboard" : "/en/nexus/collection",
+    homeHref: isId ? "/nexus/dashboard" : "/en/nexus/coming-soon",
     languageLabel: isId
       ? "Pilih bahasa ruang kerja"
       : "Choose workspace language",
@@ -295,23 +297,27 @@ export function getNexusDashboardShellPreviewContent(
     mainNavigationLabel: isId ? "Navigasi ruang kerja" : "Workspace navigation",
     navigationGroups,
     notificationLabel: isId ? "Buka notifikasi" : "Open notifications",
-    notifications: [
-      {
-        detail: isId
-          ? "Kandidat publikasi dan lintas-domain tersedia dalam satu antrean."
-          : "Publication and cross-domain candidates share one queue.",
-        href: isId ? "/nexus/tinjauan" : "/en/nexus/reviews",
-        id: "candidate-review",
-        timeLabel: isId ? "Baru saja" : "Just now",
-        title: isId ? "Data menunggu tinjauan" : "Data awaiting review",
-      },
-    ],
+    notifications: isId
+      ? [
+          {
+            detail:
+              "Kandidat publikasi dan lintas-domain tersedia dalam satu antrean.",
+            href: "/nexus/tinjauan",
+            id: "candidate-review",
+            timeLabel: "Baru saja",
+            title: "Data menunggu tinjauan",
+          },
+        ]
+      : [],
+    notificationsEmptyLabel: isId
+      ? "Belum ada notifikasi baru."
+      : "No new notifications.",
     notificationsTitle: isId ? "Notifikasi" : "Notifications",
     openMenuLabel: isId ? "Buka navigasi" : "Open navigation",
-    plannedBadgeLabel: isId ? "Segera" : "Planned",
+    plannedBadgeLabel: isId ? "Segera" : "Coming soon",
     plannedFeatureLabel: isId
-      ? "Fitur ini akan dibangun pada tahap berikutnya"
-      : "This feature is planned for a later stage",
+      ? "Layanan ini akan segera tersedia"
+      : "This service will be available soon",
     profileLabel: isId ? "Buka menu pengguna" : "Open user menu",
     searchEmptyLabel: isId
       ? "Tidak ada halaman yang cocok."

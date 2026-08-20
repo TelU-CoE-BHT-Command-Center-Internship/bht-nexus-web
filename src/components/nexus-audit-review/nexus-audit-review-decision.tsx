@@ -12,6 +12,11 @@ import {
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import {
+  isMetadataCompletionFieldKey,
+  metadataCompletionFieldConfigs,
+  metadataCompletionValueError,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -55,8 +60,19 @@ export function AuditReviewDecisionSection({
     (item) =>
       draft[item.id]?.trim() !== auditCurrentValue(record, state, item.id),
   );
+  const correctionErrors = Object.fromEntries(
+    correctionFields.flatMap((item) => {
+      const value = draft[item.id]?.trim() ?? "";
+      if (!isMetadataCompletionFieldKey(item.id) || value.length === 0) {
+        return [];
+      }
+
+      const error = metadataCompletionValueError(item.id, value);
+      return error ? [[item.id, error] as const] : [];
+    }),
+  ) as Record<string, string>;
   const correctionComplete = correctionFields.every(
-    (item) => draft[item.id]?.trim().length > 0,
+    (item) => draft[item.id]?.trim().length > 0 && !correctionErrors[item.id],
   );
   const consequence = auditDecisionConsequence(decisionChoice, selectedMatch);
   const correctionSelectionReady =
@@ -94,6 +110,11 @@ export function AuditReviewDecisionSection({
       decisionChoice,
       note.trim(),
       decisionChoice === "changes_requested" ? selectedFieldIds : [],
+      ["approved_completion", "approved_update", "merged"].includes(
+        decisionChoice,
+      )
+        ? selectedMatch?.id
+        : undefined,
     );
   };
 
@@ -164,22 +185,61 @@ export function AuditReviewDecisionSection({
           {state.fixRequest.reason}
         </NexusWorkspaceNotice>
         <div className={drawerStyles.reviewCorrectionFields}>
-          {correctionFields.map((item) => (
-            <label className={drawerStyles.reviewTextField} key={item.id}>
-              <span>{item.label}</span>
-              <input
-                id={`correction-${record.id}-${item.id}`}
-                onChange={(event) => {
-                  const nextValue = event.currentTarget.value;
-                  setDraft((current) => ({
-                    ...current,
-                    [item.id]: nextValue,
-                  }));
-                }}
-                value={draft[item.id] ?? ""}
-              />
-            </label>
-          ))}
+          {correctionFields.map((item) => {
+            const fieldId = `correction-${record.id}-${item.id}`;
+            const config = isMetadataCompletionFieldKey(item.id)
+              ? metadataCompletionFieldConfigs[item.id]
+              : undefined;
+            const error = correctionErrors[item.id];
+            const updateDraft = (value: string) =>
+              setDraft((current) => ({ ...current, [item.id]: value }));
+
+            return (
+              <label
+                className={drawerStyles.reviewTextField}
+                htmlFor={fieldId}
+                key={item.id}
+              >
+                <span>{item.label}</span>
+                {config?.type === "choice" ? (
+                  <select
+                    aria-describedby={error ? `${fieldId}-error` : undefined}
+                    aria-invalid={error ? true : undefined}
+                    id={fieldId}
+                    onChange={(event) => updateDraft(event.currentTarget.value)}
+                    value={draft[item.id] ?? ""}
+                  >
+                    <option value="">{config.placeholder}</option>
+                    {config.choices?.map((choice) => (
+                      <option key={choice} value={choice}>
+                        {choice}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    aria-describedby={error ? `${fieldId}-error` : undefined}
+                    aria-invalid={error ? true : undefined}
+                    id={fieldId}
+                    inputMode={config?.inputMode}
+                    maxLength={config?.maxLength}
+                    onChange={(event) => updateDraft(event.currentTarget.value)}
+                    type={config?.type === "url" ? "url" : "text"}
+                    value={draft[item.id] ?? ""}
+                  />
+                )}
+                {error ? (
+                  <small
+                    className={drawerStyles.reviewFieldError}
+                    id={`${fieldId}-error`}
+                    role="alert"
+                  >
+                    {error}
+                  </small>
+                ) : null}
+              </label>
+            );
+          })}
         </div>
         <label className={drawerStyles.reviewTextField}>
           <span>
@@ -247,6 +307,12 @@ export function AuditReviewDecisionSection({
             <dt>Versi kandidat</dt>
             <dd>V{state.version}</dd>
           </div>
+          {state.decision.targetRecordId ? (
+            <div>
+              <dt>Rekam tujuan</dt>
+              <dd>{state.decision.targetRecordId}</dd>
+            </div>
+          ) : null}
         </dl>
         <div className={drawerStyles.reviewDecisionActions}>
           <NexusWorkspaceButton onClick={onClose} type="button">

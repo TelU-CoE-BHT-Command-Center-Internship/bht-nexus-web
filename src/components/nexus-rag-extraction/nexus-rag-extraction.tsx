@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { NexusDocumentNav } from "@/components/nexus-document-workspace/nexus-document-nav";
 import styles from "@/components/nexus-rag-extraction/nexus-rag-extraction.module.css";
 import type {
@@ -14,6 +13,7 @@ import { useOptionalNexusReviewSession } from "@/components/nexus-review-session
 import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
+  NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -21,10 +21,7 @@ import {
   NexusWorkspacePage,
 } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceTableBadge } from "@/components/nexus-workspace-ui/nexus-workspace-records";
-import {
-  type NexusSelectConfig,
-  NexusWorkspaceSelect,
-} from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 
 function ExtractionIcon({ name }: { name: "accepted" | "fields" | "pending" }) {
@@ -59,10 +56,7 @@ export function NexusRagExtraction({
   const initialDecisions = Object.fromEntries(
     content.fields.map((field) => [field.id, field.decision]),
   ) as Record<string, ExtractionFieldDecision>;
-  const [profile, setProfile] = useState(content.selectedProfileId);
   const [decisions, setDecisions] = useState(initialDecisions);
-  const [sent, setSent] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const decidedCount = Object.values(decisions).filter(
     (decision) => decision !== "pending",
   ).length;
@@ -71,57 +65,72 @@ export function NexusRagExtraction({
   ).length;
   const pendingCount = content.fields.length - decidedCount;
   const allDecided = pendingCount === 0;
-  const profileConfig = useMemo<NexusSelectConfig>(
-    () => ({
-      defaultValue: content.selectedProfileId,
-      id: "extraction-profile",
-      label: content.profileLabel,
-      options: [
-        {
-          label: `${content.profileOptions[0]?.label ?? "Profile"} · ${content.profileOptions[0]?.version ?? "v1"}`,
-          value: content.profileOptions[0]?.id ?? content.selectedProfileId,
-        },
-        ...content.profileOptions.slice(1).map((option) => ({
-          label: `${option.label} · ${option.version}`,
-          value: option.id,
-        })),
-      ],
-    }),
-    [content.profileLabel, content.profileOptions, content.selectedProfileId],
-  );
+  const readyForReview = allDecided && acceptedCount > 0;
+  const readyToSend = Boolean(content.reviewHref) && readyForReview;
+  const profile =
+    content.profileOptions.find(
+      (option) => option.id === content.selectedProfileId,
+    ) ?? content.profileOptions[0];
 
   function decide(id: string, decision: ExtractionFieldDecision) {
     setDecisions((current) => ({ ...current, [id]: decision }));
-    setSent(false);
-  }
-
-  function changeProfile(nextProfile: string) {
-    setProfile(nextProfile);
-    setDecisions(
-      Object.fromEntries(
-        content.fields.map((field) => [field.id, "pending"]),
-      ) as Record<string, ExtractionFieldDecision>,
-    );
-    setSent(false);
   }
 
   function sendToReview() {
-    if (!allDecided) return;
-    if (content.locale === "en") {
-      setSent(true);
-      return;
-    }
+    if (!readyToSend || !content.reviewHref) return;
     if (!reviewSession) {
       throw new Error("Review session is unavailable");
     }
     const reviewRecord = createExtractionReviewRecord(
       content,
       decisions,
-      profile,
+      profile?.id ?? content.selectedProfileId,
       reviewSession.actor,
+      reviewSession.createSessionRecordId(
+        `EXT-${(profile?.id ?? content.selectedProfileId).toUpperCase()}`,
+      ),
     );
     reviewSession.submitRecord(reviewRecord);
     router.push(`${content.reviewHref}?record=${reviewRecord.id}`);
+  }
+
+  if (content.requestError) {
+    return (
+      <NexusWorkspacePage
+        description={content.description}
+        descriptionId="extraction-description"
+        title={content.title}
+        titleId="extraction-title"
+      >
+        <NexusWorkspaceState
+          actions={
+            <NexusWorkspaceLinkButton
+              href={
+                content.locale === "id"
+                  ? "/nexus/dokumen"
+                  : "/en/nexus/documents"
+              }
+            >
+              {content.locale === "id"
+                ? "Kembali ke Dokumen"
+                : "Back to Documents"}
+            </NexusWorkspaceLinkButton>
+          }
+          description={content.requestError}
+          eyebrow={
+            content.locale === "id"
+              ? "Dokumen tidak siap"
+              : "Document unavailable"
+          }
+          title={
+            content.locale === "id"
+              ? "Ekstraksi tidak dimulai"
+              : "Extraction was not started"
+          }
+          tone="danger"
+        />
+      </NexusWorkspacePage>
+    );
   }
 
   return (
@@ -145,7 +154,8 @@ export function NexusRagExtraction({
           {
             icon: <ExtractionIcon name="accepted" />,
             id: "accepted",
-            label: content.locale === "id" ? "Diterima Reviewer" : "Accepted",
+            label:
+              content.locale === "id" ? "Bidang Disertakan" : "Included Fields",
             tone: "completed",
             unit: content.locale === "id" ? "data" : "fields",
             value: acceptedCount,
@@ -182,14 +192,15 @@ export function NexusRagExtraction({
             </div>
             <div className={styles.profileField}>
               <span>{content.profileLabel}</span>
-              <NexusWorkspaceSelect
-                config={profileConfig}
-                isOpen={isProfileOpen}
-                name="extraction-profile"
-                onOpenChange={setIsProfileOpen}
-                onValueChange={changeProfile}
-                value={profile}
-              />
+              <strong>
+                {profile?.label ?? content.selectedProfileId} ·{" "}
+                {profile?.version ?? "v1"}
+              </strong>
+              <small>
+                {content.locale === "id"
+                  ? "Profil yang tersedia untuk jenis dokumen ini"
+                  : "Profile available for this document type"}
+              </small>
             </div>
           </div>
         </NexusWorkspaceCard>
@@ -198,7 +209,7 @@ export function NexusRagExtraction({
           guidance={
             content.locale === "id"
               ? "Keputusan berlaku per bidang. Kutipan sumber harus diperiksa sebelum kandidat dikirim ke Tinjauan."
-              : "Decisions apply per field. Check the source passage before sending candidates to Reviews."
+              : "Decisions apply per field. Check each source passage before including a field."
           }
           summary={`${decidedCount} ${content.locale === "id" ? "dari" : "of"} ${content.fields.length} ${content.locale === "id" ? "bidang telah diputuskan" : "fields decided"}`}
           title={content.fieldsTitle}
@@ -265,30 +276,31 @@ export function NexusRagExtraction({
           </ul>
           <footer className={styles.sendArea}>
             <p>
-              {allDecided
+              {readyForReview
                 ? content.locale === "id"
-                  ? "Semua bidang sudah diputuskan dan siap dikirim."
-                  : "All fields are decided and ready to send."
-                : content.locale === "id"
-                  ? `${pendingCount} bidang masih memerlukan keputusan.`
-                  : `${pendingCount} fields still need a decision.`}
+                  ? `${acceptedCount} bidang akan dikirim sebagai satu kandidat.`
+                  : `${acceptedCount} fields are ready to form one candidate.`
+                : allDecided
+                  ? content.locale === "id"
+                    ? "Sertakan setidaknya satu bidang sebelum mengirim kandidat."
+                    : "Include at least one field before this extraction can form a candidate."
+                  : content.locale === "id"
+                    ? `${pendingCount} bidang masih memerlukan keputusan.`
+                    : `${pendingCount} fields still need a decision.`}
             </p>
-            {sent ? (
-              <NexusWorkspaceNotice tone="success">
-                {content.sentLabel}{" "}
-                <Link href={content.reviewHref} prefetch={false}>
-                  {content.reviewLinkLabel}
-                </Link>
-              </NexusWorkspaceNotice>
-            ) : (
+            {content.reviewHref ? (
               <NexusWorkspaceButton
-                disabled={!allDecided}
+                disabled={!readyToSend}
                 onClick={sendToReview}
                 tone="primary"
                 type="button"
               >
                 {content.sendLabel}
               </NexusWorkspaceButton>
+            ) : (
+              <NexusWorkspaceNotice>
+                {content.reviewUnavailableLabel}
+              </NexusWorkspaceNotice>
             )}
           </footer>
         </NexusWorkspaceTableSection>

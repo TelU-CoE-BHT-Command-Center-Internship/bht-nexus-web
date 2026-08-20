@@ -8,6 +8,20 @@ export const metadata: Metadata = {
   robots: { follow: false, index: false },
 };
 
-export default function DocumentQuestionsPage() {
-  return <NexusRagQa content={getNexusRagQaContent("id")} />;
+export default async function DocumentQuestionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ document?: string | string[] }>;
+}) {
+  const requestedDocument = (await searchParams).document;
+  return (
+    <NexusRagQa
+      content={getNexusRagQaContent("id")}
+      initialDocumentId={
+        Array.isArray(requestedDocument)
+          ? requestedDocument[0]
+          : requestedDocument
+      }
+    />
+  );
 }

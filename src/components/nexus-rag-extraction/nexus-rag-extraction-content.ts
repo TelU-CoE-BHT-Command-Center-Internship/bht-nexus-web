@@ -1,3 +1,4 @@
+import { getNexusDocumentRecords } from "@/components/nexus-document-workspace/nexus-document-content";
 import type { Locale } from "@/i18n/locales";
 
 export type ExtractionProfileOption = {
@@ -27,6 +28,7 @@ export type NexusRagExtractionContent = {
   candidateOwner: string;
   candidatePrimaryParty: string;
   description: string;
+  documentId: string;
   documentMeta: string;
   documentTitle: string;
   fields: ExtractionField[];
@@ -39,11 +41,11 @@ export type NexusRagExtractionContent = {
   profileOptions: ExtractionProfileOption[];
   rejectLabel: string;
   rejectedLabel: string;
-  reviewHref: string;
-  reviewLinkLabel: string;
+  requestError?: string;
+  reviewHref?: string;
+  reviewUnavailableLabel: string;
   selectedProfileId: string;
   sendLabel: string;
-  sentLabel: string;
   sourceLabel: string;
   title: string;
 };
@@ -51,7 +53,7 @@ export type NexusRagExtractionContent = {
 const fields = {
   id: [
     {
-      decision: "accepted",
+      decision: "pending",
       id: "activity_title",
       label: "Judul kegiatan",
       source: {
@@ -102,7 +104,7 @@ const fields = {
   ],
   en: [
     {
-      decision: "accepted",
+      decision: "pending",
       id: "activity_title",
       label: "Activity title",
       source: {
@@ -155,14 +157,12 @@ const fields = {
 
 const copy = {
   id: {
-    acceptLabel: "Terima",
-    acceptedLabel: "Diterima",
+    acceptLabel: "Sertakan",
+    acceptedLabel: "Disertakan",
     candidateOwner: "Belum ditetapkan",
     candidatePrimaryParty: "Tim Riset Telemedisin CoE BHT",
     description:
       "Periksa setiap kandidat isian beserta potongan sumber sebelum mengirimkannya ke antrean Tinjauan.",
-    documentMeta: "PDF · 10 halaman · selesai diproses",
-    documentTitle: "Ringkasan Kegiatan Telemedisin Layanan Primer",
     fieldsTitle: "Kandidat isian",
     notFoundLabel: "Tidak ditemukan pada dokumen",
     pageLabel: "Halaman",
@@ -170,33 +170,23 @@ const copy = {
     profileLabel: "Profil ekstraksi",
     profileOptions: [
       { id: "activity", label: "Kegiatan riset", version: "v1" },
-      { id: "publication", label: "Publikasi", version: "v1" },
-      {
-        id: "community_service",
-        label: "Pengabdian masyarakat",
-        version: "v1",
-      },
     ],
-    rejectLabel: "Tolak",
-    rejectedLabel: "Ditolak",
+    rejectLabel: "Jangan sertakan",
+    rejectedLabel: "Tidak disertakan",
     reviewHref: "/nexus/tinjauan",
-    reviewLinkLabel: "Buka Tinjauan",
+    reviewUnavailableLabel: "",
     selectedProfileId: "activity",
     sendLabel: "Kirim kandidat ke Tinjauan",
-    sentLabel:
-      "Kandidat ekstraksi sudah ditambahkan ke antrean Tinjauan pada sesi ini.",
     sourceLabel: "Potongan sumber",
     title: "Ekstraksi Dokumen",
   },
   en: {
-    acceptLabel: "Accept",
-    acceptedLabel: "Accepted",
+    acceptLabel: "Include",
+    acceptedLabel: "Included",
     candidateOwner: "Not assigned",
     candidatePrimaryParty: "CoE BHT Telemedicine Research Team",
     description:
-      "Check every candidate field and its source passage before sending it to the Reviews queue.",
-    documentMeta: "PDF · 10 pages · processing complete",
-    documentTitle: "Primary Care Telemedicine Activity Summary",
+      "Check every candidate field and its source passage. Candidate submission is currently completed in the Indonesian workspace.",
     fieldsTitle: "Candidate fields",
     notFoundLabel: "Not found in the document",
     pageLabel: "Page",
@@ -204,27 +194,63 @@ const copy = {
     profileLabel: "Extraction profile",
     profileOptions: [
       { id: "activity", label: "Research activity", version: "v1" },
-      { id: "publication", label: "Publication", version: "v1" },
-      { id: "community_service", label: "Community service", version: "v1" },
     ],
-    rejectLabel: "Reject",
-    rejectedLabel: "Rejected",
-    reviewHref: "/en/nexus/reviews",
-    reviewLinkLabel: "Open Reviews",
+    rejectLabel: "Exclude",
+    rejectedLabel: "Excluded",
+    reviewUnavailableLabel:
+      "Continue in Indonesian to review extracted fields and submit a candidate.",
     selectedProfileId: "activity",
-    sendLabel: "Send candidates to Reviews",
-    sentLabel:
-      "The extracted candidates were added to the Reviews queue for this session.",
+    sendLabel: "Send candidates for review",
     sourceLabel: "Source passage",
     title: "Document Extraction",
   },
 } satisfies Record<
   Locale,
-  Omit<NexusRagExtractionContent, "fields" | "locale">
+  Omit<
+    NexusRagExtractionContent,
+    | "documentId"
+    | "documentMeta"
+    | "documentTitle"
+    | "fields"
+    | "locale"
+    | "requestError"
+  >
 >;
 
 export function getNexusRagExtractionContent(
   locale: Locale,
+  requestedDocumentId?: string,
 ): NexusRagExtractionContent {
-  return { ...copy[locale], fields: fields[locale], locale };
+  const documents = getNexusDocumentRecords(locale);
+  const requestedDocument = documents.find(
+    (document) =>
+      document.id === requestedDocumentId &&
+      document.status === "succeeded" &&
+      document.capabilities.includes("extraction"),
+  );
+  const document =
+    requestedDocument ??
+    documents.find(
+      (item) =>
+        item.status === "succeeded" && item.capabilities.includes("extraction"),
+    );
+
+  if (!document) {
+    throw new Error("No processed document is available for extraction");
+  }
+
+  return {
+    ...copy[locale],
+    documentId: document.id,
+    documentMeta: `${document.fileLabel} · ${document.statusLabel}`,
+    documentTitle: document.title,
+    fields: fields[locale],
+    locale,
+    requestError:
+      requestedDocumentId && !requestedDocument
+        ? locale === "id"
+          ? "Dokumen yang diminta tidak tersedia atau belum siap diekstrak. Pilih dokumen berstatus selesai dari pustaka dokumen."
+          : "The requested document is unavailable or not ready for extraction. Choose a processed document from the document library."
+        : undefined,
+  };
 }

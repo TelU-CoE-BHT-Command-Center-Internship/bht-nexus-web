@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { NexusRagExtraction } from "@/components/nexus-rag-extraction/nexus-rag-extraction";
-import { getNexusRagExtractionContent } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Document Extraction",
@@ -9,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function ExtractionPage() {
-  return <NexusRagExtraction content={getNexusRagExtractionContent("en")} />;
+  redirect("/en/nexus/coming-soon");
 }

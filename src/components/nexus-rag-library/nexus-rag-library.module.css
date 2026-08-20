@@ -60,6 +60,13 @@
   color: var(--color-nexus-text-subtle);
 }
 
+.documentActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
 .emptyState {
   display: grid;
   place-items: center;

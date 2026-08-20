@@ -33,9 +33,19 @@
   font-size: 0.9rem;
 }
 
+.profileField strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.78rem;
+}
+
 .documentSignal small {
   color: var(--color-nexus-text-muted);
   font-size: 0.68rem;
+}
+
+.profileField small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.65rem;
 }
 
 .fieldList {

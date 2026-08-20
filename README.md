@@ -47,9 +47,10 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Halaman Kontrak & Proposal BHT Nexus | Tersedia; memisahkan status kontrak dan proposal dalam satu rumah data resmi, mencakup KM-17 sampai KM-19 serta KM-37 sampai KM-39, dan meneruskan usulan pelengkapan metadata ke Tinjauan |
 | Halaman Akademik BHT Nexus | Tersedia dan responsif; memuat bimbingan doktor, bimbingan magister, dan magang mahasiswa beserta pembimbing, bukti kegiatan, dan keterkaitan indikator KM. Bimbingan dengan lebih dari satu pembimbing dihitung sebagai satu kegiatan, identitas mahasiswa diganti penanda rekam, dan peserta magang tidak disalahartikan sebagai nilai kapasitas KM-30 |
 | Halaman Kegiatan & Pengabdian BHT Nexus | Tersedia dan responsif; memuat keterlibatan unit bisnis, pembinaan komunitas, konferensi internasional, layanan non-riset, pengabdian masyarakat, proposal pengabdian, dan pengelolaan jurnal nasional untuk KM-20 sampai KM-27. Metadata yang belum lengkap diajukan ke Tinjauan tanpa langsung mengubah rekam resmi |
-| Halaman Pengumpulan BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan, dan membuat satu rekam Tinjauan untuk setiap kandidat yang ditemukan |
-| Halaman Tinjauan BHT Nexus | Alur Indonesia tersedia dan responsif; seluruh kandidat berada dalam satu antrean, identitas serta label KM-1 sampai KM-46 mengikuti workbook stakeholder, data yang belum diketahui tidak ditebak, dan metadata, bukti, pembanding, asal-usul data, serta keputusan menyesuaikan tujuan kandidat. Terjemahan Inggris belum tersedia dan dinyatakan apa adanya pada route Inggris |
-| Ruang kerja Dokumen BHT Nexus | Tersedia dalam bahasa Indonesia dan Inggris; mencakup pustaka, tanya jawab bersitasi yang menolak jawaban tanpa dukungan, serta ekstraksi kandidat per bidang sebelum diteruskan ke Tinjauan |
+| Halaman Pengumpulan BHT Nexus | Tersedia dalam ruang kerja Indonesia; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan, dan membuat setiap hasil sebagai rekam Tinjauan individual |
+| Halaman Tinjauan BHT Nexus | Alur Indonesia tersedia dan responsif; seluruh kandidat berada dalam satu antrean, identitas serta label KM-1 sampai KM-46 mengikuti workbook stakeholder, data yang belum diketahui tidak ditebak, dan metadata, bukti, pembanding, asal-usul data, serta keputusan menyesuaikan tujuan kandidat |
+| Ruang kerja Dokumen BHT Nexus | Tersedia dalam ruang kerja Indonesia; mencakup pustaka, tanya jawab bersitasi yang menolak jawaban tanpa dukungan, serta pemeriksaan kandidat ekstraksi per bidang sebelum dikirim ke Tinjauan |
+| Ruang kerja BHT Nexus Inggris | Sedang dibangun; seluruh route workspace Inggris diarahkan ke satu halaman status sampai alur Indonesia selesai, sedangkan landing page dan halaman masuk Inggris tetap tersedia |
 | Login dan hak akses | Antarmuka tersedia; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
 | Deployment | Belum menjadi cakupan saat ini |
@@ -128,22 +129,18 @@ Inventaris fitur, alur kandidat, dan batas implementasi terbaru tersedia di [cak
 | `/en/nexus/sign-in` | Inggris | Antarmuka masuk BHT Nexus |
 | `/nexus/dashboard` | Indonesia | Dashboard ruang kerja BHT Nexus |
 | `/nexus/pengumpulan` | Indonesia | Pekerjaan pengumpulan profil publik SINTA atau Google Scholar |
-| `/en/nexus/collection` | Inggris | Pekerjaan pengumpulan profil publik SINTA atau Google Scholar |
+| `/en/nexus/coming-soon` | Inggris | Status pembangunan ruang kerja Inggris dan jalan kembali ke ruang kerja Indonesia |
 | `/nexus/publikasi` | Indonesia | Daftar publikasi resmi beserta metadata, sumber, dan riwayat tinjauannya |
 | `/nexus/kekayaan-intelektual` | Indonesia | Daftar hak cipta dan paten resmi beserta nomor pencatatan dan dokumennya |
 | `/nexus/kontrak-proposal` | Indonesia | Daftar kontrak dan proposal resmi beserta pihak, skema, bukti, dan indikator KM |
 | `/nexus/akademik` | Indonesia | Daftar bimbingan doktor, bimbingan magister, dan magang mahasiswa resmi |
 | `/nexus/kegiatan` | Indonesia | Daftar kegiatan, bisnis, dan pengabdian masyarakat resmi untuk KM-20 sampai KM-27 |
 | `/nexus/tinjauan` | Indonesia | Satu antrean Tinjauan untuk publikasi, pelengkapan metadata, serta kandidat lintas-domain |
-| `/en/nexus/reviews` | Inggris | Pemberitahuan bahwa terjemahan Tinjauan belum tersedia, dengan tautan ke alur Indonesia |
 | `/nexus/dokumen` | Indonesia | Pustaka dan status pemrosesan dokumen |
 | `/nexus/tanya-dokumen` | Indonesia | Tanya jawab dokumen dengan sumber dan kutipan |
 | `/nexus/ekstraksi` | Indonesia | Tinjauan kandidat isian hasil ekstraksi dokumen |
-| `/en/nexus/documents` | Inggris | Pustaka dan status pemrosesan dokumen |
-| `/en/nexus/ask-documents` | Inggris | Tanya jawab dokumen dengan sumber dan kutipan |
-| `/en/nexus/extraction` | Inggris | Tinjauan kandidat isian hasil ekstraksi dokumen |
 
-Alamat lama `/nexus/pencarian`, `/nexus/kandidat`, `/en/nexus/search`, dan `/en/nexus/candidates` tetap diarahkan ke Pengumpulan atau Tinjauan yang sesuai agar tautan lama tidak berakhir pada halaman buntu.
+Alamat lama `/nexus/pencarian` dan `/nexus/kandidat` tetap diarahkan ke Pengumpulan atau Tinjauan yang sesuai. Seluruh alamat workspace Inggris lama diarahkan ke `/en/nexus/coming-soon`, sehingga tidak ada alur terjemahan parsial yang terlihat selesai.
 
 Landing page saat ini mencakup:
 
@@ -164,7 +161,7 @@ Ruang kerja menyediakan Dashboard, Pengumpulan, Tinjauan, Publikasi, Kekayaan In
 
 Tinjauan menjadi satu antrean keputusan manusia untuk kandidat lintas-domain. Metadata, bukti, pilihan pembanding, kaitan evaluasi, asal-usul data, dan tindakan menyesuaikan apakah kandidat merupakan data baru, pembaruan rekam, atau pelengkapan metadata.
 
-Pada ruang kerja Indonesia, setiap hasil bisnis dari Pengumpulan, bidang yang diterima dari Ekstraksi Dokumen, dan usulan pelengkapan dari seluruh rumah data resmi benar-benar dibuat sebagai rekam Tinjauan dan dibuka kembali melalui identitas rekamnya selama sesi frontend. Identitas pekerjaan Pengumpulan tetap disimpan sebagai jejak sumber, bukan dijadikan satu kandidat gabungan. Perpindahan ini tetap bersifat lokal sampai endpoint staging dan penyimpanan server tersedia. Route Tinjauan Inggris menampilkan keadaan belum tersedia secara jujur dan pemindah bahasa disembunyikan pada alur ini sampai terjemahannya mempunyai kemampuan yang setara.
+Pada ruang kerja Indonesia, setiap hasil bisnis dari Pengumpulan, bidang yang disertakan dari Ekstraksi Dokumen, dan usulan pelengkapan dari seluruh rumah data resmi benar-benar dibuat sebagai rekam Tinjauan dan dibuka kembali melalui identitas rekamnya selama sesi frontend. Identitas pekerjaan Pengumpulan tetap disimpan sebagai jejak sumber, bukan dijadikan satu kandidat gabungan. Perpindahan ini tetap bersifat lokal sampai endpoint staging dan penyimpanan server tersedia. Pemindah bahasa tampil konsisten pada seluruh header workspace; pilihan Inggris menuju satu halaman status pembangunan sampai seluruh alurnya benar-benar setara.
 
 Data saat ini masih bersifat lokal dan deterministik untuk memvalidasi presentasi serta interaksi frontend. Autentikasi, hak akses, penyimpanan permanen, worker, dan perubahan data resmi tetap menunggu integrasi layanan server. Struktur adapter dan state frontend dipertahankan sebagai batas integrasi agar sumber data server nantinya dapat menggantikan data pengembangan tanpa membongkar alur utama antarmuka.
 

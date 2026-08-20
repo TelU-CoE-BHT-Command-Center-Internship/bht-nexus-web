@@ -15,7 +15,6 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
   NexusWorkspaceField,
-  NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -222,7 +221,7 @@ export function NexusScraperSearch({
     const tone = statusTone(job.status);
     const hasCandidates = job.candidates.length > 0;
     const action =
-      job.status === "succeeded" && hasCandidates && content.locale === "id" ? (
+      job.status === "succeeded" && hasCandidates && content.reviewHref ? (
         <NexusWorkspaceButton
           key={`${job.id}-action`}
           onClick={() => {
@@ -239,17 +238,12 @@ export function NexusScraperSearch({
           }}
           type="button"
         >
-          {content.locale === "id"
-            ? `Tinjau ${job.candidates.length} kandidat`
-            : `Review ${job.candidates.length} candidates`}
+          {`Tinjau ${job.candidates.length} kandidat`}
         </NexusWorkspaceButton>
       ) : job.status === "succeeded" && hasCandidates ? (
-        <NexusWorkspaceLinkButton
-          href={content.reviewHref}
-          key={`${job.id}-action`}
-        >
+        <span className={styles.noAction} key={`${job.id}-action`}>
           {content.reviewLabel}
-        </NexusWorkspaceLinkButton>
+        </span>
       ) : job.status === "succeeded" ? (
         <span className={styles.noAction} key={`${job.id}-action`}>
           {content.noResultsLabel}
@@ -340,7 +334,7 @@ export function NexusScraperSearch({
           description={
             content.locale === "id"
               ? "Sumber hanya menerima profil publik HTTPS. Hasil selalu masuk ke antrean Tinjauan."
-              : "Only public HTTPS profiles are accepted. Results always enter the Reviews queue."
+              : "Only public HTTPS profiles are accepted. Candidate review is currently completed in the Indonesian workspace."
           }
           title={
             content.locale === "id"
@@ -399,7 +393,7 @@ export function NexusScraperSearch({
           guidance={
             content.locale === "id"
               ? "Pekerjaan otomatis tidak pernah menulis langsung ke data resmi; kandidat harus diputuskan oleh reviewer."
-              : "Automated jobs never write directly to official data; a reviewer decides every candidate."
+              : "Automated jobs never write directly to official data. Use the Indonesian workspace for candidate review."
           }
           summary={`${completedCount} ${content.locale === "id" ? "selesai dari" : "completed of"} ${jobs.length} ${content.locale === "id" ? "pekerjaan" : "jobs"}`}
           title={
@@ -412,7 +406,13 @@ export function NexusScraperSearch({
           <NexusWorkspaceRecordTable
             caption={content.tableCaption}
             columns={columns}
-            empty={<div />}
+            empty={
+              <p className={styles.noAction}>
+                {content.locale === "id"
+                  ? "Belum ada pekerjaan pengumpulan."
+                  : "No collection jobs yet."}
+              </p>
+            }
             pagination={
               <NexusTablePagination
                 currentPage={currentPage}

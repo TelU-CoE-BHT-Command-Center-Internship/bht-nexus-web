@@ -24,17 +24,6 @@ import {
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 
-const supportedTerms = [
-  "metadata",
-  "publikasi",
-  "publication",
-  "doi",
-  "tinjau",
-  "review",
-  "kandidat",
-  "candidate",
-];
-
 function QaIcon({ name }: { name: "answer" | "document" | "source" }) {
   if (name === "document")
     return (
@@ -55,11 +44,26 @@ function QaIcon({ name }: { name: "answer" | "document" | "source" }) {
   );
 }
 
-export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
+export function NexusRagQa({
+  content,
+  initialDocumentId,
+}: {
+  content: NexusRagQaContent;
+  initialDocumentId?: string;
+}) {
+  const initialDocumentIsSupported = content.supportedSources.some(
+    (source) => source.id === initialDocumentId,
+  );
   const [query, setQuery] = useState("");
   const [exchanges, setExchanges] = useState(content.exchanges);
-  const [error, setError] = useState("");
-  const [scope, setScope] = useState("all");
+  const [error, setError] = useState(() =>
+    initialDocumentId && !initialDocumentIsSupported
+      ? content.invalidDocumentLabel
+      : "",
+  );
+  const [scope, setScope] = useState(() =>
+    initialDocumentIsSupported ? (initialDocumentId ?? "all") : "all",
+  );
   const [isScopeOpen, setIsScopeOpen] = useState(false);
   const scopeConfig: NexusSelectConfig = {
     defaultValue: "all",
@@ -73,10 +77,10 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
             : "All ready documents",
         value: "all",
       },
-      {
-        label: content.supportedSources[0]?.documentTitle ?? "Metadata guide",
-        value: "guide",
-      },
+      ...content.supportedSources.map((source) => ({
+        label: source.documentTitle,
+        value: source.id,
+      })),
     ],
   };
   const supportedCount = exchanges.filter(
@@ -100,17 +104,26 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
       return;
     }
     const normalized = question.toLocaleLowerCase();
-    const supported = supportedTerms.some((term) => normalized.includes(term));
+    const scopedSources =
+      scope === "all"
+        ? content.supportedSources
+        : content.supportedSources.filter((source) => source.id === scope);
+    const matchingSources = scopedSources.filter((source) =>
+      source.keywords.some((keyword) => normalized.includes(keyword)),
+    );
+    const supported = matchingSources.length > 0;
     const now = new Date().toISOString();
     const exchange: RagExchange = {
-      answer: supported ? content.supportedAnswer : content.unsupportedAnswer,
+      answer: supported
+        ? matchingSources.map((source) => source.answer).join(" ")
+        : content.unsupportedAnswer,
       askedAt: now,
       askedAtLabel: formatTimestamp(now),
       id: `local-${Date.now()}`,
       question,
       questionLanguageLabel:
         content.locale === "id" ? "Bahasa Indonesia" : "English",
-      sources: supported ? content.supportedSources : [],
+      sources: matchingSources,
       supported,
     };
     setExchanges((current) => [exchange, ...current]);
@@ -189,7 +202,10 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
                 isOpen={isScopeOpen}
                 name="qa-document-scope"
                 onOpenChange={setIsScopeOpen}
-                onValueChange={setScope}
+                onValueChange={(value) => {
+                  setScope(value);
+                  setError("");
+                }}
                 value={scope}
               />
             </div>

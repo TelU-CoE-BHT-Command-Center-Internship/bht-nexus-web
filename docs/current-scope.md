@@ -29,7 +29,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 ### Shell dan dashboard
 
 - Navigasi desktop dan mobile memakai struktur yang sama di seluruh ruang kerja.
-- Identitas pengguna, pemindah bahasa Indonesia/Inggris, notifikasi, bantuan, dan menu profil sudah tersedia sebagai antarmuka.
+- Identitas pengguna, notifikasi, bantuan, dan menu profil sudah tersedia sebagai antarmuka. Pemindah bahasa tampil konsisten pada seluruh header workspace; pilihan Inggris menuju satu halaman status pembangunan sampai seluruh alur Indonesia selesai dan terjemahannya benar-benar setara.
 - Dashboard menampilkan metrik, pengumuman, aktivitas riset, program unggulan, serta proyek terkini.
 - Tabel dan kartu mempunyai perilaku responsif serta keadaan kosong dan loading yang konsisten.
 
@@ -119,8 +119,10 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 
 - Pustaka menerima PDF atau DOCX hingga 25 MB pada sesi frontend.
 - Tanya jawab hanya menampilkan jawaban ketika bukti dan kutipan tersedia.
-- Ekstraksi memperlihatkan kandidat per bidang dan mewajibkan keputusan sebelum dikirim ke Tinjauan.
-- Bidang yang diterima beserta kutipannya dibuat sebagai rekam Tinjauan pada sesi yang sama.
+- Pustaka membawa identitas dokumen melalui URL saat pengguna berpindah ke Tanya jawab atau Ekstraksi; hanya dokumen selesai diproses dengan kemampuan yang sesuai yang dapat dipakai.
+- Tanya jawab menerapkan cakupan dokumen yang dipilih dan hanya mengutip sumber yang mendukung pertanyaan.
+- Ekstraksi memperlihatkan kandidat per bidang dan memakai satu profil yang benar-benar tersedia. Parameter dokumen yang tidak valid ditolak secara jelas dan tidak diam-diam diganti dengan dokumen lain.
+- Seluruh bidang harus diputuskan dan minimal satu bidang harus disertakan sebelum hasil beserta kutipannya dibuat sebagai rekam Tinjauan beridentitas unik pada ruang kerja Indonesia.
 - Pustaka, Tanya jawab, dan Ekstraksi tetap berada dalam satu ruang kerja Dokumen.
 
 ## Route utama
@@ -131,17 +133,19 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/anggota` dan `/en/members` | Profil ketua dan tim pengurus |
 | `/nexus/masuk` dan `/en/nexus/sign-in` | Antarmuka masuk |
 | `/nexus/dashboard` | Dashboard ruang kerja |
-| `/nexus/pengumpulan` dan `/en/nexus/collection` | Pengumpulan sumber publik |
+| `/nexus/pengumpulan` | Pengumpulan sumber publik |
 | `/nexus/tinjauan` | Tinjauan kandidat sebelum menjadi data resmi |
-| `/en/nexus/reviews` | Keadaan jujur bahwa terjemahan Tinjauan belum tersedia |
 | `/nexus/publikasi` | Daftar dan rincian publikasi resmi |
 | `/nexus/kekayaan-intelektual` | Daftar dan rincian hak cipta serta paten resmi |
 | `/nexus/kontrak-proposal` | Daftar dan rincian kontrak serta proposal resmi |
 | `/nexus/akademik` | Daftar dan rincian bimbingan serta magang mahasiswa resmi |
 | `/nexus/kegiatan` | Daftar dan rincian kegiatan, bisnis, serta pengabdian masyarakat resmi |
-| `/nexus/dokumen` dan `/en/nexus/documents` | Pustaka dokumen |
-| `/nexus/tanya-dokumen` dan `/en/nexus/ask-documents` | Tanya jawab bersitasi |
-| `/nexus/ekstraksi` dan `/en/nexus/extraction` | Ekstraksi kandidat dari dokumen |
+| `/nexus/dokumen` | Pustaka dokumen |
+| `/nexus/tanya-dokumen` | Tanya jawab bersitasi |
+| `/nexus/ekstraksi` | Ekstraksi kandidat dari dokumen |
+| `/en/nexus/coming-soon` | Status pembangunan seluruh ruang kerja Inggris |
+
+Route workspace Inggris yang pernah tersedia tetap dipertahankan sebagai pengarah ke halaman status tersebut agar tautan lama tidak buntu dan tidak menampilkan alur terjemahan yang baru selesai sebagian.
 
 ## Batas implementasi
 

@@ -166,11 +166,22 @@ export function metadataCompletionValueError(
   return null;
 }
 
+/**
+ * Menjaga batas antara bidang metadata resmi dan bidang kandidat generik.
+ * Drawer Tinjauan memakai pemeriksaan ini sebelum menerapkan aturan validasi
+ * yang sama dengan form pelengkapan metadata.
+ */
+export function isMetadataCompletionFieldKey(
+  value: string,
+): value is MetadataCompletionFieldKey {
+  return Object.hasOwn(metadataCompletionFieldConfigs, value);
+}
+
 export const metadataCompletionFieldLabels: Record<
   MetadataCompletionFieldKey,
   string
 > = {
-  applicant: "Nama pengusul / penanggung jawab",
+  applicant: "Nama / unit terkait",
   contractEnd: "Tanggal selesai kontrak",
   contractStart: "Tanggal mulai kontrak",
   doi: "DOI",
@@ -222,9 +233,9 @@ export const metadataCompletionFieldConfigs: Record<
   MetadataCompletionFieldConfig
 > = {
   applicant: {
-    help: "Gunakan nama pengusul atau penanggung jawab yang tercatat pada dokumen sumber.",
+    help: "Gunakan nama orang, tim, atau unit persis seperti yang tercatat pada dokumen sumber.",
     key: "applicant",
-    placeholder: "Nama pengusul atau penanggung jawab",
+    placeholder: "Nama orang, tim, atau unit terkait",
     type: "text",
   },
   contractEnd: {

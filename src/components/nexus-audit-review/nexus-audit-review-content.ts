@@ -65,6 +65,8 @@ export type AuditReviewDecision = {
   kind: AuditDecisionKind;
   label: string;
   note: string;
+  /** Rekam resmi yang dipilih reviewer untuk merge, update, atau pelengkapan. */
+  targetRecordId?: string;
   timeLabel: string;
 };
 

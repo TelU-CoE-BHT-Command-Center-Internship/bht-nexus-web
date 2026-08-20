@@ -1082,6 +1082,7 @@
 }
 
 .reviewTextField input,
+.reviewTextField select,
 .reviewTextField textarea {
   width: 100%;
   min-width: 0;
@@ -1100,11 +1101,16 @@
   min-height: 2.65rem;
 }
 
+.reviewTextField select {
+  min-height: 2.65rem;
+}
+
 .reviewTextField textarea {
   resize: vertical;
 }
 
 .reviewTextField input:focus,
+.reviewTextField select:focus,
 .reviewTextField textarea:focus {
   border-color: #6c5dd3;
   box-shadow: 0 0 0 0.16rem rgb(108 93 211 / 15%);
@@ -1114,6 +1120,11 @@
   color: #8b96a8;
   font-size: 0.56rem;
   text-align: right;
+}
+
+.reviewTextField > .reviewFieldError {
+  color: #b42336;
+  text-align: left;
 }
 
 .reviewDecisionFooter {

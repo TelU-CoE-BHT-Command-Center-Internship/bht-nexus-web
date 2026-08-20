@@ -248,9 +248,8 @@ export function NexusAcademicDetail({
         </dl>
 
         <p className={detail.explanationTrailing}>
-          Identitas mahasiswa ditampilkan sebagai penanda rekam. Identitas
-          lengkap dan akses bukti mengikuti hak akses yang nanti diberikan
-          layanan server. {record.evidenceNote}
+          Identitas mahasiswa ditampilkan secara terbatas sesuai kewenangan akun
+          Anda. {record.evidenceNote}
         </p>
       </section>
 

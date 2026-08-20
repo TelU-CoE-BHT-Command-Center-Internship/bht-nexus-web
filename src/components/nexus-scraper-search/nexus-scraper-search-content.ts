@@ -62,7 +62,7 @@ export type NexusScraperSearchContent = {
   profileUrlLabel: string;
   profileUrlPlaceholder: string;
   queuedLabel: string;
-  reviewHref: string;
+  reviewHref?: string;
   reviewLabel: string;
   sourceLabel: string;
   sourceOptions: Array<{ id: CollectionSource; label: string }>;
@@ -256,7 +256,7 @@ const copy = {
       submittedAt: "Submitted",
     },
     description:
-      "Submit a public SINTA or Google Scholar profile as a collection job. Results enter Reviews and never write directly to official data.",
+      "Submit a public SINTA or Google Scholar profile as a collection job. This page shows candidate results without writing them directly to official data.",
     errorLabel:
       "Enter a name and an HTTPS URL matching the selected SINTA or Google Scholar source.",
     nameLabel: "Researcher name",
@@ -266,8 +266,7 @@ const copy = {
     profileUrlPlaceholder:
       "https://sinta.kemdiktisaintek.go.id/authors/profile/…",
     queuedLabel: "The collection job was added to the queue.",
-    reviewHref: "/en/nexus/reviews",
-    reviewLabel: "Open Reviews",
+    reviewLabel: "Switch to Indonesian to review candidates",
     sourceLabel: "Source",
     sourceOptions: [
       { id: "sinta", label: "SINTA" },

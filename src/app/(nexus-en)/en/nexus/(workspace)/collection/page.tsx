@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { NexusScraperSearch } from "@/components/nexus-scraper-search/nexus-scraper-search";
-import { getNexusScraperSearchContent } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Data Collection",
@@ -9,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function CollectionPage() {
-  return <NexusScraperSearch content={getNexusScraperSearchContent("en")} />;
+  redirect("/en/nexus/coming-soon");
 }

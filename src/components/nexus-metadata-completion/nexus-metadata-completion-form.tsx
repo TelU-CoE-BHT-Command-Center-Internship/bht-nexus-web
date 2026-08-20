@@ -41,6 +41,18 @@ function getResolutionResult(resolution: MetadataCompletionResolution) {
   return `Tidak berlaku · ${resolution.reason}`;
 }
 
+function getEffectiveResolutionResult(
+  proposal: MetadataCompletionProposal,
+  key: MetadataCompletionFieldKey,
+  correctedValues?: Record<string, string>,
+) {
+  const correctedValue = correctedValues?.[key]?.trim();
+  if (correctedValue) return correctedValue;
+
+  const resolution = proposal.resolutions[key];
+  return resolution ? getResolutionResult(resolution) : "Belum tersedia";
+}
+
 function SuccessIcon() {
   return (
     <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
@@ -147,6 +159,21 @@ export function NexusMetadataCompletionForm({
     onSubmitProposal(recordId, normalizedResolutions, sourceNote.trim());
   };
 
+  const beginReplacementProposal = () => {
+    if (!reviewSession) return;
+    setResolutions(
+      Object.fromEntries(
+        missingFields.map((key) => [
+          key,
+          createEmptyMetadataCompletionResolution(),
+        ]),
+      ) as MetadataCompletionResolutions,
+    );
+    setSourceNote("");
+    setShowConfirmation(false);
+    reviewSession.clearCompletionProposal(recordId);
+  };
+
   if (proposal) {
     const resultStatus =
       reviewState?.status === "completed"
@@ -166,6 +193,11 @@ export function NexusMetadataCompletionForm({
         : reviewState?.status === "needs_fix"
           ? "Pemeriksa meminta perbaikan. Data resmi belum berubah dan rincian bidang yang perlu diperbaiki tersedia di Tinjauan."
           : "Data resmi belum ditimpa. Status rekam tetap Perlu dilengkapi sampai pemeriksa menyetujui usulan dan memastikan seluruh bidang yang perlu diperiksa sudah diselesaikan.";
+    const canCreateReplacement = Boolean(
+      reviewSession &&
+        reviewState?.status === "completed" &&
+        reviewState.decision?.kind === "rejected",
+    );
 
     return (
       <section
@@ -192,15 +224,21 @@ export function NexusMetadataCompletionForm({
               <div key={key}>
                 <dt>{metadataCompletionFieldLabels[key]}</dt>
                 <dd>
-                  {proposal.resolutions[key]
-                    ? getResolutionResult(proposal.resolutions[key])
-                    : "Belum tersedia"}
+                  {getEffectiveResolutionResult(
+                    proposal,
+                    key,
+                    reviewState?.correction?.after,
+                  )}
                 </dd>
               </div>
             ))}
             <div className={styles.resultNote}>
-              <dt>Dasar perubahan</dt>
-              <dd>{proposal.note}</dd>
+              <dt>
+                {reviewState?.correction
+                  ? "Dasar perubahan terbaru"
+                  : "Dasar perubahan"}
+              </dt>
+              <dd>{reviewState?.correction?.evidenceNote ?? proposal.note}</dd>
             </div>
             {reviewState?.decision ? (
               <div className={styles.resultNote}>
@@ -223,6 +261,11 @@ export function NexusMetadataCompletionForm({
               : "Buka rincian Tinjauan untuk melihat keputusan, bidang terkait, dan jejak pemeriksaannya."}
           </p>
           <div className={styles.resultActions}>
+            {canCreateReplacement ? (
+              <button onClick={beginReplacementProposal} type="button">
+                Buat usulan baru
+              </button>
+            ) : null}
             <Link
               href={`/nexus/tinjauan?record=${proposal.id}`}
               prefetch={false}

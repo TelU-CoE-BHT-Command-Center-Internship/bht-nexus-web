@@ -29,34 +29,18 @@ type WorkspaceLanguageOption = {
   locale: Locale;
 };
 
-type WorkspaceRoutePair = Record<Locale, string>;
-
 const workspaceLanguageOptions: WorkspaceLanguageOption[] = [
   { flag: indonesiaFlag, label: "Bahasa Indonesia", locale: "id" },
   { flag: unitedKingdomFlag, label: "English", locale: "en" },
 ];
 
-const workspaceRoutePairs: WorkspaceRoutePair[] = [
-  { en: "/en/nexus/collection", id: "/nexus/pengumpulan" },
-  { en: "/en/nexus/collection", id: "/nexus/dashboard" },
-  { en: "/en/nexus/reviews", id: "/nexus/tinjauan" },
-  { en: "/en/nexus/collection", id: "/nexus/publikasi" },
-  { en: "/en/nexus/documents", id: "/nexus/dokumen" },
-  { en: "/en/nexus/ask-documents", id: "/nexus/tanya-dokumen" },
-  { en: "/en/nexus/extraction", id: "/nexus/ekstraksi" },
-  { en: "/en/nexus/candidates", id: "/nexus/kandidat" },
-  { en: "/en/nexus/search", id: "/nexus/pencarian" },
-];
-
-function getWorkspaceLocalizedHref(pathname: string, targetLocale: Locale) {
-  const pair = workspaceRoutePairs.find(
-    (candidate) => candidate.en === pathname || candidate.id === pathname,
-  );
-
-  return (
-    pair?.[targetLocale] ??
-    (targetLocale === "id" ? "/nexus/dashboard" : "/en/nexus/collection")
-  );
+function getWorkspaceLanguageHref(
+  currentLocale: Locale,
+  pathname: string,
+  targetLocale: Locale,
+) {
+  if (targetLocale === currentLocale) return pathname;
+  return targetLocale === "en" ? "/en/nexus/coming-soon" : "/nexus/dashboard";
 }
 
 export function NexusDashboardHeader({
@@ -69,10 +53,6 @@ export function NexusDashboardHeader({
 }: NexusDashboardHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const showsLanguageSwitcher = ![
-    "/en/nexus/reviews",
-    "/nexus/tinjauan",
-  ].includes(pathname);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const matches = useMemo(() => {
@@ -173,38 +153,35 @@ export function NexusDashboardHeader({
       </form>
 
       <div className={styles.headerActions}>
-        {showsLanguageSwitcher ? (
-          <nav
-            aria-label={content.languageLabel}
-            className={styles.workspaceLanguageSwitcher}
-          >
-            {workspaceLanguageOptions.map((option) => {
-              const isActive = content.locale === option.locale;
+        <nav
+          aria-label={content.languageLabel}
+          className={styles.workspaceLanguageSwitcher}
+        >
+          {workspaceLanguageOptions.map((option) => {
+            const isActive = content.locale === option.locale;
 
-              return (
-                <Link
-                  aria-current={isActive ? "page" : undefined}
-                  aria-label={option.label}
-                  data-active={isActive || undefined}
-                  href={getWorkspaceLocalizedHref(pathname, option.locale)}
-                  key={option.locale}
-                  prefetch={false}
-                  title={option.label}
-                >
-                  <span className={styles.workspaceLanguageFlag}>
-                    <Image
-                      alt=""
-                      sizes="1.5rem"
-                      src={option.flag}
-                      unoptimized
-                    />
-                  </span>
-                  <span className={styles.visuallyHidden}>{option.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        ) : null}
+            return (
+              <Link
+                aria-current={isActive ? "page" : undefined}
+                aria-label={option.label}
+                data-active={isActive || undefined}
+                href={getWorkspaceLanguageHref(
+                  content.locale,
+                  pathname,
+                  option.locale,
+                )}
+                key={option.locale}
+                prefetch={false}
+                title={option.label}
+              >
+                <span className={styles.workspaceLanguageFlag}>
+                  <Image alt="" sizes="1.5rem" src={option.flag} unoptimized />
+                </span>
+                <span className={styles.visuallyHidden}>{option.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
         <div className={styles.actionMenu}>
           <button
@@ -230,22 +207,26 @@ export function NexusDashboardHeader({
               id="nexus-notifications-panel"
             >
               <h2>{content.notificationsTitle}</h2>
-              {content.notifications.map((notification) => (
-                <Link
-                  className={styles.notificationItem}
-                  href={notification.href}
-                  key={notification.id}
-                  onClick={() => onTogglePanel("notifications")}
-                  prefetch={false}
-                >
-                  <span className={styles.notificationMarker} />
-                  <div>
-                    <strong>{notification.title}</strong>
-                    <p>{notification.detail}</p>
-                    <time>{notification.timeLabel}</time>
-                  </div>
-                </Link>
-              ))}
+              {content.notifications.length > 0 ? (
+                content.notifications.map((notification) => (
+                  <Link
+                    className={styles.notificationItem}
+                    href={notification.href}
+                    key={notification.id}
+                    onClick={() => onTogglePanel("notifications")}
+                    prefetch={false}
+                  >
+                    <span className={styles.notificationMarker} />
+                    <div>
+                      <strong>{notification.title}</strong>
+                      <p>{notification.detail}</p>
+                      <time>{notification.timeLabel}</time>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <p>{content.notificationsEmptyLabel}</p>
+              )}
             </section>
           ) : null}
         </div>

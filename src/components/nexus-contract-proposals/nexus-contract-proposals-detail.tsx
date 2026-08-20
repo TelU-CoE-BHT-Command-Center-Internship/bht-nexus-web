@@ -74,7 +74,7 @@ function getMetadataItems(
   if (record.kind !== "Kontrak Bisnis Komersialisasi") {
     items.splice(2, 0, {
       key: "applicant",
-      label: "Pengusul / penanggung jawab",
+      label: "Nama / unit terkait",
       missingFieldKey: isMissing("applicant") ? "applicant" : undefined,
       value: record.applicant || "Belum tercatat",
     });

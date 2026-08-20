@@ -8,6 +8,20 @@ export const metadata: Metadata = {
   robots: { follow: false, index: false },
 };
 
-export default function ExtractionPage() {
-  return <NexusRagExtraction content={getNexusRagExtractionContent("id")} />;
+export default async function ExtractionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ document?: string | string[] }>;
+}) {
+  const requestedDocument = (await searchParams).document;
+  return (
+    <NexusRagExtraction
+      content={getNexusRagExtractionContent(
+        "id",
+        Array.isArray(requestedDocument)
+          ? requestedDocument[0]
+          : requestedDocument,
+      )}
+    />
+  );
 }

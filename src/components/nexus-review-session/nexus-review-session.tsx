@@ -51,6 +51,7 @@ export type AuditRuntimeState = {
 type NexusReviewSessionValue = {
   actor: NexusReviewActor;
   capabilities: NexusReviewCapabilities;
+  clearCompletionProposal: (recordId: string) => void;
   completionProposals: Record<string, MetadataCompletionProposal>;
   createCompletionProposal: (
     idPrefix: string,
@@ -58,6 +59,7 @@ type NexusReviewSessionValue = {
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => MetadataCompletionProposal;
+  createSessionRecordId: (idPrefix: string) => string;
   records: AuditReviewRecord[];
   runtimeByRecordId: Record<string, AuditRuntimeState>;
   submitRecord: (record: AuditReviewRecord) => void;
@@ -100,7 +102,12 @@ export function NexusReviewSessionProvider({
   const [runtimeByRecordId, setRuntimeByRecordId] = useState<
     Record<string, AuditRuntimeState>
   >({});
-  const proposalSequence = useRef<Record<string, number>>({});
+  const sequenceByPrefix = useRef<Record<string, number>>({});
+  const createSessionRecordId = useCallback((idPrefix: string) => {
+    const nextSequence = (sequenceByPrefix.current[idPrefix] ?? 0) + 1;
+    sequenceByPrefix.current[idPrefix] = nextSequence;
+    return `${idPrefix}-${String(nextSequence).padStart(5, "0")}`;
+  }, []);
   const submitRecords = useCallback((incoming: AuditReviewRecord[]) => {
     const incomingIds = new Set(incoming.map((record) => record.id));
     setRecords((current) => [
@@ -119,11 +126,8 @@ export function NexusReviewSessionProvider({
       resolutions: MetadataCompletionResolutions,
       note: string,
     ) => {
-      const nextSequence = (proposalSequence.current[idPrefix] ?? 0) + 1;
-      proposalSequence.current[idPrefix] = nextSequence;
-
       const proposal: MetadataCompletionProposal = {
-        id: `${idPrefix}-${String(nextSequence).padStart(5, "0")}`,
+        id: createSessionRecordId(idPrefix),
         note,
         recordId,
         resolutions,
@@ -138,8 +142,16 @@ export function NexusReviewSessionProvider({
       }));
       return proposal;
     },
-    [actor.name],
+    [actor.name, createSessionRecordId],
   );
+  const clearCompletionProposal = useCallback((recordId: string) => {
+    setCompletionProposals((current) => {
+      if (!current[recordId]) return current;
+      const next = { ...current };
+      delete next[recordId];
+      return next;
+    });
+  }, []);
   const updateRecordRuntime = useCallback(
     (
       record: AuditReviewRecord,
@@ -158,8 +170,10 @@ export function NexusReviewSessionProvider({
     () => ({
       actor,
       capabilities,
+      clearCompletionProposal,
       completionProposals,
       createCompletionProposal,
+      createSessionRecordId,
       records,
       runtimeByRecordId,
       submitRecord,
@@ -169,8 +183,10 @@ export function NexusReviewSessionProvider({
     [
       actor,
       capabilities,
+      clearCompletionProposal,
       completionProposals,
       createCompletionProposal,
+      createSessionRecordId,
       records,
       runtimeByRecordId,
       submitRecord,
