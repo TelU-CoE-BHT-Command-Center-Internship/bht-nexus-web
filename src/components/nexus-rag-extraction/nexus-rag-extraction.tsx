@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NexusDocumentNav } from "@/components/nexus-document-workspace/nexus-document-nav";
 import styles from "@/components/nexus-rag-extraction/nexus-rag-extraction.module.css";
 import type {
@@ -26,6 +26,8 @@ import {
 import { NexusWorkspaceTableBadge } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
+
+const openReviewStorageKey = "bht-nexus:extraction-opens-review";
 
 function ExtractionIcon({ name }: { name: "accepted" | "fields" | "pending" }) {
   if (name === "accepted")
@@ -55,6 +57,9 @@ export function NexusRagExtraction({
   content: NexusRagExtractionContent;
 }) {
   const router = useRouter();
+  const [opensReviewAfterSend, setOpensReviewAfterSend] = useState(true);
+  const pickerHref =
+    content.locale === "id" ? "/nexus/ekstraksi" : "/en/nexus/extraction";
   const reviewSession = useOptionalNexusReviewSession();
   const profile =
     content.profileOptions.find(
@@ -86,6 +91,16 @@ export function NexusRagExtraction({
     Boolean(content.reviewHref) && readyForReview && Boolean(profile);
   const canOpenOrSend = Boolean(submittedRecord) || readyToSend;
 
+  useEffect(() => {
+    const stored = window.localStorage.getItem(openReviewStorageKey);
+    if (stored === "false") setOpensReviewAfterSend(false);
+  }, []);
+
+  function changeOpensReviewAfterSend(next: boolean) {
+    setOpensReviewAfterSend(next);
+    window.localStorage.setItem(openReviewStorageKey, String(next));
+  }
+
   function decide(id: string, decision: ExtractionFieldDecision) {
     setDecisions((current) => ({ ...current, [id]: decision }));
   }
@@ -108,7 +123,9 @@ export function NexusRagExtraction({
       reviewRecordId,
     );
     reviewSession.submitRecord(reviewRecord);
-    router.push(`${content.reviewHref}?record=${reviewRecord.id}`);
+    if (opensReviewAfterSend) {
+      router.push(`${content.reviewHref}?record=${reviewRecord.id}`);
+    }
   }
 
   if (content.requestError) {
@@ -310,18 +327,42 @@ export function NexusRagExtraction({
                       : `${pendingCount} fields still need a decision.`}
             </p>
             {content.reviewHref ? (
-              <NexusWorkspaceButton
-                disabled={!canOpenOrSend}
-                onClick={sendToReview}
-                tone="primary"
-                type="button"
-              >
-                {submittedRecord
-                  ? content.locale === "id"
-                    ? "Buka di Tinjauan"
-                    : "Open in Review"
-                  : content.sendLabel}
-              </NexusWorkspaceButton>
+              <div className={styles.sendActions}>
+                {submittedRecord ? (
+                  <NexusWorkspaceLinkButton href={pickerHref}>
+                    {content.locale === "id"
+                      ? "Ekstrak dokumen lain"
+                      : "Extract another document"}
+                  </NexusWorkspaceLinkButton>
+                ) : (
+                  <label className={styles.sendPreference}>
+                    <input
+                      checked={opensReviewAfterSend}
+                      onChange={(event) =>
+                        changeOpensReviewAfterSend(event.currentTarget.checked)
+                      }
+                      type="checkbox"
+                    />
+                    <span>
+                      {content.locale === "id"
+                        ? "Buka Tinjauan setelah mengirim"
+                        : "Open Review after sending"}
+                    </span>
+                  </label>
+                )}
+                <NexusWorkspaceButton
+                  disabled={!canOpenOrSend}
+                  onClick={sendToReview}
+                  tone="primary"
+                  type="button"
+                >
+                  {submittedRecord
+                    ? content.locale === "id"
+                      ? "Buka di Tinjauan"
+                      : "Open in Review"
+                    : content.sendLabel}
+                </NexusWorkspaceButton>
+              </div>
             ) : (
               <NexusWorkspaceNotice>
                 {content.reviewUnavailableLabel}
