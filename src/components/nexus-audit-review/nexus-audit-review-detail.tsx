@@ -7,6 +7,9 @@ import drawerStyles from "@/components/nexus-audit-review/nexus-audit-review-dra
 import {
   type AuditRuntimeState,
   auditCurrentValue,
+  auditEffectiveSubtitle,
+  auditEffectiveTitle,
+  auditEvaluationPeriodLabel,
   auditSourceTone,
   auditStatusLabel,
   auditStatusTone,
@@ -136,8 +139,10 @@ function CandidateOverview({
         </div>
         <time dateTime={record.discoveredAt}>{record.discoveredAtLabel}</time>
       </div>
-      <h3 id="audit-candidate-overview-title">{record.title}</h3>
-      <p>{record.subtitle}</p>
+      <h3 id="audit-candidate-overview-title">
+        {auditEffectiveTitle(record, state)}
+      </h3>
+      <p>{auditEffectiveSubtitle(record, state)}</p>
 
       <dl className={drawerStyles.reviewOverviewMeta}>
         <div>
@@ -149,8 +154,8 @@ function CandidateOverview({
           <dd>{record.owner}</dd>
         </div>
         <div>
-          <dt>Periode</dt>
-          <dd>{record.periodLabel}</dd>
+          <dt>Periode evaluasi</dt>
+          <dd>{auditEvaluationPeriodLabel(record)}</dd>
         </div>
         <div>
           <dt>Kelompok evaluasi</dt>
@@ -229,11 +234,30 @@ function MetadataSection({
 
 function MatchAssessment({
   record,
-}: Pick<AuditCandidateDetailsProps, "record">) {
+  state,
+}: Pick<AuditCandidateDetailsProps, "record" | "state">) {
   const leadingMatch = record.matches.toSorted(
     (first, second) => second.score - first.score,
   )[0];
   if (!leadingMatch) return null;
+  if (state.correction) {
+    return (
+      <section className={drawerStyles.reviewAssessment} data-tone="possible">
+        <div>
+          <strong>V{state.version}</strong>
+          <span>versi terbaru</span>
+        </div>
+        <div>
+          <span>Pencocokan perlu diperbarui</span>
+          <h3>Skor lama tidak dipakai untuk memutuskan versi terbaru</h3>
+          <p>
+            Perubahan kandidat sudah tercatat. Layanan pencocokan perlu
+            menghitung ulang skor dan perbandingan sebelum data dihubungkan.
+          </p>
+        </div>
+      </section>
+    );
+  }
   const exactIdentifier = leadingMatch.verdict === "same_identifier";
 
   return (
@@ -267,9 +291,10 @@ function OfficialMatchSection({
   onSelectMatch,
   record,
   selectedMatch,
+  state,
 }: Pick<
   AuditCandidateDetailsProps,
-  "indexes" | "onSelectMatch" | "record" | "selectedMatch"
+  "indexes" | "onSelectMatch" | "record" | "selectedMatch" | "state"
 >) {
   return (
     <section
@@ -311,7 +336,8 @@ function OfficialMatchSection({
                 <span className={drawerStyles.reviewMatchCopy}>
                   <strong>{match.title}</strong>
                   <small>
-                    {match.id} · {record.periodLabel} · rekam resmi
+                    {match.id} · {auditEvaluationPeriodLabel(record)} · rekam
+                    resmi
                   </small>
                   <em>
                     {exactIdentifier
@@ -321,8 +347,12 @@ function OfficialMatchSection({
                   <b>{record.sourceLabel} + BHT Nexus</b>
                 </span>
                 <span className={drawerStyles.reviewMatchScore}>
-                  <strong>{match.score}%</strong>
-                  <small>{match.verdictLabel}</small>
+                  <strong>{state.correction ? "—" : `${match.score}%`}</strong>
+                  <small>
+                    {state.correction
+                      ? "Perlu dihitung ulang"
+                      : match.verdictLabel}
+                  </small>
                 </span>
               </label>
             );
@@ -367,10 +397,45 @@ function ComparisonSection({
       </section>
     );
   }
-  const differentCount = selectedMatch.comparisons.filter(
+  const comparisons = selectedMatch.comparisons.map((comparison) => {
+    const currentValue = auditCurrentValue(record, state, comparison.fieldId);
+    const normalizedCurrent = currentValue.trim().toLocaleLowerCase("id-ID");
+    const normalizedOfficial = comparison.officialValue
+      .trim()
+      .toLocaleLowerCase("id-ID");
+    const changed =
+      state.correction?.fieldIds.includes(comparison.fieldId) ?? false;
+
+    if (!normalizedCurrent) {
+      return {
+        ...comparison,
+        candidateValue: currentValue,
+        status: "missing" as const,
+        statusLabel: "Belum tersedia",
+      };
+    }
+    if (normalizedCurrent === normalizedOfficial) {
+      return {
+        ...comparison,
+        candidateValue: currentValue,
+        status: "same" as const,
+        statusLabel: "Sama",
+      };
+    }
+    if (changed) {
+      return {
+        ...comparison,
+        candidateValue: currentValue,
+        status: "different" as const,
+        statusLabel: "Perlu dihitung ulang",
+      };
+    }
+    return { ...comparison, candidateValue: currentValue };
+  });
+  const differentCount = comparisons.filter(
     (item) => item.status !== "same",
   ).length;
-  const sameCount = selectedMatch.comparisons.length - differentCount;
+  const sameCount = comparisons.length - differentCount;
 
   return (
     <section
@@ -388,7 +453,7 @@ function ComparisonSection({
         <span>{sameCount} sama</span>
       </div>
       <div className={drawerStyles.reviewComparisonList}>
-        {selectedMatch.comparisons.map((comparison) => {
+        {comparisons.map((comparison) => {
           return (
             <article key={comparison.fieldId}>
               <header>
@@ -400,10 +465,7 @@ function ComparisonSection({
               <div>
                 <div>
                   <span>Kandidat masuk</span>
-                  <p>
-                    {auditCurrentValue(record, state, comparison.fieldId) ||
-                      "Belum tersedia"}
-                  </p>
+                  <p>{comparison.candidateValue || "Belum tersedia"}</p>
                 </div>
                 <div>
                   <span>Rekam resmi terpilih</span>
@@ -499,7 +561,7 @@ function SourceEvidenceSection({
             </div>
             <div>
               <dt>Diajukan oleh</dt>
-              <dd>{record.submittedBy}</dd>
+              <dd>{state.latestSubmittedBy}</dd>
             </div>
           </dl>
           <p>
@@ -632,6 +694,24 @@ function SourceEvidenceSection({
                 <span>
                   {entry.actor} · {entry.timeLabel}
                 </span>
+                {entry.note ? <p>{entry.note}</p> : null}
+                {entry.changes?.length ? (
+                  <ul>
+                    {entry.changes.map((change) => {
+                      const field = record.fields.find(
+                        (item) => item.id === change.fieldId,
+                      );
+                      return (
+                        <li key={`${entry.id}-${change.fieldId}`}>
+                          {field?.label ?? change.fieldId}:{" "}
+                          {change.before || "—"}
+                          {" → "}
+                          {change.after || "—"}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
               </div>
             </li>
           ))}
@@ -670,12 +750,13 @@ export function AuditCandidateDetails({
         selectedMatch={selectedMatch}
         state={state}
       />
-      <MatchAssessment record={record} />
+      <MatchAssessment record={record} state={state} />
       <OfficialMatchSection
         indexes={indexes}
         onSelectMatch={onSelectMatch}
         record={record}
         selectedMatch={selectedMatch}
+        state={state}
       />
       <ComparisonSection
         indexes={indexes}

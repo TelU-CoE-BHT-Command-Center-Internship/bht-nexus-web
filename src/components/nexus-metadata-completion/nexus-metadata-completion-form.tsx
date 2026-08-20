@@ -12,7 +12,9 @@ import {
   metadataCompletionFieldConfigs,
   metadataCompletionFieldLabels,
   metadataCompletionResolutionChoices,
+  metadataCompletionResolutionSetErrors,
   metadataCompletionValueError,
+  normalizeMetadataCompletionResolution,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
   initialAuditRuntimeState,
@@ -44,10 +46,10 @@ function getResolutionResult(resolution: MetadataCompletionResolution) {
 function getEffectiveResolutionResult(
   proposal: MetadataCompletionProposal,
   key: MetadataCompletionFieldKey,
-  correctedValues?: Record<string, string>,
+  correctedResolutions?: MetadataCompletionResolutions,
 ) {
-  const correctedValue = correctedValues?.[key]?.trim();
-  if (correctedValue) return correctedValue;
+  const correctedResolution = correctedResolutions?.[key];
+  if (correctedResolution) return getResolutionResult(correctedResolution);
 
   const resolution = proposal.resolutions[key];
   return resolution ? getResolutionResult(resolution) : "Belum tersedia";
@@ -89,11 +91,7 @@ export function NexusMetadataCompletionForm({
       Object.fromEntries(
         missingFields.map((key) => [
           key,
-          {
-            reason: resolutions[key]?.reason.trim() ?? "",
-            status: resolutions[key]?.status ?? "provided",
-            value: resolutions[key]?.value.trim() ?? "",
-          },
+          normalizeMetadataCompletionResolution(key, resolutions[key]),
         ]),
       ) as MetadataCompletionResolutions,
     [missingFields, resolutions],
@@ -111,6 +109,10 @@ export function NexusMetadataCompletionForm({
       return error ? [[key, error] as const] : [];
     }),
   ) as Partial<Record<MetadataCompletionFieldKey, string>>;
+  Object.assign(
+    fieldErrors,
+    metadataCompletionResolutionSetErrors(normalizedResolutions),
+  );
   const allFieldsResolved = missingFields.every((key) => {
     const resolution = normalizedResolutions[key];
 
@@ -124,7 +126,9 @@ export function NexusMetadataCompletionForm({
     return resolution.reason.length >= 8;
   });
   const canPrepareSubmission =
-    allFieldsResolved && sourceNote.trim().length >= 8;
+    allFieldsResolved &&
+    !Object.values(fieldErrors).some(Boolean) &&
+    sourceNote.trim().length >= 8;
   const reviewRecord = proposal
     ? reviewSession?.records.find((record) => record.id === proposal.id)
     : undefined;
@@ -227,7 +231,7 @@ export function NexusMetadataCompletionForm({
                   {getEffectiveResolutionResult(
                     proposal,
                     key,
-                    reviewState?.correction?.after,
+                    reviewState?.correction?.resolutions,
                   )}
                 </dd>
               </div>

@@ -6,7 +6,9 @@ import type { Locale } from "@/i18n/locales";
 export type NexusDocumentCapability = "extraction" | "qa";
 
 export type NexusDocumentRecord = {
+  attempt?: number;
   capabilities: NexusDocumentCapability[];
+  failureReason?: string;
   fileLabel: string;
   id: string;
   indexedAt: string;
@@ -62,13 +64,33 @@ const documentSeeds = [
     indexedAt: "2026-08-11T19:22",
     ownerUnit: { en: "Data Management", id: "Pengelolaan Data" },
     status: "retrying",
+    attempt: 2,
+    failureReason:
+      "Pemrosesan teks belum berhasil. Sistem sedang menjalankan percobaan berikutnya.",
     title: {
       en: "Annual Publication Summary",
       id: "Rekap Publikasi Tahunan",
     },
   },
+  {
+    attempt: 3,
+    capabilities: [],
+    failureReason:
+      "Berkas tidak dapat dibaca setelah tiga percobaan. Periksa berkas sumber lalu ajukan pemrosesan baru.",
+    fileLabel: { en: "PDF · 6 pages", id: "PDF · 6 halaman" },
+    id: "lampiran-kegiatan-tidak-terbaca",
+    indexedAt: "2026-08-11T18:10",
+    ownerUnit: { en: "Research", id: "Riset" },
+    status: "failed_permanently",
+    title: {
+      en: "Unreadable Activity Attachment",
+      id: "Lampiran Kegiatan Belum Terbaca",
+    },
+  },
 ] satisfies Array<{
+  attempt?: number;
   capabilities: NexusDocumentCapability[];
+  failureReason?: string;
   fileLabel: Record<Locale, string>;
   id: string;
   indexedAt: string;
@@ -80,7 +102,9 @@ const documentSeeds = [
 /** Satu sumber metadata dokumen dipakai bersama Pustaka, Tanya, dan Ekstraksi. */
 export function getNexusDocumentRecords(locale: Locale): NexusDocumentRecord[] {
   return documentSeeds.map((seed) => ({
+    attempt: seed.attempt,
     capabilities: seed.capabilities,
+    failureReason: seed.failureReason,
     fileLabel: seed.fileLabel[locale],
     id: seed.id,
     indexedAt: seed.indexedAt,

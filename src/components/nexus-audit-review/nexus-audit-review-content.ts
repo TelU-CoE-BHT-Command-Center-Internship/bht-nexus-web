@@ -1,3 +1,4 @@
+import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
   kmIndicator,
   type NexusKmIndicator,
@@ -55,13 +56,26 @@ export type AuditReviewEvidence = {
 
 export type AuditReviewHistory = {
   actor: string;
+  actorId?: string;
+  changes?: Array<{
+    after: string;
+    before: string;
+    fieldId: string;
+  }>;
+  decisionKind?: AuditDecisionKind;
+  fieldIds?: string[];
   id: string;
+  kind?: "correction_submitted" | "decision" | "submitted";
   label: string;
+  note?: string;
+  targetRecordId?: string;
   timeLabel: string;
+  version?: number;
 };
 
 export type AuditReviewDecision = {
   actor: string;
+  actorId?: string;
   kind: AuditDecisionKind;
   label: string;
   note: string;
@@ -71,6 +85,7 @@ export type AuditReviewDecision = {
 };
 
 export type AuditFixRequest = {
+  assigneeActorId?: string;
   assigneeLabel?: string;
   fieldIds: string[];
   reason: string;
@@ -116,6 +131,7 @@ export type AuditReviewRecord = {
   candidateKind: AuditCandidateKind;
   category: AuditReviewCategory;
   categoryLabel: string;
+  completionResolutions?: MetadataCompletionResolutions;
   decision?: AuditReviewDecision;
   discoveredAt: string;
   discoveredAtLabel: string;
@@ -127,7 +143,8 @@ export type AuditReviewRecord = {
   kpiLinks: AuditKpiLink[];
   matches: AuditOfficialMatch[];
   owner: string;
-  periodLabel: string;
+  /** Periode evaluasi KM; kosong bila sumber belum menentukan periodenya. */
+  evaluationPeriodLabel?: string;
   primaryPerson: string;
   provenance: AuditReviewProvenance;
   signal: AuditReviewSignal;
@@ -136,6 +153,7 @@ export type AuditReviewRecord = {
   status: AuditReviewStatus;
   statusLabel: string;
   submittedBy: string;
+  submittedByActorId?: string;
   subtitle: string;
   title: string;
   typeLabel: string;
@@ -284,7 +302,7 @@ const records: AuditReviewRecord[] = [
       },
     ],
     owner: "Belum ditetapkan",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Peneliti A",
     provenance: {},
     signal: {
@@ -343,7 +361,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Sofia Saidah",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.14!A6:L6" },
     signal: {
@@ -403,7 +421,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Sugondo Hadiyoso",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.13!A4:L4" },
     signal: {
@@ -467,7 +485,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Fathur Rahman",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.11!A8:I8" },
     signal: {
@@ -517,7 +535,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Dosen A",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.15!A4:F4" },
     signal: {
@@ -566,7 +584,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Inventor A",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.16!A4:E4" },
     signal: {
@@ -615,7 +633,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Tim Riset A",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.17!A4:E4" },
     signal: {
@@ -663,7 +681,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026–2027",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Mitra Industri A",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.19!A4:E4" },
     signal: {
@@ -712,7 +730,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Dosen A",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no. 29!A5:G5" },
     signal: {
@@ -770,7 +788,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "D. Puspitasari",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.33!A4:F4" },
     signal: {
@@ -819,7 +837,7 @@ const records: AuditReviewRecord[] = [
     ],
     matches: [],
     owner: "CoE BHT",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Tim Pengusul A",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no. 38!A2:I2" },
     signal: {
@@ -880,7 +898,7 @@ const records: AuditReviewRecord[] = [
     kpiLinks: [],
     matches: [],
     owner: "Belum ditetapkan",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Tim Kegiatan A",
     provenance: {},
     signal: {
@@ -942,7 +960,7 @@ const records: AuditReviewRecord[] = [
     kpiLinks: [],
     matches: [],
     owner: "Belum ditetapkan",
-    periodLabel: "2026",
+    evaluationPeriodLabel: "2026",
     primaryPerson: "Tim Laboratorium A",
     provenance: {},
     signal: {

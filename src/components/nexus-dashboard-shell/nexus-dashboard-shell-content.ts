@@ -40,6 +40,7 @@ export type DashboardNotification = {
 };
 export type DashboardViewer = {
   avatarSrc?: ImageProps["src"];
+  id: string;
   initials: string;
   name: string;
   roleLabel: string;
@@ -230,6 +231,7 @@ const groupLabels = {
 
 export const nexusDashboardPreviewViewer = {
   avatarSrc: muhammadAmmarAsyrafPhoto,
+  id: "USR-COE-BHT-ADMIN-001",
   initials: "MA",
   name: "Muhammad Ammar Asyraf",
   roleLabel: "Admin / Pimpinan",

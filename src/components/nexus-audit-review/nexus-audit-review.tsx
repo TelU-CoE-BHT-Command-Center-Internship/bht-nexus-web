@@ -11,7 +11,13 @@ import type {
   AuditReviewStatus,
   NexusAuditReviewContent,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
-import { auditCurrentValue } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
+import {
+  auditCurrentValue,
+  auditEffectiveSubtitle,
+  auditEffectiveTitle,
+  auditEvaluationPeriodLabel,
+} from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
+import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
   type AuditRuntimeState,
   initialAuditRuntimeState,
@@ -65,7 +71,7 @@ const columns: readonly NexusWorkspaceRecordColumn[] = [
   { id: "source", label: "Sumber" },
   { id: "signal", label: "Sinyal" },
   { id: "owner", label: "Pemilik" },
-  { id: "period", label: "Periode" },
+  { id: "period", label: "Periode evaluasi" },
   { id: "status", label: "Status" },
   { id: "action", label: "Aksi" },
 ];
@@ -189,8 +195,8 @@ function actionLabel(status: AuditReviewStatus) {
 
 function searchableText(record: AuditReviewRecord, state: AuditRuntimeState) {
   return [
-    record.title,
-    record.subtitle,
+    auditEffectiveTitle(record, state),
+    auditEffectiveSubtitle(record, state),
     record.typeLabel,
     record.categoryLabel,
     record.owner,
@@ -294,7 +300,7 @@ export function NexusAuditReview({
 
   const periodConfig = useMemo<NexusSelectConfig>(() => {
     const periods = Array.from(
-      new Set(records.map((record) => record.periodLabel)),
+      new Set(records.map(auditEvaluationPeriodLabel)),
     ).sort((first, second) => second.localeCompare(first, "id-ID"));
 
     return {
@@ -318,7 +324,7 @@ export function NexusAuditReview({
         (source === "all" || record.source === source) &&
         (status === "all" || effectiveStatus === status) &&
         (category === "all" || record.category === category) &&
-        (period === "all" || record.periodLabel === period) &&
+        (period === "all" || auditEvaluationPeriodLabel(record) === period) &&
         (needle.length === 0 ||
           searchableText(record, recordState).includes(needle))
       );
@@ -326,7 +332,16 @@ export function NexusAuditReview({
 
     return next.toSorted((a, b) =>
       sort === "title"
-        ? a.title.localeCompare(b.title, "id-ID")
+        ? auditEffectiveTitle(
+            a,
+            runtime[a.id] ?? initialAuditRuntimeState(a),
+          ).localeCompare(
+            auditEffectiveTitle(
+              b,
+              runtime[b.id] ?? initialAuditRuntimeState(b),
+            ),
+            "id-ID",
+          )
         : sort === "oldest"
           ? a.discoveredAt.localeCompare(b.discoveredAt)
           : b.discoveredAt.localeCompare(a.discoveredAt),
@@ -372,12 +387,42 @@ export function NexusAuditReview({
     fieldIds: string[],
     targetRecordId?: string,
   ) => {
+    const currentState = runtime[record.id] ?? initialAuditRuntimeState(record);
+    const recordCapabilities = reviewSession.capabilitiesFor(
+      record,
+      currentState,
+    );
+    const decisionIsAllowed =
+      kind === "changes_requested"
+        ? recordCapabilities.canRequestChanges
+        : kind === "rejected"
+          ? recordCapabilities.canReject
+          : recordCapabilities.canApprove;
+    if (!decisionIsAllowed) return;
+
     const label = decisionLabel(kind);
     const timeLabel = formatAuditTimestamp();
+    const reviewer = `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`;
+    const completionResolutions =
+      currentState.correction?.resolutions ?? record.completionResolutions;
+    if (
+      kind === "approved_completion" &&
+      targetRecordId &&
+      completionResolutions
+    ) {
+      reviewSession.applyOfficialMetadataCompletion(targetRecordId, {
+        appliedAt: timeLabel,
+        note,
+        resolutions: completionResolutions,
+        reviewRecordId: record.id,
+        reviewer,
+      });
+    }
     reviewSession.updateRecordRuntime(record, (previous) => ({
       ...previous,
       decision: {
-        actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
+        actor: reviewer,
+        actorId: reviewSession.actor.id,
         kind,
         label,
         note,
@@ -387,7 +432,10 @@ export function NexusAuditReview({
       fixRequest:
         kind === "changes_requested"
           ? {
-              assigneeLabel: "Akan ditentukan berdasarkan hak akses sistem",
+              assigneeActorId:
+                currentState.latestSubmittedByActorId ??
+                record.submittedByActorId,
+              assigneeLabel: currentState.latestSubmittedBy,
               fieldIds,
               reason: note,
             }
@@ -395,12 +443,20 @@ export function NexusAuditReview({
       history: [
         ...previous.history,
         {
-          actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
+          actor: reviewer,
+          actorId: reviewSession.actor.id,
+          decisionKind: kind,
+          fieldIds: kind === "changes_requested" ? fieldIds : undefined,
           id: `${record.id}-${kind}-${previous.history.length + 1}`,
+          kind: "decision",
           label,
+          note,
+          targetRecordId,
           timeLabel,
+          version: previous.version,
         },
       ],
+      reviewTargetRecordId: targetRecordId ?? previous.reviewTargetRecordId,
       status: kind === "changes_requested" ? "needs_fix" : "completed",
     }));
     setCurrentPage(1);
@@ -410,7 +466,14 @@ export function NexusAuditReview({
     record: AuditReviewRecord,
     values: Record<string, string>,
     evidenceNote: string,
+    resolutions?: MetadataCompletionResolutions,
   ) => {
+    const currentState = runtime[record.id] ?? initialAuditRuntimeState(record);
+    if (
+      !reviewSession.capabilitiesFor(record, currentState).canSubmitCorrection
+    )
+      return;
+
     reviewSession.updateRecordRuntime(record, (previous) => {
       if (!previous.fixRequest) return previous;
       const nextVersion = previous.version + 1;
@@ -422,10 +485,17 @@ export function NexusAuditReview({
             "",
         ]),
       );
-      const after = Object.fromEntries(
+      const changedAfter = Object.fromEntries(
         previous.fixRequest.fieldIds.map((fieldId) => [
           fieldId,
           values[fieldId] ?? "",
+        ]),
+      );
+      const after = { ...previous.correction?.after, ...changedAfter };
+      const allCorrectedFieldIds = Array.from(
+        new Set([
+          ...(previous.correction?.fieldIds ?? []),
+          ...previous.fixRequest.fieldIds,
         ]),
       );
 
@@ -433,9 +503,14 @@ export function NexusAuditReview({
         ...previous,
         correction: {
           after,
-          before,
+          before: { ...previous.correction?.before, ...before },
           evidenceNote,
-          fieldIds: previous.fixRequest.fieldIds,
+          fieldIds: allCorrectedFieldIds,
+          resolutions: {
+            ...record.completionResolutions,
+            ...previous.correction?.resolutions,
+            ...resolutions,
+          },
           version: nextVersion,
         },
         decision: undefined,
@@ -444,11 +519,22 @@ export function NexusAuditReview({
           ...previous.history,
           {
             actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
+            actorId: reviewSession.actor.id,
+            changes: previous.fixRequest.fieldIds.map((fieldId) => ({
+              after: changedAfter[fieldId] ?? "",
+              before: before[fieldId] ?? "",
+              fieldId,
+            })),
             id: `${record.id}-resubmitted-${nextVersion}`,
+            kind: "correction_submitted",
             label: `Kandidat versi ${nextVersion} dikirim ulang`,
+            note: evidenceNote,
             timeLabel: formatAuditTimestamp(),
+            version: nextVersion,
           },
         ],
+        latestSubmittedBy: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
+        latestSubmittedByActorId: reviewSession.actor.id,
         status: "waiting",
         version: nextVersion,
       };
@@ -458,8 +544,17 @@ export function NexusAuditReview({
 
   const rows = visible.map((record) => {
     const recordState = runtime[record.id];
+    const effectiveState = recordState ?? initialAuditRuntimeState(record);
     const effectiveStatus = recordState?.status ?? record.status;
-    const visibleActionLabel = actionLabel(effectiveStatus);
+    const recordCapabilities = reviewSession.capabilitiesFor(
+      record,
+      effectiveState,
+    );
+    const visibleActionLabel =
+      effectiveStatus === "waiting" && !recordCapabilities.canReview
+        ? "Lihat status"
+        : actionLabel(effectiveStatus);
+    const effectiveTitle = auditEffectiveTitle(record, effectiveState);
     const signal = recordState?.correction
       ? {
           primary: `Versi ${recordState.version} dikirim ulang`,
@@ -477,7 +572,7 @@ export function NexusAuditReview({
     const action = (
       <NexusWorkspaceTableAction
         key={`${record.id}-action`}
-        label={`${visibleActionLabel}: ${record.title}`}
+        label={`${visibleActionLabel}: ${effectiveTitle}`}
         onClick={open}
       >
         {visibleActionLabel}
@@ -489,12 +584,12 @@ export function NexusAuditReview({
       cells: {
         action,
         owner: record.owner,
-        period: record.periodLabel,
+        period: auditEvaluationPeriodLabel(record),
         primary: (
           <NexusWorkspaceTablePrimary
             onClick={open}
-            subtitle={record.subtitle}
-            title={record.title}
+            subtitle={auditEffectiveSubtitle(record, effectiveState)}
+            title={effectiveTitle}
           />
         ),
         signal: (
@@ -520,7 +615,7 @@ export function NexusAuditReview({
         <NexusWorkspaceMobileCard
           action={
             <NexusWorkspaceMobileAction
-              label={`${visibleActionLabel}: ${record.title}`}
+              label={`${visibleActionLabel}: ${effectiveTitle}`}
               onClick={open}
             >
               {visibleActionLabel}
@@ -551,14 +646,16 @@ export function NexusAuditReview({
                 <dd>{record.owner}</dd>
               </div>
               <div>
-                <dt>Periode</dt>
-                <dd>{record.periodLabel}</dd>
+                <dt>Periode evaluasi</dt>
+                <dd>{auditEvaluationPeriodLabel(record)}</dd>
               </div>
             </dl>
           }
-          title={record.title}
+          title={effectiveTitle}
         >
-          <p className={styles.mobileSubtitle}>{record.subtitle}</p>
+          <p className={styles.mobileSubtitle}>
+            {auditEffectiveSubtitle(record, effectiveState)}
+          </p>
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -769,13 +866,13 @@ export function NexusAuditReview({
       {selected && selectedState ? (
         <NexusAuditReviewDrawer
           key={`${selected.id}-${selectedState.status}-${selectedState.version}-${selectedState.decision?.kind ?? "open"}`}
-          capabilities={reviewSession.capabilities}
+          capabilities={reviewSession.capabilitiesFor(selected, selectedState)}
           onClose={() => setOpenId(null)}
           onDecide={(kind, note, fieldIds, targetRecordId) =>
             decide(selected, kind, note, fieldIds, targetRecordId)
           }
-          onResubmit={(values, evidenceNote) =>
-            resubmit(selected, values, evidenceNote)
+          onResubmit={(values, evidenceNote, resolutions) =>
+            resubmit(selected, values, evidenceNote, resolutions)
           }
           record={selected}
           state={selectedState}

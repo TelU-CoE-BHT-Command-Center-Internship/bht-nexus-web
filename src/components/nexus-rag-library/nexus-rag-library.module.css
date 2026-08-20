@@ -60,6 +60,19 @@
   color: var(--color-nexus-text-subtle);
 }
 
+.statusDetail {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.statusDetail small {
+  color: var(--color-nexus-text-muted);
+  line-height: 1.45;
+  max-width: 24rem;
+}
+
 .documentActions {
   display: flex;
   flex-wrap: wrap;

@@ -3,6 +3,9 @@ import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace
 import type { Locale } from "@/i18n/locales";
 
 export type RagPassage = {
+  chunkId?: string;
+  documentVersion?: number;
+  href?: string;
   id: string;
   page: number;
   quote: string;

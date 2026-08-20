@@ -12,6 +12,7 @@ import {
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createIntellectualPropertyCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -189,6 +190,14 @@ export function NexusIntellectualProperty({
   content,
 }: NexusIntellectualPropertyProps) {
   const reviewSession = useNexusReviewSession();
+  const records = useMemo(
+    () =>
+      projectOfficialMetadataRecords(
+        content.records,
+        reviewSession.officialMetadataByRecordId,
+      ),
+    [content.records, reviewSession.officialMetadataByRecordId],
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const proposals = reviewSession.completionProposals;
   const [filterValues, setFilterValues] =
@@ -201,17 +210,17 @@ export function NexusIntellectualProperty({
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
 
   const indicatorConfig = useMemo(
-    () => createIndicatorConfig(content.records),
-    [content.records],
+    () => createIndicatorConfig(records),
+    [records],
   );
   const protectionConfig = useMemo(
-    () => createProtectionConfig(content.records),
-    [content.records],
+    () => createProtectionConfig(records),
+    [records],
   );
 
   const filtered = useMemo(() => {
     const needle = normalizeWorkspaceSearch(deferredSearchQuery);
-    const matching = content.records.filter(
+    const matching = records.filter(
       (record) =>
         (filterValues.indicator === "all" ||
           (filterValues.indicator === unlinkedIndicatorValue
@@ -241,12 +250,12 @@ export function NexusIntellectualProperty({
         ? first.year - second.year
         : second.year - first.year;
     });
-  }, [content.records, deferredSearchQuery, filterValues]);
+  }, [deferredSearchQuery, filterValues, records]);
 
-  const registeredCount = content.records.filter(
+  const registeredCount = records.filter(
     (record) => record.registrationNumber,
   ).length;
-  const needsCompletionCount = content.records.filter(
+  const needsCompletionCount = records.filter(
     (record) => record.quality === "Perlu dilengkapi",
   ).length;
   const pageSize = Number(pageSizeValue);
@@ -256,20 +265,20 @@ export function NexusIntellectualProperty({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = content.records.find((record) => record.id === selectedId);
+  const selected = records.find((record) => record.id === selectedId);
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
   ).length;
   const hasActiveFilters = activeFilterCount > 0 || searchQuery.length > 0;
   const evaluationPeriods = Array.from(
-    new Set(content.records.map((record) => record.evaluationPeriod)),
+    new Set(records.map((record) => record.evaluationPeriod)),
   )
     .toSorted()
     .join(", ");
   const resultSummary = [
     `Periode evaluasi ${evaluationPeriods}`,
-    `${filtered.length} dari ${content.records.length} rekam sesuai filter`,
+    `${filtered.length} dari ${records.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
       : "tanpa filter tambahan",
@@ -286,7 +295,7 @@ export function NexusIntellectualProperty({
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => {
-    const record = content.records.find((item) => item.id === recordId);
+    const record = records.find((item) => item.id === recordId);
     if (!record) return;
 
     const proposal: IntellectualPropertyProposal =
@@ -423,7 +432,7 @@ export function NexusIntellectualProperty({
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: content.records.length,
+            value: records.length,
           },
           {
             icon: <NexusIntellectualPropertyIcon name="certificate" />,
@@ -505,13 +514,13 @@ export function NexusIntellectualProperty({
             empty={
               <NexusWorkspaceEmptyState
                 description={
-                  content.records.length === 0
+                  records.length === 0
                     ? "Rekam akan muncul setelah pengajuan disetujui melalui proses Tinjauan."
                     : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
                 }
                 onResetFilters={hasActiveFilters ? resetFilters : undefined}
                 title={
-                  content.records.length === 0
+                  records.length === 0
                     ? "Belum ada kekayaan intelektual resmi"
                     : "Tidak ada rekam yang cocok"
                 }

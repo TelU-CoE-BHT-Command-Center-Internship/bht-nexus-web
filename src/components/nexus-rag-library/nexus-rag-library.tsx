@@ -11,6 +11,7 @@ import type {
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
+  NexusWorkspaceButton,
   NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -115,6 +116,16 @@ export function NexusRagLibrary({
         tone: "needs-fix",
         value: "retrying",
       },
+      {
+        label: getAutomationStatusLabel(content.locale, "failed"),
+        tone: "needs-fix",
+        value: "failed",
+      },
+      {
+        label: getAutomationStatusLabel(content.locale, "failed_permanently"),
+        tone: "needs-fix",
+        value: "failed_permanently",
+      },
     ],
   };
   const pageSizeConfig: NexusSelectConfig = {
@@ -144,16 +155,47 @@ export function NexusRagLibrary({
     );
   }, [content.locale, deferredQuery, documents, status]);
   const pageSize = Number(pageSizeValue);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredDocuments.length / pageSize),
+  );
+  const safePage = Math.min(Math.max(currentPage, 1), totalPages);
   const visibleDocuments = filteredDocuments.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
+    (safePage - 1) * pageSize,
+    safePage * pageSize,
   );
   const readyCount = documents.filter(
     (document) => document.status === "succeeded",
   ).length;
   const queueCount = documents.filter(
-    (document) => document.status !== "succeeded",
+    (document) =>
+      document.status === "queued" ||
+      document.status === "running" ||
+      document.status === "retrying",
   ).length;
+
+  function submitNewProcessing(document: RagDocument) {
+    setDocuments((current) =>
+      current.map((item) =>
+        item.id === document.id
+          ? {
+              ...item,
+              attempt: (item.attempt ?? 0) + 1,
+              failureReason: undefined,
+              status: "queued",
+              statusLabel: getAutomationStatusLabel(content.locale, "queued"),
+            }
+          : item,
+      ),
+    );
+    setFeedback({
+      message:
+        content.locale === "id"
+          ? `${document.title} diajukan kembali ke antrean pemrosesan.`
+          : `${document.title} was submitted to the processing queue again.`,
+      tone: "success",
+    });
+  }
 
   function addDocument(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -212,6 +254,15 @@ export function NexusRagLibrary({
             </NexusWorkspaceLinkButton>
           ) : null}
         </span>
+      ) : document.status === "failed" ||
+        document.status === "failed_permanently" ? (
+        <NexusWorkspaceButton
+          key={`${document.id}-action`}
+          onClick={() => submitNewProcessing(document)}
+          type="button"
+        >
+          {content.locale === "id" ? "Ajukan proses baru" : "Submit new job"}
+        </NexusWorkspaceButton>
       ) : (
         <span className={styles.noAction} key={`${document.id}-action`}>
           —
@@ -228,9 +279,14 @@ export function NexusRagLibrary({
         ),
         owner: document.ownerUnit,
         status: (
-          <NexusWorkspaceTableBadge tone={tone}>
-            {document.statusLabel}
-          </NexusWorkspaceTableBadge>
+          <span className={styles.statusDetail}>
+            <NexusWorkspaceTableBadge tone={tone}>
+              {document.statusLabel}
+            </NexusWorkspaceTableBadge>
+            {document.failureReason ? (
+              <small>{document.failureReason}</small>
+            ) : null}
+          </span>
         ),
         updated: (
           <time dateTime={document.indexedAt}>{document.indexedLabel}</time>
@@ -259,6 +315,12 @@ export function NexusRagLibrary({
                 <dt>Format</dt>
                 <dd>{document.fileLabel}</dd>
               </div>
+              {document.failureReason ? (
+                <div>
+                  <dt>{content.locale === "id" ? "Kendala" : "Issue"}</dt>
+                  <dd>{document.failureReason}</dd>
+                </div>
+              ) : null}
             </dl>
           }
           title={document.title}
@@ -396,7 +458,7 @@ export function NexusRagLibrary({
             isLoading={query !== deferredQuery}
             pagination={
               <NexusTablePagination
-                currentPage={currentPage}
+                currentPage={safePage}
                 itemCount={filteredDocuments.length}
                 navigationLabel={
                   content.locale === "id"

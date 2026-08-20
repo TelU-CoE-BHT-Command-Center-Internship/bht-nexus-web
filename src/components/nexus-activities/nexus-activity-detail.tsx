@@ -12,7 +12,10 @@ import {
 } from "@/components/nexus-activities/nexus-activities-content";
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
 import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
-import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
+  type MetadataCompletionResolutions,
+  metadataCompletionResolvedValue,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -57,6 +60,8 @@ function formatDate(value: string) {
 function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
   const isMissing = (key: ActivityCompletionFieldKey) =>
     record.missingFields.includes(key);
+  const resolved = (key: ActivityCompletionFieldKey, fallback: string) =>
+    metadataCompletionResolvedValue(record.resolvedMetadata, key, fallback);
   const field = (
     key: ActivityCompletionFieldKey,
     label: string,
@@ -66,7 +71,7 @@ function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
     key,
     label,
     missingFieldKey: isMissing(key) ? key : undefined,
-    value: value || "Belum tercatat pada sumber",
+    value: resolved(key, value || "Belum tercatat pada sumber"),
     wide,
   });
   const items: MetadataItem[] = [
@@ -126,7 +131,7 @@ function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
       key: "evidenceUrl",
       label: "Dokumen bukti",
       missingFieldKey: isMissing("evidenceUrl") ? "evidenceUrl" : undefined,
-      value: activityEvidenceLabel(record),
+      value: resolved("evidenceUrl", activityEvidenceLabel(record)),
       wide: true,
     },
     {

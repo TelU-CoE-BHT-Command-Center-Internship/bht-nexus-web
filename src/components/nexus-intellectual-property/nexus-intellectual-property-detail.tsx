@@ -10,7 +10,10 @@ import {
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
 import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
-import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
+  type MetadataCompletionResolutions,
+  metadataCompletionResolvedValue,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -56,13 +59,17 @@ function getMetadataItems(
 ): MetadataItem[] {
   const isMissing = (key: IntellectualPropertyCompletionFieldKey) =>
     record.missingFields.includes(key);
+  const resolved = (
+    key: IntellectualPropertyCompletionFieldKey,
+    fallback: string,
+  ) => metadataCompletionResolvedValue(record.resolvedMetadata, key, fallback);
 
   return [
     {
       key: "title",
       label: "Judul karya",
       missingFieldKey: isMissing("title") ? "title" : undefined,
-      value: record.title || "Belum tercatat pada sumber",
+      value: resolved("title", record.title || "Belum tercatat pada sumber"),
       wide: true,
     },
     {
@@ -77,7 +84,7 @@ function getMetadataItems(
       missingFieldKey: isMissing("protectionType")
         ? "protectionType"
         : undefined,
-      value: record.protection,
+      value: resolved("protectionType", record.protection),
     },
     {
       key: "registrationNumber",
@@ -85,13 +92,19 @@ function getMetadataItems(
       missingFieldKey: isMissing("registrationNumber")
         ? "registrationNumber"
         : undefined,
-      value: record.registrationNumber ?? "Belum tercatat",
+      value: resolved(
+        "registrationNumber",
+        record.registrationNumber ?? "Belum tercatat",
+      ),
     },
     {
       key: "year",
       label: "Tahun pengajuan",
       missingFieldKey: isMissing("year") ? "year" : undefined,
-      value: record.year ? String(record.year) : "Belum tercatat",
+      value: resolved(
+        "year",
+        record.year ? String(record.year) : "Belum tercatat",
+      ),
     },
     {
       key: "filedOn",
@@ -109,7 +122,7 @@ function getMetadataItems(
       key: "documentUrl",
       label: "Dokumen pendaftaran",
       missingFieldKey: isMissing("documentUrl") ? "documentUrl" : undefined,
-      value: documentValue(record),
+      value: resolved("documentUrl", documentValue(record)),
       wide: true,
     },
     {

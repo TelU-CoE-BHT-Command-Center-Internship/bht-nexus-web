@@ -15,6 +15,7 @@ import {
 } from "@/components/nexus-activities/nexus-activities-content";
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createActivityCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -183,6 +184,14 @@ function createIndicatorConfig(
 
 export function NexusActivities({ content }: NexusActivitiesProps) {
   const reviewSession = useNexusReviewSession();
+  const records = useMemo(
+    () =>
+      projectOfficialMetadataRecords(
+        content.records,
+        reviewSession.officialMetadataByRecordId,
+      ),
+    [content.records, reviewSession.officialMetadataByRecordId],
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [filterValues, setFilterValues] =
     useState<FilterValues>(defaultFilterValues);
@@ -195,13 +204,13 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
 
   const indicatorConfig = useMemo(
-    () => createIndicatorConfig(content.records),
-    [content.records],
+    () => createIndicatorConfig(records),
+    [records],
   );
 
   const filtered = useMemo(() => {
     const needle = normalizeWorkspaceSearch(deferredSearchQuery);
-    const matching = content.records.filter(
+    const matching = records.filter(
       (record) =>
         (filterValues.indicator === "all" ||
           (filterValues.indicator === unlinkedIndicatorValue
@@ -231,14 +240,14 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
         second.kmLinks[0]?.indicator.number ?? Number.MAX_SAFE_INTEGER;
       return firstIndicator - secondIndicator;
     });
-  }, [content.records, deferredSearchQuery, filterValues]);
+  }, [deferredSearchQuery, filterValues, records]);
 
   const coveredIndicatorCount = activityIndicatorScope.filter((indicator) =>
-    content.records.some((record) =>
+    records.some((record) =>
       record.kmLinks.some((link) => link.indicator.id === indicator.id),
     ),
   ).length;
-  const needsCompletionCount = content.records.filter(
+  const needsCompletionCount = records.filter(
     (record) => record.quality === "Perlu dilengkapi",
   ).length;
   const pageSize = Number(pageSizeValue);
@@ -248,15 +257,15 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = content.records.find((record) => record.id === selectedId);
+  const selected = records.find((record) => record.id === selectedId);
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
   ).length;
   const hasActiveFilters = activeFilterCount > 0 || searchQuery.length > 0;
   const resultSummary = [
-    `Periode evaluasi ${content.records[0]?.evaluationPeriod ?? "—"}`,
-    `${filtered.length} dari ${content.records.length} rekam sesuai filter`,
+    `Periode evaluasi ${records[0]?.evaluationPeriod ?? "—"}`,
+    `${filtered.length} dari ${records.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
       : "tanpa filter tambahan",
@@ -273,7 +282,7 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => {
-    const record = content.records.find((item) => item.id === recordId);
+    const record = records.find((item) => item.id === recordId);
     if (!record) return;
 
     const proposal: ActivityProposal = reviewSession.createCompletionProposal(
@@ -412,7 +421,7 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: content.records.length,
+            value: records.length,
           },
           {
             icon: <NexusActivitiesIcon name="indicator" />,
@@ -493,13 +502,13 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
             empty={
               <NexusWorkspaceEmptyState
                 description={
-                  content.records.length === 0
+                  records.length === 0
                     ? "Rekam akan muncul setelah kegiatan atau program disetujui melalui proses Tinjauan."
                     : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
                 }
                 onResetFilters={hasActiveFilters ? resetFilters : undefined}
                 title={
-                  content.records.length === 0
+                  records.length === 0
                     ? "Belum ada kegiatan atau pengabdian resmi"
                     : "Tidak ada rekam yang cocok"
                 }

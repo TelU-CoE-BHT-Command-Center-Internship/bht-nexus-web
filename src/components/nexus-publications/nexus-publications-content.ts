@@ -122,6 +122,8 @@ export type OfficialPublication = {
   publicId: string;
   publisherUrl?: string;
   quality: PublicationQuality;
+  /** Nilai atau pengecualian pelengkapan yang sudah disetujui. */
+  resolvedMetadata?: MetadataCompletionResolutions;
   /**
    * Kuartil jurnal kanonis. Hanya terisi untuk artikel jurnal; nilai sumber
    * pada bentuk karya lain tidak dinaikkan menjadi kuartil kanonis.

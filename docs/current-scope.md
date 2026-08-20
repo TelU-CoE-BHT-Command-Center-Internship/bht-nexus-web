@@ -38,6 +38,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Menerima profil publik SINTA atau Google Scholar.
 - Memvalidasi nama, protokol HTTPS, dan host sesuai sumber.
 - Menampilkan perjalanan pekerjaan dari antrean hingga hasil tersedia.
+- Menampilkan alasan kegagalan dan tindakan coba lagi tanpa mengarang hasil ketika layanan pengumpulan belum tersedia.
 - Hasil pengumpulan selalu menjadi kandidat dan tidak pernah langsung mengubah data resmi. Satu pekerjaan yang menemukan enam karya menghasilkan enam rekam kandidat individual; pekerjaan hanya menjadi jejak sumbernya.
 - Rekam hasil mempertahankan identitas pekerjaan, sumber, profil peneliti, pengaju, dan kandidat saat dibuka di Tinjauan pada sesi yang sama.
 
@@ -55,8 +56,9 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Pengaju kandidat dicatat terpisah dari pemilik atau pihak utama agar pelaku ekstraksi tidak keliru dianggap sebagai pemilik data.
 - Identitas dan label KM-1 sampai KM-46 berada pada satu kamus yang diturunkan dari worksheet `List KM` workbook stakeholder. Rekam hanya merujuk indikator dari kamus tersebut dan dapat memiliki nol, satu, atau beberapa kaitan tanpa menggandakan data. Definisi, formula, unit, periode, target, dan realisasi baru akan dimodelkan bersama pekerjaan Monitoring/Evaluasi KM. Kandidat yang klasifikasinya belum didukung bukti ditampilkan sebagai belum dikaitkan dengan indikator evaluasi.
 - Bukti boleh memiliki rekam dan referensi tanpa URL. Dalam keadaan itu antarmuka menyatakan bahwa tautan bukti belum tersedia dan tidak mengarahkannya ke halaman umum yang bukan sumber bukti.
-- Setiap keputusan membutuhkan alasan dan tahap konfirmasi sebelum disimpan pada state frontend.
-- Kemampuan pemeriksa disediakan melalui kontrak sesi. Pada kemampuan Audit KM saat ini, permintaan perbaikan menentukan bidang dan alasan, lalu ditampilkan sebagai status baca-saja; pemeriksa tidak mengubah kandidat atas nama pihak lain. Penerimanya dinyatakan netral sampai hak akses server menentukan pihak yang berwenang.
+- Setiap keputusan membutuhkan alasan dan tahap konfirmasi sebelum disimpan pada state frontend. Riwayat menyimpan pelaku, jenis keputusan, sasaran rekam, bidang yang diminta untuk diperbaiki, alasan, versi, dan perubahan sebelum–sesudah yang tersedia.
+- Kemampuan meninjau dan mengirim koreksi disediakan melalui kontrak sesi serta dihitung per rekam. Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri; setelah koreksi dikirim sebagai versi baru, kandidat kembali menunggu pemeriksa lain. Otorisasi sebenarnya tetap menjadi tanggung jawab layanan server.
+- Persetujuan pelengkapan metadata langsung tercermin pada rumah data resmi selama sesi frontend. Keputusan menerima data baru, memperbarui, atau menghubungkan kandidat hanya dicatat sebagai hasil tinjauan sampai layanan server mengonfirmasi transaksi resminya.
 - Tautan rekam sesi yang sudah tidak tersedia menampilkan penjelasan dan jalan kembali ke antrean, bukan halaman kosong atau drawer tanpa isi.
 - Drawer rincian dimuat ketika diperlukan agar halaman antrean tetap ringan.
 
@@ -118,6 +120,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 ### Dokumen
 
 - Pustaka menerima PDF atau DOCX hingga 25 MB pada sesi frontend.
+- Pustaka membedakan antrean, pemrosesan, selesai, dan gagal; rekam gagal menampilkan alasan serta tindakan coba lagi.
 - Tanya jawab hanya menampilkan jawaban ketika bukti dan kutipan tersedia.
 - Pustaka membawa identitas dokumen melalui URL saat pengguna berpindah ke Tanya jawab atau Ekstraksi; hanya dokumen selesai diproses dengan kemampuan yang sesuai yang dapat dipakai.
 - Tanya jawab menerapkan cakupan dokumen yang dipilih dan hanya mengutip sumber yang mendukung pertanyaan.
@@ -161,7 +164,7 @@ Hal-hal berikut belum menjadi kemampuan produksi pada repository web:
 - integrasi penuh dengan layanan server;
 - deployment produksi final.
 
-Penanggung jawab tujuan permintaan perbaikan masih merupakan keputusan produk yang perlu dikonfirmasi bersama layanan server dan konfigurasi peran. Antarmuka saat ini menggunakan bahasa netral, tidak menetapkan orang atau peran secara sepihak, dan tidak menegakkan izin melalui pemeriksaan role di browser.
+Penanggung jawab tujuan permintaan perbaikan mengikuti identitas pengirim versi terbaru ketika identitas tersebut tersedia. Pemetaan peran, penugasan lintas pengguna, dan penegakan izin tetap perlu dikonfirmasi melalui layanan server; pemeriksaan di browser hanya membentuk perilaku antarmuka dan bukan pengamanan otoritatif.
 
 Memuat ulang halaman interaktif akan mengembalikan state lokal ke kondisi awal. Bentuk data dan komponen sudah dipisahkan agar integrasi server dapat dilakukan melalui adapter tanpa membongkar presentasi utama.
 

@@ -21,6 +21,7 @@ import {
   type PublicationSourceId,
   publicationHasSource,
 } from "@/components/nexus-publications/nexus-publications-utils";
+import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createMetadataCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -327,6 +328,14 @@ function QuartileCell({ publication }: { publication: OfficialPublication }) {
 
 export function NexusPublications({ content }: NexusPublicationsProps) {
   const reviewSession = useNexusReviewSession();
+  const records = useMemo(
+    () =>
+      projectOfficialMetadataRecords(
+        content.records,
+        reviewSession.officialMetadataByRecordId,
+      ),
+    [content.records, reviewSession.officialMetadataByRecordId],
+  );
   const [activeSourceId, setActiveSourceId] =
     useState<PublicationSourceId>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -343,23 +352,20 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
 
   const sourceTabs = useMemo(
-    () => getPublicationSourceTabs(content.records),
-    [content.records],
+    () => getPublicationSourceTabs(records),
+    [records],
   );
   const indicatorConfig = useMemo(
-    () => createIndicatorConfig(content.records),
-    [content.records],
+    () => createIndicatorConfig(records),
+    [records],
   );
-  const yearConfig = useMemo(
-    () => createYearConfig(content.records),
-    [content.records],
-  );
+  const yearConfig = useMemo(() => createYearConfig(records), [records]);
   const activeSource =
     sourceTabs.find((source) => source.id === activeSourceId) ?? sourceTabs[0];
 
   const filteredPublications = useMemo(() => {
     const needle = normalizeWorkspaceSearch(deferredSearchQuery);
-    const matching = content.records.filter(
+    const matching = records.filter(
       (publication) =>
         publicationHasSource(
           publication,
@@ -397,15 +403,15 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
         ? first.year - second.year
         : second.year - first.year;
     });
-  }, [activeSource.id, content.records, deferredSearchQuery, filterValues]);
+  }, [activeSource.id, deferredSearchQuery, filterValues, records]);
 
   const evaluationPeriods = Array.from(
-    new Set(content.records.map((publication) => publication.evaluationPeriod)),
+    new Set(records.map((publication) => publication.evaluationPeriod)),
   )
     .toSorted()
     .join(", ");
-  const topQuartileCount = content.records.filter(isTopQuartile).length;
-  const needsCompletionCount = content.records.filter(
+  const topQuartileCount = records.filter(isTopQuartile).length;
+  const needsCompletionCount = records.filter(
     (publication) => publication.quality === "Perlu dilengkapi",
   ).length;
   const pageSize = Number(pageSizeValue);
@@ -418,7 +424,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selectedPublication = content.records.find(
+  const selectedPublication = records.find(
     (publication) => publication.id === selectedPublicationId,
   );
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
@@ -464,9 +470,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
     resolutions: PublicationCompletionResolutions,
     note: string,
   ) => {
-    const publication = content.records.find(
-      (record) => record.id === publicationId,
-    );
+    const publication = records.find((record) => record.id === publicationId);
     if (!publication) return;
 
     const proposal: PublicationMetadataProposal =
@@ -628,7 +632,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
             label: "Publikasi Resmi",
             tone: "completed",
             unit: "data",
-            value: content.records.length,
+            value: records.length,
           },
           {
             icon: <NexusPublicationsIcon name="quartile" />,
@@ -723,13 +727,13 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
             empty={
               <NexusWorkspaceEmptyState
                 description={
-                  content.records.length === 0
+                  records.length === 0
                     ? "Publikasi akan muncul setelah kandidat disetujui melalui proses Tinjauan."
                     : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
                 }
                 onResetFilters={hasActiveFilters ? resetFilters : undefined}
                 title={
-                  content.records.length === 0
+                  records.length === 0
                     ? "Belum ada publikasi resmi"
                     : "Tidak ada publikasi yang cocok"
                 }

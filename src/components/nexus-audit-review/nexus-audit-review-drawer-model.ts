@@ -4,15 +4,16 @@ import type {
   AuditReviewRecord,
   AuditReviewStatus,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
+import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import type {
   AuditRuntimeState,
-  NexusReviewCapabilities,
+  NexusRecordCapabilities,
 } from "@/components/nexus-review-session/nexus-review-session";
 
 export type { AuditRuntimeState };
 
 export type AuditReviewDrawerProps = {
-  capabilities: NexusReviewCapabilities;
+  capabilities: NexusRecordCapabilities;
   onClose: () => void;
   onDecide: (
     kind: AuditDecisionKind,
@@ -20,7 +21,11 @@ export type AuditReviewDrawerProps = {
     fieldIds: string[],
     targetRecordId?: string,
   ) => void;
-  onResubmit: (values: Record<string, string>, evidenceNote: string) => void;
+  onResubmit: (
+    values: Record<string, string>,
+    evidenceNote: string,
+    resolutions?: MetadataCompletionResolutions,
+  ) => void;
   record: AuditReviewRecord;
   state: AuditRuntimeState;
 };
@@ -62,6 +67,37 @@ export function auditCurrentValue(
   return state.correction?.after[fieldId] ?? original ?? "—";
 }
 
+export function auditEffectiveTitle(
+  record: AuditReviewRecord,
+  state: AuditRuntimeState,
+) {
+  const titleField = record.fields.find((item) =>
+    ["activity_title", "title"].includes(item.id),
+  );
+  return titleField
+    ? auditCurrentValue(record, state, titleField.id) || record.title
+    : record.title;
+}
+
+export function auditEffectiveSubtitle(
+  record: AuditReviewRecord,
+  state: AuditRuntimeState,
+) {
+  if (!state.correction) return record.subtitle;
+
+  const values = record.fields
+    .filter((item) => !["activity_title", "title"].includes(item.id))
+    .map((item) => auditCurrentValue(record, state, item.id).trim())
+    .filter((value) => value && value !== "—")
+    .slice(0, 2);
+
+  return values.length > 0 ? values.join(" · ") : record.subtitle;
+}
+
+export function auditEvaluationPeriodLabel(record: AuditReviewRecord) {
+  return record.evaluationPeriodLabel ?? "Belum ditetapkan";
+}
+
 export function auditSectionIndexes(
   hasOfficialMatch: boolean,
 ): ReviewSectionIndexes {
@@ -88,14 +124,14 @@ export function auditDecisionConsequence(
 ) {
   if (choice === "merged") {
     return {
-      body: `Rekam resmi ${selectedMatch?.id ?? "terpilih"} tetap menjadi acuan. Sumber kandidat dihubungkan dan perbedaan metadata dicatat sebagai bahan pelengkapan, tanpa penimpaan otomatis.`,
-      title: "Data resmi tetap aman dan dapat diaudit",
+      body: `Keputusan untuk menghubungkan kandidat ke ${selectedMatch?.id ?? "rekam terpilih"} dicatat bersama sumber dan perbedaannya. Data resmi diperbarui setelah layanan BHT Nexus mengonfirmasi transaksi.`,
+      title: "Hubungan data dicatat untuk dikonfirmasi",
     };
   }
   if (choice === "approved_update") {
     return {
-      body: `Perubahan yang diperiksa diterapkan pada ${selectedMatch?.id ?? "rekam resmi terpilih"} setelah konfirmasi. Nilai sebelumnya, sumber, reviewer, waktu, dan versi tetap dapat ditelusuri.`,
-      title: "Pembaruan diterapkan dengan jejak versi",
+      body: `Perubahan yang diperiksa disiapkan untuk ${selectedMatch?.id ?? "rekam resmi terpilih"}. Nilai sebelumnya, sumber, reviewer, waktu, dan versi menyertai konfirmasi layanan BHT Nexus.`,
+      title: "Pembaruan dicatat dengan jejak versi",
     };
   }
   if (choice === "approved_completion") {
@@ -106,8 +142,8 @@ export function auditDecisionConsequence(
   }
   if (choice === "approved_new") {
     return {
-      body: "Kandidat diterima sebagai rekam resmi baru setelah keputusan dikonfirmasi. Bukti, indikator, reviewer, waktu, dan versi kandidat tetap tercatat.",
-      title: "Kandidat menjadi data baru",
+      body: "Keputusan menerima kandidat dicatat bersama bukti, indikator, reviewer, waktu, dan versinya. Rekam resmi dibuat setelah layanan BHT Nexus mengonfirmasi transaksi.",
+      title: "Kandidat disetujui sebagai data baru",
     };
   }
   if (choice === "changes_requested") {

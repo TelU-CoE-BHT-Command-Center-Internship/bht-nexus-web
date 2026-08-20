@@ -11,6 +11,7 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
   NexusWorkspaceField,
+  NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -23,6 +24,7 @@ import {
   type NexusSelectConfig,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
 function QaIcon({ name }: { name: "answer" | "document" | "source" }) {
   if (name === "document")
@@ -96,6 +98,29 @@ export function NexusRagQa({
     0,
   );
 
+  if (initialDocumentId && !initialDocumentIsSupported) {
+    return (
+      <NexusWorkspacePage
+        description={content.description}
+        descriptionId="qa-description"
+        title={content.title}
+        titleId="qa-title"
+      >
+        <NexusWorkspaceState
+          actions={
+            <NexusWorkspaceLinkButton href="/nexus/dokumen">
+              Kembali ke Dokumen
+            </NexusWorkspaceLinkButton>
+          }
+          description={content.invalidDocumentLabel}
+          eyebrow="Dokumen tidak siap"
+          title="Pertanyaan tidak dimulai"
+          tone="danger"
+        />
+      </NexusWorkspacePage>
+    );
+  }
+
   function ask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = query.trim();
@@ -161,9 +186,7 @@ export function NexusRagQa({
             icon: <QaIcon name="source" />,
             id: "citations",
             label:
-              content.locale === "id"
-                ? "Kutipan Terverifikasi"
-                : "Verified Citations",
+              content.locale === "id" ? "Kutipan Sumber" : "Source Citations",
             tone:
               supportedCount === exchanges.length ? "completed" : "needs-fix",
             unit: content.locale === "id" ? "bukti" : "passages",
@@ -281,8 +304,23 @@ export function NexusRagQa({
                             <blockquote key={passage.id}>
                               <span>
                                 {content.pageLabel} {passage.page}
+                                {passage.documentVersion
+                                  ? ` · V${passage.documentVersion}`
+                                  : ""}
+                                {passage.chunkId ? ` · ${passage.chunkId}` : ""}
                               </span>
                               <p>{passage.quote}</p>
+                              {passage.href ? (
+                                <a
+                                  href={passage.href}
+                                  rel="noreferrer"
+                                  target="_blank"
+                                >
+                                  {content.locale === "id"
+                                    ? "Buka dokumen"
+                                    : "Open document"}
+                                </a>
+                              ) : null}
                             </blockquote>
                           ))}
                         </li>

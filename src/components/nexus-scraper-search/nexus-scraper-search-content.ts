@@ -2,10 +2,6 @@ import type { AuditReviewRecord } from "@/components/nexus-audit-review/nexus-au
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
-import {
-  kmIndicator,
-  type NexusKmIndicatorId,
-} from "@/content/nexus-km-indicators";
 import type { Locale } from "@/i18n/locales";
 
 export type CollectionSource = "scholar" | "sinta";
@@ -15,13 +11,15 @@ export type CollectionCandidate = Pick<
   | "candidateKind"
   | "category"
   | "categoryLabel"
+  | "evidence"
+  | "evaluationPeriodLabel"
   | "fields"
   | "id"
   | "kpiLinks"
   | "matches"
   | "owner"
-  | "periodLabel"
   | "primaryPerson"
+  | "provenance"
   | "signal"
   | "subtitle"
   | "title"
@@ -30,6 +28,8 @@ export type CollectionCandidate = Pick<
 
 export type CollectionJob = {
   candidates: CollectionCandidate[];
+  attempt?: number;
+  failureReason?: string;
   fullName: string;
   id: string;
   profileUrl: string;
@@ -40,6 +40,7 @@ export type CollectionJob = {
   submittedAt: string;
   submittedAtLabel: string;
   submittedBy: string;
+  submittedByActorId?: string;
 };
 
 export type NexusScraperSearchContent = {
@@ -76,7 +77,6 @@ type PublicationCandidateSeed = {
   candidateKind: CollectionCandidate["candidateKind"];
   doi?: string;
   id: string;
-  indicatorId: NexusKmIndicatorId;
   owner: string;
   person: string;
   title: string;
@@ -89,7 +89,6 @@ function publicationCandidate({
   candidateKind,
   doi,
   id,
-  indicatorId,
   owner,
   person,
   title,
@@ -109,17 +108,13 @@ function publicationCandidate({
       { id: "year", label: "Tahun terbit", value: String(year) },
     ],
     id,
-    kpiLinks: [
-      {
-        evidenceRule:
-          "Halaman penerbit, daftar penulis, afiliasi CoE, tahun terbit, dan klasifikasi publikasi yang dapat diverifikasi.",
-        indicator: kmIndicator(indicatorId),
-      },
-    ],
+    evidence: [],
+    evaluationPeriodLabel: undefined,
+    kpiLinks: [],
     matches: [],
     owner,
-    periodLabel: String(year),
     primaryPerson: person,
+    provenance: {},
     signal: {
       primary: "Kandidat hasil pengumpulan",
       secondary: "Belum ada rekam pembanding terpilih",
@@ -135,7 +130,6 @@ const suksmandhiraCandidates: CollectionCandidate[] = [
   publicationCandidate({
     candidateKind: "new_record",
     id: "COL-SINTA-6712043-PUB-001",
-    indicatorId: "KM-11",
     owner: "CoE BHT",
     person:
       "Suksmandhira Harimurti; M Rivaldi Ali Septian; Khilda Afifah; Estananto",
@@ -149,7 +143,6 @@ const suksmandhiraCandidates: CollectionCandidate[] = [
   publicationCandidate({
     candidateKind: "new_record",
     id: "COL-SINTA-6712043-PUB-002",
-    indicatorId: "KM-12",
     owner: "CoE BHT",
     person:
       "M Rivaldi Ali Septian; Suksmandhira Harimurti; Wahmisari Priharti; Iswahyudi Hidayat; Mohamad Ramdhani",
@@ -165,7 +158,6 @@ const hestyCandidates: CollectionCandidate[] = [
   publicationCandidate({
     candidateKind: "new_record",
     id: "COL-SCHOLAR-HESTY-PUB-001",
-    indicatorId: "KM-12",
     owner: "CoE BHT",
     person: "Liana Nafisa Saftari; Hesty Susanti",
     title:
@@ -206,6 +198,19 @@ const seeds = [
     status: "running",
     submittedAt: "2026-08-12T08:41",
     submittedBy: "Muhammad Ammar Asyraf · Admin / Pimpinan",
+  },
+  {
+    attempt: 3,
+    candidates: [],
+    failureReason:
+      "Profil publik tidak dapat dibaca setelah tiga percobaan. Periksa URL profil lalu ajukan pekerjaan baru.",
+    fullName: "Peneliti A",
+    id: "sinta-profile-failed-neutral",
+    profileUrl: "https://sinta.kemdiktisaintek.go.id/authors/profile/0000000",
+    source: "sinta",
+    status: "failed_permanently",
+    submittedAt: "2026-08-12T08:36",
+    submittedBy: "Pengelola Data",
   },
 ] satisfies Array<
   Omit<CollectionJob, "sourceLabel" | "statusLabel" | "submittedAtLabel">

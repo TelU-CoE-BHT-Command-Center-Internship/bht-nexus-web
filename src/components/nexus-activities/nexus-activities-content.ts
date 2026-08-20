@@ -1,6 +1,7 @@
 import {
   type MetadataCompletionFieldKey,
   type MetadataCompletionProposal,
+  type MetadataCompletionResolutions,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
@@ -72,6 +73,8 @@ export type OfficialActivityRecord = {
   publicationFrequency?: string;
   quality: ActivityQuality;
   recordStatus: "Aktif" | "Diajukan" | "Dikelola" | "Tercatat";
+  /** Nilai atau pengecualian pelengkapan yang sudah disetujui. */
+  resolvedMetadata?: MetadataCompletionResolutions;
   review: {
     candidateId: string;
     decision: "Dihubungkan ke rekam resmi" | "Disetujui sebagai data baru";

@@ -1,9 +1,15 @@
+import type { AuditReviewCategory } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import { getNexusDocumentRecords } from "@/components/nexus-document-workspace/nexus-document-content";
 import type { Locale } from "@/i18n/locales";
 
-export type ExtractionProfileOption = {
+export type ExtractionProfileDefinition = {
+  category: AuditReviewCategory;
+  categoryLabel: string;
+  fieldIds: readonly string[];
   id: string;
   label: string;
+  titleFieldId: string;
+  typeLabel: string;
   version: string;
 };
 
@@ -38,7 +44,7 @@ export type NexusRagExtractionContent = {
   pageLabel: string;
   pendingDecisionLabel: string;
   profileLabel: string;
-  profileOptions: ExtractionProfileOption[];
+  profileOptions: ExtractionProfileDefinition[];
   rejectLabel: string;
   rejectedLabel: string;
   requestError?: string;
@@ -169,7 +175,22 @@ const copy = {
     pendingDecisionLabel: "Menunggu keputusan",
     profileLabel: "Profil ekstraksi",
     profileOptions: [
-      { id: "activity", label: "Kegiatan riset", version: "v1" },
+      {
+        category: "research_business",
+        categoryLabel: "Riset & bisnis",
+        fieldIds: [
+          "activity_title",
+          "activity_team",
+          "implementation_period",
+          "primary_output",
+          "external_identifier",
+        ],
+        id: "activity",
+        label: "Kegiatan riset",
+        titleFieldId: "activity_title",
+        typeLabel: "Kegiatan hasil ekstraksi",
+        version: "v1",
+      },
     ],
     rejectLabel: "Jangan sertakan",
     rejectedLabel: "Tidak disertakan",
@@ -193,7 +214,22 @@ const copy = {
     pendingDecisionLabel: "Awaiting decision",
     profileLabel: "Extraction profile",
     profileOptions: [
-      { id: "activity", label: "Research activity", version: "v1" },
+      {
+        category: "research_business",
+        categoryLabel: "Research & business",
+        fieldIds: [
+          "activity_title",
+          "activity_team",
+          "implementation_period",
+          "primary_output",
+          "external_identifier",
+        ],
+        id: "activity",
+        label: "Research activity",
+        titleFieldId: "activity_title",
+        typeLabel: "Extracted research activity",
+        version: "v1",
+      },
     ],
     rejectLabel: "Exclude",
     rejectedLabel: "Excluded",

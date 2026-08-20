@@ -12,9 +12,16 @@ import {
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import {
+  areMetadataCompletionResolutionsEqual,
+  createEmptyMetadataCompletionResolution,
   isMetadataCompletionFieldKey,
+  type MetadataCompletionResolutions,
   metadataCompletionFieldConfigs,
+  metadataCompletionResolutionChoices,
+  metadataCompletionResolutionLabels,
+  metadataCompletionResolutionSetErrors,
   metadataCompletionValueError,
+  normalizeMetadataCompletionResolution,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
   NexusWorkspaceButton,
@@ -39,6 +46,11 @@ export function AuditReviewDecisionSection({
   const exactIdentifier = record.matches.some(
     (match) => match.verdict === "same_identifier",
   );
+  const matchingIsStale = Boolean(
+    state.correction &&
+      record.candidateKind !== "metadata_completion" &&
+      record.matches.length > 0,
+  );
   const [decisionChoice, setDecisionChoice] =
     useState<AuditDecisionKind | null>(null);
   const [note, setNote] = useState("");
@@ -53,27 +65,100 @@ export function AuditReviewDecisionSection({
       ]),
     ),
   );
+  const [resolutionDraft, setResolutionDraft] =
+    useState<MetadataCompletionResolutions>(() => ({
+      ...record.completionResolutions,
+      ...state.correction?.resolutions,
+    }));
   const correctionFields = record.fields.filter((item) =>
     state.fixRequest?.fieldIds.includes(item.id),
   );
-  const correctionChanged = correctionFields.some(
-    (item) =>
-      draft[item.id]?.trim() !== auditCurrentValue(record, state, item.id),
-  );
+  const isCompletionCorrection = record.candidateKind === "metadata_completion";
+  const normalizedCorrectionResolutions = Object.fromEntries(
+    correctionFields.flatMap((item) =>
+      isMetadataCompletionFieldKey(item.id)
+        ? [
+            [
+              item.id,
+              normalizeMetadataCompletionResolution(
+                item.id,
+                resolutionDraft[item.id],
+              ),
+            ],
+          ]
+        : [],
+    ),
+  ) as MetadataCompletionResolutions;
+  const effectiveCorrectionResolutions: MetadataCompletionResolutions = {
+    ...record.completionResolutions,
+    ...state.correction?.resolutions,
+    ...normalizedCorrectionResolutions,
+  };
+  const correctionChanged = correctionFields.some((item) => {
+    if (isCompletionCorrection && isMetadataCompletionFieldKey(item.id)) {
+      const previousResolution = normalizeMetadataCompletionResolution(
+        item.id,
+        state.correction?.resolutions?.[item.id] ??
+          record.completionResolutions?.[item.id],
+      );
+      const nextResolution = normalizeMetadataCompletionResolution(
+        item.id,
+        resolutionDraft[item.id],
+      );
+      return !areMetadataCompletionResolutionsEqual(
+        previousResolution,
+        nextResolution,
+      );
+    }
+
+    return draft[item.id]?.trim() !== auditCurrentValue(record, state, item.id);
+  });
   const correctionErrors = Object.fromEntries(
     correctionFields.flatMap((item) => {
-      const value = draft[item.id]?.trim() ?? "";
-      if (!isMetadataCompletionFieldKey(item.id) || value.length === 0) {
+      if (!isMetadataCompletionFieldKey(item.id)) {
         return [];
       }
+
+      const resolution = isCompletionCorrection
+        ? normalizedCorrectionResolutions[item.id]
+        : undefined;
+      const value = resolution?.value ?? draft[item.id]?.trim() ?? "";
+      if (resolution && resolution.status !== "provided") return [];
+      if (value.length === 0) return [];
 
       const error = metadataCompletionValueError(item.id, value);
       return error ? [[item.id, error] as const] : [];
     }),
   ) as Record<string, string>;
-  const correctionComplete = correctionFields.every(
-    (item) => draft[item.id]?.trim().length > 0 && !correctionErrors[item.id],
-  );
+  if (isCompletionCorrection) {
+    const relationalErrors = metadataCompletionResolutionSetErrors(
+      effectiveCorrectionResolutions,
+    );
+    const correctsContractEnd = correctionFields.some(
+      (item) => item.id === "contractEnd",
+    );
+    const correctsContractStart = correctionFields.some(
+      (item) => item.id === "contractStart",
+    );
+
+    if (relationalErrors.contractEnd && correctsContractEnd) {
+      correctionErrors.contractEnd = relationalErrors.contractEnd;
+    } else if (relationalErrors.contractEnd && correctsContractStart) {
+      correctionErrors.contractStart =
+        "Tanggal mulai tidak boleh lebih akhir dari tanggal selesai kontrak.";
+    }
+  }
+  const correctionComplete = correctionFields.every((item) => {
+    if (isCompletionCorrection && isMetadataCompletionFieldKey(item.id)) {
+      const resolution = normalizedCorrectionResolutions[item.id];
+      if (!resolution || correctionErrors[item.id]) return false;
+      return resolution.status === "provided"
+        ? resolution.value.length > 0
+        : resolution.reason.length >= 8;
+    }
+
+    return draft[item.id]?.trim().length > 0 && !correctionErrors[item.id];
+  });
   const consequence = auditDecisionConsequence(decisionChoice, selectedMatch);
   const correctionSelectionReady =
     decisionChoice !== "changes_requested" || selectedFieldIds.length > 0;
@@ -83,11 +168,22 @@ export function AuditReviewDecisionSection({
       decisionChoice,
     ) ||
     Boolean(selectedMatch);
+  const selectedActionAllowed =
+    decisionChoice === "changes_requested"
+      ? capabilities.canRequestChanges
+      : decisionChoice === "rejected"
+        ? capabilities.canReject
+        : capabilities.canApprove;
   const decisionReady = Boolean(
     decisionChoice &&
+      selectedActionAllowed &&
       note.trim().length > 0 &&
       correctionSelectionReady &&
-      targetSelectionReady,
+      targetSelectionReady &&
+      !(
+        matchingIsStale &&
+        ["approved_new", "approved_update", "merged"].includes(decisionChoice)
+      ),
   );
 
   const selectDecision = (choice: AuditDecisionKind) => {
@@ -110,9 +206,12 @@ export function AuditReviewDecisionSection({
       decisionChoice,
       note.trim(),
       decisionChoice === "changes_requested" ? selectedFieldIds : [],
-      ["approved_completion", "approved_update", "merged"].includes(
-        decisionChoice,
-      )
+      [
+        "approved_completion",
+        "approved_update",
+        "changes_requested",
+        "merged",
+      ].includes(decisionChoice)
         ? selectedMatch?.id
         : undefined,
     );
@@ -194,6 +293,104 @@ export function AuditReviewDecisionSection({
             const updateDraft = (value: string) =>
               setDraft((current) => ({ ...current, [item.id]: value }));
 
+            if (
+              isCompletionCorrection &&
+              isMetadataCompletionFieldKey(item.id)
+            ) {
+              const key = item.id;
+              const resolution =
+                resolutionDraft[key] ??
+                createEmptyMetadataCompletionResolution();
+              const updateResolution = (update: Partial<typeof resolution>) =>
+                setResolutionDraft((current) => ({
+                  ...current,
+                  [key]: { ...resolution, ...update },
+                }));
+
+              return (
+                <div className={drawerStyles.reviewTextField} key={item.id}>
+                  <span>{item.label}</span>
+                  <select
+                    aria-label={`Penyelesaian ${item.label}`}
+                    onChange={(event) =>
+                      updateResolution({
+                        reason: "",
+                        status: event.currentTarget
+                          .value as typeof resolution.status,
+                        value: "",
+                      })
+                    }
+                    value={resolution.status}
+                  >
+                    {metadataCompletionResolutionChoices(key).map((option) => (
+                      <option key={option.status} value={option.status}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {resolution.status === "provided" ? (
+                    config?.type === "choice" ? (
+                      <select
+                        aria-describedby={
+                          error ? `${fieldId}-error` : undefined
+                        }
+                        aria-invalid={error ? true : undefined}
+                        id={fieldId}
+                        onChange={(event) =>
+                          updateResolution({ value: event.currentTarget.value })
+                        }
+                        value={resolution.value}
+                      >
+                        <option value="">{config.placeholder}</option>
+                        {config.choices?.map((choice) => (
+                          <option key={choice} value={choice}>
+                            {choice}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        aria-describedby={
+                          error ? `${fieldId}-error` : undefined
+                        }
+                        aria-invalid={error ? true : undefined}
+                        id={fieldId}
+                        inputMode={config?.inputMode}
+                        maxLength={config?.maxLength}
+                        onChange={(event) =>
+                          updateResolution({ value: event.currentTarget.value })
+                        }
+                        type={config?.type === "url" ? "url" : "text"}
+                        value={resolution.value}
+                      />
+                    )
+                  ) : (
+                    <textarea
+                      aria-describedby={error ? `${fieldId}-error` : undefined}
+                      aria-invalid={error ? true : undefined}
+                      id={fieldId}
+                      maxLength={320}
+                      onChange={(event) =>
+                        updateResolution({ reason: event.currentTarget.value })
+                      }
+                      placeholder={`Alasan ${metadataCompletionResolutionLabels[resolution.status].toLocaleLowerCase("id-ID")}`}
+                      rows={3}
+                      value={resolution.reason}
+                    />
+                  )}
+                  {error ? (
+                    <small
+                      className={drawerStyles.reviewFieldError}
+                      id={`${fieldId}-error`}
+                      role="alert"
+                    >
+                      {error}
+                    </small>
+                  ) : null}
+                </div>
+              );
+            }
+
             return (
               <label
                 className={drawerStyles.reviewTextField}
@@ -264,7 +461,32 @@ export function AuditReviewDecisionSection({
               !correctionComplete ||
               evidenceNote.trim().length === 0
             }
-            onClick={() => onResubmit(draft, evidenceNote.trim())}
+            onClick={() => {
+              if (isCompletionCorrection) {
+                const values = Object.fromEntries(
+                  correctionFields.map((item) => {
+                    if (!isMetadataCompletionFieldKey(item.id)) {
+                      return [item.id, draft[item.id] ?? ""];
+                    }
+                    const resolution = normalizedCorrectionResolutions[item.id];
+                    if (!resolution) return [item.id, ""];
+                    return [
+                      item.id,
+                      resolution.status === "provided"
+                        ? resolution.value
+                        : `${metadataCompletionResolutionLabels[resolution.status]} · ${resolution.reason}`,
+                    ];
+                  }),
+                );
+                onResubmit(
+                  values,
+                  evidenceNote.trim(),
+                  effectiveCorrectionResolutions,
+                );
+                return;
+              }
+              onResubmit(draft, evidenceNote.trim());
+            }}
             tone="primary"
             type="button"
           >
@@ -294,6 +516,19 @@ export function AuditReviewDecisionSection({
           <strong>{state.decision.label}</strong>
           <p>{state.decision.note}</p>
         </div>
+        {record.candidateKind === "metadata_completion" &&
+        state.decision.kind === "approved_completion" ? (
+          <NexusWorkspaceNotice>
+            Pelengkapan yang disetujui sudah tercermin pada data resmi selama
+            sesi ini. Penyimpanan permanen mengikuti konfirmasi layanan BHT
+            Nexus.
+          </NexusWorkspaceNotice>
+        ) : state.decision.kind !== "rejected" ? (
+          <NexusWorkspaceNotice>
+            Keputusan sudah dicatat. Perubahan data resmi menunggu konfirmasi
+            layanan BHT Nexus agar transaksi dan jejak audit tetap utuh.
+          </NexusWorkspaceNotice>
+        ) : null}
         <dl className={drawerStyles.reviewFinalMeta}>
           <div>
             <dt>Reviewer</dt>
@@ -323,6 +558,32 @@ export function AuditReviewDecisionSection({
     );
   }
 
+  if (!capabilities.canReview) {
+    return (
+      <section
+        aria-labelledby="audit-review-access-title"
+        className={drawerStyles.reviewDecisionSection}
+      >
+        <AuditReviewSectionHeading
+          id="audit-review-access-title"
+          index={decisionIndex}
+          meta="Menunggu pemeriksa lain"
+          title="Kandidat tidak dapat Anda putuskan"
+        />
+        <NexusWorkspaceNotice>
+          Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri.
+          Kandidat tetap berada di antrean sampai diperiksa pengguna lain yang
+          berwenang.
+        </NexusWorkspaceNotice>
+        <div className={drawerStyles.reviewDecisionActions}>
+          <NexusWorkspaceButton onClick={onClose} type="button">
+            Tutup rincian
+          </NexusWorkspaceButton>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       aria-labelledby="audit-decision-title"
@@ -335,12 +596,26 @@ export function AuditReviewDecisionSection({
         title="Tetapkan keputusan"
       />
 
+      {matchingIsStale ? (
+        <NexusWorkspaceNotice tone="danger">
+          Pencocokan versi sebelumnya sudah kedaluwarsa setelah kandidat
+          diperbaiki. Tunggu layanan pencocokan memperbarui skor sebelum
+          menerima, memperbarui, atau menghubungkan data.
+        </NexusWorkspaceNotice>
+      ) : null}
+
       <fieldset className={drawerStyles.reviewDecisionChoices}>
         <legend>Pilih hasil tinjauan</legend>
         {record.candidateKind === "new_record" && selectedMatch ? (
-          <label data-selected={decisionChoice === "merged" || undefined}>
+          <label
+            data-disabled={
+              matchingIsStale || !capabilities.canApprove || undefined
+            }
+            data-selected={decisionChoice === "merged" || undefined}
+          >
             <input
               checked={decisionChoice === "merged"}
+              disabled={matchingIsStale || !capabilities.canApprove}
               name={`decision-${record.id}`}
               onChange={() => selectDecision("merged")}
               type="radio"
@@ -356,12 +631,19 @@ export function AuditReviewDecisionSection({
         ) : null}
         {record.candidateKind === "new_record" ? (
           <label
-            data-disabled={exactIdentifier || undefined}
+            data-disabled={
+              exactIdentifier ||
+              matchingIsStale ||
+              !capabilities.canApprove ||
+              undefined
+            }
             data-selected={decisionChoice === "approved_new" || undefined}
           >
             <input
               checked={decisionChoice === "approved_new"}
-              disabled={exactIdentifier}
+              disabled={
+                exactIdentifier || matchingIsStale || !capabilities.canApprove
+              }
               name={`decision-${record.id}`}
               onChange={() => selectDecision("approved_new")}
               type="radio"
@@ -372,19 +654,28 @@ export function AuditReviewDecisionSection({
               <small>
                 {exactIdentifier
                   ? "Tidak tersedia karena pengenal identik ditemukan."
-                  : "Tetapkan kandidat sebagai rekam resmi baru."}
+                  : matchingIsStale
+                    ? "Tunggu pencocokan versi terbaru selesai."
+                    : "Tetapkan kandidat sebagai rekam resmi baru."}
               </small>
             </span>
           </label>
         ) : null}
         {record.candidateKind === "record_update" ? (
           <label
-            data-disabled={!selectedMatch || undefined}
+            data-disabled={
+              !selectedMatch ||
+              matchingIsStale ||
+              !capabilities.canApprove ||
+              undefined
+            }
             data-selected={decisionChoice === "approved_update" || undefined}
           >
             <input
               checked={decisionChoice === "approved_update"}
-              disabled={!selectedMatch}
+              disabled={
+                !selectedMatch || matchingIsStale || !capabilities.canApprove
+              }
               name={`decision-${record.id}`}
               onChange={() => selectDecision("approved_update")}
               type="radio"
@@ -403,14 +694,16 @@ export function AuditReviewDecisionSection({
         ) : null}
         {record.candidateKind === "metadata_completion" ? (
           <label
-            data-disabled={!selectedMatch || undefined}
+            data-disabled={
+              !selectedMatch || !capabilities.canApprove || undefined
+            }
             data-selected={
               decisionChoice === "approved_completion" || undefined
             }
           >
             <input
               checked={decisionChoice === "approved_completion"}
-              disabled={!selectedMatch}
+              disabled={!selectedMatch || !capabilities.canApprove}
               name={`decision-${record.id}`}
               onChange={() => selectDecision("approved_completion")}
               type="radio"
@@ -425,10 +718,12 @@ export function AuditReviewDecisionSection({
           </label>
         ) : null}
         <label
+          data-disabled={!capabilities.canRequestChanges || undefined}
           data-selected={decisionChoice === "changes_requested" || undefined}
         >
           <input
             checked={decisionChoice === "changes_requested"}
+            disabled={!capabilities.canRequestChanges}
             name={`decision-${record.id}`}
             onChange={() => selectDecision("changes_requested")}
             type="radio"
@@ -439,9 +734,13 @@ export function AuditReviewDecisionSection({
             <small>Kembalikan kandidat; data resmi tetap tidak berubah.</small>
           </span>
         </label>
-        <label data-selected={decisionChoice === "rejected" || undefined}>
+        <label
+          data-disabled={!capabilities.canReject || undefined}
+          data-selected={decisionChoice === "rejected" || undefined}
+        >
           <input
             checked={decisionChoice === "rejected"}
+            disabled={!capabilities.canReject}
             name={`decision-${record.id}`}
             onChange={() => selectDecision("rejected")}
             type="radio"

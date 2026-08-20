@@ -12,7 +12,10 @@ import {
 } from "@/components/nexus-academic/nexus-academic-content";
 import { NexusAcademicIcon } from "@/components/nexus-academic/nexus-academic-icons";
 import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
-import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
+  type MetadataCompletionResolutions,
+  metadataCompletionResolvedValue,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -48,13 +51,15 @@ function ArrowIcon() {
 function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
   const isMissing = (key: AcademicCompletionFieldKey) =>
     record.missingFields.includes(key);
+  const resolved = (key: AcademicCompletionFieldKey, fallback: string) =>
+    metadataCompletionResolvedValue(record.resolvedMetadata, key, fallback);
 
   const items: MetadataItem[] = [
     {
       key: "title",
       label: "Topik riset / nama kegiatan",
       missingFieldKey: isMissing("title") ? "title" : undefined,
-      value: record.title || "Belum tercatat pada sumber",
+      value: resolved("title", record.title || "Belum tercatat pada sumber"),
       wide: true,
     },
     {
@@ -77,7 +82,7 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
       key: "programStudy",
       label: "Program studi",
       missingFieldKey: isMissing("programStudy") ? "programStudy" : undefined,
-      value: record.programStudy ?? "Belum tercatat",
+      value: resolved("programStudy", record.programStudy ?? "Belum tercatat"),
     },
     {
       key: "evaluationPeriod",
@@ -94,13 +99,16 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
         key: "year",
         label: "Tahun kegiatan",
         missingFieldKey: isMissing("year") ? "year" : undefined,
-        value: record.year ? String(record.year) : "Belum tercatat",
+        value: resolved(
+          "year",
+          record.year ? String(record.year) : "Belum tercatat",
+        ),
       },
       {
         key: "duration",
         label: "Lama kegiatan",
         missingFieldKey: isMissing("duration") ? "duration" : undefined,
-        value: record.duration ?? "Belum tercatat",
+        value: resolved("duration", record.duration ?? "Belum tercatat"),
       },
     );
   }
@@ -110,7 +118,10 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
     key: "evidenceUrl",
     label: "Bukti kegiatan",
     missingFieldKey: isMissing("evidenceUrl") ? "evidenceUrl" : undefined,
-    value: record.evidenceUrl ?? academicEvidenceLabel(record),
+    value: resolved(
+      "evidenceUrl",
+      record.evidenceUrl ?? academicEvidenceLabel(record),
+    ),
     wide: true,
   });
 

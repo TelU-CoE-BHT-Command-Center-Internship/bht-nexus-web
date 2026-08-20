@@ -208,12 +208,35 @@ export function NexusScraperSearch({
       submittedBy: reviewSession
         ? `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`
         : "Pengguna ruang kerja",
+      submittedByActorId: reviewSession?.actor.id,
     };
 
     setJobs((current) => [queued, ...current]);
     setFeedback({ message: content.queuedLabel, tone: "success" });
     setName("");
     setProfileUrl("");
+    setCurrentPage(1);
+  }
+
+  function submitNewCollection(job: CollectionJob) {
+    const now = new Date();
+    const queued: CollectionJob = {
+      ...job,
+      attempt: (job.attempt ?? 0) + 1,
+      candidates: [],
+      failureReason: undefined,
+      id: `local-${now.getTime()}`,
+      status: "queued",
+      statusLabel: content.waitingForServiceLabel,
+      submittedAt: now.toISOString(),
+      submittedAtLabel: formatTimestamp(now.toISOString()),
+      submittedBy: reviewSession
+        ? `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`
+        : "Pengguna ruang kerja",
+      submittedByActorId: reviewSession?.actor.id,
+    };
+    setJobs((current) => [queued, ...current]);
+    setFeedback({ message: content.queuedLabel, tone: "success" });
     setCurrentPage(1);
   }
 
@@ -248,6 +271,14 @@ export function NexusScraperSearch({
         <span className={styles.noAction} key={`${job.id}-action`}>
           {content.noResultsLabel}
         </span>
+      ) : job.status === "failed" || job.status === "failed_permanently" ? (
+        <NexusWorkspaceButton
+          key={`${job.id}-action`}
+          onClick={() => submitNewCollection(job)}
+          type="button"
+        >
+          {content.locale === "id" ? "Ajukan ulang" : "Submit again"}
+        </NexusWorkspaceButton>
       ) : (
         <span className={styles.noAction} key={`${job.id}-action`}>
           —
@@ -270,9 +301,12 @@ export function NexusScraperSearch({
           </NexusWorkspaceTableBadge>
         ),
         status: (
-          <NexusWorkspaceTableBadge tone={tone}>
-            {job.statusLabel}
-          </NexusWorkspaceTableBadge>
+          <span className={styles.statusDetail}>
+            <NexusWorkspaceTableBadge tone={tone}>
+              {job.statusLabel}
+            </NexusWorkspaceTableBadge>
+            {job.failureReason ? <small>{job.failureReason}</small> : null}
+          </span>
         ),
         result: (
           <NexusWorkspaceTableSignal
@@ -313,6 +347,12 @@ export function NexusScraperSearch({
                 <dt>{content.columns.submittedAt}</dt>
                 <dd>{job.submittedAtLabel}</dd>
               </div>
+              {job.failureReason ? (
+                <div>
+                  <dt>{content.locale === "id" ? "Kendala" : "Issue"}</dt>
+                  <dd>{job.failureReason}</dd>
+                </div>
+              ) : null}
             </dl>
           }
           title={job.fullName}

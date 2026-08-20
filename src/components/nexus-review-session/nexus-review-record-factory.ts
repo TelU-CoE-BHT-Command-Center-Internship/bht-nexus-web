@@ -25,7 +25,10 @@ import type {
   OfficialIntellectualProperty,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { intellectualPropertyCreatorNames } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
-import { metadataCompletionFieldLabels } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
+  metadataCompletionFieldLabels,
+  metadataCompletionProvidedValue,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
   type OfficialPublication,
   type PublicationCompletionFieldKey,
@@ -35,11 +38,14 @@ import {
   publicationCompletionFieldLabels,
   publicationDisplayTitle,
 } from "@/components/nexus-publications/nexus-publications-content";
-import type { NexusRagExtractionContent } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
+import type {
+  ExtractionProfileDefinition,
+  NexusRagExtractionContent,
+} from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
 import type { CollectionJob } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
-type FrontendActor = { name: string; roleLabel: string };
+type FrontendActor = { id: string; name: string; roleLabel: string };
 
 function actorLabel(actor: FrontendActor) {
   return `${actor.name} · ${actor.roleLabel}`;
@@ -52,6 +58,7 @@ function createBaseRecord(
     | "candidateKind"
     | "category"
     | "categoryLabel"
+    | "completionResolutions"
     | "discoveredAt"
     | "discoveredAtLabel"
     | "evidence"
@@ -60,7 +67,7 @@ function createBaseRecord(
     | "kpiLinks"
     | "matches"
     | "owner"
-    | "periodLabel"
+    | "evaluationPeriodLabel"
     | "primaryPerson"
     | "provenance"
     | "signal"
@@ -70,29 +77,27 @@ function createBaseRecord(
     | "title"
     | "typeLabel"
   >,
+  submittedByActorId?: string,
 ): AuditReviewRecord {
   return {
     ...values,
     history: [
       {
         actor: submittedBy,
+        actorId: submittedByActorId,
         id: `${values.id}-submitted`,
+        kind: "submitted",
         label: "Kandidat masuk ke antrean",
         timeLabel: values.discoveredAtLabel,
+        version: 1,
       },
     ],
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
     submittedBy,
+    submittedByActorId,
     version: 1,
   };
-}
-
-function periodFromFields(fields: readonly AuditReviewField[]) {
-  const periodValue = fields.find((field) =>
-    /tahun|periode/i.test(field.label),
-  )?.value;
-  return periodValue?.match(/20\d{2}/)?.[0] ?? "2026";
 }
 
 export function createCollectionReviewRecords(
@@ -100,40 +105,50 @@ export function createCollectionReviewRecords(
 ): AuditReviewRecord[] {
   const source = job.source satisfies AuditReviewSource;
   return job.candidates.map((candidate) =>
-    createBaseRecord(job.submittedBy, {
-      ...candidate,
-      discoveredAt: job.submittedAt,
-      discoveredAtLabel: job.submittedAtLabel,
-      evidence: [
-        {
-          href: job.profileUrl,
-          id: `${candidate.id}-profile`,
-          label: `Profil publik ${job.sourceLabel}`,
-          reference: `${job.id} · ${job.profileUrl}`,
-          sourceLabel: job.sourceLabel,
+    createBaseRecord(
+      job.submittedBy,
+      {
+        ...candidate,
+        discoveredAt: job.submittedAt,
+        discoveredAtLabel: job.submittedAtLabel,
+        evidence: [
+          ...candidate.evidence,
+          {
+            href: job.profileUrl,
+            id: `${candidate.id}-profile`,
+            label: `Profil publik ${job.sourceLabel}`,
+            reference: `${job.id} · ${job.profileUrl}`,
+            sourceLabel: job.sourceLabel,
+          },
+        ],
+        provenance: {
+          ...candidate.provenance,
+          jobId: job.id,
+          retrievedAt: job.submittedAt,
+          sourceKey: `${job.source}:${candidate.id}`,
         },
-      ],
-      provenance: {
-        jobId: job.id,
-        retrievedAt: job.submittedAt,
-        sourceKey: `${job.source}:${candidate.id}`,
+        source,
+        sourceLabel: job.sourceLabel,
       },
-      source,
-      sourceLabel: job.sourceLabel,
-    }),
+      job.submittedByActorId,
+    ),
   );
 }
 
 export function createExtractionReviewRecord(
   content: NexusRagExtractionContent,
   decisions: Record<string, "accepted" | "pending" | "rejected">,
-  profileId: string,
+  profile: ExtractionProfileDefinition,
   actor: FrontendActor,
   id: string,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
   const acceptedFields = content.fields
-    .filter((field) => decisions[field.id] === "accepted")
+    .filter(
+      (field) =>
+        profile.fieldIds.includes(field.id) &&
+        decisions[field.id] === "accepted",
+    )
     .map(({ id: fieldId, label, value }) => ({ id: fieldId, label, value }));
   const evidence = content.fields.flatMap((field) =>
     decisions[field.id] === "accepted" && field.source
@@ -148,37 +163,41 @@ export function createExtractionReviewRecord(
       : [],
   );
 
-  return createBaseRecord(actorLabel(actor), {
-    candidateKind: "new_record",
-    category: "research_business",
-    categoryLabel: "Riset & bisnis",
-    discoveredAt: discoveredAt.toISOString(),
-    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
-    evidence,
-    fields: acceptedFields,
-    id,
-    kpiLinks: [],
-    matches: [],
-    owner: content.candidateOwner,
-    periodLabel: periodFromFields(acceptedFields),
-    primaryPerson: content.candidatePrimaryParty,
-    provenance: {
-      retrievedAt: discoveredAt.toISOString(),
-      sourceKey: `document:${content.documentId}`,
+  return createBaseRecord(
+    actorLabel(actor),
+    {
+      candidateKind: "new_record",
+      category: profile.category,
+      categoryLabel: profile.categoryLabel,
+      discoveredAt: discoveredAt.toISOString(),
+      discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+      evidence,
+      fields: acceptedFields,
+      id,
+      kpiLinks: [],
+      matches: [],
+      owner: content.candidateOwner,
+      evaluationPeriodLabel: undefined,
+      primaryPerson: content.candidatePrimaryParty,
+      provenance: {
+        retrievedAt: discoveredAt.toISOString(),
+        sourceKey: `document:${content.documentId}`,
+      },
+      signal: {
+        primary: `${acceptedFields.length} bidang disertakan dari dokumen`,
+        secondary: `${content.fields.length - acceptedFields.length} bidang tidak diteruskan`,
+        tone: "waiting",
+      },
+      source: "document",
+      sourceLabel: "Dokumen",
+      subtitle: `${content.documentTitle} · ${profile.label} ${profile.version}`,
+      title:
+        acceptedFields.find((field) => field.id === profile.titleFieldId)
+          ?.value ?? content.documentTitle,
+      typeLabel: profile.typeLabel,
     },
-    signal: {
-      primary: `${acceptedFields.length} bidang disertakan dari dokumen`,
-      secondary: `${content.fields.length - acceptedFields.length} bidang tidak diteruskan`,
-      tone: "waiting",
-    },
-    source: "document",
-    sourceLabel: "Dokumen",
-    subtitle: `${content.documentTitle} · profil ${profileId}`,
-    title:
-      acceptedFields.find((field) => field.id === "activity_title")?.value ??
-      content.documentTitle,
-    typeLabel: "Kegiatan hasil ekstraksi",
-  });
+    actor.id,
+  );
 }
 
 function resolutionValue(
@@ -264,65 +283,76 @@ export function createMetadataCompletionReviewRecord(
     status: "missing" as const,
     statusLabel: "Diajukan",
   }));
+  const proposedPublisherUrl = metadataCompletionProvidedValue(
+    proposal.resolutions,
+    "publisherUrl",
+  );
+  const proposedDoi = metadataCompletionProvidedValue(
+    proposal.resolutions,
+    "doi",
+  );
   const evidenceHref: string | undefined =
-    proposal.resolutions.publisherUrl?.value ||
-    (proposal.resolutions.doi?.value
-      ? `https://doi.org/${proposal.resolutions.doi.value}`
-      : undefined);
+    proposedPublisherUrl ||
+    (proposedDoi ? `https://doi.org/${proposedDoi}` : undefined);
 
-  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
-    candidateKind: "metadata_completion",
-    category: "publication_conference",
-    categoryLabel: "Publikasi & konferensi",
-    discoveredAt: discoveredAt.toISOString(),
-    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
-    evidence: [
-      {
-        href: evidenceHref,
-        id: `${proposal.id}-source`,
-        label: "Dasar usulan pelengkapan",
-        reference: proposal.note,
-        sourceLabel: "Usulan pengelola",
+  return createBaseRecord(
+    proposal.submittedBy || actorLabel(actor),
+    {
+      candidateKind: "metadata_completion",
+      category: "publication_conference",
+      categoryLabel: "Publikasi & konferensi",
+      completionResolutions: proposal.resolutions,
+      discoveredAt: discoveredAt.toISOString(),
+      discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+      evidence: [
+        {
+          href: evidenceHref,
+          id: `${proposal.id}-source`,
+          label: "Dasar usulan pelengkapan",
+          reference: proposal.note,
+          sourceLabel: "Usulan pengelola",
+        },
+      ],
+      fields,
+      id: proposal.id,
+      kpiLinks: publication.kmLinks.map((link) => ({
+        evidenceRule:
+          "Metadata resmi perlu lengkap sebelum rekam dihitung pada indikator ini.",
+        indicator: link.indicator,
+      })),
+      matches: [
+        {
+          comparisons,
+          id: publication.publicId,
+          score: 100,
+          title: displayTitle,
+          verdict: "strong",
+          verdictLabel: "Rekam tujuan",
+        },
+      ],
+      // Pemilik data belum ditetapkan oleh kebijakan peran; penulis pertama
+      // bukan pemilik data, dan keberadaan rekam di registry CoE BHT belum
+      // membuktikan kepemilikannya.
+      owner: "Belum ditetapkan",
+      evaluationPeriodLabel: publication.evaluationPeriod,
+      primaryPerson: publication.authors[0]?.name ?? "Belum ditetapkan",
+      provenance: {
+        retrievedAt: discoveredAt.toISOString(),
+        sourceKey: `publication:${publication.publicId}`,
       },
-    ],
-    fields,
-    id: proposal.id,
-    kpiLinks: publication.kmLinks.map((link) => ({
-      evidenceRule:
-        "Metadata resmi perlu lengkap sebelum rekam dihitung pada indikator ini.",
-      indicator: link.indicator,
-    })),
-    matches: [
-      {
-        comparisons,
-        id: publication.publicId,
-        score: 100,
-        title: displayTitle,
-        verdict: "strong",
-        verdictLabel: "Rekam tujuan",
+      signal: {
+        primary: `${publication.missingFields.length} bidang diajukan`,
+        secondary: `Melengkapi ${publication.publicId}`,
+        tone: "info",
       },
-    ],
-    // Pemilik data belum ditetapkan oleh kebijakan peran; penulis pertama
-    // bukan pemilik data, dan keberadaan rekam di registry CoE BHT belum
-    // membuktikan kepemilikannya.
-    owner: "Belum ditetapkan",
-    periodLabel: publication.evaluationPeriod,
-    primaryPerson: publication.authors[0]?.name ?? "Belum ditetapkan",
-    provenance: {
-      retrievedAt: discoveredAt.toISOString(),
-      sourceKey: `publication:${publication.publicId}`,
+      source: "manual",
+      sourceLabel: "Usulan manual",
+      subtitle: `${publication.publicId} · pelengkapan metadata`,
+      title: displayTitle,
+      typeLabel: "Pelengkapan metadata publikasi",
     },
-    signal: {
-      primary: `${publication.missingFields.length} bidang diajukan`,
-      secondary: `Melengkapi ${publication.publicId}`,
-      tone: "info",
-    },
-    source: "manual",
-    sourceLabel: "Usulan manual",
-    subtitle: `${publication.publicId} · pelengkapan metadata`,
-    title: displayTitle,
-    typeLabel: "Pelengkapan metadata publikasi",
-  });
+    proposal.submittedByActorId ?? actor.id,
+  );
 }
 
 export function createAcademicCompletionReviewRecord(
@@ -390,60 +420,68 @@ export function createAcademicCompletionReviewRecord(
     statusLabel: "Diajukan",
   }));
 
-  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
-    candidateKind: "metadata_completion",
-    category: "academic_hr",
-    categoryLabel: "Akademik & SDM",
-    discoveredAt: discoveredAt.toISOString(),
-    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
-    evidence: [
-      {
-        href: proposal.resolutions.evidenceUrl?.value || undefined,
-        id: `${proposal.id}-source`,
-        label: "Dasar usulan pelengkapan",
-        reference: proposal.note,
-        sourceLabel: "Usulan pengelola",
+  return createBaseRecord(
+    proposal.submittedBy || actorLabel(actor),
+    {
+      candidateKind: "metadata_completion",
+      category: "academic_hr",
+      categoryLabel: "Akademik & SDM",
+      completionResolutions: proposal.resolutions,
+      discoveredAt: discoveredAt.toISOString(),
+      discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+      evidence: [
+        {
+          href: metadataCompletionProvidedValue(
+            proposal.resolutions,
+            "evidenceUrl",
+          ),
+          id: `${proposal.id}-source`,
+          label: "Dasar usulan pelengkapan",
+          reference: proposal.note,
+          sourceLabel: "Usulan pengelola",
+        },
+      ],
+      fields,
+      id: proposal.id,
+      kpiLinks: record.kmLinks.map((link) => ({
+        evidenceRule:
+          link.indicator.id === "KM-30"
+            ? "Rekam peserta menjadi bukti operasional. Nilai indikator tetap berupa kapasitas magang yang ditetapkan dari sumber daya tampung, bukan jumlah peserta aktif."
+            : "Kegiatan baru dihitung pada indikator ini setelah bukti kegiatannya dapat diperiksa.",
+        indicator: link.indicator,
+      })),
+      matches: [
+        {
+          comparisons,
+          id: record.publicId,
+          score: 100,
+          title: displayTitle,
+          verdict: "strong",
+          verdictLabel: "Rekam tujuan",
+        },
+      ],
+      owner: "Belum ditetapkan",
+      evaluationPeriodLabel: record.evaluationPeriod,
+      // Mahasiswa tidak dipakai sebagai pihak utama karena identitasnya tidak
+      // dipublikasikan; pembimbing pertama adalah pihak yang dapat dihubungi.
+      primaryPerson: record.mentors[0]?.name ?? "Belum ditetapkan",
+      provenance: {
+        retrievedAt: discoveredAt.toISOString(),
+        sourceKey: `academic:${record.publicId}`,
       },
-    ],
-    fields,
-    id: proposal.id,
-    kpiLinks: record.kmLinks.map((link) => ({
-      evidenceRule:
-        link.indicator.id === "KM-30"
-          ? "Rekam peserta menjadi bukti operasional. Nilai indikator tetap berupa kapasitas magang yang ditetapkan dari sumber daya tampung, bukan jumlah peserta aktif."
-          : "Kegiatan baru dihitung pada indikator ini setelah bukti kegiatannya dapat diperiksa.",
-      indicator: link.indicator,
-    })),
-    matches: [
-      {
-        comparisons,
-        id: record.publicId,
-        score: 100,
-        title: displayTitle,
-        verdict: "strong",
-        verdictLabel: "Rekam tujuan",
+      signal: {
+        primary: `${record.missingFields.length} bidang diajukan`,
+        secondary: `Melengkapi ${record.publicId}`,
+        tone: "info",
       },
-    ],
-    owner: "Belum ditetapkan",
-    periodLabel: record.evaluationPeriod,
-    // Mahasiswa tidak dipakai sebagai pihak utama karena identitasnya tidak
-    // dipublikasikan; pembimbing pertama adalah pihak yang dapat dihubungi.
-    primaryPerson: record.mentors[0]?.name ?? "Belum ditetapkan",
-    provenance: {
-      retrievedAt: discoveredAt.toISOString(),
-      sourceKey: `academic:${record.publicId}`,
+      source: "manual",
+      sourceLabel: "Usulan manual",
+      subtitle: `${record.publicId} · pelengkapan metadata`,
+      title: displayTitle,
+      typeLabel: "Pelengkapan metadata kegiatan akademik",
     },
-    signal: {
-      primary: `${record.missingFields.length} bidang diajukan`,
-      secondary: `Melengkapi ${record.publicId}`,
-      tone: "info",
-    },
-    source: "manual",
-    sourceLabel: "Usulan manual",
-    subtitle: `${record.publicId} · pelengkapan metadata`,
-    title: displayTitle,
-    typeLabel: "Pelengkapan metadata kegiatan akademik",
-  });
+    proposal.submittedByActorId ?? actor.id,
+  );
 }
 
 export function createActivityCompletionReviewRecord(
@@ -531,58 +569,66 @@ export function createActivityCompletionReviewRecord(
     statusLabel: "Diajukan",
   }));
 
-  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
-    candidateKind: "metadata_completion",
-    category:
-      record.group === "Bisnis" ? "research_business" : "community_service",
-    categoryLabel:
-      record.group === "Bisnis" ? "Riset & bisnis" : "Pengabdian masyarakat",
-    discoveredAt: discoveredAt.toISOString(),
-    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
-    evidence: [
-      {
-        href: proposal.resolutions.evidenceUrl?.value || undefined,
-        id: `${proposal.id}-source`,
-        label: "Dasar usulan pelengkapan",
-        reference: proposal.note,
-        sourceLabel: "Usulan pengelola",
+  return createBaseRecord(
+    proposal.submittedBy || actorLabel(actor),
+    {
+      candidateKind: "metadata_completion",
+      category:
+        record.group === "Bisnis" ? "research_business" : "community_service",
+      categoryLabel:
+        record.group === "Bisnis" ? "Riset & bisnis" : "Pengabdian masyarakat",
+      completionResolutions: proposal.resolutions,
+      discoveredAt: discoveredAt.toISOString(),
+      discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+      evidence: [
+        {
+          href: metadataCompletionProvidedValue(
+            proposal.resolutions,
+            "evidenceUrl",
+          ),
+          id: `${proposal.id}-source`,
+          label: "Dasar usulan pelengkapan",
+          reference: proposal.note,
+          sourceLabel: "Usulan pengelola",
+        },
+      ],
+      fields,
+      id: proposal.id,
+      kpiLinks: record.kmLinks.map((link) => ({
+        evidenceRule:
+          "Kegiatan baru dihitung setelah jenis, pihak terkait, dan bukti pelaksanaannya dapat diperiksa.",
+        indicator: link.indicator,
+      })),
+      matches: [
+        {
+          comparisons,
+          id: record.publicId,
+          score: 100,
+          title: displayTitle,
+          verdict: "strong",
+          verdictLabel: "Rekam tujuan",
+        },
+      ],
+      owner: record.ownerUnit,
+      evaluationPeriodLabel: record.evaluationPeriod,
+      primaryPerson: record.primaryParty,
+      provenance: {
+        retrievedAt: discoveredAt.toISOString(),
+        sourceKey: `activity:${record.publicId}`,
       },
-    ],
-    fields,
-    id: proposal.id,
-    kpiLinks: record.kmLinks.map((link) => ({
-      evidenceRule:
-        "Kegiatan baru dihitung setelah jenis, pihak terkait, dan bukti pelaksanaannya dapat diperiksa.",
-      indicator: link.indicator,
-    })),
-    matches: [
-      {
-        comparisons,
-        id: record.publicId,
-        score: 100,
-        title: displayTitle,
-        verdict: "strong",
-        verdictLabel: "Rekam tujuan",
+      signal: {
+        primary: `${record.missingFields.length} bidang diajukan`,
+        secondary: `Melengkapi ${record.publicId}`,
+        tone: "info",
       },
-    ],
-    owner: record.ownerUnit,
-    periodLabel: record.evaluationPeriod,
-    primaryPerson: record.primaryParty,
-    provenance: {
-      retrievedAt: discoveredAt.toISOString(),
-      sourceKey: `activity:${record.publicId}`,
+      source: "manual",
+      sourceLabel: "Usulan manual",
+      subtitle: `${record.publicId} · pelengkapan metadata`,
+      title: displayTitle,
+      typeLabel: "Pelengkapan metadata kegiatan atau pengabdian",
     },
-    signal: {
-      primary: `${record.missingFields.length} bidang diajukan`,
-      secondary: `Melengkapi ${record.publicId}`,
-      tone: "info",
-    },
-    source: "manual",
-    sourceLabel: "Usulan manual",
-    subtitle: `${record.publicId} · pelengkapan metadata`,
-    title: displayTitle,
-    typeLabel: "Pelengkapan metadata kegiatan atau pengabdian",
-  });
+    proposal.submittedByActorId ?? actor.id,
+  );
 }
 
 export function createContractProposalCompletionReviewRecord(
@@ -660,56 +706,64 @@ export function createContractProposalCompletionReviewRecord(
     statusLabel: "Diajukan",
   }));
 
-  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
-    candidateKind: "metadata_completion",
-    category: "research_business",
-    categoryLabel: "Riset & bisnis",
-    discoveredAt: discoveredAt.toISOString(),
-    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
-    evidence: [
-      {
-        href: proposal.resolutions.evidenceUrl?.value || undefined,
-        id: `${proposal.id}-source`,
-        label: "Dasar usulan pelengkapan",
-        reference: proposal.note,
-        sourceLabel: "Usulan pengelola",
+  return createBaseRecord(
+    proposal.submittedBy || actorLabel(actor),
+    {
+      candidateKind: "metadata_completion",
+      category: "research_business",
+      categoryLabel: "Riset & bisnis",
+      completionResolutions: proposal.resolutions,
+      discoveredAt: discoveredAt.toISOString(),
+      discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+      evidence: [
+        {
+          href: metadataCompletionProvidedValue(
+            proposal.resolutions,
+            "evidenceUrl",
+          ),
+          id: `${proposal.id}-source`,
+          label: "Dasar usulan pelengkapan",
+          reference: proposal.note,
+          sourceLabel: "Usulan pengelola",
+        },
+      ],
+      fields,
+      id: proposal.id,
+      kpiLinks: record.kmLinks.map((link) => ({
+        evidenceRule:
+          "Rekam baru dihitung pada indikator ini setelah jenis, pihak terkait, dan bukti pengajuan atau kontraknya dapat diperiksa.",
+        indicator: link.indicator,
+      })),
+      matches: [
+        {
+          comparisons,
+          id: record.publicId,
+          score: 100,
+          title: displayTitle,
+          verdict: "strong",
+          verdictLabel: "Rekam tujuan",
+        },
+      ],
+      owner: record.ownerUnit,
+      evaluationPeriodLabel: record.evaluationPeriod,
+      primaryPerson: contractProposalPrimaryParty(record),
+      provenance: {
+        retrievedAt: discoveredAt.toISOString(),
+        sourceKey: `contract-proposal:${record.publicId}`,
       },
-    ],
-    fields,
-    id: proposal.id,
-    kpiLinks: record.kmLinks.map((link) => ({
-      evidenceRule:
-        "Rekam baru dihitung pada indikator ini setelah jenis, pihak terkait, dan bukti pengajuan atau kontraknya dapat diperiksa.",
-      indicator: link.indicator,
-    })),
-    matches: [
-      {
-        comparisons,
-        id: record.publicId,
-        score: 100,
-        title: displayTitle,
-        verdict: "strong",
-        verdictLabel: "Rekam tujuan",
+      signal: {
+        primary: `${record.missingFields.length} bidang diajukan`,
+        secondary: `Melengkapi ${record.publicId}`,
+        tone: "info",
       },
-    ],
-    owner: record.ownerUnit,
-    periodLabel: record.evaluationPeriod,
-    primaryPerson: contractProposalPrimaryParty(record),
-    provenance: {
-      retrievedAt: discoveredAt.toISOString(),
-      sourceKey: `contract-proposal:${record.publicId}`,
+      source: "manual",
+      sourceLabel: "Usulan manual",
+      subtitle: `${record.publicId} · pelengkapan metadata`,
+      title: displayTitle,
+      typeLabel: "Pelengkapan metadata kontrak atau proposal",
     },
-    signal: {
-      primary: `${record.missingFields.length} bidang diajukan`,
-      secondary: `Melengkapi ${record.publicId}`,
-      tone: "info",
-    },
-    source: "manual",
-    sourceLabel: "Usulan manual",
-    subtitle: `${record.publicId} · pelengkapan metadata`,
-    title: displayTitle,
-    typeLabel: "Pelengkapan metadata kontrak atau proposal",
-  });
+    proposal.submittedByActorId ?? actor.id,
+  );
 }
 
 export function createIntellectualPropertyCompletionReviewRecord(
@@ -771,65 +825,70 @@ export function createIntellectualPropertyCompletionReviewRecord(
     statusLabel: "Diajukan",
   }));
 
-  return createBaseRecord(proposal.submittedBy || actorLabel(actor), {
-    candidateKind: "metadata_completion",
-    category: "innovation_ip",
-    categoryLabel: "Inovasi & HKI",
-    discoveredAt: discoveredAt.toISOString(),
-    discoveredAtLabel: formatAuditTimestamp(discoveredAt),
-    evidence: [
-      {
-        id: `${proposal.id}-source`,
-        label: "Dasar usulan pelengkapan",
-        reference: proposal.note,
-        sourceLabel: "Usulan pengelola",
+  return createBaseRecord(
+    proposal.submittedBy || actorLabel(actor),
+    {
+      candidateKind: "metadata_completion",
+      category: "innovation_ip",
+      categoryLabel: "Inovasi & HKI",
+      completionResolutions: proposal.resolutions,
+      discoveredAt: discoveredAt.toISOString(),
+      discoveredAtLabel: formatAuditTimestamp(discoveredAt),
+      evidence: [
+        {
+          id: `${proposal.id}-source`,
+          label: "Dasar usulan pelengkapan",
+          reference: proposal.note,
+          sourceLabel: "Usulan pengelola",
+        },
+        ...(proposedDocumentUrl?.status === "provided"
+          ? [
+              {
+                href: proposedDocumentUrl.value,
+                id: `${proposal.id}-document`,
+                label: "Dokumen pendaftaran yang diajukan",
+                reference:
+                  "Tautan dokumen disertakan sebagai bukti audit pelengkapan metadata.",
+                sourceLabel: "Usulan pengelola",
+              },
+            ]
+          : []),
+      ],
+      fields,
+      id: proposal.id,
+      kpiLinks: record.kmLinks.map((link) => ({
+        evidenceRule:
+          "Indikator menghitung pengajuan setelah memperoleh nomor registrasi. Dokumen pendaftaran diperiksa sebagai bukti audit yang terpisah.",
+        indicator: link.indicator,
+      })),
+      matches: [
+        {
+          comparisons,
+          id: record.publicId,
+          score: 100,
+          title: record.title,
+          verdict: "strong",
+          verdictLabel: "Rekam tujuan",
+        },
+      ],
+      owner: "Belum ditetapkan",
+      evaluationPeriodLabel: record.evaluationPeriod,
+      primaryPerson: record.creators[0]?.name ?? "Belum ditetapkan",
+      provenance: {
+        retrievedAt: discoveredAt.toISOString(),
+        sourceKey: `intellectual-property:${record.publicId}`,
       },
-      ...(proposedDocumentUrl?.status === "provided"
-        ? [
-            {
-              href: proposedDocumentUrl.value,
-              id: `${proposal.id}-document`,
-              label: "Dokumen pendaftaran yang diajukan",
-              reference:
-                "Tautan dokumen disertakan sebagai bukti audit pelengkapan metadata.",
-              sourceLabel: "Usulan pengelola",
-            },
-          ]
-        : []),
-    ],
-    fields,
-    id: proposal.id,
-    kpiLinks: record.kmLinks.map((link) => ({
-      evidenceRule:
-        "Indikator menghitung pengajuan setelah memperoleh nomor registrasi. Dokumen pendaftaran diperiksa sebagai bukti audit yang terpisah.",
-      indicator: link.indicator,
-    })),
-    matches: [
-      {
-        comparisons,
-        id: record.publicId,
-        score: 100,
-        title: record.title,
-        verdict: "strong",
-        verdictLabel: "Rekam tujuan",
+      signal: {
+        primary: `${record.missingFields.length} bidang diajukan`,
+        secondary: `Melengkapi ${record.publicId}`,
+        tone: "info",
       },
-    ],
-    owner: "Belum ditetapkan",
-    periodLabel: record.evaluationPeriod,
-    primaryPerson: record.creators[0]?.name ?? "Belum ditetapkan",
-    provenance: {
-      retrievedAt: discoveredAt.toISOString(),
-      sourceKey: `intellectual-property:${record.publicId}`,
+      source: "manual",
+      sourceLabel: "Usulan manual",
+      subtitle: `${record.publicId} · pelengkapan metadata`,
+      title: record.title,
+      typeLabel: "Pelengkapan metadata kekayaan intelektual",
     },
-    signal: {
-      primary: `${record.missingFields.length} bidang diajukan`,
-      secondary: `Melengkapi ${record.publicId}`,
-      tone: "info",
-    },
-    source: "manual",
-    sourceLabel: "Usulan manual",
-    subtitle: `${record.publicId} · pelengkapan metadata`,
-    title: record.title,
-    typeLabel: "Pelengkapan metadata kekayaan intelektual",
-  });
+    proposal.submittedByActorId ?? actor.id,
+  );
 }

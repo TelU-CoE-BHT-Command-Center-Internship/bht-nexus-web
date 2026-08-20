@@ -20,8 +20,13 @@ import type {
   MetadataCompletionProposal,
   MetadataCompletionResolutions,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import type {
+  OfficialMetadataProjection,
+  OfficialMetadataProjectionMap,
+} from "@/components/nexus-review-session/nexus-official-record-projection";
 
 export type NexusReviewActor = {
+  id: string;
   name: string;
   roleLabel: string;
 };
@@ -31,11 +36,18 @@ export type NexusReviewCapabilities = {
   canSubmitCorrection: boolean;
 };
 
+export type NexusRecordCapabilities = NexusReviewCapabilities & {
+  canApprove: boolean;
+  canReject: boolean;
+  canRequestChanges: boolean;
+};
+
 export type AuditCorrection = {
   after: Record<string, string>;
   before: Record<string, string>;
   evidenceNote: string;
   fieldIds: string[];
+  resolutions?: MetadataCompletionResolutions;
   version: number;
 };
 
@@ -44,6 +56,9 @@ export type AuditRuntimeState = {
   decision?: AuditReviewDecision;
   fixRequest?: AuditFixRequest;
   history: AuditReviewHistory[];
+  latestSubmittedBy: string;
+  latestSubmittedByActorId?: string;
+  reviewTargetRecordId?: string;
   status: AuditReviewStatus;
   version: number;
 };
@@ -51,6 +66,14 @@ export type AuditRuntimeState = {
 type NexusReviewSessionValue = {
   actor: NexusReviewActor;
   capabilities: NexusReviewCapabilities;
+  capabilitiesFor: (
+    record: AuditReviewRecord,
+    state: AuditRuntimeState,
+  ) => NexusRecordCapabilities;
+  applyOfficialMetadataCompletion: (
+    recordId: string,
+    projection: OfficialMetadataProjection,
+  ) => void;
   clearCompletionProposal: (recordId: string) => void;
   completionProposals: Record<string, MetadataCompletionProposal>;
   createCompletionProposal: (
@@ -61,6 +84,7 @@ type NexusReviewSessionValue = {
   ) => MetadataCompletionProposal;
   createSessionRecordId: (idPrefix: string) => string;
   records: AuditReviewRecord[];
+  officialMetadataByRecordId: OfficialMetadataProjectionMap;
   runtimeByRecordId: Record<string, AuditRuntimeState>;
   submitRecord: (record: AuditReviewRecord) => void;
   submitRecords: (records: AuditReviewRecord[]) => void;
@@ -81,6 +105,9 @@ export function initialAuditRuntimeState(
     decision: record.decision,
     fixRequest: record.fixRequest,
     history: record.history,
+    latestSubmittedBy: record.submittedBy,
+    latestSubmittedByActorId: record.submittedByActorId,
+    reviewTargetRecordId: record.decision?.targetRecordId,
     status: record.status,
     version: record.version,
   };
@@ -99,6 +126,8 @@ export function NexusReviewSessionProvider({
     Record<string, MetadataCompletionProposal>
   >({});
   const [records, setRecords] = useState<AuditReviewRecord[]>([]);
+  const [officialMetadataByRecordId, setOfficialMetadataByRecordId] =
+    useState<OfficialMetadataProjectionMap>({});
   const [runtimeByRecordId, setRuntimeByRecordId] = useState<
     Record<string, AuditRuntimeState>
   >({});
@@ -134,6 +163,7 @@ export function NexusReviewSessionProvider({
         status: "waiting-review",
         submittedAt: "Baru saja",
         submittedBy: actor.name,
+        submittedByActorId: actor.id,
       };
 
       setCompletionProposals((current) => ({
@@ -142,7 +172,7 @@ export function NexusReviewSessionProvider({
       }));
       return proposal;
     },
-    [actor.name, createSessionRecordId],
+    [actor.id, actor.name, createSessionRecordId],
   );
   const clearCompletionProposal = useCallback((recordId: string) => {
     setCompletionProposals((current) => {
@@ -152,6 +182,44 @@ export function NexusReviewSessionProvider({
       return next;
     });
   }, []);
+  const applyOfficialMetadataCompletion = useCallback(
+    (recordId: string, projection: OfficialMetadataProjection) => {
+      setOfficialMetadataByRecordId((current) => ({
+        ...current,
+        [recordId]: projection,
+      }));
+    },
+    [],
+  );
+  const capabilitiesFor = useCallback(
+    (record: AuditReviewRecord, state: AuditRuntimeState) => {
+      const submittedByCurrentActor =
+        state.latestSubmittedByActorId === actor.id;
+      const assignedToAnotherActor = Boolean(
+        state.fixRequest?.assigneeActorId &&
+          state.fixRequest.assigneeActorId !== actor.id,
+      );
+      const canReview =
+        capabilities.canReview &&
+        state.status === "waiting" &&
+        !submittedByCurrentActor;
+
+      return {
+        canApprove: canReview,
+        canReject: canReview,
+        canRequestChanges: canReview,
+        canReview,
+        canSubmitCorrection:
+          capabilities.canSubmitCorrection &&
+          state.status === "needs_fix" &&
+          !assignedToAnotherActor &&
+          (state.fixRequest?.assigneeActorId === actor.id ||
+            state.latestSubmittedByActorId === actor.id ||
+            (!state.fixRequest?.assigneeActorId && !record.submittedByActorId)),
+      };
+    },
+    [actor.id, capabilities.canReview, capabilities.canSubmitCorrection],
+  );
   const updateRecordRuntime = useCallback(
     (
       record: AuditReviewRecord,
@@ -169,12 +237,15 @@ export function NexusReviewSessionProvider({
   const value = useMemo(
     () => ({
       actor,
+      applyOfficialMetadataCompletion,
       capabilities,
+      capabilitiesFor,
       clearCompletionProposal,
       completionProposals,
       createCompletionProposal,
       createSessionRecordId,
       records,
+      officialMetadataByRecordId,
       runtimeByRecordId,
       submitRecord,
       submitRecords,
@@ -182,12 +253,15 @@ export function NexusReviewSessionProvider({
     }),
     [
       actor,
+      applyOfficialMetadataCompletion,
       capabilities,
+      capabilitiesFor,
       clearCompletionProposal,
       completionProposals,
       createCompletionProposal,
       createSessionRecordId,
       records,
+      officialMetadataByRecordId,
       runtimeByRecordId,
       submitRecord,
       submitRecords,

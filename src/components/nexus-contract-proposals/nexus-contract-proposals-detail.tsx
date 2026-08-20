@@ -13,7 +13,10 @@ import {
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
 import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
-import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
+  type MetadataCompletionResolutions,
+  metadataCompletionResolvedValue,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -51,12 +54,16 @@ function getMetadataItems(
 ): MetadataItem[] {
   const isMissing = (key: ContractProposalCompletionFieldKey) =>
     record.missingFields.includes(key);
+  const resolved = (
+    key: ContractProposalCompletionFieldKey,
+    fallback: string,
+  ) => metadataCompletionResolvedValue(record.resolvedMetadata, key, fallback);
   const items: MetadataItem[] = [
     {
       key: "title",
       label: "Judul kontrak / proposal",
       missingFieldKey: isMissing("title") ? "title" : undefined,
-      value: record.title || "Belum tercatat pada sumber",
+      value: resolved("title", record.title || "Belum tercatat pada sumber"),
       wide: true,
     },
     {
@@ -76,7 +83,7 @@ function getMetadataItems(
       key: "applicant",
       label: "Nama / unit terkait",
       missingFieldKey: isMissing("applicant") ? "applicant" : undefined,
-      value: record.applicant || "Belum tercatat",
+      value: resolved("applicant", record.applicant || "Belum tercatat"),
     });
   }
 
@@ -85,7 +92,7 @@ function getMetadataItems(
       key: "scheme",
       label: "Skema / program",
       missingFieldKey: isMissing("scheme") ? "scheme" : undefined,
-      value: record.scheme ?? "Belum tercatat",
+      value: resolved("scheme", record.scheme ?? "Belum tercatat"),
       wide: true,
     });
   }
@@ -95,7 +102,7 @@ function getMetadataItems(
       key: "funder",
       label: "Instansi pemberi hibah",
       missingFieldKey: isMissing("funder") ? "funder" : undefined,
-      value: record.funder ?? "Belum tercatat",
+      value: resolved("funder", record.funder ?? "Belum tercatat"),
       wide: true,
     });
   }
@@ -108,13 +115,19 @@ function getMetadataItems(
         missingFieldKey: isMissing("contractStart")
           ? "contractStart"
           : undefined,
-        value: formatContractProposalDate(record.contractStart),
+        value: resolved(
+          "contractStart",
+          formatContractProposalDate(record.contractStart),
+        ),
       },
       {
         key: "contractEnd",
         label: "Tanggal selesai kontrak",
         missingFieldKey: isMissing("contractEnd") ? "contractEnd" : undefined,
-        value: formatContractProposalDate(record.contractEnd),
+        value: resolved(
+          "contractEnd",
+          formatContractProposalDate(record.contractEnd),
+        ),
       },
     );
   }
@@ -125,7 +138,7 @@ function getMetadataItems(
       key: "evidenceUrl",
       label: "Dokumen bukti",
       missingFieldKey: isMissing("evidenceUrl") ? "evidenceUrl" : undefined,
-      value: contractProposalEvidenceLabel(record),
+      value: resolved("evidenceUrl", contractProposalEvidenceLabel(record)),
       wide: true,
     },
     {

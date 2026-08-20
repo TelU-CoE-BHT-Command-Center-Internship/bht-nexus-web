@@ -11,8 +11,12 @@ export default function NexusWorkspaceLayout({
 
   return (
     <NexusReviewSessionProvider
-      actor={{ name: content.viewer.name, roleLabel: content.viewer.roleLabel }}
-      capabilities={{ canReview: true, canSubmitCorrection: false }}
+      actor={{
+        id: content.viewer.id,
+        name: content.viewer.name,
+        roleLabel: content.viewer.roleLabel,
+      }}
+      capabilities={{ canReview: true, canSubmitCorrection: true }}
     >
       <NexusDashboardShell content={content}>{children}</NexusDashboardShell>
     </NexusReviewSessionProvider>

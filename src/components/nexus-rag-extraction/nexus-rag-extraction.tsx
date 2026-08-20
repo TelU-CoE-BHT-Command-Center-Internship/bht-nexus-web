@@ -66,29 +66,28 @@ export function NexusRagExtraction({
   const pendingCount = content.fields.length - decidedCount;
   const allDecided = pendingCount === 0;
   const readyForReview = allDecided && acceptedCount > 0;
-  const readyToSend = Boolean(content.reviewHref) && readyForReview;
   const profile =
     content.profileOptions.find(
       (option) => option.id === content.selectedProfileId,
     ) ?? content.profileOptions[0];
+  const readyToSend =
+    Boolean(content.reviewHref) && readyForReview && Boolean(profile);
 
   function decide(id: string, decision: ExtractionFieldDecision) {
     setDecisions((current) => ({ ...current, [id]: decision }));
   }
 
   function sendToReview() {
-    if (!readyToSend || !content.reviewHref) return;
+    if (!readyToSend || !content.reviewHref || !profile) return;
     if (!reviewSession) {
       throw new Error("Review session is unavailable");
     }
     const reviewRecord = createExtractionReviewRecord(
       content,
       decisions,
-      profile?.id ?? content.selectedProfileId,
+      profile,
       reviewSession.actor,
-      reviewSession.createSessionRecordId(
-        `EXT-${(profile?.id ?? content.selectedProfileId).toUpperCase()}`,
-      ),
+      reviewSession.createSessionRecordId(`EXT-${profile.id.toUpperCase()}`),
     );
     reviewSession.submitRecord(reviewRecord);
     router.push(`${content.reviewHref}?record=${reviewRecord.id}`);

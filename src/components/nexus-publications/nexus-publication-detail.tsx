@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
+import { metadataCompletionResolvedValue } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
 import {
   type OfficialPublication,
@@ -77,6 +78,12 @@ function getMetadataItems(
 ): PublicationMetadataItem[] {
   const isMissing = (key: PublicationCompletionFieldKey) =>
     publication.missingFields.includes(key);
+  const resolved = (key: PublicationCompletionFieldKey, fallback: string) =>
+    metadataCompletionResolvedValue(
+      publication.resolvedMetadata,
+      key,
+      fallback,
+    );
   const optionalValues: Partial<Record<PublicationCompletionFieldKey, string>> =
     {
       doi: publication.doi,
@@ -87,14 +94,16 @@ function getMetadataItems(
     (key) => {
       const value = optionalValues[key];
 
-      if (!value && !isMissing(key)) return [];
+      if (!value && !isMissing(key) && !publication.resolvedMetadata?.[key]) {
+        return [];
+      }
 
       return [
         {
           key,
           label: publicationCompletionFieldLabels[key],
           missingFieldKey: isMissing(key) ? key : undefined,
-          value: value || "Belum tersedia",
+          value: resolved(key, value || "Belum tersedia"),
         },
       ];
     },
@@ -105,7 +114,10 @@ function getMetadataItems(
       key: "title",
       label: "Judul",
       missingFieldKey: isMissing("title") ? "title" : undefined,
-      value: publication.title || "Belum tercatat pada sumber",
+      value: resolved(
+        "title",
+        publication.title || "Belum tercatat pada sumber",
+      ),
       wide: true,
     },
     {
@@ -124,20 +136,23 @@ function getMetadataItems(
       key: "type",
       label: "Jenis publikasi",
       missingFieldKey: isMissing("type") ? "type" : undefined,
-      value: publication.type,
+      value: resolved("type", publication.type),
     },
     {
       key: "year",
       label: "Tahun terbit",
       missingFieldKey: isMissing("year") ? "year" : undefined,
-      value: publication.year ? String(publication.year) : "Belum tercatat",
+      value: resolved(
+        "year",
+        publication.year ? String(publication.year) : "Belum tercatat",
+      ),
     },
     ...optionalItems,
     {
       key: "quartile",
       label: "Kuartil jurnal",
       missingFieldKey: isMissing("quartile") ? "quartile" : undefined,
-      value: publicationQuartileLabel(publication),
+      value: resolved("quartile", publicationQuartileLabel(publication)),
     },
     {
       key: "evaluationPeriod",
@@ -149,7 +164,10 @@ function getMetadataItems(
       key: "publisherUrl",
       label: "Tautan penerbit",
       missingFieldKey: isMissing("publisherUrl") ? "publisherUrl" : undefined,
-      value: publication.publisherUrl ?? "Belum tersedia",
+      value: resolved(
+        "publisherUrl",
+        publication.publisherUrl ?? "Belum tersedia",
+      ),
       wide: true,
     },
   ];

@@ -69,6 +69,7 @@ export type MetadataCompletionProposal = {
   status: "waiting-review";
   submittedAt: string;
   submittedBy: string;
+  submittedByActorId?: string;
 };
 
 export type MetadataCompletionFieldConfig = {
@@ -106,6 +107,24 @@ function isIsoDate(value: string) {
 }
 
 /**
+ * Menyimpan DOI dalam bentuk kanonis tanpa awalan URL atau label `doi:`.
+ * Pengguna tetap boleh menempelkan DOI dari address bar; nilai yang masuk ke
+ * kandidat selalu mempunyai bentuk yang sama untuk kebutuhan pencocokan.
+ */
+export function normalizeMetadataCompletionValue(
+  key: MetadataCompletionFieldKey,
+  value: string,
+) {
+  const trimmed = value.trim();
+  if (key !== "doi") return trimmed;
+
+  return trimmed
+    .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "")
+    .replace(/^doi:\s*/i, "")
+    .trim();
+}
+
+/**
  * Pesan kesalahan untuk nilai yang diajukan, atau `null` bila sudah sah.
  * Dipakai sebelum konfirmasi supaya nilai yang jelas keliru tidak pernah
  * sampai ke antrean Tinjauan.
@@ -114,7 +133,7 @@ export function metadataCompletionValueError(
   key: MetadataCompletionFieldKey,
   value: string,
 ): string | null {
-  const trimmed = value.trim();
+  const trimmed = normalizeMetadataCompletionValue(key, value);
 
   if (trimmed.length === 0) return "Nilai belum diisi.";
 
@@ -149,6 +168,10 @@ export function metadataCompletionValueError(
     return "Pilih salah satu kuartil Q1 sampai Q4.";
   }
 
+  if (key === "doi" && !/^10\.\d{4,9}\/\S+$/i.test(trimmed)) {
+    return "DOI harus berbentuk 10.xxxx/xxxxx, tanpa spasi.";
+  }
+
   if (
     key === "protectionType" &&
     !metadataCompletionProtectionChoices.some((choice) => choice === trimmed)
@@ -164,6 +187,32 @@ export function metadataCompletionValueError(
   }
 
   return null;
+}
+
+/**
+ * Validasi yang membutuhkan lebih dari satu bidang. Aturan ini dipisahkan
+ * dari `metadataCompletionValueError` agar form dan alur perbaikan memakai
+ * kaidah tanggal kontrak yang sama.
+ */
+export function metadataCompletionResolutionSetErrors(
+  resolutions: MetadataCompletionResolutions,
+) {
+  const errors: Partial<Record<MetadataCompletionFieldKey, string>> = {};
+  const start = resolutions.contractStart;
+  const end = resolutions.contractEnd;
+
+  if (
+    start?.status === "provided" &&
+    end?.status === "provided" &&
+    isIsoDate(start.value) &&
+    isIsoDate(end.value) &&
+    end.value < start.value
+  ) {
+    errors.contractEnd =
+      "Tanggal selesai tidak boleh lebih awal dari tanggal mulai kontrak.";
+  }
+
+  return errors;
 }
 
 /**
@@ -497,18 +546,48 @@ export const metadataCompletionResolutionLabels: Record<
   provided: "Nilai diajukan",
 };
 
+/**
+ * Menampilkan hasil penyelesaian yang sudah disetujui tanpa menghilangkan
+ * arti pengecualian. Nilai fallback tetap dipakai untuk rekam lama yang belum
+ * mempunyai hasil pelengkapan terstruktur.
+ */
+export function metadataCompletionResolvedValue(
+  resolutions: MetadataCompletionResolutions | undefined,
+  key: MetadataCompletionFieldKey,
+  fallback: string,
+) {
+  const resolution = resolutions?.[key];
+  if (!resolution) return fallback;
+  if (resolution.status === "provided") return resolution.value || fallback;
+
+  return `${metadataCompletionResolutionLabels[resolution.status]} · ${resolution.reason}`;
+}
+
 export function createEmptyMetadataCompletionResolution(): MetadataCompletionResolution {
   return { reason: "", status: "provided", value: "" };
 }
 
 export function normalizeMetadataCompletionResolution(
+  key: MetadataCompletionFieldKey,
   resolution?: MetadataCompletionResolution,
 ): MetadataCompletionResolution {
+  const status = resolution?.status ?? "provided";
   return {
-    reason: resolution?.reason.trim() ?? "",
-    status: resolution?.status ?? "provided",
-    value: resolution?.value.trim() ?? "",
+    reason: status === "provided" ? "" : (resolution?.reason.trim() ?? ""),
+    status,
+    value:
+      status === "provided"
+        ? normalizeMetadataCompletionValue(key, resolution?.value ?? "")
+        : "",
   };
+}
+
+export function metadataCompletionProvidedValue(
+  resolutions: MetadataCompletionResolutions,
+  key: MetadataCompletionFieldKey,
+) {
+  const resolution = resolutions[key];
+  return resolution?.status === "provided" ? resolution.value : undefined;
 }
 
 export function areMetadataCompletionResolutionsEqual(

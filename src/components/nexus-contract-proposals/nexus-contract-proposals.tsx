@@ -15,6 +15,7 @@ import {
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createContractProposalCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -181,6 +182,14 @@ export function NexusContractProposals({
   content,
 }: NexusContractProposalsProps) {
   const reviewSession = useNexusReviewSession();
+  const records = useMemo(
+    () =>
+      projectOfficialMetadataRecords(
+        content.records,
+        reviewSession.officialMetadataByRecordId,
+      ),
+    [content.records, reviewSession.officialMetadataByRecordId],
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [filterValues, setFilterValues] =
     useState<FilterValues>(defaultFilterValues);
@@ -193,13 +202,13 @@ export function NexusContractProposals({
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
 
   const indicatorConfig = useMemo(
-    () => createIndicatorConfig(content.records),
-    [content.records],
+    () => createIndicatorConfig(records),
+    [records],
   );
 
   const filtered = useMemo(() => {
     const needle = normalizeWorkspaceSearch(deferredSearchQuery);
-    const matching = content.records.filter(
+    const matching = records.filter(
       (record) =>
         (filterValues.indicator === "all" ||
           record.kmLinks.some(
@@ -233,15 +242,15 @@ export function NexusContractProposals({
             "id-ID",
           );
     });
-  }, [content.records, deferredSearchQuery, filterValues]);
+  }, [deferredSearchQuery, filterValues, records]);
 
   const coveredIndicatorCount = contractProposalIndicatorScope.filter(
     (indicator) =>
-      content.records.some((record) =>
+      records.some((record) =>
         record.kmLinks.some((link) => link.indicator.id === indicator.id),
       ),
   ).length;
-  const needsCompletionCount = content.records.filter(
+  const needsCompletionCount = records.filter(
     (record) => record.quality === "Perlu dilengkapi",
   ).length;
   const pageSize = Number(pageSizeValue);
@@ -251,20 +260,20 @@ export function NexusContractProposals({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = content.records.find((record) => record.id === selectedId);
+  const selected = records.find((record) => record.id === selectedId);
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
   ).length;
   const hasActiveFilters = activeFilterCount > 0 || searchQuery.length > 0;
   const evaluationPeriods = Array.from(
-    new Set(content.records.map((record) => record.evaluationPeriod)),
+    new Set(records.map((record) => record.evaluationPeriod)),
   )
     .toSorted()
     .join(", ");
   const resultSummary = [
     `Periode evaluasi ${evaluationPeriods}`,
-    `${filtered.length} dari ${content.records.length} rekam sesuai filter`,
+    `${filtered.length} dari ${records.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
       : "tanpa filter tambahan",
@@ -281,7 +290,7 @@ export function NexusContractProposals({
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => {
-    const record = content.records.find((item) => item.id === recordId);
+    const record = records.find((item) => item.id === recordId);
     if (!record) return;
 
     const proposal: ContractProposalProposal =
@@ -438,7 +447,7 @@ export function NexusContractProposals({
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: content.records.length,
+            value: records.length,
           },
           {
             icon: <NexusContractProposalIcon name="indicator" />,
@@ -519,13 +528,13 @@ export function NexusContractProposals({
             empty={
               <NexusWorkspaceEmptyState
                 description={
-                  content.records.length === 0
+                  records.length === 0
                     ? "Rekam akan muncul setelah kontrak atau proposal disetujui melalui proses Tinjauan."
                     : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
                 }
                 onResetFilters={hasActiveFilters ? resetFilters : undefined}
                 title={
-                  content.records.length === 0
+                  records.length === 0
                     ? "Belum ada kontrak atau proposal resmi"
                     : "Tidak ada rekam yang cocok"
                 }
