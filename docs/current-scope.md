@@ -74,6 +74,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Bidang resmi yang masih kosong dapat menerima usulan nilai, pernyataan tidak tersedia, atau pernyataan tidak berlaku. Judul, tahun terbit, dan jenis karya tidak menyediakan pilihan tidak berlaku karena ketiganya selalu melekat pada sebuah karya.
 - Usulan tidak langsung mengubah rekam resmi dan selalu diteruskan ke Tinjauan beserta kaitan indikator KM-nya.
 - Setelah dikirim, usulan tersedia sebagai kandidat pelengkapan metadata pada Tinjauan di sesi yang sama.
+- Status usulan pada halaman asal mengikuti keputusan sesi Tinjauan yang sama, sehingga permintaan perbaikan atau hasil akhir tidak kembali ditampilkan sebagai masih menunggu.
 
 ### Kekayaan Intelektual
 
@@ -89,7 +90,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 
 - Rumah data resmi menggabungkan pencarian kontrak dan proposal tanpa mencampur maknanya: proposal tetap berstatus pengajuan, sedangkan kontrak menyatakan hubungan yang sudah terbentuk.
 - Cakupan indikator saat ini adalah kontrak riset nasional, kontrak riset internasional, kontrak bisnis komersialisasi, proposal riset nasional, proposal riset internasional, dan proposal non-riset (KM-17–KM-19 serta KM-37–KM-39).
-- Bidang mengikuti kebutuhan workbook: judul, pengusul atau penanggung jawab, skema, mitra, pemberi hibah, tanggal kontrak bila relevan, serta lokasi bukti.
+- Bidang mengikuti kebutuhan workbook per jenis rekam. Kontrak dan proposal riset memakai pengusul serta skema; kontrak bisnis KM-19 memakai pihak kontrak dan masa berlaku tanpa mengarang kolom pengusul yang tidak tersedia pada worksheet sumber.
 - Contoh operasional memakai identitas netral dan tidak memasukkan judul, mitra, pihak kontrak, atau tautan penyimpanan privat dari workbook internal ke repository publik.
 - Bukti internal dibedakan dari bukti yang belum tercatat. Pelengkapan bidang yang benar-benar kosong diteruskan ke antrean Tinjauan pada kategori Riset & bisnis.
 
@@ -101,6 +102,8 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Data pengembangan memakai penanda mahasiswa, pembimbing, dan topik yang netral. Identitas lengkap nantinya mengikuti hak akses serta payload dari layanan server, bukan ditanamkan di frontend publik.
 - Bukti membedakan keadaan tersimpan internal dan belum tercatat. URL penyimpanan privat tidak dimasukkan ke repository; bukti yang benar-benar belum tercatat tetap menjadi pekerjaan pelengkapan.
 - Kartu Indikator Terisi menyatakan berapa indikator akademik yang sudah mempunyai rekam, sehingga indikator yang belum mempunyai satu pun baris kegiatan tidak hilang dari pandangan.
+- Baris magang diperlakukan sebagai bukti operasional peserta. Nilai KM-30 tetap bermakna kapasitas atau daya tampung magang dan tidak dihitung dari jumlah peserta aktif pada adapter frontend.
+- Tahun dan lama kegiatan hanya menjadi bidang wajib pada rekam magang; bimbingan doktor dan magister mengikuti kolom sumber tanpa mengarang kekosongan tahun.
 - Usulan pelengkapan memakai alur yang sama dengan Publikasi dan diteruskan ke Tinjauan pada kategori Akademik & SDM.
 
 ### Kegiatan & Pengabdian
@@ -135,6 +138,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/kekayaan-intelektual` | Daftar dan rincian hak cipta serta paten resmi |
 | `/nexus/kontrak-proposal` | Daftar dan rincian kontrak serta proposal resmi |
 | `/nexus/akademik` | Daftar dan rincian bimbingan serta magang mahasiswa resmi |
+| `/nexus/kegiatan` | Daftar dan rincian kegiatan, bisnis, serta pengabdian masyarakat resmi |
 | `/nexus/dokumen` dan `/en/nexus/documents` | Pustaka dokumen |
 | `/nexus/tanya-dokumen` dan `/en/nexus/ask-documents` | Tanya jawab bersitasi |
 | `/nexus/ekstraksi` dan `/en/nexus/extraction` | Ekstraksi kandidat dari dokumen |

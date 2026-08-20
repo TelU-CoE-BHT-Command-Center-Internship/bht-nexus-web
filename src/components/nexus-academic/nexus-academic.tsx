@@ -197,9 +197,7 @@ function createActivityConfig(
 export function NexusAcademic({ content }: NexusAcademicProps) {
   const reviewSession = useNexusReviewSession();
   const [currentPage, setCurrentPage] = useState(1);
-  const [proposals, setProposals] = useState<Record<string, AcademicProposal>>(
-    {},
-  );
+  const proposals = reviewSession.completionProposals;
   const [filterValues, setFilterValues] =
     useState<FilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
@@ -308,17 +306,12 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
     const record = content.records.find((item) => item.id === recordId);
     if (!record) return;
 
-    const proposal: AcademicProposal = {
-      id: `PLG-AKD-2026-${String(Object.keys(proposals).length + 1).padStart(5, "0")}`,
-      note,
+    const proposal: AcademicProposal = reviewSession.createCompletionProposal(
+      "PLG-AKD-2026",
       recordId,
       resolutions,
-      status: "waiting-review",
-      submittedAt: "Baru saja",
-      submittedBy: reviewSession.actor.name,
-    };
-
-    setProposals((current) => ({ ...current, [recordId]: proposal }));
+      note,
+    );
     reviewSession.submitRecord(
       createAcademicCompletionReviewRecord(
         record,

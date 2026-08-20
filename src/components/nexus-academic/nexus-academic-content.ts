@@ -1,6 +1,6 @@
-import type { MetadataCompletionProposal } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import {
   type MetadataCompletionFieldKey,
+  type MetadataCompletionProposal,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -98,7 +98,7 @@ const kmLinkNotes: Record<AcademicIndicatorId, string> = {
   "KM-29":
     "Bimbingan magister dihitung ketika topik tesisnya berasal dari riset CoE dan bukti bimbingannya tersedia.",
   "KM-30":
-    "Kapasitas magang dihitung dari mahasiswa yang menjalani magang di CoE pada periode evaluasi berjalan.",
+    "Rekam peserta magang menjadi bukti operasional. Nilai KM-30 tetap berupa kapasitas atau daya tampung magang, bukan jumlah mahasiswa aktif.",
 };
 
 const evidenceNotes: Record<AcademicEvidenceStatus, string> = {
@@ -152,7 +152,6 @@ const seeds: readonly AcademicSeed[] = [
       },
     ],
     title: "Topik Riset Doktor A",
-    year: 2026,
   },
   {
     activity: "Bimbingan Doktor",
@@ -165,7 +164,7 @@ const seeds: readonly AcademicSeed[] = [
       {
         capturedAt,
         identifier: "AKD-SRC-003",
-        note: "Program studi, tahun kegiatan, dan bukti belum tercatat pada sumber.",
+        note: "Program studi dan bukti belum tercatat pada sumber.",
         source: "Data akademik",
       },
     ],
@@ -187,7 +186,6 @@ const seeds: readonly AcademicSeed[] = [
       },
     ],
     title: "Topik Riset Magister A",
-    year: 2026,
   },
   {
     activity: "Bimbingan Magister",
@@ -205,7 +203,6 @@ const seeds: readonly AcademicSeed[] = [
         source: "Data akademik",
       },
     ],
-    year: 2026,
   },
   {
     activity: "Magang Mahasiswa",
@@ -262,7 +259,6 @@ const seeds: readonly AcademicSeed[] = [
       },
     ],
     title: "Topik Riset Lintas Program A",
-    year: 2026,
   },
 ];
 
@@ -281,10 +277,12 @@ function toMentor(name: string): AcademicMentor {
 
 function createRecord(seed: AcademicSeed): OfficialAcademicRecord {
   const title = seed.title ?? "";
+  const isInternship = seed.activity === "Magang Mahasiswa";
   const missingFields: AcademicCompletionFieldKey[] = [
     ...(title.length === 0 ? (["title"] as const) : []),
-    ...(seed.year ? [] : (["year"] as const)),
     ...(seed.programStudy ? [] : (["programStudy"] as const)),
+    ...(isInternship && !seed.duration ? (["duration"] as const) : []),
+    ...(isInternship && !seed.year ? (["year"] as const) : []),
     ...(seed.evidenceStatus === "unrecorded" ? (["evidenceUrl"] as const) : []),
   ];
 
@@ -362,7 +360,7 @@ export function getNexusAcademicContent(): NexusAcademicContent {
     description:
       "Seluruh kegiatan akademik resmi CoE BHT yang sudah lolos Tinjauan, mulai dari bimbingan doktor dan magister sampai magang mahasiswa, beserta pembimbing dan bukti kegiatannya.",
     officialNote:
-      "Daftar ini hanya memuat rekam resmi. Kegiatan yang sama dengan beberapa pembimbing tetap dihitung sebagai satu rekam.",
+      "Daftar ini hanya memuat rekam resmi. Kegiatan yang sama dengan beberapa pembimbing tetap satu rekam. Baris peserta magang menjadi bukti operasional; nilai KM-30 tetap ditetapkan sebagai kapasitas magang.",
     records,
     title: "Akademik",
     updatedAt: "Diperbarui 17 Agustus 2026 · 09.30 WIB",

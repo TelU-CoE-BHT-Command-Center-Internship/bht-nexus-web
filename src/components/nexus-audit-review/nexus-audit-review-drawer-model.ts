@@ -1,30 +1,15 @@
 import type {
   AuditDecisionKind,
-  AuditFixRequest,
   AuditOfficialMatch,
-  AuditReviewDecision,
-  AuditReviewHistory,
   AuditReviewRecord,
   AuditReviewStatus,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
-import type { NexusReviewCapabilities } from "@/components/nexus-review-session/nexus-review-session";
+import type {
+  AuditRuntimeState,
+  NexusReviewCapabilities,
+} from "@/components/nexus-review-session/nexus-review-session";
 
-export type AuditCorrection = {
-  after: Record<string, string>;
-  before: Record<string, string>;
-  evidenceNote: string;
-  fieldIds: string[];
-  version: number;
-};
-
-export type AuditRuntimeState = {
-  correction?: AuditCorrection;
-  decision?: AuditReviewDecision;
-  fixRequest?: AuditFixRequest;
-  history: AuditReviewHistory[];
-  status: AuditReviewStatus;
-  version: number;
-};
+export type { AuditRuntimeState };
 
 export type AuditReviewDrawerProps = {
   capabilities: NexusReviewCapabilities;

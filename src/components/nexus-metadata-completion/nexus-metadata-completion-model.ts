@@ -15,16 +15,28 @@ export type MetadataCompletionFieldKey =
   | "contractStart"
   | "documentUrl"
   | "doi"
+  | "duration"
   | "evidenceUrl"
+  | "eventDate"
   | "funder"
+  | "funding"
   | "issue"
+  | "issn"
+  | "journalVolume"
+  | "location"
+  | "organization"
   | "pages"
+  | "primaryParty"
   | "programStudy"
   | "protectionType"
+  | "publicationFrequency"
   | "publisherUrl"
   | "quartile"
   | "registrationNumber"
+  | "role"
   | "scheme"
+  | "targetGroup"
+  | "team"
   | "title"
   | "type"
   | "year";
@@ -44,6 +56,21 @@ export type MetadataCompletionResolutions = Partial<
   Record<MetadataCompletionFieldKey, MetadataCompletionResolution>
 >;
 
+/**
+ * Usulan pelengkapan yang menunggu keputusan Tinjauan. Model ini dimiliki
+ * domain pelengkapan, bukan komponen form, agar halaman resmi dan sesi
+ * Tinjauan berbagi kontrak data yang sama tanpa saling mengimpor UI.
+ */
+export type MetadataCompletionProposal = {
+  id: string;
+  note: string;
+  recordId: string;
+  resolutions: MetadataCompletionResolutions;
+  status: "waiting-review";
+  submittedAt: string;
+  submittedBy: string;
+};
+
 export type MetadataCompletionFieldConfig = {
   /** Pilihan tetap untuk bidang bertipe `choice`. */
   choices?: readonly string[];
@@ -56,14 +83,14 @@ export type MetadataCompletionFieldConfig = {
   type: "choice" | "text" | "url";
 };
 
-/** Tahun paling awal yang masih masuk akal untuk arsip CoE. */
-const EARLIEST_PUBLICATION_YEAR = 1900;
+/** Tahun paling awal yang masih masuk akal untuk seluruh rekam CoE. */
+const EARLIEST_RECORD_YEAR = 1900;
 
-/** Tautan hanya diterima bila lengkap dan memakai skema web. */
-function isHttpUrl(value: string) {
+/** Tautan bukti hanya diterima bila lengkap dan memakai HTTPS. */
+function isHttpsUrl(value: string) {
   try {
     const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
+    return url.protocol === "https:";
   } catch {
     return false;
   }
@@ -99,13 +126,13 @@ export function metadataCompletionValueError(
     const year = Number(trimmed);
     const latest = new Date().getFullYear() + 1;
 
-    if (year < EARLIEST_PUBLICATION_YEAR || year > latest) {
-      return `Tahun harus antara ${EARLIEST_PUBLICATION_YEAR} dan ${latest}.`;
+    if (year < EARLIEST_RECORD_YEAR || year > latest) {
+      return `Tahun harus antara ${EARLIEST_RECORD_YEAR} dan ${latest}.`;
     }
   }
 
   if (
-    (key === "contractStart" || key === "contractEnd") &&
+    (key === "contractStart" || key === "contractEnd" || key === "eventDate") &&
     !isIsoDate(trimmed)
   ) {
     return "Tanggal harus memakai format YYYY-MM-DD, contoh 2026-08-17.";
@@ -113,9 +140,9 @@ export function metadataCompletionValueError(
 
   if (
     metadataCompletionFieldConfigs[key].type === "url" &&
-    !isHttpUrl(trimmed)
+    !isHttpsUrl(trimmed)
   ) {
-    return "Tautan harus lengkap dan diawali http:// atau https://.";
+    return "Tautan harus lengkap dan diawali https://.";
   }
 
   if (key === "quartile" && !/^Q[1-4]$/.test(trimmed)) {
@@ -147,16 +174,28 @@ export const metadataCompletionFieldLabels: Record<
   contractEnd: "Tanggal selesai kontrak",
   contractStart: "Tanggal mulai kontrak",
   doi: "DOI",
+  duration: "Lama kegiatan",
   evidenceUrl: "Tautan bukti kegiatan",
+  eventDate: "Tanggal kegiatan",
   funder: "Instansi pemberi hibah",
+  funding: "Dana tercatat",
   issue: "Nomor terbit",
+  issn: "ISSN",
+  journalVolume: "Nomor volume",
+  location: "Tempat kegiatan",
+  organization: "Unit bisnis / komunitas",
   pages: "Halaman / nomor artikel",
+  primaryParty: "Pihak utama",
   programStudy: "Program studi",
   documentUrl: "Tautan dokumen pendaftaran",
   protectionType: "Jenis perlindungan",
+  publicationFrequency: "Frekuensi terbit",
   publisherUrl: "Tautan penerbit",
   registrationNumber: "Nomor pencatatan",
+  role: "Bentuk keterlibatan",
   scheme: "Skema / program",
+  targetGroup: "Masyarakat / mitra sasaran",
+  team: "Tim pelaksana",
   quartile: "Kuartil jurnal",
   title: "Judul",
   type: "Jenis publikasi",
@@ -208,16 +247,35 @@ export const metadataCompletionFieldConfigs: Record<
     placeholder: "10.xxxx/xxxxx",
     type: "text",
   },
+  duration: {
+    help: "Gunakan lama kegiatan yang tercatat pada sumber akademik, misalnya 4 bulan.",
+    key: "duration",
+    placeholder: "Contoh: 4 bulan",
+    type: "text",
+  },
   evidenceUrl: {
     help: "Gunakan tautan bukti yang dapat dibuka oleh pemeriksa, misalnya kontrak, proposal, surat tugas, lembar pengesahan, atau berkas laporan.",
     key: "evidenceUrl",
     placeholder: "https://penyimpanan.example/bukti",
     type: "url",
   },
+  eventDate: {
+    help: "Gunakan tanggal pelaksanaan kegiatan dengan format YYYY-MM-DD.",
+    key: "eventDate",
+    maxLength: 10,
+    placeholder: "2026-09-18",
+    type: "text",
+  },
   funder: {
     help: "Gunakan nama instansi pemberi hibah sebagaimana tercatat pada proposal atau surat pengumuman.",
     key: "funder",
     placeholder: "Nama instansi pemberi hibah",
+    type: "text",
+  },
+  funding: {
+    help: "Gunakan nilai dana persis seperti yang tercatat pada dokumen sumber.",
+    key: "funding",
+    placeholder: "Contoh: Rp25.000.000",
     type: "text",
   },
   issue: {
@@ -226,10 +284,40 @@ export const metadataCompletionFieldConfigs: Record<
     placeholder: "Contoh: Vol. 31 No. 3",
     type: "text",
   },
+  issn: {
+    help: "Gunakan ISSN yang tercatat untuk jurnal yang dikelola.",
+    key: "issn",
+    placeholder: "Contoh: 1234-5678",
+    type: "text",
+  },
+  journalVolume: {
+    help: "Gunakan nomor volume jurnal pada periode sumber.",
+    key: "journalVolume",
+    placeholder: "Contoh: Volume 1",
+    type: "text",
+  },
+  location: {
+    help: "Gunakan tempat pelaksanaan yang tercatat pada sumber kegiatan.",
+    key: "location",
+    placeholder: "Tempat kegiatan",
+    type: "text",
+  },
+  organization: {
+    help: "Gunakan nama unit bisnis, UMKM, atau komunitas sesuai jenis rekam.",
+    key: "organization",
+    placeholder: "Nama unit bisnis atau komunitas",
+    type: "text",
+  },
   pages: {
     help: "Gunakan rentang halaman atau nomor artikel dari penerbit.",
     key: "pages",
     placeholder: "Contoh: 115–128 atau e10452",
+    type: "text",
+  },
+  primaryParty: {
+    help: "Gunakan nama dosen, pembina, pengelola, atau pihak utama yang tercatat pada sumber.",
+    key: "primaryParty",
+    placeholder: "Nama pihak utama",
     type: "text",
   },
   documentUrl: {
@@ -251,16 +339,40 @@ export const metadataCompletionFieldConfigs: Record<
     placeholder: "Pilih jenis perlindungan",
     type: "choice",
   },
+  publicationFrequency: {
+    help: "Gunakan frekuensi terbit jurnal yang tercatat pada sumber.",
+    key: "publicationFrequency",
+    placeholder: "Contoh: 2 kali per tahun",
+    type: "text",
+  },
   registrationNumber: {
     help: "Gunakan nomor yang tertera pada bukti pencatatan atau pendaftaran. Indikator KM baru menghitung pengajuan yang sudah memperoleh nomor registrasi.",
     key: "registrationNumber",
     placeholder: "Contoh: REG-2026-001",
     type: "text",
   },
+  role: {
+    help: "Gunakan bentuk keterlibatan dosen pada unit bisnis sesuai sumber.",
+    key: "role",
+    placeholder: "Contoh: Anggota",
+    type: "text",
+  },
   scheme: {
     help: "Gunakan nama skema atau program persis seperti yang tercantum pada kontrak atau proposal.",
     key: "scheme",
     placeholder: "Nama skema atau program",
+    type: "text",
+  },
+  targetGroup: {
+    help: "Gunakan masyarakat atau mitra sasaran yang tercatat pada sumber kegiatan.",
+    key: "targetGroup",
+    placeholder: "Masyarakat atau mitra sasaran",
+    type: "text",
+  },
+  team: {
+    help: "Gunakan nama dosen dan tim pelaksana sebagaimana tercatat pada sumber.",
+    key: "team",
+    placeholder: "Nama tim pelaksana",
     type: "text",
   },
   publisherUrl: {
@@ -331,11 +443,25 @@ const alwaysApplicableFields: readonly MetadataCompletionFieldKey[] = [
   "applicant",
   "contractEnd",
   "contractStart",
+  "documentUrl",
+  "duration",
   "evidenceUrl",
+  "eventDate",
   "funder",
+  "funding",
+  "issn",
+  "journalVolume",
+  "location",
+  "organization",
+  "primaryParty",
   "programStudy",
   "protectionType",
+  "publicationFrequency",
+  "registrationNumber",
+  "role",
   "scheme",
+  "targetGroup",
+  "team",
   "title",
   "type",
   "year",

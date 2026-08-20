@@ -49,7 +49,7 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
   const isMissing = (key: AcademicCompletionFieldKey) =>
     record.missingFields.includes(key);
 
-  return [
+  const items: MetadataItem[] = [
     {
       key: "title",
       label: "Topik riset / nama kegiatan",
@@ -80,32 +80,41 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
       value: record.programStudy ?? "Belum tercatat",
     },
     {
-      key: "year",
-      label: "Tahun kegiatan",
-      missingFieldKey: isMissing("year") ? "year" : undefined,
-      value: record.year ? String(record.year) : "Belum tercatat",
-    },
-    {
-      key: "duration",
-      label: "Lama kegiatan",
-      value: record.duration ?? "Tidak dicatat untuk bentuk kegiatan ini",
-    },
-    {
       key: "evaluationPeriod",
       label: "Periode evaluasi KM",
       value: record.evaluationPeriod,
     },
-    // Bidang lebar diletakkan terakhir supaya enam bidang sempit di atasnya
-    // membentuk tiga baris penuh dan tidak ada baris yang menggantung separuh.
-    {
-      href: record.evidenceUrl,
-      key: "evidenceUrl",
-      label: "Bukti kegiatan",
-      missingFieldKey: isMissing("evidenceUrl") ? "evidenceUrl" : undefined,
-      value: record.evidenceUrl ?? academicEvidenceLabel(record),
-      wide: true,
-    },
   ];
+
+  if (record.activity === "Magang Mahasiswa") {
+    items.splice(
+      items.length - 1,
+      0,
+      {
+        key: "year",
+        label: "Tahun kegiatan",
+        missingFieldKey: isMissing("year") ? "year" : undefined,
+        value: record.year ? String(record.year) : "Belum tercatat",
+      },
+      {
+        key: "duration",
+        label: "Lama kegiatan",
+        missingFieldKey: isMissing("duration") ? "duration" : undefined,
+        value: record.duration ?? "Belum tercatat",
+      },
+    );
+  }
+
+  items.push({
+    href: record.evidenceUrl,
+    key: "evidenceUrl",
+    label: "Bukti kegiatan",
+    missingFieldKey: isMissing("evidenceUrl") ? "evidenceUrl" : undefined,
+    value: record.evidenceUrl ?? academicEvidenceLabel(record),
+    wide: true,
+  });
+
+  return items;
 }
 
 function resolutionSummary(
@@ -176,8 +185,8 @@ export function NexusAcademicDetail({
             <dd>{record.participantCode}</dd>
           </div>
           <div className={detail.metaItem}>
-            <dt>Tahun</dt>
-            <dd>{record.year ?? "Belum tercatat"}</dd>
+            <dt>Periode evaluasi</dt>
+            <dd>{record.evaluationPeriod}</dd>
           </div>
           <div className={detail.metaItem}>
             <dt>Indikator KM</dt>

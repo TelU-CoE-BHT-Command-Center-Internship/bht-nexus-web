@@ -58,6 +58,8 @@ type NexusActivitiesProps = {
 type FilterId = "completeness" | "group" | "indicator" | "sort";
 type FilterValues = Record<FilterId, string>;
 
+const unlinkedIndicatorValue = "unlinked";
+
 const columns: readonly NexusWorkspaceRecordColumn[] = [
   { id: "primary", label: "Kegiatan / program", primary: true },
   { id: "signal", label: "Indikator KM" },
@@ -157,6 +159,14 @@ function createIndicatorConfig(
     .toSorted((first, second) => first.number - second.number);
   const options: [NexusSelectOption, ...NexusSelectOption[]] = [
     { label: "Semua indikator KM", value: "all" },
+    ...(records.some((record) => record.kmLinks.length === 0)
+      ? [
+          {
+            label: "Belum dikaitkan dengan indikator",
+            value: unlinkedIndicatorValue,
+          },
+        ]
+      : []),
     ...indicators.map((indicator) => ({
       label: `${indicator.id} · ${indicator.label}`,
       value: indicator.id,
@@ -178,9 +188,7 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
     useState<FilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
   const [pageSizeValue, setPageSizeValue] = useState("10");
-  const [proposals, setProposals] = useState<Record<string, ActivityProposal>>(
-    {},
-  );
+  const proposals = reviewSession.completionProposals;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -196,9 +204,11 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
     const matching = content.records.filter(
       (record) =>
         (filterValues.indicator === "all" ||
-          record.kmLinks.some(
-            (link) => link.indicator.id === filterValues.indicator,
-          )) &&
+          (filterValues.indicator === unlinkedIndicatorValue
+            ? record.kmLinks.length === 0
+            : record.kmLinks.some(
+                (link) => link.indicator.id === filterValues.indicator,
+              ))) &&
         (filterValues.group === "all" || record.group === filterValues.group) &&
         (filterValues.completeness === "all" ||
           record.quality === filterValues.completeness) &&
@@ -215,9 +225,11 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
           "id-ID",
         );
       }
-      return (
-        first.kmLinks[0].indicator.number - second.kmLinks[0].indicator.number
-      );
+      const firstIndicator =
+        first.kmLinks[0]?.indicator.number ?? Number.MAX_SAFE_INTEGER;
+      const secondIndicator =
+        second.kmLinks[0]?.indicator.number ?? Number.MAX_SAFE_INTEGER;
+      return firstIndicator - secondIndicator;
     });
   }, [content.records, deferredSearchQuery, filterValues]);
 
@@ -264,17 +276,12 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
     const record = content.records.find((item) => item.id === recordId);
     if (!record) return;
 
-    const proposal: ActivityProposal = {
-      id: `PLG-KGT-2026-${String(Object.keys(proposals).length + 1).padStart(5, "0")}`,
-      note,
+    const proposal: ActivityProposal = reviewSession.createCompletionProposal(
+      "PLG-KGT-2026",
       recordId,
       resolutions,
-      status: "waiting-review",
-      submittedAt: "Baru saja",
-      submittedBy: reviewSession.actor.name,
-    };
-
-    setProposals((current) => ({ ...current, [recordId]: proposal }));
+      note,
+    );
     reviewSession.submitRecord(
       createActivityCompletionReviewRecord(
         record,

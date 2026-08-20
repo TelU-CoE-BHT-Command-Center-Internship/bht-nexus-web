@@ -11,8 +11,10 @@ import type {
   AuditReviewStatus,
   NexusAuditReviewContent,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
-import type { AuditRuntimeState } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
-import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import {
+  initialAuditRuntimeState,
+  useNexusReviewSession,
+} from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceSearch,
@@ -183,21 +185,6 @@ function actionLabel(status: AuditReviewStatus) {
   return "Tinjau";
 }
 
-function initialRuntimeState(records: AuditReviewRecord[]) {
-  return Object.fromEntries(
-    records.map((record) => [
-      record.id,
-      {
-        decision: record.decision,
-        fixRequest: record.fixRequest,
-        history: record.history,
-        status: record.status,
-        version: record.version,
-      } satisfies AuditRuntimeState,
-    ]),
-  );
-}
-
 function searchableText(record: AuditReviewRecord) {
   return [
     record.title,
@@ -238,9 +225,7 @@ export function NexusAuditReview({
     ],
     [content.records, reviewSession.records],
   );
-  const [runtime, setRuntime] = useState<Record<string, AuditRuntimeState>>(
-    () => initialRuntimeState(records),
-  );
+  const runtime = reviewSession.runtimeByRecordId;
   const [source, setSource] = useState<AuditReviewSource | "all">("all");
   const [status, setStatus] = useState<AuditReviewStatus | "all">("all");
   const [category, setCategory] = useState<AuditReviewCategory | "all">("all");
@@ -348,7 +333,9 @@ export function NexusAuditReview({
     safePage * pageSize,
   );
   const selected = records.find((record) => record.id === openId);
-  const selectedState = selected ? runtime[selected.id] : undefined;
+  const selectedState = selected
+    ? (runtime[selected.id] ?? initialAuditRuntimeState(selected))
+    : undefined;
   const requestedRecordIsMissing = Boolean(
     initialRecordId && !records.some((record) => record.id === initialRecordId),
   );
@@ -378,42 +365,34 @@ export function NexusAuditReview({
   ) => {
     const label = decisionLabel(kind);
     const timeLabel = formatAuditTimestamp();
-    setRuntime((current) => {
-      const previous = current[record.id];
-      if (!previous) return current;
-
-      return {
-        ...current,
-        [record.id]: {
-          ...previous,
-          decision: {
-            actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
-            kind,
-            label,
-            note,
-            timeLabel,
-          },
-          fixRequest:
-            kind === "changes_requested"
-              ? {
-                  assigneeLabel: "Akan ditentukan berdasarkan hak akses sistem",
-                  fieldIds,
-                  reason: note,
-                }
-              : undefined,
-          history: [
-            ...previous.history,
-            {
-              actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
-              id: `${record.id}-${kind}-${previous.history.length + 1}`,
-              label,
-              timeLabel,
-            },
-          ],
-          status: kind === "changes_requested" ? "needs_fix" : "completed",
+    reviewSession.updateRecordRuntime(record, (previous) => ({
+      ...previous,
+      decision: {
+        actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
+        kind,
+        label,
+        note,
+        timeLabel,
+      },
+      fixRequest:
+        kind === "changes_requested"
+          ? {
+              assigneeLabel: "Akan ditentukan berdasarkan hak akses sistem",
+              fieldIds,
+              reason: note,
+            }
+          : undefined,
+      history: [
+        ...previous.history,
+        {
+          actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
+          id: `${record.id}-${kind}-${previous.history.length + 1}`,
+          label,
+          timeLabel,
         },
-      };
-    });
+      ],
+      status: kind === "changes_requested" ? "needs_fix" : "completed",
+    }));
     setCurrentPage(1);
   };
 
@@ -422,9 +401,8 @@ export function NexusAuditReview({
     values: Record<string, string>,
     evidenceNote: string,
   ) => {
-    setRuntime((current) => {
-      const previous = current[record.id];
-      if (!previous?.fixRequest) return current;
+    reviewSession.updateRecordRuntime(record, (previous) => {
+      if (!previous.fixRequest) return previous;
       const nextVersion = previous.version + 1;
       const before = Object.fromEntries(
         previous.fixRequest.fieldIds.map((fieldId) => [
@@ -442,30 +420,27 @@ export function NexusAuditReview({
       );
 
       return {
-        ...current,
-        [record.id]: {
-          ...previous,
-          correction: {
-            after,
-            before,
-            evidenceNote,
-            fieldIds: previous.fixRequest.fieldIds,
-            version: nextVersion,
-          },
-          decision: undefined,
-          fixRequest: undefined,
-          history: [
-            ...previous.history,
-            {
-              actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
-              id: `${record.id}-resubmitted-${nextVersion}`,
-              label: `Kandidat versi ${nextVersion} dikirim ulang`,
-              timeLabel: formatAuditTimestamp(),
-            },
-          ],
-          status: "waiting",
+        ...previous,
+        correction: {
+          after,
+          before,
+          evidenceNote,
+          fieldIds: previous.fixRequest.fieldIds,
           version: nextVersion,
         },
+        decision: undefined,
+        fixRequest: undefined,
+        history: [
+          ...previous.history,
+          {
+            actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
+            id: `${record.id}-resubmitted-${nextVersion}`,
+            label: `Kandidat versi ${nextVersion} dikirim ulang`,
+            timeLabel: formatAuditTimestamp(),
+          },
+        ],
+        status: "waiting",
+        version: nextVersion,
       };
     });
     setCurrentPage(1);

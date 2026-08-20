@@ -1,6 +1,6 @@
-import type { MetadataCompletionProposal } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import {
   type MetadataCompletionFieldKey,
+  type MetadataCompletionProposal,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
@@ -83,7 +83,8 @@ export type OfficialActivityRecord = {
   scheme?: string;
   targetGroup?: string;
   team?: string;
-  title: string;
+  /** Tidak dimiliki worksheet KM-20 dan KM-21. */
+  title?: string;
   updatedAt: string;
 };
 
@@ -163,7 +164,6 @@ const seeds: readonly ActivitySeed[] = [
         source: "Data keterlibatan unit bisnis",
       },
     ],
-    title: "Layanan Kompetensi CoE A",
   },
   {
     evidenceStatus: "unrecorded",
@@ -182,7 +182,6 @@ const seeds: readonly ActivitySeed[] = [
         source: "Data pembinaan komunitas",
       },
     ],
-    title: "Program Pembinaan Komunitas A",
   },
   {
     eventDate: "2026-09-18",
@@ -310,10 +309,52 @@ const seeds: readonly ActivitySeed[] = [
 ];
 
 function createRecord(seed: ActivitySeed): OfficialActivityRecord {
-  const missingFields: ActivityCompletionFieldKey[] = [
-    ...(seed.title ? [] : (["title"] as const)),
-    ...(seed.evidenceStatus === "unrecorded" ? (["evidenceUrl"] as const) : []),
-  ];
+  const missing = (
+    value: string | undefined,
+    key: ActivityCompletionFieldKey,
+  ) => (value?.trim() ? [] : [key]);
+  const evidenceFields: ActivityCompletionFieldKey[] =
+    seed.evidenceStatus === "unrecorded" ? ["evidenceUrl"] : [];
+  let missingFields: ActivityCompletionFieldKey[];
+
+  if (seed.indicatorId === "KM-20") {
+    missingFields = [
+      ...missing(seed.primaryParty, "primaryParty"),
+      ...missing(seed.role, "role"),
+      ...missing(seed.organization, "organization"),
+      ...evidenceFields,
+    ];
+  } else if (seed.indicatorId === "KM-21") {
+    missingFields = [
+      ...missing(seed.primaryParty, "primaryParty"),
+      ...missing(seed.organization, "organization"),
+      ...evidenceFields,
+    ];
+  } else if (seed.indicatorId === "KM-22") {
+    missingFields = [
+      ...missing(seed.title, "title"),
+      ...missing(seed.eventDate, "eventDate"),
+      ...missing(seed.location, "location"),
+      ...evidenceFields,
+    ];
+  } else if (seed.indicatorId === "KM-27") {
+    missingFields = [
+      ...missing(seed.title, "title"),
+      ...missing(seed.journalVolume, "journalVolume"),
+      ...missing(seed.issn, "issn"),
+      ...missing(seed.publicationFrequency, "publicationFrequency"),
+      ...evidenceFields,
+    ];
+  } else {
+    missingFields = [
+      ...missing(seed.scheme, "scheme"),
+      ...missing(seed.team, "team"),
+      ...missing(seed.title, "title"),
+      ...missing(seed.targetGroup, "targetGroup"),
+      ...missing(seed.funding, "funding"),
+      ...evidenceFields,
+    ];
+  }
 
   return {
     ...seed,
@@ -343,7 +384,16 @@ function createRecord(seed: ActivitySeed): OfficialActivityRecord {
 const records = seeds.map(createRecord);
 
 export function activityDisplayTitle(record: OfficialActivityRecord) {
-  return record.title || `${record.kind} · judul belum tercatat`;
+  if (record.title) return record.title;
+  if (
+    record.kind === "Keterlibatan Unit Bisnis" ||
+    record.kind === "Pembinaan UMKM / Komunitas"
+  ) {
+    return `${record.kind} · ${
+      record.organization || record.primaryParty || "pihak belum tercatat"
+    }`;
+  }
+  return `${record.kind} · judul belum tercatat`;
 }
 
 export function activityEvidenceLabel(record: OfficialActivityRecord) {
@@ -353,6 +403,7 @@ export function activityEvidenceLabel(record: OfficialActivityRecord) {
 }
 
 export function activityKmLabel(record: OfficialActivityRecord) {
+  if (record.kmLinks.length === 0) return "Belum dikaitkan";
   return record.kmLinks.map((link) => link.indicator.id).join(", ");
 }
 

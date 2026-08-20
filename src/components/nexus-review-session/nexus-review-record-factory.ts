@@ -17,6 +17,7 @@ import type {
 import {
   type ContractProposalProposal,
   contractProposalDisplayTitle,
+  contractProposalPrimaryParty,
   type OfficialContractProposalRecord,
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import type {
@@ -234,7 +235,6 @@ export function createMetadataCompletionReviewRecord(
       resolutionValue(proposal.resolutions, key),
     ]),
   );
-
   /**
    * Satu bidang bisnis wajib memiliki tepat satu `fieldId`. Tinjauan membaca
    * nilai dengan `fields.find(id)`, sehingga bidang ganda akan membuat nilai
@@ -347,9 +347,10 @@ export function createAcademicCompletionReviewRecord(
   const discoveredAt = new Date();
   const displayTitle = academicDisplayTitle(record);
   const officialValues: Partial<Record<string, string>> = {
+    duration: record.duration,
     evidenceUrl: record.evidenceUrl,
     programStudy: record.programStudy,
-    title: record.title,
+    title: record.title ?? "",
     year: record.year ? String(record.year) : undefined,
   };
   const proposedValues = new Map<string, string>(
@@ -365,14 +366,20 @@ export function createAcademicCompletionReviewRecord(
     { id: "mentors", label: "Pembimbing" },
     { id: "activity", label: "Bentuk kegiatan" },
     { id: "programStudy", label: "Program studi" },
-    { id: "year", label: "Tahun kegiatan" },
+    ...(record.activity === "Magang Mahasiswa"
+      ? [
+          { id: "duration", label: "Lama kegiatan" },
+          { id: "year", label: "Tahun kegiatan" },
+        ]
+      : []),
   ];
   const canonicalIds = new Set(canonicalFields.map((field) => field.id));
   const canonicalValues: Record<string, string> = {
     activity: record.activity,
+    duration: record.duration ?? "",
     mentors: academicMentorNames(record),
     programStudy: record.programStudy ?? "",
-    title: record.title,
+    title: record.title ?? "",
     year: officialValues.year ?? "",
   };
   const fields: AuditReviewField[] = [
@@ -416,7 +423,9 @@ export function createAcademicCompletionReviewRecord(
     id: proposal.id,
     kpiLinks: record.kmLinks.map((link) => ({
       evidenceRule:
-        "Kegiatan baru dihitung pada indikator ini setelah bukti kegiatannya dapat diperiksa.",
+        link.indicator.id === "KM-30"
+          ? "Rekam peserta menjadi bukti operasional. Nilai indikator tetap berupa kapasitas magang yang ditetapkan dari sumber daya tampung, bukan jumlah peserta aktif."
+          : "Kegiatan baru dihitung pada indikator ini setelah bukti kegiatannya dapat diperiksa.",
       indicator: link.indicator,
     })),
     matches: [
@@ -469,7 +478,10 @@ export function createActivityCompletionReviewRecord(
     ]),
   );
   const canonicalFields: readonly { id: string; label: string }[] = [
-    { id: "title", label: "Nama kegiatan / program" },
+    ...(record.kind === "Keterlibatan Unit Bisnis" ||
+    record.kind === "Pembinaan UMKM / Komunitas"
+      ? []
+      : [{ id: "title", label: "Nama kegiatan / program" }]),
     { id: "kind", label: "Jenis rekam" },
     { id: "primaryParty", label: "Pihak utama" },
     ...(record.organization
@@ -509,7 +521,7 @@ export function createActivityCompletionReviewRecord(
     scheme: record.scheme ?? "",
     targetGroup: record.targetGroup ?? "",
     team: record.team ?? "",
-    title: record.title,
+    title: record.title ?? "",
   };
   const fields: AuditReviewField[] = [
     ...canonicalFields.map((field) => ({
@@ -612,7 +624,9 @@ export function createContractProposalCompletionReviewRecord(
   const canonicalFields: readonly { id: string; label: string }[] = [
     { id: "title", label: "Judul kontrak / proposal" },
     { id: "kind", label: "Jenis rekam" },
-    { id: "applicant", label: "Pengusul / penanggung jawab" },
+    ...(record.kind === "Kontrak Bisnis Komersialisasi"
+      ? []
+      : [{ id: "applicant", label: "Pengusul / penanggung jawab" }]),
     ...(record.kind === "Kontrak Bisnis Komersialisasi"
       ? []
       : [{ id: "scheme", label: "Skema / program" }]),
@@ -629,7 +643,7 @@ export function createContractProposalCompletionReviewRecord(
   ];
   const canonicalIds = new Set(canonicalFields.map((field) => field.id));
   const canonicalValues: Record<string, string> = {
-    applicant: record.applicant,
+    applicant: record.applicant ?? "",
     contractEnd: record.contractEnd ?? "",
     contractStart: record.contractStart ?? "",
     funder: record.funder ?? "",
@@ -694,7 +708,7 @@ export function createContractProposalCompletionReviewRecord(
     ],
     owner: record.ownerUnit,
     periodLabel: record.evaluationPeriod,
-    primaryPerson: record.applicant || "Belum ditetapkan",
+    primaryPerson: contractProposalPrimaryParty(record),
     provenance: {
       retrievedAt: discoveredAt.toISOString(),
       sourceKey: `contract-proposal:${record.publicId}`,
@@ -731,6 +745,7 @@ export function createIntellectualPropertyCompletionReviewRecord(
       resolutionValue(proposal.resolutions, key),
     ]),
   );
+  const proposedDocumentUrl = proposal.resolutions.documentUrl;
 
   // Satu bidang bisnis tetap satu fieldId, sama seperti pelengkapan Publikasi.
   const canonicalFields: readonly { id: string; label: string }[] = [
@@ -783,12 +798,24 @@ export function createIntellectualPropertyCompletionReviewRecord(
         reference: proposal.note,
         sourceLabel: "Usulan pengelola",
       },
+      ...(proposedDocumentUrl?.status === "provided"
+        ? [
+            {
+              href: proposedDocumentUrl.value,
+              id: `${proposal.id}-document`,
+              label: "Dokumen pendaftaran yang diajukan",
+              reference:
+                "Tautan dokumen disertakan sebagai bukti audit pelengkapan metadata.",
+              sourceLabel: "Usulan pengelola",
+            },
+          ]
+        : []),
     ],
     fields,
     id: proposal.id,
     kpiLinks: record.kmLinks.map((link) => ({
       evidenceRule:
-        "Indikator baru menghitung pengajuan yang sudah memperoleh nomor registrasi beserta dokumen pendaftarannya.",
+        "Indikator menghitung pengajuan setelah memperoleh nomor registrasi. Dokumen pendaftaran diperiksa sebagai bukti audit yang terpisah.",
       indicator: link.indicator,
     })),
     matches: [

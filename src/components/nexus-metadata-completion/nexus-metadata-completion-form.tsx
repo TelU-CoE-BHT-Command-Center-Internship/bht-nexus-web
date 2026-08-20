@@ -6,6 +6,7 @@ import styles from "@/components/nexus-metadata-completion/nexus-metadata-comple
 import {
   createEmptyMetadataCompletionResolution,
   type MetadataCompletionFieldKey,
+  type MetadataCompletionProposal,
   type MetadataCompletionResolution,
   type MetadataCompletionResolutions,
   metadataCompletionFieldConfigs,
@@ -13,20 +14,10 @@ import {
   metadataCompletionResolutionChoices,
   metadataCompletionValueError,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-
-/**
- * Usulan pelengkapan metadata yang sedang menunggu tinjauan. Bentuknya sama
- * untuk seluruh rumah data resmi supaya alurnya tidak bercabang per domain.
- */
-export type MetadataCompletionProposal = {
-  id: string;
-  note: string;
-  recordId: string;
-  resolutions: MetadataCompletionResolutions;
-  status: "waiting-review";
-  submittedAt: string;
-  submittedBy: string;
-};
+import {
+  initialAuditRuntimeState,
+  useOptionalNexusReviewSession,
+} from "@/components/nexus-review-session/nexus-review-session";
 
 type NexusMetadataCompletionFormProps = {
   /** Nomor urut seksi pada drawer tempat form ini dipasang. */
@@ -66,6 +57,7 @@ export function NexusMetadataCompletionForm({
   proposal,
   recordId,
 }: NexusMetadataCompletionFormProps) {
+  const reviewSession = useOptionalNexusReviewSession();
   const [resolutions, setResolutions] = useState<MetadataCompletionResolutions>(
     () =>
       Object.fromEntries(
@@ -121,6 +113,13 @@ export function NexusMetadataCompletionForm({
   });
   const canPrepareSubmission =
     allFieldsResolved && sourceNote.trim().length >= 8;
+  const reviewRecord = proposal
+    ? reviewSession?.records.find((record) => record.id === proposal.id)
+    : undefined;
+  const reviewState = reviewRecord
+    ? (reviewSession?.runtimeByRecordId[reviewRecord.id] ??
+      initialAuditRuntimeState(reviewRecord))
+    : undefined;
 
   const updateResolution = (
     key: MetadataCompletionFieldKey,
@@ -149,6 +148,25 @@ export function NexusMetadataCompletionForm({
   };
 
   if (proposal) {
+    const resultStatus =
+      reviewState?.status === "completed"
+        ? "Selesai Ditinjau"
+        : reviewState?.status === "needs_fix"
+          ? "Perlu Perbaikan"
+          : "Menunggu Tinjauan";
+    const resultTitle =
+      reviewState?.status === "completed"
+        ? "Usulan pelengkapan metadata selesai ditinjau"
+        : reviewState?.status === "needs_fix"
+          ? "Usulan pelengkapan metadata perlu diperbaiki"
+          : "Usulan pelengkapan metadata sudah dikirim";
+    const resultDescription =
+      reviewState?.status === "completed"
+        ? "Keputusan pemeriksa sudah tercatat pada sesi ini. Riwayat, sumber, dan versi usulan tetap dapat dilihat di Tinjauan."
+        : reviewState?.status === "needs_fix"
+          ? "Pemeriksa meminta perbaikan. Data resmi belum berubah dan rincian bidang yang perlu diperbaiki tersedia di Tinjauan."
+          : "Data resmi belum ditimpa. Status rekam tetap Perlu dilengkapi sampai pemeriksa menyetujui usulan dan memastikan seluruh bidang yang perlu diperiksa sudah diselesaikan.";
+
     return (
       <section
         aria-labelledby="completion-proposal-result-title"
@@ -158,15 +176,9 @@ export function NexusMetadataCompletionForm({
           <SuccessIcon />
         </div>
         <div className={styles.resultCopy}>
-          <span className={styles.resultStatus}>Menunggu Tinjauan</span>
-          <h3 id="completion-proposal-result-title">
-            Usulan pelengkapan metadata sudah dikirim
-          </h3>
-          <p>
-            Data resmi belum ditimpa. Status rekam tetap Perlu dilengkapi sampai
-            pemeriksa menyetujui usulan dan memastikan seluruh bidang yang perlu
-            diperiksa sudah diselesaikan.
-          </p>
+          <span className={styles.resultStatus}>{resultStatus}</span>
+          <h3 id="completion-proposal-result-title">{resultTitle}</h3>
+          <p>{resultDescription}</p>
           <dl>
             <div>
               <dt>ID usulan</dt>
@@ -190,17 +202,34 @@ export function NexusMetadataCompletionForm({
               <dt>Dasar perubahan</dt>
               <dd>{proposal.note}</dd>
             </div>
+            {reviewState?.decision ? (
+              <div className={styles.resultNote}>
+                <dt>Keputusan pemeriksa</dt>
+                <dd>
+                  {reviewState.decision.label} · {reviewState.decision.note}
+                </dd>
+              </div>
+            ) : null}
+            {reviewState?.fixRequest ? (
+              <div className={styles.resultNote}>
+                <dt>Permintaan perbaikan</dt>
+                <dd>{reviewState.fixRequest.reason}</dd>
+              </div>
+            ) : null}
           </dl>
           <p className={styles.resultFinish}>
-            Pekerjaan pengusul selesai untuk saat ini. Usulan tidak perlu
-            dikirim kembali selama masih menunggu tinjauan.
+            {reviewState?.status === "waiting" || !reviewState
+              ? "Pekerjaan pengusul selesai untuk saat ini. Usulan tidak perlu dikirim kembali selama masih menunggu tinjauan."
+              : "Buka rincian Tinjauan untuk melihat keputusan, bidang terkait, dan jejak pemeriksaannya."}
           </p>
           <div className={styles.resultActions}>
             <Link
               href={`/nexus/tinjauan?record=${proposal.id}`}
               prefetch={false}
             >
-              Buka di Tinjauan
+              {reviewState?.status === "waiting" || !reviewState
+                ? "Buka di Tinjauan"
+                : "Lihat status di Tinjauan"}
             </Link>
             <button onClick={onClose} type="button">
               Tutup rincian

@@ -1,6 +1,6 @@
-import type { MetadataCompletionProposal } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import {
   type MetadataCompletionFieldKey,
+  type MetadataCompletionProposal,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";

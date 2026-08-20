@@ -330,9 +330,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
   const [activeSourceId, setActiveSourceId] =
     useState<PublicationSourceId>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [completionProposals, setCompletionProposals] = useState<
-    Record<string, PublicationMetadataProposal>
-  >({});
+  const completionProposals = reviewSession.completionProposals;
   const [filterValues, setFilterValues] =
     useState<PublicationFilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
@@ -471,20 +469,13 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
     );
     if (!publication) return;
 
-    const proposal: PublicationMetadataProposal = {
-      id: `PLG-2026-${String(Object.keys(completionProposals).length + 1).padStart(5, "0")}`,
-      note,
-      recordId: publicationId,
-      resolutions,
-      status: "waiting-review",
-      submittedAt: "Baru saja",
-      submittedBy: reviewSession.actor.name,
-    };
-
-    setCompletionProposals((currentProposals) => ({
-      ...currentProposals,
-      [publicationId]: proposal,
-    }));
+    const proposal: PublicationMetadataProposal =
+      reviewSession.createCompletionProposal(
+        "PLG-2026",
+        publicationId,
+        resolutions,
+        note,
+      );
     reviewSession.submitRecord(
       createMetadataCompletionReviewRecord(
         publication,

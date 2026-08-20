@@ -190,9 +190,7 @@ export function NexusIntellectualProperty({
 }: NexusIntellectualPropertyProps) {
   const reviewSession = useNexusReviewSession();
   const [currentPage, setCurrentPage] = useState(1);
-  const [proposals, setProposals] = useState<
-    Record<string, IntellectualPropertyProposal>
-  >({});
+  const proposals = reviewSession.completionProposals;
   const [filterValues, setFilterValues] =
     useState<FilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
@@ -291,17 +289,13 @@ export function NexusIntellectualProperty({
     const record = content.records.find((item) => item.id === recordId);
     if (!record) return;
 
-    const proposal: IntellectualPropertyProposal = {
-      id: `PLG-KI-2026-${String(Object.keys(proposals).length + 1).padStart(5, "0")}`,
-      note,
-      recordId,
-      resolutions,
-      status: "waiting-review",
-      submittedAt: "Baru saja",
-      submittedBy: reviewSession.actor.name,
-    };
-
-    setProposals((current) => ({ ...current, [recordId]: proposal }));
+    const proposal: IntellectualPropertyProposal =
+      reviewSession.createCompletionProposal(
+        "PLG-KI-2026",
+        recordId,
+        resolutions,
+        note,
+      );
     reviewSession.submitRecord(
       createIntellectualPropertyCompletionReviewRecord(
         record,

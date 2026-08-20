@@ -319,9 +319,9 @@ export function NexusIntellectualPropertyDetail({
         </div>
 
         <p className={detail.explanation}>
-          Status Lengkap hanya dapat diberikan setelah setiap bidang yang perlu
-          diperiksa berisi nilai, atau pengecualian yang diajukan telah
-          disetujui. Dokumen yang tersimpan internal bukan bidang yang hilang.
+          Nomor pencatatan menentukan apakah pengajuan dapat dihitung pada KM-15
+          atau KM-16. Dokumen pendaftaran adalah bukti audit yang diperiksa
+          terpisah; dokumen yang tersimpan internal bukan bidang yang hilang.
         </p>
 
         <ul className={detail.completenessList}>

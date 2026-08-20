@@ -9,6 +9,7 @@ import {
   contractProposalEvidenceLabel,
   contractProposalIndicatorScope,
   contractProposalKmLabel,
+  contractProposalPrimaryParty,
   type NexusContractProposalContent,
   type OfficialContractProposalRecord,
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
@@ -185,9 +186,7 @@ export function NexusContractProposals({
     useState<FilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
   const [pageSizeValue, setPageSizeValue] = useState("10");
-  const [proposals, setProposals] = useState<
-    Record<string, ContractProposalProposal>
-  >({});
+  const proposals = reviewSession.completionProposals;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -214,7 +213,10 @@ export function NexusContractProposals({
 
     return matching.toSorted((first, second) => {
       if (filterValues.sort === "party") {
-        return first.applicant.localeCompare(second.applicant, "id-ID");
+        return contractProposalPrimaryParty(first).localeCompare(
+          contractProposalPrimaryParty(second),
+          "id-ID",
+        );
       }
       if (filterValues.sort === "title") {
         return contractProposalDisplayTitle(first).localeCompare(
@@ -282,17 +284,13 @@ export function NexusContractProposals({
     const record = content.records.find((item) => item.id === recordId);
     if (!record) return;
 
-    const proposal: ContractProposalProposal = {
-      id: `PLG-KPR-2026-${String(Object.keys(proposals).length + 1).padStart(5, "0")}`,
-      note,
-      recordId,
-      resolutions,
-      status: "waiting-review",
-      submittedAt: "Baru saja",
-      submittedBy: reviewSession.actor.name,
-    };
-
-    setProposals((current) => ({ ...current, [recordId]: proposal }));
+    const proposal: ContractProposalProposal =
+      reviewSession.createCompletionProposal(
+        "PLG-KPR-2026",
+        recordId,
+        resolutions,
+        note,
+      );
     reviewSession.submitRecord(
       createContractProposalCompletionReviewRecord(
         record,
@@ -343,14 +341,18 @@ export function NexusContractProposals({
             <small>{record.recordStatus}</small>
           </span>
         ),
-        party: <span className={styles.plainCell}>{record.applicant}</span>,
+        party: (
+          <span className={styles.plainCell}>
+            {contractProposalPrimaryParty(record)}
+          </span>
+        ),
         primary: (
           <NexusWorkspaceTablePrimary
             onClick={open}
             subtitle={
-              record.partner
+              record.applicant && record.partner
                 ? `${record.applicant} · ${record.partner}`
-                : record.applicant
+                : contractProposalPrimaryParty(record)
             }
             title={displayTitle}
           />
@@ -400,7 +402,7 @@ export function NexusContractProposals({
               </div>
               <div>
                 <dt>Pihak utama</dt>
-                <dd>{record.applicant}</dd>
+                <dd>{contractProposalPrimaryParty(record)}</dd>
               </div>
               <div>
                 <dt>Bukti</dt>

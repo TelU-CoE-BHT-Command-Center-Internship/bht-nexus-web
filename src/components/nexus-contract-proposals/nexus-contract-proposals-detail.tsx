@@ -7,6 +7,7 @@ import {
   contractProposalDisplayTitle,
   contractProposalEvidenceLabel,
   contractProposalFieldLabels,
+  contractProposalPrimaryParty,
   formatContractProposalDate,
   type OfficialContractProposalRecord,
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
@@ -64,17 +65,20 @@ function getMetadataItems(
       value: record.kind,
     },
     {
-      key: "applicant",
-      label: "Pengusul / penanggung jawab",
-      missingFieldKey: isMissing("applicant") ? "applicant" : undefined,
-      value: record.applicant || "Belum tercatat",
-    },
-    {
       key: "partner",
       label: "Mitra",
       value: record.partner ?? "Tidak tercatat; bukan bidang wajib",
     },
   ];
+
+  if (record.kind !== "Kontrak Bisnis Komersialisasi") {
+    items.splice(2, 0, {
+      key: "applicant",
+      label: "Pengusul / penanggung jawab",
+      missingFieldKey: isMissing("applicant") ? "applicant" : undefined,
+      value: record.applicant || "Belum tercatat",
+    });
+  }
 
   if (record.kind !== "Kontrak Bisnis Komersialisasi") {
     items.push({
@@ -191,7 +195,7 @@ export function NexusContractProposalDetail({
         </div>
         <h3 id="contract-proposal-overview-title">{displayTitle}</h3>
         <p>
-          {record.applicant || "Pihak utama belum tercatat"}
+          {contractProposalPrimaryParty(record)}
           {record.partner ? ` · ${record.partner}` : ""}
         </p>
 

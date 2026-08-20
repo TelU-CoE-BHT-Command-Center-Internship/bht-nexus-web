@@ -1,6 +1,6 @@
-import type { MetadataCompletionProposal } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import {
   type MetadataCompletionFieldKey,
+  type MetadataCompletionProposal,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
@@ -46,7 +46,8 @@ type ContractProposalKmLink = {
 };
 
 export type OfficialContractProposalRecord = {
-  applicant: string;
+  /** Tidak dimiliki kontrak bisnis pada struktur sumber KM-19. */
+  applicant?: string;
   contractEnd?: string;
   contractStart?: string;
   evaluationPeriod: string;
@@ -174,7 +175,6 @@ const seeds: readonly ContractProposalSeed[] = [
     title: "Program Riset Internasional A",
   },
   {
-    applicant: "Penanggung Jawab A",
     contractStart: "2026-02-01",
     evidenceStatus: "internal",
     group: "Kontrak",
@@ -258,13 +258,14 @@ function createRecord(
   seed: ContractProposalSeed,
 ): OfficialContractProposalRecord {
   const title = seed.title ?? "";
-  const applicant = seed.applicant ?? "";
+  const applicant = seed.applicant;
+  const requiresApplicant = seed.kind !== "Kontrak Bisnis Komersialisasi";
   const requiresScheme = seed.kind !== "Kontrak Bisnis Komersialisasi";
   const requiresFunder = seed.group === "Proposal";
   const requiresContractDates = seed.kind === "Kontrak Bisnis Komersialisasi";
   const missingFields: ContractProposalCompletionFieldKey[] = [
     ...(title ? [] : (["title"] as const)),
-    ...(applicant ? [] : (["applicant"] as const)),
+    ...(requiresApplicant && !applicant ? (["applicant"] as const) : []),
     ...(requiresScheme && !seed.scheme ? (["scheme"] as const) : []),
     ...(requiresFunder && !seed.funder ? (["funder"] as const) : []),
     ...(requiresContractDates && !seed.contractStart
@@ -336,6 +337,12 @@ export function contractProposalKmLabel(
   return record.kmLinks.map((link) => link.indicator.id).join(", ");
 }
 
+export function contractProposalPrimaryParty(
+  record: OfficialContractProposalRecord,
+) {
+  return record.applicant || record.partner || record.ownerUnit;
+}
+
 export function formatContractProposalDate(value?: string) {
   if (!value) return "Belum tercatat";
   return new Intl.DateTimeFormat("id-ID", {
@@ -356,7 +363,7 @@ export function getNexusContractProposalContent(): NexusContractProposalContent 
     description:
       "Seluruh kontrak dan proposal resmi CoE BHT yang sudah lolos Tinjauan, beserta pihak terkait, skema, bukti, dan keterkaitan indikator KM.",
     officialNote:
-      "Kontrak dan proposal tetap menjadi dua jenis rekam berbeda. Keduanya disatukan pada satu rumah data agar hubungan dari pengajuan menuju kontrak dapat ditelusuri tanpa mencampur statusnya.",
+      "Kontrak dan proposal tetap menjadi dua jenis rekam berbeda. Keduanya ditampilkan pada satu rumah data agar pemeriksaan konsisten tanpa menyatakan hubungan antar-rekam yang belum disediakan sumber.",
     records,
     title: "Kontrak & Proposal",
     updatedAt: "Diperbarui 17 Agustus 2026 · 09.30 WIB",

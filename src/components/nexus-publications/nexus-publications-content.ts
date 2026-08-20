@@ -6,9 +6,9 @@ import lailyAdeOktavianaPhoto from "@/assets/members/laily-ade-oktaviana.webp";
 import miftadiSudjaiPhoto from "@/assets/members/miftadi-sudjai.webp";
 import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
 import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
-import type { MetadataCompletionProposal } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import {
   type MetadataCompletionFieldKey,
+  type MetadataCompletionProposal,
   type MetadataCompletionResolutions,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";

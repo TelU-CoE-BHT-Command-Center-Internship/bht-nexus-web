@@ -7,6 +7,7 @@ import {
   activityDisplayTitle,
   activityEvidenceLabel,
   activityFieldLabels,
+  activityKmLabel,
   type OfficialActivityRecord,
 } from "@/components/nexus-activities/nexus-activities-content";
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
@@ -56,96 +57,67 @@ function formatDate(value: string) {
 function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
   const isMissing = (key: ActivityCompletionFieldKey) =>
     record.missingFields.includes(key);
+  const field = (
+    key: ActivityCompletionFieldKey,
+    label: string,
+    value?: string,
+    wide = false,
+  ): MetadataItem => ({
+    key,
+    label,
+    missingFieldKey: isMissing(key) ? key : undefined,
+    value: value || "Belum tercatat pada sumber",
+    wide,
+  });
   const items: MetadataItem[] = [
-    {
-      key: "title",
-      label: "Nama kegiatan / program",
-      missingFieldKey: isMissing("title") ? "title" : undefined,
-      value: record.title || "Belum tercatat pada sumber",
-      wide: true,
-    },
     { key: "kind", label: "Jenis rekam", value: record.kind },
-    {
-      key: "primaryParty",
-      label: "Pihak utama",
-      value: record.primaryParty,
-    },
   ];
 
-  if (record.organization) {
-    items.push({
-      key: "organization",
-      label:
-        record.kind === "Pembinaan UMKM / Komunitas"
-          ? "UMKM / komunitas"
-          : "Unit bisnis",
-      value: record.organization,
-    });
-  }
-  if (record.role) {
-    items.push({
-      key: "role",
-      label: "Keterlibatan sebagai",
-      value: record.role,
-    });
-  }
-  if (record.scheme) {
-    items.push({
-      key: "scheme",
-      label: "Skema / program",
-      value: record.scheme,
-      wide: true,
-    });
-  }
-  if (record.team) {
-    items.push({
-      key: "team",
-      label: "Tim pelaksana",
-      value: record.team,
-      wide: true,
-    });
-  }
-  if (record.targetGroup) {
-    items.push({
-      key: "targetGroup",
-      label: "Masyarakat / mitra sasaran",
-      value: record.targetGroup,
-      wide: true,
-    });
-  }
-  if (record.funding) {
-    items.push({
-      key: "funding",
-      label: "Dana tercatat",
-      value: record.funding,
-    });
-  }
-  if (record.eventDate) {
-    items.push({
-      key: "eventDate",
-      label: "Tanggal kegiatan",
-      value: formatDate(record.eventDate),
-    });
-  }
-  if (record.location) {
-    items.push({ key: "location", label: "Tempat", value: record.location });
-  }
-  if (record.journalVolume) {
-    items.push({
-      key: "journalVolume",
-      label: "Volume pada periode sumber",
-      value: record.journalVolume,
-    });
-  }
-  if (record.issn) {
-    items.push({ key: "issn", label: "ISSN", value: record.issn });
-  }
-  if (record.publicationFrequency) {
-    items.push({
-      key: "publicationFrequency",
-      label: "Frekuensi terbit",
-      value: record.publicationFrequency,
-    });
+  if (record.kind === "Keterlibatan Unit Bisnis") {
+    items.push(
+      field("primaryParty", "Nama dosen", record.primaryParty),
+      field("role", "Keterlibatan", record.role),
+      field("organization", "Unit bisnis", record.organization),
+    );
+  } else if (record.kind === "Pembinaan UMKM / Komunitas") {
+    items.push(
+      field("primaryParty", "Nama dosen", record.primaryParty),
+      field("organization", "UMKM / komunitas", record.organization, true),
+    );
+  } else if (record.kind === "Pengelolaan Konferensi Internasional") {
+    items.push(
+      field("title", "Nama acara internasional", record.title, true),
+      field(
+        "eventDate",
+        "Tanggal kegiatan",
+        record.eventDate ? formatDate(record.eventDate) : undefined,
+      ),
+      field("location", "Tempat", record.location),
+    );
+  } else if (record.kind === "Pengelolaan Jurnal Ilmiah") {
+    items.push(
+      field("title", "Nama jurnal nasional terakreditasi", record.title, true),
+      field("journalVolume", "Nomor volume", record.journalVolume),
+      field("issn", "ISSN", record.issn),
+      field(
+        "publicationFrequency",
+        "Frekuensi terbit",
+        record.publicationFrequency,
+      ),
+    );
+  } else {
+    items.push(
+      field("scheme", "Skema", record.scheme),
+      field("team", "Nama dosen dan tim pelaksana", record.team, true),
+      field("title", "Judul kegiatan", record.title, true),
+      field(
+        "targetGroup",
+        "Masyarakat / mitra sasaran",
+        record.targetGroup,
+        true,
+      ),
+      field("funding", "Dana", record.funding),
+    );
   }
 
   items.push(
@@ -242,9 +214,7 @@ export function NexusActivityDetail({
           </div>
           <div className={detail.metaItem}>
             <dt>Indikator KM</dt>
-            <dd>
-              {record.kmLinks.map((link) => link.indicator.id).join(", ")}
-            </dd>
+            <dd>{activityKmLabel(record)}</dd>
           </div>
         </dl>
       </section>
@@ -316,16 +286,26 @@ export function NexusActivityDetail({
           tidak dapat saling menggantikan walaupun berada pada satu rumah data.
         </p>
         <ul className={detail.kmLinkList}>
-          {record.kmLinks.map((link) => (
-            <li key={link.indicator.id}>
-              <strong>
-                {link.indicator.id} · {link.indicator.label}
-              </strong>
+          {record.kmLinks.length === 0 ? (
+            <li data-empty="true">
+              <strong>Belum dikaitkan dengan indikator KM</strong>
               <small>
-                {link.indicator.category} — {link.note}
+                Rekam tetap resmi. Keterkaitan dapat ditetapkan melalui Tinjauan
+                setelah klasifikasinya dipastikan.
               </small>
             </li>
-          ))}
+          ) : (
+            record.kmLinks.map((link) => (
+              <li key={link.indicator.id}>
+                <strong>
+                  {link.indicator.id} · {link.indicator.label}
+                </strong>
+                <small>
+                  {link.indicator.category} — {link.note}
+                </small>
+              </li>
+            ))
+          )}
         </ul>
       </section>
 
