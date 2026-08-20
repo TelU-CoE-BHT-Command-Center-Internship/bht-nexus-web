@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useDeferredValue, useMemo, useState } from "react";
+import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import { createCollectionReviewRecords } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import styles from "@/components/nexus-scraper-search/nexus-scraper-search.module.css";
@@ -11,13 +12,17 @@ import type {
   NexusScraperSearchContent,
 } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
+import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
   NexusWorkspaceField,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatTimestamp,
+  normalizeWorkspaceSearch,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspaceInfoHint } from "@/components/nexus-workspace-ui/nexus-workspace-info-hint";
 import {
   NexusWorkspaceMetrics,
@@ -120,6 +125,12 @@ export function NexusScraperSearch({
   } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSizeValue, setPageSizeValue] = useState("10");
+  const [historyQuery, setHistoryQuery] = useState("");
+  const deferredHistoryQuery = useDeferredValue(historyQuery);
+  const [historySource, setHistorySource] = useState("all");
+  const [isHistorySourceOpen, setIsHistorySourceOpen] = useState(false);
+  const [historyStatus, setHistoryStatus] = useState("all");
+  const [isHistoryStatusOpen, setIsHistoryStatusOpen] = useState(false);
   const sourceConfig = useMemo<NexusSelectConfig>(
     () => ({
       defaultValue: "sinta",
@@ -137,10 +148,90 @@ export function NexusScraperSearch({
     }),
     [content.sourceLabel, content.sourceOptions],
   );
+  const historySourceConfig = useMemo<NexusSelectConfig>(
+    () => ({
+      defaultValue: "all",
+      id: "collection-history-source",
+      label: content.columns.source,
+      options: [
+        {
+          label: content.locale === "id" ? "Semua sumber" : "All sources",
+          value: "all",
+        },
+        ...content.sourceOptions.map((option) => ({
+          label: option.label,
+          value: option.id,
+        })),
+      ],
+    }),
+    [content.columns.source, content.locale, content.sourceOptions],
+  );
+  const historyStatusConfig = useMemo<NexusSelectConfig>(
+    () => ({
+      defaultValue: "all",
+      id: "collection-history-status",
+      label: content.columns.status,
+      options: [
+        {
+          label: content.locale === "id" ? "Semua status" : "All statuses",
+          value: "all",
+        },
+        {
+          label: getAutomationStatusLabel(content.locale, "succeeded"),
+          tone: "completed",
+          value: "succeeded",
+        },
+        {
+          label: getAutomationStatusLabel(content.locale, "running"),
+          tone: "waiting",
+          value: "running",
+        },
+        {
+          label: getAutomationStatusLabel(content.locale, "queued"),
+          tone: "neutral",
+          value: "queued",
+        },
+        {
+          label: getAutomationStatusLabel(content.locale, "retrying"),
+          tone: "needs-fix",
+          value: "retrying",
+        },
+        {
+          label: getAutomationStatusLabel(content.locale, "failed"),
+          tone: "needs-fix",
+          value: "failed",
+        },
+        {
+          label: getAutomationStatusLabel(content.locale, "failed_permanently"),
+          tone: "needs-fix",
+          value: "failed_permanently",
+        },
+      ],
+    }),
+    [content.columns.status, content.locale],
+  );
+  const filteredJobs = useMemo(() => {
+    const needle = normalizeWorkspaceSearch(deferredHistoryQuery);
+    return jobs.filter(
+      (job) =>
+        (historySource === "all" || job.source === historySource) &&
+        (historyStatus === "all" || job.status === historyStatus) &&
+        (needle.length === 0 ||
+          normalizeWorkspaceSearch(
+            `${job.fullName} ${job.profileUrl} ${job.sourceLabel} ${job.statusLabel}`,
+          ).includes(needle)),
+    );
+  }, [deferredHistoryQuery, historySource, historyStatus, jobs]);
+  const isHistoryFiltered =
+    historySource !== "all" ||
+    historyStatus !== "all" ||
+    historyQuery.trim().length > 0;
   const pageSize = Number(pageSizeValue);
-  const visibleJobs = jobs.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
+  const safePage = Math.min(Math.max(currentPage, 1), totalPages);
+  const visibleJobs = filteredJobs.slice(
+    (safePage - 1) * pageSize,
+    safePage * pageSize,
   );
   const completedCount = jobs.filter(
     (job) => job.status === "succeeded",
@@ -435,13 +526,63 @@ export function NexusScraperSearch({
           ) : null}
         </NexusWorkspaceCard>
 
+        <div className={styles.historyToolbar}>
+          <NexusWorkspaceSearch
+            label={
+              content.locale === "id"
+                ? "Cari pekerjaan pengumpulan"
+                : "Search collection jobs"
+            }
+            name="collection-history-search"
+            onValueChange={(value) => {
+              setHistoryQuery(value);
+              setCurrentPage(1);
+            }}
+            placeholder={
+              content.locale === "id"
+                ? "Cari peneliti, URL profil, atau status..."
+                : "Search researcher, profile URL, or status..."
+            }
+            value={historyQuery}
+          />
+          <NexusWorkspaceSelect
+            config={historySourceConfig}
+            isOpen={isHistorySourceOpen}
+            name="collection-history-source"
+            onOpenChange={setIsHistorySourceOpen}
+            onValueChange={(value) => {
+              setHistorySource(value);
+              setCurrentPage(1);
+            }}
+            value={historySource}
+          />
+          <NexusWorkspaceSelect
+            config={historyStatusConfig}
+            isOpen={isHistoryStatusOpen}
+            name="collection-history-status"
+            onOpenChange={setIsHistoryStatusOpen}
+            onValueChange={(value) => {
+              setHistoryStatus(value);
+              setCurrentPage(1);
+            }}
+            value={historyStatus}
+          />
+        </div>
+        <div aria-live="polite" className={styles.historyResultMeta}>
+          {historyQuery !== deferredHistoryQuery
+            ? content.locale === "id"
+              ? "Memperbarui hasil pencarian..."
+              : "Updating search results..."
+            : `${filteredJobs.length} ${content.locale === "id" ? "pekerjaan ditemukan" : "jobs found"}`}
+        </div>
+
         <NexusWorkspaceTableSection
           guidance={
             content.locale === "id"
               ? "Pekerjaan otomatis tidak pernah menulis langsung ke data resmi; kandidat harus diputuskan oleh reviewer."
               : "Automated jobs never write directly to official data. Use the Indonesian workspace for candidate review."
           }
-          summary={`${completedCount} ${content.locale === "id" ? "selesai dari" : "completed of"} ${jobs.length} ${content.locale === "id" ? "pekerjaan" : "jobs"}`}
+          summary={`${filteredJobs.length} ${content.locale === "id" ? "sesuai filter dari" : "matching of"} ${jobs.length} ${content.locale === "id" ? "pekerjaan" : "jobs"} · ${completedCount} ${content.locale === "id" ? "selesai" : "completed"}`}
           title={
             content.locale === "id"
               ? "Riwayat pengumpulan"
@@ -454,15 +595,19 @@ export function NexusScraperSearch({
             columns={columns}
             empty={
               <p className={styles.noAction}>
-                {content.locale === "id"
-                  ? "Belum ada pekerjaan pengumpulan."
-                  : "No collection jobs yet."}
+                {isHistoryFiltered
+                  ? content.locale === "id"
+                    ? "Tidak ada pekerjaan yang cocok dengan pencarian atau filter."
+                    : "No jobs match the current search or filters."
+                  : content.locale === "id"
+                    ? "Belum ada pekerjaan pengumpulan."
+                    : "No collection jobs yet."}
               </p>
             }
             pagination={
               <NexusTablePagination
-                currentPage={currentPage}
-                itemCount={jobs.length}
+                currentPage={safePage}
+                itemCount={filteredJobs.length}
                 navigationLabel={
                   content.locale === "id"
                     ? "Navigasi halaman pekerjaan"
