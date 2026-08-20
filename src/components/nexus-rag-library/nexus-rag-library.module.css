@@ -44,6 +44,11 @@
   font-weight: 680;
 }
 
+.uploadButton:has(.fileInput:focus-visible) {
+  outline: 3px solid var(--color-brand-gold);
+  outline-offset: 4px;
+}
+
 .fileInput {
   position: absolute;
   width: 1px;
