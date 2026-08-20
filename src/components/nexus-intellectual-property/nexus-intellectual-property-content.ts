@@ -273,6 +273,38 @@ function createRecord(
 
 const records: OfficialIntellectualProperty[] = seeds.map(createRecord);
 
+/**
+ * Kaitan KM baru dibentuk setelah keputusan pelengkapan menghasilkan jenis
+ * perlindungan yang jelas dan nomor registrasi yang benar-benar tersedia.
+ * Pengecualian atas nomor registrasi tetap menyelesaikan metadata, tetapi tidak
+ * cukup untuk menyatakan rekam memenuhi bukti indikator.
+ */
+export function normalizeProjectedIntellectualProperty(
+  record: OfficialIntellectualProperty,
+): OfficialIntellectualProperty {
+  if (record.kmLinks.length > 0) return record;
+  if (
+    record.protection === "Belum diklasifikasikan" ||
+    !record.registrationNumber ||
+    record.missingFields.includes("protectionType") ||
+    record.missingFields.includes("registrationNumber")
+  ) {
+    return record;
+  }
+
+  const indicatorId: IntellectualPropertyIndicatorId =
+    record.protection === "Paten" ? "KM-16" : "KM-15";
+  return {
+    ...record,
+    kmLinks: [
+      {
+        indicator: kmIndicator(indicatorId),
+        note: kmLinkNotes[indicatorId],
+      },
+    ],
+  };
+}
+
 export function intellectualPropertyCreatorNames(
   record: OfficialIntellectualProperty,
 ) {

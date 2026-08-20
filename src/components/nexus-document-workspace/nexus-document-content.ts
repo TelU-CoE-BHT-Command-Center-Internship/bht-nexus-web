@@ -1,22 +1,39 @@
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import { nexusReviewActorIds } from "@/components/nexus-review-session/nexus-review-actors";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
 export type NexusDocumentCapability = "extraction" | "qa";
 
+export type NexusDocumentProcessingAttempt = {
+  attemptedAt: string;
+  number: number;
+  reason?: string;
+  status: AutomationJobStatus;
+};
+
+export type NexusDocumentProcessingJob = {
+  attempts: NexusDocumentProcessingAttempt[];
+  correlationId: string;
+  finishedAt?: string;
+  id: string;
+  requestedAt: string;
+  requestedByActorId: string;
+  status: AutomationJobStatus;
+};
+
 export type NexusDocumentRecord = {
-  attempt?: number;
   capabilities: NexusDocumentCapability[];
-  failureReason?: string;
   fileLabel: string;
   id: string;
-  indexedAt: string;
-  indexedLabel: string;
   ownerUnit: string;
-  status: AutomationJobStatus;
+  processingHistory: NexusDocumentProcessingJob[];
+  processingJob: NexusDocumentProcessingJob;
   statusLabel: string;
   title: string;
+  updatedAt: string;
+  updatedLabel: string;
 };
 
 const documentSeeds = [
@@ -24,7 +41,7 @@ const documentSeeds = [
     capabilities: ["qa"],
     fileLabel: { en: "PDF · 18 pages", id: "PDF · 18 halaman" },
     id: "pedoman-metadata-publikasi",
-    indexedAt: "2026-08-12T09:12",
+    updatedAt: "2026-08-12T09:12",
     ownerUnit: { en: "Data Management", id: "Pengelolaan Data" },
     status: "succeeded",
     title: {
@@ -36,7 +53,7 @@ const documentSeeds = [
     capabilities: ["qa", "extraction"],
     fileLabel: { en: "PDF · 10 pages", id: "PDF · 10 halaman" },
     id: "ringkasan-kegiatan-telemedisin",
-    indexedAt: "2026-08-12T08:05",
+    updatedAt: "2026-08-12T08:05",
     ownerUnit: { en: "Research", id: "Riset" },
     // Dokumen yang sudah menjadi sumber ekstraksi harus sudah selesai diproses.
     status: "succeeded",
@@ -49,7 +66,7 @@ const documentSeeds = [
     capabilities: [],
     fileLabel: { en: "DOCX · 7 pages", id: "DOCX · 7 halaman" },
     id: "profil-riset-laboratorium",
-    indexedAt: "2026-08-12T08:03",
+    updatedAt: "2026-08-12T08:03",
     ownerUnit: { en: "Research", id: "Riset" },
     status: "queued",
     title: {
@@ -61,7 +78,7 @@ const documentSeeds = [
     capabilities: [],
     fileLabel: { en: "PDF · 24 pages", id: "PDF · 24 halaman" },
     id: "rekap-publikasi-tahunan",
-    indexedAt: "2026-08-11T19:22",
+    updatedAt: "2026-08-11T19:22",
     ownerUnit: { en: "Data Management", id: "Pengelolaan Data" },
     status: "retrying",
     attempt: 2,
@@ -79,7 +96,7 @@ const documentSeeds = [
       "Berkas tidak dapat dibaca setelah tiga percobaan. Periksa berkas sumber lalu ajukan pemrosesan baru.",
     fileLabel: { en: "PDF · 6 pages", id: "PDF · 6 halaman" },
     id: "lampiran-kegiatan-tidak-terbaca",
-    indexedAt: "2026-08-11T18:10",
+    updatedAt: "2026-08-11T18:10",
     ownerUnit: { en: "Research", id: "Riset" },
     status: "failed_permanently",
     title: {
@@ -93,7 +110,7 @@ const documentSeeds = [
   failureReason?: string;
   fileLabel: Record<Locale, string>;
   id: string;
-  indexedAt: string;
+  updatedAt: string;
   ownerUnit: Record<Locale, string>;
   status: AutomationJobStatus;
   title: Record<Locale, string>;
@@ -101,17 +118,38 @@ const documentSeeds = [
 
 /** Satu sumber metadata dokumen dipakai bersama Pustaka, Tanya, dan Ekstraksi. */
 export function getNexusDocumentRecords(locale: Locale): NexusDocumentRecord[] {
-  return documentSeeds.map((seed) => ({
-    attempt: seed.attempt,
+  return documentSeeds.map((seed, index) => ({
     capabilities: seed.capabilities,
-    failureReason: seed.failureReason,
     fileLabel: seed.fileLabel[locale],
     id: seed.id,
-    indexedAt: seed.indexedAt,
-    indexedLabel: formatTimestamp(seed.indexedAt),
     ownerUnit: seed.ownerUnit[locale],
-    status: seed.status,
+    processingHistory: [],
+    processingJob: {
+      attempts: [
+        {
+          attemptedAt: seed.updatedAt,
+          number: seed.attempt ?? 1,
+          reason: seed.failureReason,
+          status: seed.status,
+        },
+      ],
+      correlationId: `DOC-CORR-2026-${String(index + 1).padStart(4, "0")}`,
+      finishedAt:
+        seed.status === "succeeded" || seed.status === "failed_permanently"
+          ? seed.updatedAt
+          : undefined,
+      id: `DOC-JOB-2026-${String(index + 1).padStart(4, "0")}`,
+      requestedAt: seed.updatedAt,
+      requestedByActorId: nexusReviewActorIds.dataSteward,
+      status: seed.status,
+    },
     statusLabel: getAutomationStatusLabel(locale, seed.status),
     title: seed.title[locale],
+    updatedAt: seed.updatedAt,
+    updatedLabel: formatTimestamp(seed.updatedAt),
   }));
+}
+
+export function latestDocumentProcessingAttempt(document: NexusDocumentRecord) {
+  return document.processingJob.attempts.at(-1);
 }

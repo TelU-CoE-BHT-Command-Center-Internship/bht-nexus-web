@@ -9,9 +9,9 @@ export type RagDocument = NexusDocumentRecord;
 export type NexusRagLibraryContent = {
   columns: {
     document: string;
-    indexedAt: string;
     owner: string;
     status: string;
+    updatedAt: string;
   };
   description: string;
   documents: RagDocument[];
@@ -27,9 +27,9 @@ const libraryCopy = {
   id: {
     columns: {
       document: "Dokumen",
-      indexedAt: "Diperbarui",
       owner: "Unit pemilik",
       status: "Status pemrosesan",
+      updatedAt: "Diperbarui",
     },
     description:
       "Kelola dokumen yang diizinkan untuk pencarian bersitasi dan ekstraksi kandidat.",
@@ -42,9 +42,9 @@ const libraryCopy = {
   en: {
     columns: {
       document: "Document",
-      indexedAt: "Updated",
       owner: "Owning unit",
       status: "Processing status",
+      updatedAt: "Updated",
     },
     description:
       "Manage documents authorised for cited search and candidate extraction.",

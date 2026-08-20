@@ -133,7 +133,8 @@ function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
 
   items.push(
     {
-      href: record.evidenceStatus === "public" ? record.evidenceUrl : undefined,
+      href:
+        record.evidenceStatus !== "internal" ? record.evidenceUrl : undefined,
       key: "evidenceUrl",
       label: "Dokumen bukti",
       missingFieldKey: isMissing("evidenceUrl") ? "evidenceUrl" : undefined,

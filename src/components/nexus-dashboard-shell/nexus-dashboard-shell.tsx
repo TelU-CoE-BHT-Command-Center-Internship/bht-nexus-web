@@ -11,6 +11,7 @@ import { NexusDashboardHeader } from "@/components/nexus-dashboard-shell/nexus-d
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
 import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { NexusDashboardSidebar } from "@/components/nexus-dashboard-shell/nexus-dashboard-sidebar";
+import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
 type NexusDashboardShellProps = {
   children: ReactNode;
@@ -31,7 +32,16 @@ export function NexusDashboardShell({
   const activeNavigationItem = content.navigationGroups
     .flatMap((group) => group.items)
     .find((item) => item.activeHrefs.includes(pathname));
-  const pageTitle = activeNavigationItem?.label ?? content.defaultPageTitle;
+  const activeRouteAccess = content.routeAccess.find((item) =>
+    item.activeHrefs.includes(pathname),
+  );
+  const pageTitle =
+    activeNavigationItem?.label ??
+    activeRouteAccess?.label ??
+    content.defaultPageTitle;
+  const accessDenied = Boolean(
+    activeRouteAccess?.implemented && !activeRouteAccess.allowed,
+  );
 
   useLayoutEffect(() => {
     if (pathname) {
@@ -103,7 +113,17 @@ export function NexusDashboardShell({
       />
 
       <main className={styles.main} id="main-content" tabIndex={-1}>
-        {children}
+        {accessDenied ? (
+          <NexusWorkspaceNoAccess
+            description={content.accessDeniedDescription}
+            eyebrow={content.accessDeniedEyebrow}
+            returnHref={content.homeHref}
+            returnLabel={content.accessDeniedReturnLabel}
+            title={content.accessDeniedTitle}
+          />
+        ) : (
+          children
+        )}
       </main>
     </div>
   );

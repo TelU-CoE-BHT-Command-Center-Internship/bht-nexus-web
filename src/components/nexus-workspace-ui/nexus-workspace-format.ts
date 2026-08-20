@@ -57,6 +57,32 @@ export function formatAuditTimestamp(value: Date | string = new Date()) {
 }
 
 /**
+ * Membandingkan instant, bukan bentuk teks ISO-nya. Nilai legacy tanpa offset
+ * tetap diperlakukan sebagai WIB; nilai invalid selalu ditempatkan terakhir.
+ */
+export function compareTimestamps(
+  first: string,
+  second: string,
+  direction: "ascending" | "descending" = "ascending",
+) {
+  const firstEpoch = new Date(normalizedTimestamp(first)).getTime();
+  const secondEpoch = new Date(normalizedTimestamp(second)).getTime();
+  const firstIsValid = !Number.isNaN(firstEpoch);
+  const secondIsValid = !Number.isNaN(secondEpoch);
+
+  if (!firstIsValid && !secondIsValid) {
+    const fallback = first.localeCompare(second);
+    return direction === "ascending" ? fallback : -fallback;
+  }
+  if (!firstIsValid) return 1;
+  if (!secondIsValid) return -1;
+
+  return direction === "ascending"
+    ? firstEpoch - secondEpoch
+    : secondEpoch - firstEpoch;
+}
+
+/**
  * Normalisasi teks pencarian ruang kerja: tanpa diakritik, huruf kecil, dan
  * terpangkas, supaya pencarian pada setiap rumah data resmi berperilaku sama.
  */

@@ -3,6 +3,7 @@
  * Nama hanya untuk tampilan; pemeriksaan hak selalu memakai ID ini.
  */
 export const nexusReviewActorIds = {
+  collectionService: "SYS-COLLECTION-SERVICE",
   dataSteward: "USR-DATA-STEWARD-001",
   documentPipeline: "SYS-DOCUMENT-PIPELINE",
   matchingService: "SYS-MATCHING-SERVICE",

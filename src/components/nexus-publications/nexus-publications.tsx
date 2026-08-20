@@ -14,6 +14,7 @@ import {
   publicationDisplayTitle,
   publicationIndicatorShortLabels,
   publicationQuartileLabel,
+  publicationQuartileState,
 } from "@/components/nexus-publications/nexus-publications-content";
 import { NexusPublicationsIcon } from "@/components/nexus-publications/nexus-publications-icons";
 import {
@@ -107,6 +108,7 @@ const quartileConfig: NexusSelectConfig = {
     { label: "Q2", value: "Q2" },
     { label: "Q3", value: "Q3" },
     { label: "Q4", value: "Q4" },
+    { label: "Tidak tersedia", value: "not-available" },
     { label: "Belum diverifikasi", tone: "needs-fix", value: "unverified" },
     { label: "Tidak berlaku / belum dapat dinilai", value: "not-applicable" },
   ],
@@ -172,11 +174,12 @@ function matchesQuartileFilter(
   publication: OfficialPublication,
   value: string,
 ) {
+  const state = publicationQuartileState(publication);
   if (value === "all") return true;
-  if (value === "not-applicable") return !publication.quartileApplies;
-  if (value === "unverified") {
-    return publication.quartileApplies && !publication.quartile;
-  }
+  if (value === "not-applicable")
+    return state === "not_applicable" || state === "pending_type";
+  if (value === "not-available") return state === "not_available";
+  if (value === "unverified") return state === "unresolved";
   if (value === "q1-q2") return isTopQuartile(publication);
   return publication.quartile === value;
 }
@@ -303,14 +306,15 @@ function KmLinkCell({ publication }: { publication: OfficialPublication }) {
 }
 
 function QuartileCell({ publication }: { publication: OfficialPublication }) {
-  if (!publication.quartileApplies) {
+  const state = publicationQuartileState(publication);
+  if (state !== "available" && state !== "unresolved") {
     return (
       <span className={styles.plainCell}>
         {publicationQuartileLabel(publication)}
       </span>
     );
   }
-  if (!publication.quartile) {
+  if (state === "unresolved") {
     return (
       <NexusWorkspaceTableBadge tone="danger">
         Belum diverifikasi

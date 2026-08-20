@@ -8,10 +8,14 @@ import {
   intellectualPropertyCreatorNames,
   intellectualPropertyKmLabel,
   type NexusIntellectualPropertyContent,
+  normalizeProjectedIntellectualProperty,
   type OfficialIntellectualProperty,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
-import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
+  type MetadataCompletionResolutions,
+  metadataCompletionAvailabilityLabel,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createIntellectualPropertyCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
@@ -110,9 +114,16 @@ const pageSizeConfig: NexusSelectConfig = {
 
 /** Dokumen internal bukan metadata yang hilang, jadi nadanya bukan peringatan. */
 function documentLabel(record: OfficialIntellectualProperty) {
-  if (record.documentAccess === "public") return "Tautan publik";
-  if (record.documentAccess === "internal") return "Penyimpanan internal";
-  return "Belum tercatat";
+  const availableLabel =
+    record.documentAccess === "internal"
+      ? "Penyimpanan internal"
+      : "Tautan publik";
+  return metadataCompletionAvailabilityLabel(
+    record.resolvedMetadata,
+    "documentUrl",
+    record.missingFields.includes("documentUrl"),
+    availableLabel,
+  );
 }
 
 function searchableText(record: OfficialIntellectualProperty) {
@@ -195,6 +206,7 @@ export function NexusIntellectualProperty({
       projectOfficialMetadataRecords(
         content.records,
         reviewSession.officialMetadataByRecordId,
+        normalizeProjectedIntellectualProperty,
       ),
     [content.records, reviewSession.officialMetadataByRecordId],
   );

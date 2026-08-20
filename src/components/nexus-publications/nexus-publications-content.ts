@@ -11,6 +11,7 @@ import {
   type MetadataCompletionProposal,
   type MetadataCompletionResolutions,
   metadataCompletionFieldLabels,
+  metadataCompletionFieldState,
   metadataCompletionProvidedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -1007,13 +1008,36 @@ export function publicationDisplayTitle(publication: OfficialPublication) {
  * Label kuartil yang dipakai tabel desktop, kartu mobile, dan rincian agar
  * ketiganya tidak pernah menyebut keadaan yang sama dengan istilah berbeda.
  */
+export type PublicationQuartileState =
+  | "available"
+  | "not_available"
+  | "not_applicable"
+  | "pending_type"
+  | "unresolved";
+
+export function publicationQuartileState(
+  publication: OfficialPublication,
+): PublicationQuartileState {
+  if (publication.type === "Belum diklasifikasikan") return "pending_type";
+  if (!publication.quartileApplies) return "not_applicable";
+  if (publication.quartile) return "available";
+
+  const state = metadataCompletionFieldState(
+    publication.resolvedMetadata,
+    "quartile",
+    publication.missingFields.includes("quartile"),
+  );
+  return state === "not-available" ? "not_available" : "unresolved";
+}
+
 export function publicationQuartileLabel(publication: OfficialPublication) {
-  if (publication.quartileApplies) {
+  const state = publicationQuartileState(publication);
+  if (state === "available")
     return publication.quartile ?? "Belum diverifikasi";
-  }
-  return publication.type === "Belum diklasifikasikan"
-    ? "Belum dapat dinilai"
-    : "Tidak berlaku";
+  if (state === "not_available") return "Tidak tersedia";
+  if (state === "pending_type") return "Belum dapat dinilai";
+  if (state === "not_applicable") return "Tidak berlaku";
+  return "Belum diverifikasi";
 }
 
 /**

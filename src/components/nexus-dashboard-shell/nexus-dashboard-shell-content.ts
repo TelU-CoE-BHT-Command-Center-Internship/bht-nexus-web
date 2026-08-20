@@ -1,5 +1,12 @@
 import type { ImageProps } from "next/image";
 import muhammadAmmarAsyrafPhoto from "@/assets/members/muhammad-ammar-asyraf.webp";
+import {
+  type NexusWorkspaceAccess,
+  type NexusWorkspaceNavigationId,
+  nexusPreviewWorkspaceAccess,
+  nexusWorkspaceCanOpen,
+} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import type { NexusReviewCapabilities } from "@/components/nexus-review-session/nexus-review-session";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
 import type { Locale } from "@/i18n/locales";
 
@@ -22,7 +29,7 @@ export type DashboardNavigationItem = {
   implemented: boolean;
   href: string;
   icon: DashboardShellIconName;
-  id: string;
+  id: NexusWorkspaceNavigationId;
   label: string;
 };
 
@@ -53,6 +60,10 @@ export type DashboardSearchItem = {
 };
 
 export type NexusDashboardShellContent = {
+  accessDeniedDescription: string;
+  accessDeniedEyebrow: string;
+  accessDeniedReturnLabel: string;
+  accessDeniedTitle: string;
   brandInstitutionLabel: string;
   brandLabel: string;
   brandOrganizationLabel: string;
@@ -67,6 +78,13 @@ export type NexusDashboardShellContent = {
   locale: Locale;
   mainNavigationLabel: string;
   navigationGroups: DashboardNavigationGroup[];
+  reviewCapabilities: NexusReviewCapabilities;
+  routeAccess: Array<{
+    activeHrefs: string[];
+    allowed: boolean;
+    implemented: boolean;
+    label: string;
+  }>;
   notificationLabel: string;
   notifications: DashboardNotification[];
   notificationsEmptyLabel: string;
@@ -95,7 +113,7 @@ type NavigationDefinition = {
   group: NavigationGroupId;
   href: Record<Locale, string>;
   icon: DashboardShellIconName;
-  id: string;
+  id: NexusWorkspaceNavigationId;
   label: Record<Locale, string>;
 };
 
@@ -239,24 +257,40 @@ export const nexusDashboardPreviewViewer = {
 
 export function getNexusDashboardShellPreviewContent(
   locale: Locale = "id",
+  access: NexusWorkspaceAccess = nexusPreviewWorkspaceAccess,
 ): NexusDashboardShellContent {
   const isId = locale === "id";
+  const routeAccess = navigationDefinitions.map((item) => ({
+    activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
+    allowed: nexusWorkspaceCanOpen(access, item.id),
+    implemented: item.implemented[locale],
+    label: item.label[locale],
+  }));
+  const firstAllowedHref = navigationDefinitions.find(
+    (item) =>
+      item.implemented[locale] && nexusWorkspaceCanOpen(access, item.id),
+  )?.href[locale];
   const navigationGroups = (
     ["main", "pipeline", "official", "administration"] as const
-  ).map((group) => ({
-    id: group,
-    items: navigationDefinitions
-      .filter((item) => item.group === group)
-      .map((item) => ({
-        activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
-        implemented: item.implemented[locale],
-        href: item.href[locale],
-        icon: item.icon,
-        id: item.id,
-        label: item.label[locale],
-      })),
-    label: groupLabels[locale][group],
-  }));
+  )
+    .map((group) => ({
+      id: group,
+      items: navigationDefinitions
+        .filter(
+          (item) =>
+            item.group === group && nexusWorkspaceCanOpen(access, item.id),
+        )
+        .map((item) => ({
+          activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
+          implemented: item.implemented[locale],
+          href: item.href[locale],
+          icon: item.icon,
+          id: item.id,
+          label: item.label[locale],
+        })),
+      label: groupLabels[locale][group],
+    }))
+    .filter((group) => group.items.length > 0);
   const supportMessage = [
     isId ? "Halo Tim Dukungan BHT Nexus," : "Hello BHT Nexus Support Team,",
     "",
@@ -282,6 +316,16 @@ export function getNexusDashboardShellPreviewContent(
   );
 
   return {
+    accessDeniedDescription: isId
+      ? "Akun Anda belum memiliki izin untuk membuka halaman ini. Silakan kembali ke ruang kerja atau hubungi pengelola jika akses tersebut diperlukan."
+      : "Your account cannot open this page. Return to the workspace or contact an administrator if you need access.",
+    accessDeniedEyebrow: isId ? "Akses dibatasi" : "Access restricted",
+    accessDeniedReturnLabel: isId
+      ? "Kembali ke ruang kerja"
+      : "Return to workspace",
+    accessDeniedTitle: isId
+      ? "Halaman ini tidak tersedia untuk akun Anda"
+      : "This page is not available to your account",
     brandInstitutionLabel: "Telkom University, Indonesia",
     brandLabel: "BHT Nexus",
     brandOrganizationLabel: "CoE Biomedical & Healthcare Technology",
@@ -291,26 +335,30 @@ export function getNexusDashboardShellPreviewContent(
     expandMenuLabel: isId ? "Perluas navigasi" : "Expand navigation",
     helpHref: `${COE_BHT_LINKS.email}?subject=${isId ? "Bantuan%20BHT%20Nexus" : "BHT%20Nexus%20help"}`,
     helpLabel: isId ? "Bantuan BHT Nexus" : "BHT Nexus help",
-    homeHref: isId ? "/nexus/dashboard" : "/en/nexus/coming-soon",
+    homeHref:
+      firstAllowedHref ?? (isId ? "/nexus/dashboard" : "/en/nexus/coming-soon"),
     languageLabel: isId
       ? "Pilih bahasa ruang kerja"
       : "Choose workspace language",
     locale,
     mainNavigationLabel: isId ? "Navigasi ruang kerja" : "Workspace navigation",
     navigationGroups,
+    reviewCapabilities: access.reviewCapabilities,
+    routeAccess,
     notificationLabel: isId ? "Buka notifikasi" : "Open notifications",
-    notifications: isId
-      ? [
-          {
-            detail:
-              "Kandidat publikasi dan lintas-domain tersedia dalam satu antrean.",
-            href: "/nexus/tinjauan",
-            id: "candidate-review",
-            timeLabel: "Baru saja",
-            title: "Data menunggu tinjauan",
-          },
-        ]
-      : [],
+    notifications:
+      isId && nexusWorkspaceCanOpen(access, "reviews")
+        ? [
+            {
+              detail:
+                "Kandidat publikasi dan lintas-domain tersedia dalam satu antrean.",
+              href: "/nexus/tinjauan",
+              id: "candidate-review",
+              timeLabel: "Baru saja",
+              title: "Data menunggu tinjauan",
+            },
+          ]
+        : [],
     notificationsEmptyLabel: isId
       ? "Belum ada notifikasi baru."
       : "No new notifications.",

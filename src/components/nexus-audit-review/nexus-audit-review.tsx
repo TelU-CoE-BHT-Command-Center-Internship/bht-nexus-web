@@ -33,6 +33,7 @@ import {
   NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { compareTimestamps } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -342,8 +343,8 @@ export function NexusAuditReview({
             "id-ID",
           )
         : sort === "oldest"
-          ? a.discoveredAt.localeCompare(b.discoveredAt)
-          : b.discoveredAt.localeCompare(a.discoveredAt),
+          ? compareTimestamps(a.discoveredAt, b.discoveredAt)
+          : compareTimestamps(a.discoveredAt, b.discoveredAt, "descending"),
     );
   }, [category, deferredQuery, period, records, runtime, sort, source, status]);
 
@@ -432,9 +433,12 @@ export function NexusAuditReview({
         kind === "changes_requested"
           ? {
               assigneeActorId:
+                record.correctionAssigneeActorId ??
                 currentState.latestSubmittedByActorId ??
                 record.submittedByActorId,
-              assigneeLabel: currentState.latestSubmittedBy,
+              assigneeLabel:
+                record.correctionAssigneeLabel ??
+                currentState.latestSubmittedBy,
               fieldIds,
               reason: note,
             }

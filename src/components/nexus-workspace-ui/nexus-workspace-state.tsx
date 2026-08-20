@@ -33,11 +33,17 @@ export function NexusWorkspaceState({
 }
 
 export function NexusWorkspaceNoAccess({
+  description = "Akun Anda belum memiliki izin untuk membuka data ini. Silakan kembali atau hubungi pengelola jika Anda memerlukan akses.",
+  eyebrow = "Akses dibatasi",
   returnHref,
   returnLabel,
+  title = "Anda tidak memiliki akses untuk meninjau data ini",
 }: {
+  description?: string;
+  eyebrow?: string;
   returnHref: string;
   returnLabel: string;
+  title?: string;
 }) {
   return (
     <NexusWorkspaceState
@@ -46,9 +52,9 @@ export function NexusWorkspaceNoAccess({
           {returnLabel}
         </NexusWorkspaceLinkButton>
       }
-      description="Akun Anda belum memiliki izin untuk membuka data ini. Silakan kembali atau hubungi pengelola jika Anda memerlukan akses."
-      eyebrow="Akses dibatasi"
-      title="Anda tidak memiliki akses untuk meninjau data ini"
+      description={description}
+      eyebrow={eyebrow}
+      title={title}
       tone="danger"
     />
   );

@@ -53,7 +53,7 @@ function ArrowIcon() {
 }
 
 function documentValue(record: OfficialIntellectualProperty) {
-  if (record.documentAccess === "public" && record.documentUrl) {
+  if (record.documentAccess !== "internal" && record.documentUrl) {
     return record.documentUrl;
   }
   if (record.documentAccess === "internal") return "Penyimpanan internal CoE";
@@ -124,7 +124,8 @@ function getMetadataItems(
       wide: true,
     },
     {
-      href: record.documentAccess === "public" ? record.documentUrl : undefined,
+      href:
+        record.documentAccess !== "internal" ? record.documentUrl : undefined,
       key: "documentUrl",
       label: "Dokumen pendaftaran",
       missingFieldKey: isMissing("documentUrl") ? "documentUrl" : undefined,
@@ -297,8 +298,9 @@ export function NexusIntellectualPropertyDetail({
             <li data-empty="true">
               <strong>Belum dikaitkan dengan indikator KM</strong>
               <small>
-                Keterkaitan indikator dapat ditetapkan melalui Tinjauan ketika
-                klasifikasinya sudah dipastikan.
+                Keterkaitan indikator ditetapkan setelah jenis perlindungan dan
+                nomor registrasi yang menjadi bukti perhitungan disetujui dalam
+                Tinjauan.
               </small>
             </li>
           ) : (

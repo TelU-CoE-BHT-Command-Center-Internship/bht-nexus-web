@@ -42,10 +42,34 @@ import type {
   ExtractionProfileDefinition,
   NexusRagExtractionContent,
 } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
+import { nexusReviewActorIds } from "@/components/nexus-review-session/nexus-review-actors";
 import type { CollectionJob } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type FrontendActor = { id: string; name: string; roleLabel: string };
+
+export function extractionReviewSourceKey(
+  content: NexusRagExtractionContent,
+  profile: ExtractionProfileDefinition,
+) {
+  return [
+    "document",
+    content.documentId,
+    "profile",
+    profile.id,
+    profile.version,
+    "run",
+    content.extractionRunId,
+  ].join(":");
+}
+
+export function extractionReviewRecordId(
+  content: NexusRagExtractionContent,
+  profile: ExtractionProfileDefinition,
+) {
+  const runId = content.extractionRunId.replace(/[^A-Za-z0-9]+/g, "-");
+  return `EXT-${profile.id.toUpperCase()}-${runId}`;
+}
 
 function actorLabel(actor: FrontendActor) {
   return `${actor.name} · ${actor.roleLabel}`;
@@ -78,6 +102,7 @@ function createBaseRecord(
     | "typeLabel"
   >,
   submittedByActorId?: string,
+  sourceActorId?: string,
 ): AuditReviewRecord {
   return {
     ...values,
@@ -94,6 +119,9 @@ function createBaseRecord(
     ],
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
+    correctionAssigneeActorId: submittedByActorId,
+    correctionAssigneeLabel: submittedBy,
+    sourceActorId,
     submittedBy,
     submittedByActorId,
     version: 1,
@@ -131,6 +159,7 @@ export function createCollectionReviewRecords(
         sourceLabel: job.sourceLabel,
       },
       job.submittedByActorId,
+      nexusReviewActorIds.collectionService,
     ),
   );
 }
@@ -180,7 +209,7 @@ export function createExtractionReviewRecord(
       primaryPerson: content.candidatePrimaryParty,
       provenance: {
         retrievedAt: discoveredAt.toISOString(),
-        sourceKey: `document:${content.documentId}`,
+        sourceKey: extractionReviewSourceKey(content, profile),
       },
       signal: {
         primary: `${acceptedFields.length} bidang disertakan dari dokumen`,
@@ -196,6 +225,7 @@ export function createExtractionReviewRecord(
       typeLabel: profile.typeLabel,
     },
     actor.id,
+    nexusReviewActorIds.documentPipeline,
   );
 }
 

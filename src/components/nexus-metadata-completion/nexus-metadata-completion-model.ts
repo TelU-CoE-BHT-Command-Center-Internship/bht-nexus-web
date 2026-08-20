@@ -579,6 +579,23 @@ export function metadataCompletionFieldState(
 }
 
 /**
+ * Satu penerjemah status ketersediaan untuk tabel, kartu, dan rincian ringkas.
+ * Nilai yang sudah diberi pengecualian tidak boleh kembali tampil sebagai
+ * "belum tercatat" hanya karena properti mentahnya kosong.
+ */
+export function metadataCompletionAvailabilityLabel(
+  resolutions: MetadataCompletionResolutions | undefined,
+  key: MetadataCompletionFieldKey,
+  isMissing: boolean,
+  availableLabel: string,
+) {
+  const state = metadataCompletionFieldState(resolutions, key, isMissing);
+  return state === "available"
+    ? availableLabel
+    : metadataCompletionFieldStateLabels[state];
+}
+
+/**
  * Menampilkan hasil penyelesaian yang sudah disetujui tanpa menghilangkan
  * arti pengecualian. Nilai fallback tetap dipakai untuk rekam lama yang belum
  * mempunyai hasil pelengkapan terstruktur.

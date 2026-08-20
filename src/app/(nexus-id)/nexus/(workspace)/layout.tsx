@@ -16,7 +16,7 @@ export default function NexusWorkspaceLayout({
         name: content.viewer.name,
         roleLabel: content.viewer.roleLabel,
       }}
-      capabilities={{ canReview: true, canSubmitCorrection: true }}
+      capabilities={content.reviewCapabilities}
     >
       <NexusDashboardShell content={content}>{children}</NexusDashboardShell>
     </NexusReviewSessionProvider>

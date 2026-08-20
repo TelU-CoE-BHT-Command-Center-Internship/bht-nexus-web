@@ -37,6 +37,8 @@ export type NexusRagExtractionContent = {
   documentId: string;
   documentMeta: string;
   documentTitle: string;
+  /** Identitas proses ekstraksi; satu run hanya boleh membentuk satu kandidat. */
+  extractionRunId: string;
   fields: ExtractionField[];
   fieldsTitle: string;
   locale: Locale;
@@ -247,6 +249,7 @@ const copy = {
     | "documentId"
     | "documentMeta"
     | "documentTitle"
+    | "extractionRunId"
     | "fields"
     | "locale"
     | "requestError"
@@ -261,25 +264,31 @@ export function getNexusRagExtractionContent(
   const requestedDocument = documents.find(
     (document) =>
       document.id === requestedDocumentId &&
-      document.status === "succeeded" &&
+      document.processingJob.status === "succeeded" &&
       document.capabilities.includes("extraction"),
   );
   const document =
     requestedDocument ??
     documents.find(
       (item) =>
-        item.status === "succeeded" && item.capabilities.includes("extraction"),
+        item.processingJob.status === "succeeded" &&
+        item.capabilities.includes("extraction"),
     );
 
   if (!document) {
     throw new Error("No processed document is available for extraction");
   }
+  const selectedProfile = copy[locale].profileOptions.find(
+    (profile) => profile.id === copy[locale].selectedProfileId,
+  );
+  const profileVersion = selectedProfile?.version ?? "unversioned";
 
   return {
     ...copy[locale],
     documentId: document.id,
     documentMeta: `${document.fileLabel} · ${document.statusLabel}`,
     documentTitle: document.title,
+    extractionRunId: `EXTRACT-RUN-${document.processingJob.id}-${copy[locale].selectedProfileId}-${profileVersion}-0001`,
     fields: fields[locale],
     locale,
     requestError:

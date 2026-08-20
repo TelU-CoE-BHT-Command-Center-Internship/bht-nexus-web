@@ -1,13 +1,21 @@
 "use client";
 
-import { type ChangeEvent, useDeferredValue, useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  useDeferredValue,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
+import { latestDocumentProcessingAttempt } from "@/components/nexus-document-workspace/nexus-document-content";
 import { NexusDocumentNav } from "@/components/nexus-document-workspace/nexus-document-nav";
 import styles from "@/components/nexus-rag-library/nexus-rag-library.module.css";
 import type {
   NexusRagLibraryContent,
   RagDocument,
 } from "@/components/nexus-rag-library/nexus-rag-library-content";
+import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
@@ -64,7 +72,7 @@ function DocumentIcon({ name }: { name: "document" | "queue" | "ready" }) {
   );
 }
 
-function statusTone(status: RagDocument["status"]) {
+function statusTone(status: RagDocument["processingJob"]["status"]) {
   if (status === "succeeded") return "success" as const;
   if (status === "failed" || status === "failed_permanently")
     return "danger" as const;
@@ -77,6 +85,7 @@ export function NexusRagLibrary({
 }: {
   content: NexusRagLibraryContent;
 }) {
+  const reviewSession = useNexusReviewSession();
   const [documents, setDocuments] = useState(content.documents);
   const [feedback, setFeedback] = useState<{
     message: string;
@@ -88,6 +97,7 @@ export function NexusRagLibrary({
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSizeValue, setPageSizeValue] = useState("10");
+  const submittedSourceJobs = useRef(new Set<string>());
   const statusConfig: NexusSelectConfig = {
     defaultValue: "all",
     id: "document-status",
@@ -148,7 +158,7 @@ export function NexusRagLibrary({
       .toLocaleLowerCase(content.locale === "id" ? "id-ID" : "en-US");
     return documents.filter(
       (document) =>
-        (status === "all" || document.status === status) &&
+        (status === "all" || document.processingJob.status === status) &&
         (!needle ||
           `${document.title} ${document.ownerUnit} ${document.fileLabel}`
             .toLocaleLowerCase()
@@ -166,25 +176,47 @@ export function NexusRagLibrary({
     safePage * pageSize,
   );
   const readyCount = documents.filter(
-    (document) => document.status === "succeeded",
+    (document) => document.processingJob.status === "succeeded",
   ).length;
   const queueCount = documents.filter(
     (document) =>
-      document.status === "queued" ||
-      document.status === "running" ||
-      document.status === "retrying",
+      document.processingJob.status === "queued" ||
+      document.processingJob.status === "running" ||
+      document.processingJob.status === "retrying",
   ).length;
 
   function submitNewProcessing(document: RagDocument) {
+    if (submittedSourceJobs.current.has(document.processingJob.id)) return;
+    submittedSourceJobs.current.add(document.processingJob.id);
+
+    const requestedAt = new Date().toISOString();
+    const documentKey = document.id.replace(/[^A-Za-z0-9]+/g, "-");
     setDocuments((current) =>
       current.map((item) =>
         item.id === document.id
           ? {
               ...item,
-              attempt: (item.attempt ?? 0) + 1,
-              failureReason: undefined,
-              status: "queued",
+              processingHistory: [
+                item.processingJob,
+                ...item.processingHistory,
+              ],
+              processingJob: {
+                attempts: [
+                  {
+                    attemptedAt: requestedAt,
+                    number: 1,
+                    status: "queued",
+                  },
+                ],
+                correlationId: `DOC-CORR-${new Date(requestedAt).getTime()}-${documentKey}`,
+                id: `DOC-JOB-${new Date(requestedAt).getTime()}-${documentKey}`,
+                requestedAt,
+                requestedByActorId: reviewSession.actor.id,
+                status: "queued",
+              },
               statusLabel: getAutomationStatusLabel(content.locale, "queued"),
+              updatedAt: requestedAt,
+              updatedLabel: formatTimestamp(requestedAt),
             }
           : item,
       ),
@@ -215,13 +247,27 @@ export function NexusRagLibrary({
       capabilities: [],
       fileLabel: `${extension.toLocaleUpperCase()} · ${(file.size / (1024 * 1024)).toFixed(1)} MB`,
       id: `local-${now.getTime()}`,
-      indexedAt: now.toISOString(),
-      indexedLabel: formatTimestamp(now.toISOString()),
       ownerUnit:
         content.locale === "id" ? "Pengelolaan Data" : "Data Management",
-      status: "queued",
+      processingHistory: [],
+      processingJob: {
+        attempts: [
+          {
+            attemptedAt: now.toISOString(),
+            number: 1,
+            status: "queued",
+          },
+        ],
+        correlationId: `DOC-CORR-${now.getTime()}`,
+        id: `DOC-JOB-${now.getTime()}`,
+        requestedAt: now.toISOString(),
+        requestedByActorId: reviewSession.actor.id,
+        status: "queued",
+      },
       statusLabel: getAutomationStatusLabel(content.locale, "queued"),
       title: file.name.replace(/\.(pdf|docx)$/i, ""),
+      updatedAt: now.toISOString(),
+      updatedLabel: formatTimestamp(now.toISOString()),
     };
     setDocuments((current) => [next, ...current]);
     setFeedback({
@@ -232,7 +278,9 @@ export function NexusRagLibrary({
   }
 
   const rows = visibleDocuments.map((document) => {
-    const tone = statusTone(document.status);
+    const processingStatus = document.processingJob.status;
+    const failureReason = latestDocumentProcessingAttempt(document)?.reason;
+    const tone = statusTone(processingStatus);
     const questionHref = `${
       content.locale === "id"
         ? "/nexus/tanya-dokumen"
@@ -242,7 +290,7 @@ export function NexusRagLibrary({
       content.locale === "id" ? "/nexus/ekstraksi" : "/en/nexus/extraction"
     }?document=${encodeURIComponent(document.id)}`;
     const action =
-      document.status === "succeeded" && document.capabilities.length > 0 ? (
+      processingStatus === "succeeded" && document.capabilities.length > 0 ? (
         <span className={styles.documentActions} key={`${document.id}-action`}>
           {document.capabilities.includes("qa") ? (
             <NexusWorkspaceLinkButton href={questionHref}>
@@ -255,8 +303,8 @@ export function NexusRagLibrary({
             </NexusWorkspaceLinkButton>
           ) : null}
         </span>
-      ) : document.status === "failed" ||
-        document.status === "failed_permanently" ? (
+      ) : processingStatus === "failed" ||
+        processingStatus === "failed_permanently" ? (
         <NexusWorkspaceButton
           key={`${document.id}-action`}
           onClick={() => submitNewProcessing(document)}
@@ -284,16 +332,16 @@ export function NexusRagLibrary({
             <NexusWorkspaceTableBadge tone={tone}>
               {document.statusLabel}
             </NexusWorkspaceTableBadge>
-            {document.failureReason ? (
+            {failureReason ? (
               <NexusWorkspaceInfoHint
                 label={content.locale === "id" ? "Kendala" : "Issue"}
-                text={document.failureReason}
+                text={failureReason}
               />
             ) : null}
           </span>
         ),
         updated: (
-          <time dateTime={document.indexedAt}>{document.indexedLabel}</time>
+          <time dateTime={document.updatedAt}>{document.updatedLabel}</time>
         ),
         action,
       },
@@ -312,17 +360,17 @@ export function NexusRagLibrary({
                 <dd>{document.ownerUnit}</dd>
               </div>
               <div>
-                <dt>{content.columns.indexedAt}</dt>
-                <dd>{document.indexedLabel}</dd>
+                <dt>{content.columns.updatedAt}</dt>
+                <dd>{document.updatedLabel}</dd>
               </div>
               <div>
                 <dt>Format</dt>
                 <dd>{document.fileLabel}</dd>
               </div>
-              {document.failureReason ? (
+              {failureReason ? (
                 <div>
                   <dt>{content.locale === "id" ? "Kendala" : "Issue"}</dt>
-                  <dd>{document.failureReason}</dd>
+                  <dd>{failureReason}</dd>
                 </div>
               ) : null}
             </dl>

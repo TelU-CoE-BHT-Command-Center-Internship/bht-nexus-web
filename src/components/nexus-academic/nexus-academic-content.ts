@@ -2,6 +2,7 @@ import {
   type MetadataCompletionFieldKey,
   type MetadataCompletionProposal,
   type MetadataCompletionResolutions,
+  metadataCompletionAvailabilityLabel,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -342,9 +343,16 @@ export function academicMentorNames(record: OfficialAcademicRecord) {
 }
 
 export function academicEvidenceLabel(record: OfficialAcademicRecord) {
-  if (record.evidenceStatus === "internal") return "Tersimpan internal";
-  if (record.evidenceStatus === "public") return "Tautan tersedia";
-  return "Belum tercatat";
+  const availableLabel =
+    record.evidenceStatus === "internal"
+      ? "Tersimpan internal"
+      : "Tautan tersedia";
+  return metadataCompletionAvailabilityLabel(
+    record.resolvedMetadata,
+    "evidenceUrl",
+    record.missingFields.includes("evidenceUrl"),
+    availableLabel,
+  );
 }
 
 export function academicDisplayTitle(record: OfficialAcademicRecord) {

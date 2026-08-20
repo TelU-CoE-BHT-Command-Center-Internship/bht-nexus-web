@@ -219,7 +219,7 @@ export function getNexusRagQaContent(locale: Locale): NexusRagQaContent {
     getNexusDocumentRecords(locale)
       .filter(
         (document) =>
-          document.status === "succeeded" &&
+          document.processingJob.status === "succeeded" &&
           document.capabilities.includes("qa"),
       )
       .map((document) => [document.id, document]),

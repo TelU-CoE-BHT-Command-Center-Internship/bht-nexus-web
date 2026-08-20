@@ -53,13 +53,14 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Identifier yang sama mencegah kandidat diterima sebagai data baru, tetapi tidak mengambil keputusan secara otomatis.
 - Tindakan keputusan menyesuaikan tujuan kandidat: data baru, pembaruan rekam, atau pelengkapan metadata. Menghubungkan ke rekam resmi, menerima data baru ketika aman, menyetujui perubahan, menyetujui pelengkapan, meminta perbaikan, dan menolak tidak ditampilkan sebagai satu daftar generik.
 - Rincian sumber menyediakan asal-usul data saat tersedia: pekerjaan, percobaan, pengolah, waktu pengambilan, kunci sumber, dan sidik respons. Nilai teknis yang belum dihasilkan layanan server ditampilkan sebagai belum tersedia, bukan dibuat-buat oleh frontend.
-- Pengaju kandidat dicatat terpisah dari pemilik atau pihak utama agar pelaku ekstraksi tidak keliru dianggap sebagai pemilik data.
+- Sistem sumber, pengaju manusia, penerima koreksi, pemilik, dan pihak utama dicatat terpisah. Permintaan perbaikan hanya dapat diarahkan kepada pengguna manusia ber-ID; akun layanan tetap menjadi jejak asal dan tidak menerima tugas koreksi.
 - Identitas dan label KM-1 sampai KM-46 berada pada satu kamus yang diturunkan dari worksheet `List KM` workbook stakeholder. Rekam hanya merujuk indikator dari kamus tersebut dan dapat memiliki nol, satu, atau beberapa kaitan tanpa menggandakan data. Definisi, formula, unit, periode, target, dan realisasi baru akan dimodelkan bersama pekerjaan Monitoring/Evaluasi KM. Kandidat yang klasifikasinya belum didukung bukti ditampilkan sebagai belum dikaitkan dengan indikator evaluasi.
 - Bukti boleh memiliki rekam dan referensi tanpa URL. Dalam keadaan itu antarmuka menyatakan bahwa tautan bukti belum tersedia dan tidak mengarahkannya ke halaman umum yang bukan sumber bukti.
 - Setiap keputusan membutuhkan alasan dan tahap konfirmasi sebelum disimpan pada state frontend. Riwayat menyimpan ID pelaku, jenis keputusan, sasaran rekam, bidang yang diminta untuk diperbaiki, alasan, versi, perubahan sebelum–sesudah, serta instant ISO yang baru diformat ke WIB ketika ditampilkan.
 - Kemampuan meninjau dan mengirim koreksi disediakan melalui kontrak sesi serta dihitung per rekam. Identitas pelaku yang tidak diketahui menutup tindakan secara aman; nama tampilan tidak pernah dipakai sebagai identitas otorisasi. Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri dan koreksi hanya dapat dikirim oleh penerima ber-ID yang ditetapkan. Otorisasi sebenarnya tetap menjadi tanggung jawab layanan server.
 - Versi hasil pencocokan dicatat terpisah dari versi kandidat. Setelah V2 dikirim, hasil V1 menjadi kedaluwarsa dan keputusan promosi terkunci sampai layanan pencocokan mengembalikan hasil untuk versi yang sama; riwayat koreksi tetap dipertahankan.
 - Persetujuan pelengkapan metadata langsung tercermin pada rumah data resmi selama sesi frontend. Status penyelesaian membedakan tersedia, memang tidak tersedia, tidak berlaku, dan belum selesai. Keputusan tinjauannya dicatat sebagai pelengkapan metadata, bukan sebagai penggabungan rekam. Keputusan menerima data baru, memperbarui, atau menghubungkan kandidat hanya dicatat sampai layanan server mengonfirmasi transaksi resminya.
+- Usulan pelengkapan yang sudah terminal tidak menutup pekerjaan berikutnya. Jika proyeksi keputusan masih menyisakan bidang wajib—misalnya kuartil setelah jenis berubah menjadi artikel jurnal—pengguna dapat membuat usulan lanjutan khusus untuk bidang tersisa tanpa menghapus riwayat usulan sebelumnya.
 - Tautan rekam sesi yang sudah tidak tersedia menampilkan penjelasan dan jalan kembali ke antrean, bukan halaman kosong atau drawer tanpa isi.
 - Drawer rincian dimuat ketika diperlukan agar halaman antrean tetap ringan.
 
@@ -122,11 +123,12 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 
 - Pustaka menerima PDF atau DOCX hingga 25 MB pada sesi frontend.
 - Pustaka membedakan antrean, pemrosesan, selesai, dan gagal; rekam gagal menampilkan alasan serta tindakan coba lagi.
+- Dokumen dipisahkan dari job pemrosesan dan daftar percobaannya. Tindakan `Ajukan proses baru` membuat job, correlation ID, waktu pengajuan, dan percobaan awal baru, sementara job gagal sebelumnya tetap berada dalam riwayat.
 - Tanya jawab hanya menampilkan jawaban ketika bukti dan kutipan tersedia.
 - Pustaka membawa identitas dokumen melalui URL saat pengguna berpindah ke Tanya jawab atau Ekstraksi; hanya dokumen selesai diproses dengan kemampuan yang sesuai yang dapat dipakai.
 - Tanya jawab menerapkan cakupan dokumen yang dipilih dan hanya mengutip sumber yang mendukung pertanyaan. Riwayat awal juga mengikuti dokumen pada URL sehingga pertanyaan dari dokumen lain tidak muncul dalam cakupan khusus.
 - Ekstraksi memperlihatkan kandidat per bidang dan memakai satu profil yang benar-benar tersedia. Render, hitungan, kesiapan kirim, kandidat, dan bukti semuanya berasal dari `fieldIds` profil yang sama. Parameter dokumen yang tidak valid ditolak secara jelas dan tidak diam-diam diganti dengan dokumen lain.
-- Seluruh bidang pada profil aktif harus diputuskan dan minimal satu bidang harus disertakan sebelum hasil beserta kutipannya dibuat sebagai rekam Tinjauan beridentitas unik pada ruang kerja Indonesia.
+- Seluruh bidang pada profil aktif harus diputuskan dan minimal satu bidang harus disertakan sebelum hasil beserta kutipannya dibuat sebagai rekam Tinjauan. Identitas kandidat diturunkan dari dokumen, profil, versi profil, dan extraction run sehingga pengiriman ulang hasil yang sama membuka kandidat lama dan tidak membuat duplikat.
 - Pustaka, Tanya jawab, dan Ekstraksi tetap berada dalam satu ruang kerja Dokumen.
 
 ## Route utama
@@ -165,7 +167,7 @@ Hal-hal berikut belum menjadi kemampuan produksi pada repository web:
 - integrasi penuh dengan layanan server;
 - deployment produksi final.
 
-Penanggung jawab tujuan permintaan perbaikan mengikuti identitas pengirim versi terbaru ketika identitas tersebut tersedia. Pemetaan peran, penugasan lintas pengguna, dan penegakan izin tetap perlu dikonfirmasi melalui layanan server; pemeriksaan di browser hanya membentuk perilaku antarmuka dan bukan pengamanan otoritatif.
+Adapter akses frontend menjadi satu sumber untuk navigasi, pencarian, direct-route state, dan kemampuan Tinjauan. Penanggung jawab koreksi memakai identitas pengguna manusia yang terpisah dari sistem sumber. Pemetaan permission final, penugasan lintas pengguna, dan penegakan keamanan tetap perlu dikonfirmasi melalui layanan server; pemeriksaan di browser hanya membentuk perilaku antarmuka dan bukan pengamanan otoritatif.
 
 Memuat ulang halaman interaktif akan mengembalikan state lokal ke kondisi awal. Bentuk data dan komponen sudah dipisahkan agar integrasi server dapat dilakukan melalui adapter tanpa membongkar presentasi utama.
 

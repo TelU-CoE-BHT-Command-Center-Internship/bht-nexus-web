@@ -179,6 +179,12 @@ export function NexusMetadataCompletionForm({
   };
 
   if (proposal) {
+    const proposalFieldKeys = Array.from(
+      new Set([
+        ...Object.keys(proposal.resolutions),
+        ...Object.keys(reviewState?.correction?.resolutions ?? {}),
+      ]),
+    ) as MetadataCompletionFieldKey[];
     const resultStatus =
       reviewState?.status === "completed"
         ? "Selesai Ditinjau"
@@ -191,8 +197,15 @@ export function NexusMetadataCompletionForm({
         : reviewState?.status === "needs_fix"
           ? "Usulan pelengkapan metadata perlu diperbaiki"
           : "Usulan pelengkapan metadata sudah dikirim";
-    const resultDescription =
-      reviewState?.status === "completed"
+    const hasRemainingFields = missingFields.length > 0;
+    const needsFollowUpProposal = Boolean(
+      reviewState?.status === "completed" &&
+        reviewState.decision?.kind !== "rejected" &&
+        hasRemainingFields,
+    );
+    const resultDescription = needsFollowUpProposal
+      ? `Bidang pada usulan ini sudah diputuskan, tetapi rekam resmi masih mempunyai ${missingFields.length} bidang yang perlu dilengkapi. Buat usulan lanjutan tanpa menghapus riwayat usulan sebelumnya.`
+      : reviewState?.status === "completed"
         ? "Keputusan pemeriksa sudah tercatat pada sesi ini. Riwayat, sumber, dan versi usulan tetap dapat dilihat di Tinjauan."
         : reviewState?.status === "needs_fix"
           ? "Pemeriksa meminta perbaikan. Data resmi belum berubah dan rincian bidang yang perlu diperbaiki tersedia di Tinjauan."
@@ -200,7 +213,7 @@ export function NexusMetadataCompletionForm({
     const canCreateReplacement = Boolean(
       reviewSession &&
         reviewState?.status === "completed" &&
-        reviewState.decision?.kind === "rejected",
+        (reviewState.decision?.kind === "rejected" || hasRemainingFields),
     );
 
     return (
@@ -224,7 +237,7 @@ export function NexusMetadataCompletionForm({
               <dt>Diajukan oleh</dt>
               <dd>{proposal.submittedBy}</dd>
             </div>
-            {missingFields.map((key) => (
+            {proposalFieldKeys.map((key) => (
               <div key={key}>
                 <dt>{metadataCompletionFieldLabels[key]}</dt>
                 <dd>
@@ -267,7 +280,9 @@ export function NexusMetadataCompletionForm({
           <div className={styles.resultActions}>
             {canCreateReplacement ? (
               <button onClick={beginReplacementProposal} type="button">
-                Buat usulan baru
+                {needsFollowUpProposal
+                  ? "Buat usulan lanjutan"
+                  : "Buat usulan baru"}
               </button>
             ) : null}
             <Link

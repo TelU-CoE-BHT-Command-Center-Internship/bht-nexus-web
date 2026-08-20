@@ -161,11 +161,17 @@ export type AuditReviewRecord = {
   provenance: AuditReviewProvenance;
   signal: AuditReviewSignal;
   source: AuditReviewSource;
+  /** Sistem atau kanal yang menghasilkan kandidat; bukan identitas penerima tugas. */
+  sourceActorId?: string;
   sourceLabel: string;
   status: AuditReviewStatus;
   statusLabel: string;
   submittedBy: string;
+  /** Identitas manusia yang mengajukan atau bertanggung jawab atas kandidat. */
   submittedByActorId?: string;
+  /** Penerima koreksi manusia; tidak boleh menunjuk akun layanan. */
+  correctionAssigneeActorId?: string;
+  correctionAssigneeLabel?: string;
   subtitle: string;
   title: string;
   typeLabel: string;
@@ -203,7 +209,7 @@ const discovered = (
 });
 
 const sessionReviewerActor = "Pemeriksa sesi";
-const workbookSubmitter = "Impor workbook KM 2026";
+const dataStewardSubmitter = "Pengelola data CoE BHT";
 const workbookSource = "Workbook KM 2026";
 
 const records: AuditReviewRecord[] = [
@@ -391,7 +397,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Sofia Saidah dkk. · jurnal internasional Q1",
     title:
       "Artificial Intelligence in Glaucoma Detection System Based on Fundus Images",
@@ -453,7 +459,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Sugondo Hadiyoso dkk. · jurnal internasional Q3",
     title:
       "Real-Time Hand Gesture-Based Virtual Mouse System Using ESP32-CAM and OpenCV",
@@ -519,7 +525,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Fathur Rahman · prosiding internasional terindeks",
     title:
       "Effect of Graphite Addition Variations on the Electrical Properties of Graphite Oxide-Based Conductive Inks for Low-Cost Medical Electrodes",
@@ -571,7 +577,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Dosen A · Hak Cipta",
     title: "Karya Edukasi Kesehatan A",
     typeLabel: "HKI",
@@ -622,7 +628,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Inventor A dkk. · paten",
     title: "Paten Perangkat Kesehatan A",
     typeLabel: "Paten",
@@ -673,7 +679,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Tim Riset A · kontrak riset nasional",
     title: "Kontrak Riset Nasional A",
     typeLabel: "Kontrak riset",
@@ -723,7 +729,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Mitra Industri A · komersialisasi",
     title: "Kontrak Komersialisasi A",
     typeLabel: "Kontrak bisnis",
@@ -774,7 +780,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Dosen A · bimbingan magister",
     title: "Bimbingan Magister dengan Topik Riset CoE A",
     typeLabel: "Bimbingan magister",
@@ -834,7 +840,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "D. Puspitasari dkk. · buku/referensi",
     title: "Reduced Keratin for Biomedical Application",
     typeLabel: "Buku / referensi",
@@ -885,7 +891,7 @@ const records: AuditReviewRecord[] = [
     sourceLabel: workbookSource,
     status: "waiting",
     statusLabel: "Menunggu tinjauan",
-    submittedBy: workbookSubmitter,
+    submittedBy: dataStewardSubmitter,
     subtitle: "Tim Pengusul A · proposal internasional",
     title: "Proposal Riset Internasional A",
     typeLabel: "Proposal riset internasional",
@@ -1028,10 +1034,14 @@ function replaceSessionActor(actor: string, reviewerLabel: string) {
   return actor === sessionReviewerActor ? reviewerLabel : actor;
 }
 
-function staticSubmitterActorId(record: AuditReviewRecord) {
-  return record.submittedBy === workbookSubmitter
-    ? nexusReviewActorIds.workbookImport
-    : nexusReviewActorIds.dataSteward;
+function staticSourceActorId(record: AuditReviewRecord) {
+  if (record.source === "spreadsheet") {
+    return nexusReviewActorIds.workbookImport;
+  }
+  if (record.source === "document") {
+    return nexusReviewActorIds.documentPipeline;
+  }
+  return nexusReviewActorIds.collectionService;
 }
 
 function staticHistoryActorId(entry: AuditReviewHistory) {
@@ -1057,7 +1067,11 @@ export function getNexusAuditReviewContent(
     lastUpdatedLabel: "Diperbarui 16 Agu 2026, 09.22 WIB",
     records: records.map((record) => {
       const submittedByActorId =
-        record.submittedByActorId ?? staticSubmitterActorId(record);
+        record.submittedByActorId ?? nexusReviewActorIds.dataSteward;
+      const correctionAssigneeActorId =
+        record.correctionAssigneeActorId ?? submittedByActorId;
+      const correctionAssigneeLabel =
+        record.correctionAssigneeLabel ?? record.submittedBy;
 
       return {
         ...record,
@@ -1073,7 +1087,12 @@ export function getNexusAuditReviewContent(
           ? {
               ...record.fixRequest,
               assigneeActorId:
-                record.fixRequest.assigneeActorId ?? submittedByActorId,
+                record.fixRequest.assigneeActorId ?? correctionAssigneeActorId,
+              assigneeLabel:
+                record.fixRequest.assigneeActorId &&
+                record.fixRequest.assigneeLabel
+                  ? record.fixRequest.assigneeLabel
+                  : correctionAssigneeLabel,
             }
           : undefined,
         history: record.history.map((entry) => ({
@@ -1081,6 +1100,9 @@ export function getNexusAuditReviewContent(
           actor: replaceSessionActor(entry.actor, reviewerLabel),
           actorId: staticHistoryActorId(entry),
         })),
+        correctionAssigneeActorId,
+        correctionAssigneeLabel,
+        sourceActorId: record.sourceActorId ?? staticSourceActorId(record),
         submittedByActorId,
       };
     }),
