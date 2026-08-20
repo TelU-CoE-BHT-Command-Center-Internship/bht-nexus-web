@@ -1,0 +1,27 @@
+.empty {
+  display: grid;
+  min-height: min(26rem, 46vh);
+  align-content: start;
+  justify-items: center;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  padding-top: clamp(1rem, 4vh, 3rem);
+}
+
+.panel {
+  width: min(100%, 34rem);
+}
+
+.picker {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.hint {
+  margin: 0.7rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  text-align: center;
+}

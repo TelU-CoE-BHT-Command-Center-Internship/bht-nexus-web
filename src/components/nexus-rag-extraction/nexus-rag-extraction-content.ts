@@ -256,6 +256,35 @@ const copy = {
   >
 >;
 
+export function getExtractionPageCopy(locale: Locale) {
+  return {
+    description: copy[locale].description,
+    title: copy[locale].title,
+  };
+}
+
+export type ExtractionDocumentOption = {
+  id: string;
+  label: string;
+  meta: string;
+};
+
+export function getExtractionDocumentOptions(
+  locale: Locale,
+): ExtractionDocumentOption[] {
+  return getNexusDocumentRecords(locale)
+    .filter(
+      (document) =>
+        document.processingJob.status === "succeeded" &&
+        document.capabilities.includes("extraction"),
+    )
+    .map((document) => ({
+      id: document.id,
+      label: document.title,
+      meta: `${document.fileLabel} · ${document.ownerUnit}`,
+    }));
+}
+
 export function getNexusRagExtractionContent(
   locale: Locale,
   requestedDocumentId?: string,
