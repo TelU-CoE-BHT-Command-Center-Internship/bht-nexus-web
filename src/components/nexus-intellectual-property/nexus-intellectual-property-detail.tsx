@@ -9,9 +9,15 @@ import {
   type OfficialIntellectualProperty,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
+import {
+  type NexusMetadataCompletenessItem,
+  NexusMetadataCompletenessList,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completeness-list";
 import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import {
+  isMetadataCompletionFieldKey,
   type MetadataCompletionResolutions,
+  metadataCompletionFieldState,
   metadataCompletionResolvedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
@@ -29,7 +35,7 @@ type NexusIntellectualPropertyDetailProps = {
   record: OfficialIntellectualProperty;
 };
 
-type MetadataItem = {
+type MetadataItem = NexusMetadataCompletenessItem & {
   href?: string;
   key: string;
   label: string;
@@ -64,7 +70,7 @@ function getMetadataItems(
     fallback: string,
   ) => metadataCompletionResolvedValue(record.resolvedMetadata, key, fallback);
 
-  return [
+  const items: MetadataItem[] = [
     {
       key: "title",
       label: "Judul karya",
@@ -131,20 +137,17 @@ function getMetadataItems(
       value: record.evaluationPeriod,
     },
   ];
-}
 
-function resolutionSummary(
-  proposal: IntellectualPropertyProposal | undefined,
-  key: IntellectualPropertyCompletionFieldKey,
-) {
-  const resolution = proposal?.resolutions[key];
-
-  if (!resolution) return null;
-  if (resolution.status === "provided") return resolution.value;
-  if (resolution.status === "not-available") {
-    return `Diajukan sebagai memang tidak tersedia · ${resolution.reason}`;
-  }
-  return `Diajukan sebagai tidak berlaku · ${resolution.reason}`;
+  return items.map((item) => ({
+    ...item,
+    fieldState: isMetadataCompletionFieldKey(item.key)
+      ? metadataCompletionFieldState(
+          record.resolvedMetadata,
+          item.key,
+          isMissing(item.key as IntellectualPropertyCompletionFieldKey),
+        )
+      : "available",
+  }));
 }
 
 export function NexusIntellectualPropertyDetail({
@@ -337,42 +340,10 @@ export function NexusIntellectualPropertyDetail({
           terpisah; dokumen yang tersimpan internal bukan bidang yang hilang.
         </p>
 
-        <ul className={detail.completenessList}>
-          {metadataItems.map((item) => {
-            const isPending = Boolean(item.missingFieldKey && proposal);
-            const status = item.missingFieldKey
-              ? isPending
-                ? "pending"
-                : "missing"
-              : "available";
-            const summary = item.missingFieldKey
-              ? resolutionSummary(proposal, item.missingFieldKey)
-              : null;
-
-            return (
-              <li data-status={status} key={item.key}>
-                <span aria-hidden="true" className={detail.completenessMarker}>
-                  {status === "available"
-                    ? "✓"
-                    : status === "pending"
-                      ? "↗"
-                      : "?"}
-                </span>
-                <span className={detail.completenessCopy}>
-                  <strong>{item.label}</strong>
-                  <small>{summary ?? item.value}</small>
-                </span>
-                <span className={detail.completenessStatus}>
-                  {status === "available"
-                    ? "Tersedia"
-                    : status === "pending"
-                      ? "Menunggu Tinjauan"
-                      : "Belum diselesaikan"}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <NexusMetadataCompletenessList
+          items={metadataItems}
+          proposal={proposal}
+        />
       </section>
 
       <section

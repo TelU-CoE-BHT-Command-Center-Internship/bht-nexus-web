@@ -1,6 +1,7 @@
 import type { AuditReviewRecord } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import { nexusReviewActorIds } from "@/components/nexus-review-session/nexus-review-actors";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
@@ -178,6 +179,7 @@ const seeds = [
     status: "succeeded",
     submittedAt: "2026-08-12T08:54",
     submittedBy: "Muhammad Ammar Asyraf · Admin / Pimpinan",
+    submittedByActorId: nexusReviewActorIds.workspaceAdmin,
   },
   {
     candidates: hestyCandidates,
@@ -188,6 +190,7 @@ const seeds = [
     status: "succeeded",
     submittedAt: "2026-08-12T08:48",
     submittedBy: "Muhammad Ammar Asyraf · Admin / Pimpinan",
+    submittedByActorId: nexusReviewActorIds.workspaceAdmin,
   },
   {
     candidates: [],
@@ -198,6 +201,7 @@ const seeds = [
     status: "running",
     submittedAt: "2026-08-12T08:41",
     submittedBy: "Muhammad Ammar Asyraf · Admin / Pimpinan",
+    submittedByActorId: nexusReviewActorIds.workspaceAdmin,
   },
   {
     attempt: 3,
@@ -211,6 +215,7 @@ const seeds = [
     status: "failed_permanently",
     submittedAt: "2026-08-12T08:36",
     submittedBy: "Pengelola Data",
+    submittedByActorId: nexusReviewActorIds.dataSteward,
   },
 ] satisfies Array<
   Omit<CollectionJob, "sourceLabel" | "statusLabel" | "submittedAtLabel">

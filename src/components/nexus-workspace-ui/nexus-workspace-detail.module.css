@@ -291,9 +291,15 @@
   background: #f7fcf9;
 }
 
-.completenessList li[data-status="missing"] {
+.completenessList li[data-status="unresolved"] {
   border-color: #f0d7b1;
   background: #fffaf2;
+}
+
+.completenessList li[data-status="not-available"],
+.completenessList li[data-status="not-applicable"] {
+  border-color: #dce2ea;
+  background: #f8fafc;
 }
 
 .completenessList li[data-status="pending"] {
@@ -313,9 +319,15 @@
   font-weight: 800;
 }
 
-li[data-status="missing"] .completenessMarker {
+li[data-status="unresolved"] .completenessMarker {
   background: #fff0d6;
   color: #9a6400;
+}
+
+li[data-status="not-available"] .completenessMarker,
+li[data-status="not-applicable"] .completenessMarker {
+  background: #e9eef5;
+  color: #5d6b82;
 }
 
 li[data-status="pending"] .completenessMarker {
@@ -351,9 +363,15 @@ li[data-status="pending"] .completenessMarker {
   white-space: nowrap;
 }
 
-li[data-status="missing"] .completenessStatus {
+li[data-status="unresolved"] .completenessStatus {
   background: #fff0d6;
   color: #8a5900;
+}
+
+li[data-status="not-available"] .completenessStatus,
+li[data-status="not-applicable"] .completenessStatus {
+  background: #e9eef5;
+  color: #506078;
 }
 
 li[data-status="pending"] .completenessStatus {

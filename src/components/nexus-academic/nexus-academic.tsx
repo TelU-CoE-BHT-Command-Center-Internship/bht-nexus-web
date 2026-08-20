@@ -322,11 +322,7 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
       note,
     );
     reviewSession.submitRecord(
-      createAcademicCompletionReviewRecord(
-        record,
-        proposal,
-        reviewSession.actor,
-      ),
+      createAcademicCompletionReviewRecord(record, proposal),
     );
   };
 

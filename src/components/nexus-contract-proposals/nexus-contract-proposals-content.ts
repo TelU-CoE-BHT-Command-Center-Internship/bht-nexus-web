@@ -71,7 +71,10 @@ export type OfficialContractProposalRecord = {
   resolvedMetadata?: MetadataCompletionResolutions;
   review: {
     candidateId: string;
-    decision: "Dihubungkan ke rekam resmi" | "Disetujui sebagai data baru";
+    decision:
+      | "Dihubungkan ke rekam resmi"
+      | "Disetujui sebagai data baru"
+      | "Pelengkapan metadata disetujui";
     note: string;
     reviewedAt: string;
     reviewer: string;

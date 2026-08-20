@@ -57,7 +57,15 @@ export function NexusRagQa({
     (source) => source.id === initialDocumentId,
   );
   const [query, setQuery] = useState("");
-  const [exchanges, setExchanges] = useState(content.exchanges);
+  const [exchanges, setExchanges] = useState(() =>
+    initialDocumentIsSupported && initialDocumentId
+      ? content.exchanges.filter(
+          (exchange) =>
+            exchange.sources.length > 0 &&
+            exchange.sources.every((source) => source.id === initialDocumentId),
+        )
+      : content.exchanges,
+  );
   const [error, setError] = useState(() =>
     initialDocumentId && !initialDocumentIsSupported
       ? content.invalidDocumentLabel

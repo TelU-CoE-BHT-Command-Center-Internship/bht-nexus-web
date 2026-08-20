@@ -53,8 +53,15 @@ export function NexusRagExtraction({
 }) {
   const router = useRouter();
   const reviewSession = useOptionalNexusReviewSession();
+  const profile =
+    content.profileOptions.find(
+      (option) => option.id === content.selectedProfileId,
+    ) ?? content.profileOptions[0];
+  const profileFields = profile
+    ? content.fields.filter((field) => profile.fieldIds.includes(field.id))
+    : [];
   const initialDecisions = Object.fromEntries(
-    content.fields.map((field) => [field.id, field.decision]),
+    profileFields.map((field) => [field.id, field.decision]),
   ) as Record<string, ExtractionFieldDecision>;
   const [decisions, setDecisions] = useState(initialDecisions);
   const decidedCount = Object.values(decisions).filter(
@@ -63,13 +70,9 @@ export function NexusRagExtraction({
   const acceptedCount = Object.values(decisions).filter(
     (decision) => decision === "accepted",
   ).length;
-  const pendingCount = content.fields.length - decidedCount;
+  const pendingCount = profileFields.length - decidedCount;
   const allDecided = pendingCount === 0;
   const readyForReview = allDecided && acceptedCount > 0;
-  const profile =
-    content.profileOptions.find(
-      (option) => option.id === content.selectedProfileId,
-    ) ?? content.profileOptions[0];
   const readyToSend =
     Boolean(content.reviewHref) && readyForReview && Boolean(profile);
 
@@ -148,7 +151,7 @@ export function NexusRagExtraction({
               content.locale === "id" ? "Kandidat Isian" : "Candidate Fields",
             tone: "completed",
             unit: content.locale === "id" ? "data" : "fields",
-            value: content.fields.length,
+            value: profileFields.length,
           },
           {
             icon: <ExtractionIcon name="accepted" />,
@@ -210,12 +213,12 @@ export function NexusRagExtraction({
               ? "Keputusan berlaku per bidang. Kutipan sumber harus diperiksa sebelum kandidat dikirim ke Tinjauan."
               : "Decisions apply per field. Check each source passage before including a field."
           }
-          summary={`${decidedCount} ${content.locale === "id" ? "dari" : "of"} ${content.fields.length} ${content.locale === "id" ? "bidang telah diputuskan" : "fields decided"}`}
+          summary={`${decidedCount} ${content.locale === "id" ? "dari" : "of"} ${profileFields.length} ${content.locale === "id" ? "bidang telah diputuskan" : "fields decided"}`}
           title={content.fieldsTitle}
           titleId="extraction-fields-title"
         >
           <ul className={styles.fieldList}>
-            {content.fields.map((field) => {
+            {profileFields.map((field) => {
               const decision = decisions[field.id];
               const tone =
                 decision === "accepted"

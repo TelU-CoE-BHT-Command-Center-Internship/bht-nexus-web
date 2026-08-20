@@ -33,7 +33,6 @@ import {
   NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -401,7 +400,7 @@ export function NexusAuditReview({
     if (!decisionIsAllowed) return;
 
     const label = decisionLabel(kind);
-    const timeLabel = formatAuditTimestamp();
+    const occurredAt = new Date().toISOString();
     const reviewer = `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`;
     const completionResolutions =
       currentState.correction?.resolutions ?? record.completionResolutions;
@@ -411,7 +410,7 @@ export function NexusAuditReview({
       completionResolutions
     ) {
       reviewSession.applyOfficialMetadataCompletion(targetRecordId, {
-        appliedAt: timeLabel,
+        appliedAt: occurredAt,
         note,
         resolutions: completionResolutions,
         reviewRecordId: record.id,
@@ -427,7 +426,7 @@ export function NexusAuditReview({
         label,
         note,
         targetRecordId,
-        timeLabel,
+        occurredAt,
       },
       fixRequest:
         kind === "changes_requested"
@@ -452,7 +451,7 @@ export function NexusAuditReview({
           label,
           note,
           targetRecordId,
-          timeLabel,
+          occurredAt,
           version: previous.version,
         },
       ],
@@ -529,12 +528,16 @@ export function NexusAuditReview({
             kind: "correction_submitted",
             label: `Kandidat versi ${nextVersion} dikirim ulang`,
             note: evidenceNote,
-            timeLabel: formatAuditTimestamp(),
+            occurredAt: new Date().toISOString(),
             version: nextVersion,
           },
         ],
         latestSubmittedBy: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
         latestSubmittedByActorId: reviewSession.actor.id,
+        matchingStatus:
+          record.candidateKind === "metadata_completion"
+            ? "not_required"
+            : "stale",
         status: "waiting",
         version: nextVersion,
       };

@@ -11,6 +11,7 @@ import {
   type MetadataCompletionProposal,
   type MetadataCompletionResolutions,
   metadataCompletionFieldLabels,
+  metadataCompletionProvidedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
@@ -140,7 +141,10 @@ export type OfficialPublication = {
   quartileSource?: string;
   review: {
     candidateId: string;
-    decision: "Dihubungkan ke rekam resmi" | "Disetujui sebagai data baru";
+    decision:
+      | "Dihubungkan ke rekam resmi"
+      | "Disetujui sebagai data baru"
+      | "Pelengkapan metadata disetujui";
     note: string;
     reviewedAt: string;
     reviewer: string;
@@ -1010,6 +1014,41 @@ export function publicationQuartileLabel(publication: OfficialPublication) {
   return publication.type === "Belum diklasifikasikan"
     ? "Belum dapat dinilai"
     : "Tidak berlaku";
+}
+
+/**
+ * Menegakkan kembali invariant publikasi setelah metadata hasil Tinjauan
+ * diproyeksikan. Artikel jurnal selalu memerlukan status kuartil yang jelas.
+ */
+export function normalizeProjectedPublication(
+  publication: OfficialPublication,
+): OfficialPublication {
+  const type = publication.type;
+  const quartileApplies = type === "Artikel Jurnal";
+  const quartileResolution = publication.resolvedMetadata?.quartile;
+  const resolvedQuartile = metadataCompletionProvidedValue(
+    publication.resolvedMetadata ?? {},
+    "quartile",
+  ) as PublicationQuartile | undefined;
+  const quartile = quartileApplies
+    ? (resolvedQuartile ?? publication.quartile)
+    : undefined;
+  const missingFields: PublicationCompletionFieldKey[] =
+    publication.missingFields.filter((field) => field !== "quartile");
+
+  const quartileResolvedAsUnavailable =
+    quartileResolution?.status === "not-available";
+  if (quartileApplies && !quartile && !quartileResolvedAsUnavailable) {
+    missingFields.push("quartile");
+  }
+
+  return {
+    ...publication,
+    missingFields,
+    quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
+    quartile,
+    quartileApplies,
+  };
 }
 
 export function publicationAuthorNames(publication: OfficialPublication) {

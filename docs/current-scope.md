@@ -56,9 +56,10 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Pengaju kandidat dicatat terpisah dari pemilik atau pihak utama agar pelaku ekstraksi tidak keliru dianggap sebagai pemilik data.
 - Identitas dan label KM-1 sampai KM-46 berada pada satu kamus yang diturunkan dari worksheet `List KM` workbook stakeholder. Rekam hanya merujuk indikator dari kamus tersebut dan dapat memiliki nol, satu, atau beberapa kaitan tanpa menggandakan data. Definisi, formula, unit, periode, target, dan realisasi baru akan dimodelkan bersama pekerjaan Monitoring/Evaluasi KM. Kandidat yang klasifikasinya belum didukung bukti ditampilkan sebagai belum dikaitkan dengan indikator evaluasi.
 - Bukti boleh memiliki rekam dan referensi tanpa URL. Dalam keadaan itu antarmuka menyatakan bahwa tautan bukti belum tersedia dan tidak mengarahkannya ke halaman umum yang bukan sumber bukti.
-- Setiap keputusan membutuhkan alasan dan tahap konfirmasi sebelum disimpan pada state frontend. Riwayat menyimpan pelaku, jenis keputusan, sasaran rekam, bidang yang diminta untuk diperbaiki, alasan, versi, dan perubahan sebelum–sesudah yang tersedia.
-- Kemampuan meninjau dan mengirim koreksi disediakan melalui kontrak sesi serta dihitung per rekam. Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri; setelah koreksi dikirim sebagai versi baru, kandidat kembali menunggu pemeriksa lain. Otorisasi sebenarnya tetap menjadi tanggung jawab layanan server.
-- Persetujuan pelengkapan metadata langsung tercermin pada rumah data resmi selama sesi frontend. Keputusan menerima data baru, memperbarui, atau menghubungkan kandidat hanya dicatat sebagai hasil tinjauan sampai layanan server mengonfirmasi transaksi resminya.
+- Setiap keputusan membutuhkan alasan dan tahap konfirmasi sebelum disimpan pada state frontend. Riwayat menyimpan ID pelaku, jenis keputusan, sasaran rekam, bidang yang diminta untuk diperbaiki, alasan, versi, perubahan sebelum–sesudah, serta instant ISO yang baru diformat ke WIB ketika ditampilkan.
+- Kemampuan meninjau dan mengirim koreksi disediakan melalui kontrak sesi serta dihitung per rekam. Identitas pelaku yang tidak diketahui menutup tindakan secara aman; nama tampilan tidak pernah dipakai sebagai identitas otorisasi. Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri dan koreksi hanya dapat dikirim oleh penerima ber-ID yang ditetapkan. Otorisasi sebenarnya tetap menjadi tanggung jawab layanan server.
+- Versi hasil pencocokan dicatat terpisah dari versi kandidat. Setelah V2 dikirim, hasil V1 menjadi kedaluwarsa dan keputusan promosi terkunci sampai layanan pencocokan mengembalikan hasil untuk versi yang sama; riwayat koreksi tetap dipertahankan.
+- Persetujuan pelengkapan metadata langsung tercermin pada rumah data resmi selama sesi frontend. Status penyelesaian membedakan tersedia, memang tidak tersedia, tidak berlaku, dan belum selesai. Keputusan tinjauannya dicatat sebagai pelengkapan metadata, bukan sebagai penggabungan rekam. Keputusan menerima data baru, memperbarui, atau menghubungkan kandidat hanya dicatat sampai layanan server mengonfirmasi transaksi resminya.
 - Tautan rekam sesi yang sudah tidak tersedia menampilkan penjelasan dan jalan kembali ke antrean, bukan halaman kosong atau drawer tanpa isi.
 - Drawer rincian dimuat ketika diperlukan agar halaman antrean tetap ringan.
 
@@ -73,7 +74,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Asal-usul data menunjuk baris sumbernya secara persis, misalnya sel dan rentang pada worksheet workbook. Beberapa baris sumber yang setelah pemeriksaan dinilai sebagai karya yang sama menghasilkan satu rekam resmi dengan seluruh jejak sumbernya tetap tersimpan, termasuk catatan perbedaannya.
 - Nilai sumber yang saling bertentangan atau tautannya meragukan tidak dinaikkan menjadi bukti kanonis; perbedaannya dicatat agar dapat diperiksa manusia.
 - Sitasi diperlakukan sebagai metrik luar yang terpisah dari sumber pembentuk metadata, boleh kosong, dan tidak menentukan kelengkapan metadata.
-- Bidang resmi yang masih kosong dapat menerima usulan nilai, pernyataan tidak tersedia, atau pernyataan tidak berlaku. Judul, tahun terbit, dan jenis karya tidak menyediakan pilihan tidak berlaku karena ketiganya selalu melekat pada sebuah karya.
+- Bidang resmi yang masih kosong dapat menerima usulan nilai, pernyataan tidak tersedia, atau pernyataan tidak berlaku. Judul, tahun terbit, jenis karya, dan kuartil yang memang sedang diperiksa pada artikel jurnal tidak menyediakan pilihan tidak berlaku. Perubahan jenis menjadi Artikel Jurnal menghitung ulang kebutuhan kuartil sebelum rekam dapat dinyatakan lengkap.
 - Usulan tidak langsung mengubah rekam resmi dan selalu diteruskan ke Tinjauan beserta kaitan indikator KM-nya.
 - Setelah dikirim, usulan tersedia sebagai kandidat pelengkapan metadata pada Tinjauan di sesi yang sama.
 - Status usulan pada halaman asal mengikuti keputusan sesi Tinjauan yang sama, sehingga permintaan perbaikan atau hasil akhir tidak kembali ditampilkan sebagai masih menunggu.
@@ -123,9 +124,9 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Pustaka membedakan antrean, pemrosesan, selesai, dan gagal; rekam gagal menampilkan alasan serta tindakan coba lagi.
 - Tanya jawab hanya menampilkan jawaban ketika bukti dan kutipan tersedia.
 - Pustaka membawa identitas dokumen melalui URL saat pengguna berpindah ke Tanya jawab atau Ekstraksi; hanya dokumen selesai diproses dengan kemampuan yang sesuai yang dapat dipakai.
-- Tanya jawab menerapkan cakupan dokumen yang dipilih dan hanya mengutip sumber yang mendukung pertanyaan.
-- Ekstraksi memperlihatkan kandidat per bidang dan memakai satu profil yang benar-benar tersedia. Parameter dokumen yang tidak valid ditolak secara jelas dan tidak diam-diam diganti dengan dokumen lain.
-- Seluruh bidang harus diputuskan dan minimal satu bidang harus disertakan sebelum hasil beserta kutipannya dibuat sebagai rekam Tinjauan beridentitas unik pada ruang kerja Indonesia.
+- Tanya jawab menerapkan cakupan dokumen yang dipilih dan hanya mengutip sumber yang mendukung pertanyaan. Riwayat awal juga mengikuti dokumen pada URL sehingga pertanyaan dari dokumen lain tidak muncul dalam cakupan khusus.
+- Ekstraksi memperlihatkan kandidat per bidang dan memakai satu profil yang benar-benar tersedia. Render, hitungan, kesiapan kirim, kandidat, dan bukti semuanya berasal dari `fieldIds` profil yang sama. Parameter dokumen yang tidak valid ditolak secara jelas dan tidak diam-diam diganti dengan dokumen lain.
+- Seluruh bidang pada profil aktif harus diputuskan dan minimal satu bidang harus disertakan sebelum hasil beserta kutipannya dibuat sebagai rekam Tinjauan beridentitas unik pada ruang kerja Indonesia.
 - Pustaka, Tanya jawab, dan Ekstraksi tetap berada dalam satu ruang kerja Dokumen.
 
 ## Route utama

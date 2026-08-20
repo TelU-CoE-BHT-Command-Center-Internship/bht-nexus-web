@@ -11,9 +11,15 @@ import {
   type OfficialActivityRecord,
 } from "@/components/nexus-activities/nexus-activities-content";
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
+import {
+  type NexusMetadataCompletenessItem,
+  NexusMetadataCompletenessList,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completeness-list";
 import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
 import {
+  isMetadataCompletionFieldKey,
   type MetadataCompletionResolutions,
+  metadataCompletionFieldState,
   metadataCompletionResolvedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
@@ -31,7 +37,7 @@ type NexusActivityDetailProps = {
   record: OfficialActivityRecord;
 };
 
-type MetadataItem = {
+type MetadataItem = NexusMetadataCompletenessItem & {
   href?: string;
   key: string;
   label: string;
@@ -141,21 +147,16 @@ function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
     },
   );
 
-  return items;
-}
-
-function resolutionSummary(
-  proposal: ActivityProposal | undefined,
-  key: ActivityCompletionFieldKey,
-) {
-  const resolution = proposal?.resolutions[key];
-
-  if (!resolution) return null;
-  if (resolution.status === "provided") return resolution.value;
-  if (resolution.status === "not-available") {
-    return `Diajukan sebagai memang tidak tersedia · ${resolution.reason}`;
-  }
-  return `Diajukan sebagai tidak berlaku · ${resolution.reason}`;
+  return items.map((item) => ({
+    ...item,
+    fieldState: isMetadataCompletionFieldKey(item.key)
+      ? metadataCompletionFieldState(
+          record.resolvedMetadata,
+          item.key,
+          isMissing(item.key as ActivityCompletionFieldKey),
+        )
+      : "available",
+  }));
 }
 
 export function NexusActivityDetail({
@@ -333,42 +334,10 @@ export function NexusActivityDetail({
           Bukti yang tersimpan internal tidak dianggap hilang. Rekam baru perlu
           dilengkapi ketika nilai atau lokasi buktinya memang belum tercatat.
         </p>
-        <ul className={detail.completenessList}>
-          {metadataItems.map((item) => {
-            const isPending = Boolean(item.missingFieldKey && proposal);
-            const status = item.missingFieldKey
-              ? isPending
-                ? "pending"
-                : "missing"
-              : "available";
-            const summary = item.missingFieldKey
-              ? resolutionSummary(proposal, item.missingFieldKey)
-              : null;
-
-            return (
-              <li data-status={status} key={item.key}>
-                <span aria-hidden="true" className={detail.completenessMarker}>
-                  {status === "available"
-                    ? "✓"
-                    : status === "pending"
-                      ? "↗"
-                      : "?"}
-                </span>
-                <span className={detail.completenessCopy}>
-                  <strong>{item.label}</strong>
-                  <small>{summary ?? item.value}</small>
-                </span>
-                <span className={detail.completenessStatus}>
-                  {status === "available"
-                    ? "Tersedia"
-                    : status === "pending"
-                      ? "Menunggu Tinjauan"
-                      : "Belum diselesaikan"}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <NexusMetadataCompletenessList
+          items={metadataItems}
+          proposal={proposal}
+        />
       </section>
 
       <section

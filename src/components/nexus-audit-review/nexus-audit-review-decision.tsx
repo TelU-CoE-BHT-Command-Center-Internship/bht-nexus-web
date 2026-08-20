@@ -23,10 +23,12 @@ import {
   metadataCompletionValueError,
   normalizeMetadataCompletionResolution,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { auditMatchingIsCurrent } from "@/components/nexus-review-session/nexus-review-session";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type AuditReviewDecisionSectionProps = AuditReviewDrawerProps & {
   decisionIndex: ReviewSectionIndexes["decision"];
@@ -43,14 +45,10 @@ export function AuditReviewDecisionSection({
   selectedMatch,
   state,
 }: AuditReviewDecisionSectionProps) {
-  const exactIdentifier = record.matches.some(
+  const exactIdentifier = state.matches.some(
     (match) => match.verdict === "same_identifier",
   );
-  const matchingIsStale = Boolean(
-    state.correction &&
-      record.candidateKind !== "metadata_completion" &&
-      record.matches.length > 0,
-  );
+  const matchingIsStale = !auditMatchingIsCurrent(state);
   const [decisionChoice, setDecisionChoice] =
     useState<AuditDecisionKind | null>(null);
   const [note, setNote] = useState("");
@@ -536,7 +534,7 @@ export function AuditReviewDecisionSection({
           </div>
           <div>
             <dt>Waktu keputusan</dt>
-            <dd>{state.decision.timeLabel}</dd>
+            <dd>{formatAuditTimestamp(state.decision.occurredAt)}</dd>
           </div>
           <div>
             <dt>Versi kandidat</dt>
@@ -571,9 +569,11 @@ export function AuditReviewDecisionSection({
           title="Kandidat tidak dapat Anda putuskan"
         />
         <NexusWorkspaceNotice>
-          Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri.
-          Kandidat tetap berada di antrean sampai diperiksa pengguna lain yang
-          berwenang.
+          {capabilities.reviewBlockReason === "unknown_submitter"
+            ? "Identitas pengirim belum tersedia, sehingga keputusan ditutup untuk mencegah persetujuan yang tidak sah. Lengkapi identitas aktor dari layanan sumber sebelum meninjau kandidat."
+            : capabilities.reviewBlockReason === "self_submitted"
+              ? "Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri. Kandidat tetap berada di antrean sampai diperiksa pengguna lain yang berwenang."
+              : "Akun ini belum mempunyai kewenangan untuk menetapkan keputusan. Kandidat tetap berada di antrean sampai diperiksa pengguna yang berwenang."}
         </NexusWorkspaceNotice>
         <div className={drawerStyles.reviewDecisionActions}>
           <NexusWorkspaceButton onClick={onClose} type="button">

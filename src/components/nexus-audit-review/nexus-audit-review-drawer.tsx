@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuditReviewDecisionSection } from "@/components/nexus-audit-review/nexus-audit-review-decision";
 import { AuditCandidateDetails } from "@/components/nexus-audit-review/nexus-audit-review-detail";
 import {
@@ -13,21 +13,31 @@ export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
   const { onClose, record, state } = props;
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(
     state.reviewTargetRecordId &&
-      record.matches.some((match) => match.id === state.reviewTargetRecordId)
+      state.matches.some((match) => match.id === state.reviewTargetRecordId)
       ? state.reviewTargetRecordId
       : state.decision?.targetRecordId &&
-          record.matches.some(
+          state.matches.some(
             (match) => match.id === state.decision?.targetRecordId,
           )
         ? state.decision.targetRecordId
-        : record.matches.length === 1
-          ? record.matches[0].id
+        : state.matches.length === 1
+          ? state.matches[0].id
           : null,
   );
-  const selectedMatch = record.matches.find(
+  useEffect(() => {
+    if (
+      selectedMatchId &&
+      !state.matches.some((match) => match.id === selectedMatchId)
+    ) {
+      setSelectedMatchId(
+        state.matches.length === 1 ? state.matches[0].id : null,
+      );
+    }
+  }, [selectedMatchId, state.matches]);
+  const selectedMatch = state.matches.find(
     (match) => match.id === selectedMatchId,
   );
-  const sectionIndexes = auditSectionIndexes(record.matches.length > 0);
+  const sectionIndexes = auditSectionIndexes(state.matches.length > 0);
 
   return (
     <NexusWorkspaceDrawer
@@ -40,7 +50,7 @@ export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
         {
           active: state.status === "waiting",
           complete: state.status !== "waiting",
-          label: record.matches.length > 0 ? "Kecocokan" : "Bukti",
+          label: state.matches.length > 0 ? "Kecocokan" : "Bukti",
           number: 2,
         },
         {

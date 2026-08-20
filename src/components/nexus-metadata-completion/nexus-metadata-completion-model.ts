@@ -46,6 +46,12 @@ export type MetadataCompletionResolutionStatus =
   | "not-available"
   | "provided";
 
+export type MetadataCompletionFieldState =
+  | "available"
+  | "not-available"
+  | "not-applicable"
+  | "unresolved";
+
 export type MetadataCompletionResolution = {
   reason: string;
   status: MetadataCompletionResolutionStatus;
@@ -517,6 +523,7 @@ const alwaysApplicableFields: readonly MetadataCompletionFieldKey[] = [
   "programStudy",
   "protectionType",
   "publicationFrequency",
+  "quartile",
   "registrationNumber",
   "role",
   "scheme",
@@ -545,6 +552,31 @@ export const metadataCompletionResolutionLabels: Record<
   "not-available": "Memang tidak tersedia",
   provided: "Nilai diajukan",
 };
+
+export const metadataCompletionFieldStateLabels: Record<
+  MetadataCompletionFieldState,
+  string
+> = {
+  available: "Tersedia",
+  "not-applicable": "Tidak berlaku",
+  "not-available": "Tidak tersedia",
+  unresolved: "Belum diselesaikan",
+};
+
+/**
+ * Status penyelesaian bukan sinonim dari ketersediaan. Pengecualian yang sudah
+ * disetujui tetap membawa arti `tidak tersedia` atau `tidak berlaku`.
+ */
+export function metadataCompletionFieldState(
+  resolutions: MetadataCompletionResolutions | undefined,
+  key: MetadataCompletionFieldKey,
+  isMissing: boolean,
+): MetadataCompletionFieldState {
+  if (isMissing) return "unresolved";
+  const resolution = resolutions?.[key];
+  if (!resolution || resolution.status === "provided") return "available";
+  return resolution.status;
+}
 
 /**
  * Menampilkan hasil penyelesaian yang sudah disetujui tanpa menghilangkan

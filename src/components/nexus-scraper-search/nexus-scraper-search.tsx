@@ -18,6 +18,7 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { NexusWorkspaceInfoHint } from "@/components/nexus-workspace-ui/nexus-workspace-info-hint";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -305,7 +306,12 @@ export function NexusScraperSearch({
             <NexusWorkspaceTableBadge tone={tone}>
               {job.statusLabel}
             </NexusWorkspaceTableBadge>
-            {job.failureReason ? <small>{job.failureReason}</small> : null}
+            {job.failureReason ? (
+              <NexusWorkspaceInfoHint
+                label={content.locale === "id" ? "Kendala" : "Issue"}
+                text={job.failureReason}
+              />
+            ) : null}
           </span>
         ),
         result: (

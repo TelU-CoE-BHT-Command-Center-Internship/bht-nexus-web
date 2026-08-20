@@ -306,11 +306,7 @@ export function NexusIntellectualProperty({
         note,
       );
     reviewSession.submitRecord(
-      createIntellectualPropertyCompletionReviewRecord(
-        record,
-        proposal,
-        reviewSession.actor,
-      ),
+      createIntellectualPropertyCompletionReviewRecord(record, proposal),
     );
   };
 

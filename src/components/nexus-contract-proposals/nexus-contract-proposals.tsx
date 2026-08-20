@@ -301,11 +301,7 @@ export function NexusContractProposals({
         note,
       );
     reviewSession.submitRecord(
-      createContractProposalCompletionReviewRecord(
-        record,
-        proposal,
-        reviewSession.actor,
-      ),
+      createContractProposalCompletionReviewRecord(record, proposal),
     );
   };
 

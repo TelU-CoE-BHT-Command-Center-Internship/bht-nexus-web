@@ -5,6 +5,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
 import {
   type NexusPublicationsContent,
+  normalizeProjectedPublication,
   type OfficialPublication,
   type PublicationCompletionResolutions,
   type PublicationIndicatorId,
@@ -333,6 +334,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
       projectOfficialMetadataRecords(
         content.records,
         reviewSession.officialMetadataByRecordId,
+        normalizeProjectedPublication,
       ),
     [content.records, reviewSession.officialMetadataByRecordId],
   );
@@ -481,11 +483,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
         note,
       );
     reviewSession.submitRecord(
-      createMetadataCompletionReviewRecord(
-        publication,
-        proposal,
-        reviewSession.actor,
-      ),
+      createMetadataCompletionReviewRecord(publication, proposal),
     );
   };
 

@@ -2,6 +2,7 @@ import type {
   MetadataCompletionFieldKey,
   MetadataCompletionResolutions,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 export type OfficialMetadataProjection = {
   appliedAt: string;
@@ -23,7 +24,10 @@ type ProjectableOfficialRecord = {
   resolvedMetadata?: MetadataCompletionResolutions;
   review: {
     candidateId: string;
-    decision: "Dihubungkan ke rekam resmi" | "Disetujui sebagai data baru";
+    decision:
+      | "Dihubungkan ke rekam resmi"
+      | "Disetujui sebagai data baru"
+      | "Pelengkapan metadata disetujui";
     note: string;
     reviewedAt: string;
     reviewer: string;
@@ -63,12 +67,12 @@ export function projectOfficialMetadataRecord<
     },
     review: {
       candidateId: projection.reviewRecordId,
-      decision: "Dihubungkan ke rekam resmi",
+      decision: "Pelengkapan metadata disetujui",
       note: projection.note,
-      reviewedAt: projection.appliedAt,
+      reviewedAt: formatAuditTimestamp(projection.appliedAt),
       reviewer: projection.reviewer,
     },
-    updatedAt: projection.appliedAt,
+    updatedAt: formatAuditTimestamp(projection.appliedAt),
   };
   const writable = next as unknown as Record<string, unknown>;
 
@@ -92,8 +96,14 @@ export function projectOfficialMetadataRecord<
 
 export function projectOfficialMetadataRecords<
   T extends ProjectableOfficialRecord,
->(records: readonly T[], projections: OfficialMetadataProjectionMap): T[] {
-  return records.map((record) =>
-    projectOfficialMetadataRecord(record, projections[record.publicId]),
-  );
+>(
+  records: readonly T[],
+  projections: OfficialMetadataProjectionMap,
+  normalize?: (record: T, projection?: OfficialMetadataProjection) => T,
+): T[] {
+  return records.map((record) => {
+    const projection = projections[record.publicId];
+    const projected = projectOfficialMetadataRecord(record, projection);
+    return normalize ? normalize(projected, projection) : projected;
+  });
 }

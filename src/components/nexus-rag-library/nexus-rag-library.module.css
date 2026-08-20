@@ -60,24 +60,44 @@
   color: var(--color-nexus-text-subtle);
 }
 
-.statusDetail {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
+.workspace th[data-column="primary"] {
+  width: 20rem;
 }
 
-.statusDetail small {
-  color: var(--color-nexus-text-muted);
-  line-height: 1.45;
-  max-width: 24rem;
+.workspace th[data-column="owner"] {
+  width: 9.5rem;
+}
+
+.workspace th[data-column="status"] {
+  width: 10rem;
+}
+
+.workspace th[data-column="updated"] {
+  width: 8.5rem;
+}
+
+.workspace th[data-column="action"] {
+  width: 10.5rem;
+}
+
+.statusDetail {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
 }
 
 .documentActions {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.4rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.documentActions > * {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .emptyState {

@@ -15,8 +15,12 @@ import {
   auditStatusTone,
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
+import { auditMatchingIsCurrent } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusWorkspaceNotice } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatAuditTimestamp,
+  personInitials,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspaceTableBadge } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 
 type AuditCandidateDetailsProps = {
@@ -232,15 +236,12 @@ function MetadataSection({
   );
 }
 
-function MatchAssessment({
-  record,
-  state,
-}: Pick<AuditCandidateDetailsProps, "record" | "state">) {
-  const leadingMatch = record.matches.toSorted(
+function MatchAssessment({ state }: Pick<AuditCandidateDetailsProps, "state">) {
+  const leadingMatch = state.matches.toSorted(
     (first, second) => second.score - first.score,
   )[0];
   if (!leadingMatch) return null;
-  if (state.correction) {
+  if (!auditMatchingIsCurrent(state)) {
     return (
       <section className={drawerStyles.reviewAssessment} data-tone="possible">
         <div>
@@ -305,15 +306,15 @@ function OfficialMatchSection({
         id="audit-official-match-title"
         index={indexes.match}
         meta={
-          record.matches.length > 0
-            ? `${record.matches.length} rekam untuk diperiksa`
+          state.matches.length > 0
+            ? `${state.matches.length} rekam untuk diperiksa`
             : "Belum ada pembanding"
         }
         title="Rekam resmi terkait"
       />
-      {record.matches.length > 0 ? (
+      {state.matches.length > 0 ? (
         <div className={drawerStyles.reviewMatchList}>
-          {record.matches.map((match, index) => {
+          {state.matches.map((match, index) => {
             const isSelected = selectedMatch?.id === match.id;
             const exactIdentifier = match.verdict === "same_identifier";
 
@@ -347,11 +348,13 @@ function OfficialMatchSection({
                   <b>{record.sourceLabel} + BHT Nexus</b>
                 </span>
                 <span className={drawerStyles.reviewMatchScore}>
-                  <strong>{state.correction ? "—" : `${match.score}%`}</strong>
+                  <strong>
+                    {auditMatchingIsCurrent(state) ? `${match.score}%` : "—"}
+                  </strong>
                   <small>
-                    {state.correction
-                      ? "Perlu dihitung ulang"
-                      : match.verdictLabel}
+                    {auditMatchingIsCurrent(state)
+                      ? match.verdictLabel
+                      : "Perlu dihitung ulang"}
                   </small>
                 </span>
               </label>
@@ -376,7 +379,7 @@ function ComparisonSection({
   state,
 }: AuditCandidateDetailsProps) {
   if (!selectedMatch) {
-    if (record.matches.length < 2) return null;
+    if (state.matches.length < 2) return null;
 
     return (
       <section
@@ -692,7 +695,7 @@ function SourceEvidenceSection({
               <div>
                 <strong>{entry.label}</strong>
                 <span>
-                  {entry.actor} · {entry.timeLabel}
+                  {entry.actor} · {formatAuditTimestamp(entry.occurredAt)}
                 </span>
                 {entry.note ? <p>{entry.note}</p> : null}
                 {entry.changes?.length ? (
@@ -750,7 +753,7 @@ export function AuditCandidateDetails({
         selectedMatch={selectedMatch}
         state={state}
       />
-      <MatchAssessment record={record} state={state} />
+      <MatchAssessment state={state} />
       <OfficialMatchSection
         indexes={indexes}
         onSelectMatch={onSelectMatch}

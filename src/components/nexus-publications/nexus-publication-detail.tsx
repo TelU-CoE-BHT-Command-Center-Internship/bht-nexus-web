@@ -2,8 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import {
+  type NexusMetadataCompletenessItem,
+  NexusMetadataCompletenessList,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completeness-list";
 import { NexusMetadataCompletionForm } from "@/components/nexus-metadata-completion/nexus-metadata-completion-form";
-import { metadataCompletionResolvedValue } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
+  isMetadataCompletionFieldKey,
+  metadataCompletionFieldState,
+  metadataCompletionResolvedValue,
+} from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
 import {
   type OfficialPublication,
@@ -32,7 +40,7 @@ type NexusPublicationDetailProps = {
   publication: OfficialPublication;
 };
 
-type PublicationMetadataItem = {
+type PublicationMetadataItem = NexusMetadataCompletenessItem & {
   href?: string;
   key: string;
   label: string;
@@ -109,7 +117,7 @@ function getMetadataItems(
     },
   );
 
-  return [
+  const items: PublicationMetadataItem[] = [
     {
       key: "title",
       label: "Judul",
@@ -171,20 +179,17 @@ function getMetadataItems(
       wide: true,
     },
   ];
-}
 
-function getResolutionSummary(
-  proposal: PublicationMetadataProposal | undefined,
-  key: PublicationCompletionFieldKey,
-) {
-  const resolution = proposal?.resolutions[key];
-
-  if (!resolution) return null;
-  if (resolution.status === "provided") return resolution.value;
-  if (resolution.status === "not-available") {
-    return `Diajukan sebagai memang tidak tersedia · ${resolution.reason}`;
-  }
-  return `Diajukan sebagai tidak berlaku · ${resolution.reason}`;
+  return items.map((item) => ({
+    ...item,
+    fieldState: isMetadataCompletionFieldKey(item.key)
+      ? metadataCompletionFieldState(
+          publication.resolvedMetadata,
+          item.key,
+          isMissing(item.key as PublicationCompletionFieldKey),
+        )
+      : "available",
+  }));
 }
 
 export function NexusPublicationDetail({
@@ -464,42 +469,10 @@ export function NexusPublicationDetail({
           selesai.
         </p>
 
-        <ul className={detail.completenessList}>
-          {metadataItems.map((item) => {
-            const isPending = Boolean(item.missingFieldKey && proposal);
-            const status = item.missingFieldKey
-              ? isPending
-                ? "pending"
-                : "missing"
-              : "available";
-            const resolutionSummary = item.missingFieldKey
-              ? getResolutionSummary(proposal, item.missingFieldKey)
-              : null;
-
-            return (
-              <li data-status={status} key={item.key}>
-                <span aria-hidden="true" className={detail.completenessMarker}>
-                  {status === "available"
-                    ? "✓"
-                    : status === "pending"
-                      ? "↗"
-                      : "?"}
-                </span>
-                <span className={detail.completenessCopy}>
-                  <strong>{item.label}</strong>
-                  <small>{resolutionSummary ?? item.value}</small>
-                </span>
-                <span className={detail.completenessStatus}>
-                  {status === "available"
-                    ? "Tersedia"
-                    : status === "pending"
-                      ? "Menunggu Tinjauan"
-                      : "Belum diselesaikan"}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <NexusMetadataCompletenessList
+          items={metadataItems}
+          proposal={proposal}
+        />
       </section>
 
       <section

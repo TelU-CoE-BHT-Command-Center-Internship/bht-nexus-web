@@ -292,11 +292,7 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
       note,
     );
     reviewSession.submitRecord(
-      createActivityCompletionReviewRecord(
-        record,
-        proposal,
-        reviewSession.actor,
-      ),
+      createActivityCompletionReviewRecord(record, proposal),
     );
   };
 

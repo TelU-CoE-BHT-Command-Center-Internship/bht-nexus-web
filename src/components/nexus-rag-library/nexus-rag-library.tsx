@@ -16,6 +16,7 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { NexusWorkspaceInfoHint } from "@/components/nexus-workspace-ui/nexus-workspace-info-hint";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -284,7 +285,10 @@ export function NexusRagLibrary({
               {document.statusLabel}
             </NexusWorkspaceTableBadge>
             {document.failureReason ? (
-              <small>{document.failureReason}</small>
+              <NexusWorkspaceInfoHint
+                label={content.locale === "id" ? "Kendala" : "Issue"}
+                text={document.failureReason}
+              />
             ) : null}
           </span>
         ),

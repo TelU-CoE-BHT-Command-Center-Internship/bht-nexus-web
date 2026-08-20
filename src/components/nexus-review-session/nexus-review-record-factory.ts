@@ -88,7 +88,7 @@ function createBaseRecord(
         id: `${values.id}-submitted`,
         kind: "submitted",
         label: "Kandidat masuk ke antrean",
-        timeLabel: values.discoveredAtLabel,
+        occurredAt: values.discoveredAt,
         version: 1,
       },
     ],
@@ -143,14 +143,13 @@ export function createExtractionReviewRecord(
   id: string,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
-  const acceptedFields = content.fields
-    .filter(
-      (field) =>
-        profile.fieldIds.includes(field.id) &&
-        decisions[field.id] === "accepted",
-    )
+  const profileFields = content.fields.filter((field) =>
+    profile.fieldIds.includes(field.id),
+  );
+  const acceptedFields = profileFields
+    .filter((field) => decisions[field.id] === "accepted")
     .map(({ id: fieldId, label, value }) => ({ id: fieldId, label, value }));
-  const evidence = content.fields.flatMap((field) =>
+  const evidence = profileFields.flatMap((field) =>
     decisions[field.id] === "accepted" && field.source
       ? [
           {
@@ -185,7 +184,7 @@ export function createExtractionReviewRecord(
       },
       signal: {
         primary: `${acceptedFields.length} bidang disertakan dari dokumen`,
-        secondary: `${content.fields.length - acceptedFields.length} bidang tidak diteruskan`,
+        secondary: `${profileFields.length - acceptedFields.length} bidang tidak diteruskan`,
         tone: "waiting",
       },
       source: "document",
@@ -215,7 +214,6 @@ function resolutionValue(
 export function createMetadataCompletionReviewRecord(
   publication: OfficialPublication,
   proposal: PublicationMetadataProposal,
-  actor: FrontendActor,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
   const displayTitle = publicationDisplayTitle(publication);
@@ -296,7 +294,7 @@ export function createMetadataCompletionReviewRecord(
     (proposedDoi ? `https://doi.org/${proposedDoi}` : undefined);
 
   return createBaseRecord(
-    proposal.submittedBy || actorLabel(actor),
+    proposal.submittedBy,
     {
       candidateKind: "metadata_completion",
       category: "publication_conference",
@@ -351,14 +349,13 @@ export function createMetadataCompletionReviewRecord(
       title: displayTitle,
       typeLabel: "Pelengkapan metadata publikasi",
     },
-    proposal.submittedByActorId ?? actor.id,
+    proposal.submittedByActorId,
   );
 }
 
 export function createAcademicCompletionReviewRecord(
   record: OfficialAcademicRecord,
   proposal: AcademicProposal,
-  actor: FrontendActor,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
   const displayTitle = academicDisplayTitle(record);
@@ -421,7 +418,7 @@ export function createAcademicCompletionReviewRecord(
   }));
 
   return createBaseRecord(
-    proposal.submittedBy || actorLabel(actor),
+    proposal.submittedBy,
     {
       candidateKind: "metadata_completion",
       category: "academic_hr",
@@ -480,14 +477,13 @@ export function createAcademicCompletionReviewRecord(
       title: displayTitle,
       typeLabel: "Pelengkapan metadata kegiatan akademik",
     },
-    proposal.submittedByActorId ?? actor.id,
+    proposal.submittedByActorId,
   );
 }
 
 export function createActivityCompletionReviewRecord(
   record: OfficialActivityRecord,
   proposal: ActivityProposal,
-  actor: FrontendActor,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
   const displayTitle = activityDisplayTitle(record);
@@ -570,7 +566,7 @@ export function createActivityCompletionReviewRecord(
   }));
 
   return createBaseRecord(
-    proposal.submittedBy || actorLabel(actor),
+    proposal.submittedBy,
     {
       candidateKind: "metadata_completion",
       category:
@@ -627,14 +623,13 @@ export function createActivityCompletionReviewRecord(
       title: displayTitle,
       typeLabel: "Pelengkapan metadata kegiatan atau pengabdian",
     },
-    proposal.submittedByActorId ?? actor.id,
+    proposal.submittedByActorId,
   );
 }
 
 export function createContractProposalCompletionReviewRecord(
   record: OfficialContractProposalRecord,
   proposal: ContractProposalProposal,
-  actor: FrontendActor,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
   const displayTitle = contractProposalDisplayTitle(record);
@@ -707,7 +702,7 @@ export function createContractProposalCompletionReviewRecord(
   }));
 
   return createBaseRecord(
-    proposal.submittedBy || actorLabel(actor),
+    proposal.submittedBy,
     {
       candidateKind: "metadata_completion",
       category: "research_business",
@@ -762,14 +757,13 @@ export function createContractProposalCompletionReviewRecord(
       title: displayTitle,
       typeLabel: "Pelengkapan metadata kontrak atau proposal",
     },
-    proposal.submittedByActorId ?? actor.id,
+    proposal.submittedByActorId,
   );
 }
 
 export function createIntellectualPropertyCompletionReviewRecord(
   record: OfficialIntellectualProperty,
   proposal: IntellectualPropertyProposal,
-  actor: FrontendActor,
 ): AuditReviewRecord {
   const discoveredAt = new Date();
   const officialValues: Partial<Record<string, string>> = {
@@ -826,7 +820,7 @@ export function createIntellectualPropertyCompletionReviewRecord(
   }));
 
   return createBaseRecord(
-    proposal.submittedBy || actorLabel(actor),
+    proposal.submittedBy,
     {
       candidateKind: "metadata_completion",
       category: "innovation_ip",
@@ -889,6 +883,6 @@ export function createIntellectualPropertyCompletionReviewRecord(
       title: record.title,
       typeLabel: "Pelengkapan metadata kekayaan intelektual",
     },
-    proposal.submittedByActorId ?? actor.id,
+    proposal.submittedByActorId,
   );
 }

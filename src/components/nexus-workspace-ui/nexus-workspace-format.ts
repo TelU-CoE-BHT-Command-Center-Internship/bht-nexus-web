@@ -1,13 +1,35 @@
-/**
- * Renders an ISO local timestamp (`2026-08-11T08:52`) as `HH:MM DD-MM-YY`.
- * The string is sliced rather than parsed through `Date`, so server and client
- * produce the same output regardless of the machine time zone.
- */
-export function formatTimestamp(value: string): string {
-  const [date, time = ""] = value.split("T");
-  const [year = "", month = "", day = ""] = date.split("-");
+const WIB_TIME_ZONE = "Asia/Jakarta";
 
-  return `${time.slice(0, 5)} ${day}-${month}-${year.slice(2)}`;
+/**
+ * Timestamp lama tanpa offset berasal dari data lokal WIB. Tambahan offset ini
+ * menjaga kompatibilitas fixture lama; event baru selalu menyimpan ISO UTC.
+ */
+function normalizedTimestamp(value: string) {
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(trimmed)) {
+    return trimmed;
+  }
+  return `${trimmed}+07:00`;
+}
+
+/** Menampilkan instant ISO dalam zona operasional CoE BHT (WIB). */
+export function formatTimestamp(value: string): string {
+  const date = new Date(normalizedTimestamp(value));
+  if (Number.isNaN(date.getTime())) return value;
+
+  const parts = new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone: WIB_TIME_ZONE,
+    year: "2-digit",
+  }).formatToParts(date);
+  const partValue = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return `${partValue("hour")}:${partValue("minute")} ${partValue("day")}-${partValue("month")}-${partValue("year")}`;
 }
 
 /**
@@ -15,7 +37,12 @@ export function formatTimestamp(value: string): string {
  * server can later replace the source timestamp without changing the UI.
  */
 export function formatAuditTimestamp(value: Date | string = new Date()) {
-  const date = typeof value === "string" ? new Date(value) : value;
+  const date =
+    typeof value === "string" ? new Date(normalizedTimestamp(value)) : value;
+
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === "string" ? value : "Waktu tidak tersedia";
+  }
 
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
@@ -23,7 +50,7 @@ export function formatAuditTimestamp(value: Date | string = new Date()) {
     hourCycle: "h23",
     minute: "2-digit",
     month: "short",
-    timeZone: "Asia/Jakarta",
+    timeZone: WIB_TIME_ZONE,
     timeZoneName: "short",
     year: "numeric",
   }).format(date);

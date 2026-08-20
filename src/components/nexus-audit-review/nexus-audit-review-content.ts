@@ -1,4 +1,5 @@
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { nexusReviewActorIds } from "@/components/nexus-review-session/nexus-review-actors";
 import {
   kmIndicator,
   type NexusKmIndicator,
@@ -34,6 +35,12 @@ export type AuditDecisionKind =
   | "merged"
   | "rejected";
 
+export type AuditMatchingStatus =
+  | "current"
+  | "not_required"
+  | "pending"
+  | "stale";
+
 export type AuditComparisonStatus =
   | "different"
   | "missing"
@@ -68,8 +75,9 @@ export type AuditReviewHistory = {
   kind?: "correction_submitted" | "decision" | "submitted";
   label: string;
   note?: string;
+  /** Instant mesin untuk integrasi dan pengurutan audit. */
+  occurredAt: string;
   targetRecordId?: string;
-  timeLabel: string;
   version?: number;
 };
 
@@ -79,9 +87,10 @@ export type AuditReviewDecision = {
   kind: AuditDecisionKind;
   label: string;
   note: string;
+  /** Instant mesin; format WIB hanya dibuat ketika dirender. */
+  occurredAt: string;
   /** Rekam resmi yang dipilih reviewer untuk merge, update, atau pelengkapan. */
   targetRecordId?: string;
-  timeLabel: string;
 };
 
 export type AuditFixRequest = {
@@ -141,6 +150,9 @@ export type AuditReviewRecord = {
   history: AuditReviewHistory[];
   id: string;
   kpiLinks: AuditKpiLink[];
+  /** Versi kandidat yang dipakai layanan pencocokan untuk hasil ini. */
+  matchingVersion?: number;
+  matchingStatus?: AuditMatchingStatus;
   matches: AuditOfficialMatch[];
   owner: string;
   /** Periode evaluasi KM; kosong bila sumber belum menentukan periodenya. */
@@ -182,12 +194,12 @@ const evidence = (
 const discovered = (
   id: string,
   sourceLabel: string,
-  timeLabel: string,
+  occurredAt: string,
 ): AuditReviewHistory => ({
   actor: sourceLabel,
   id: `${id}-discovered`,
   label: "Kandidat masuk ke antrean",
-  timeLabel,
+  occurredAt,
 });
 
 const sessionReviewerActor = "Pemeriksa sesi";
@@ -220,12 +232,16 @@ const records: AuditReviewRecord[] = [
       field("identifier", "Pengenal eksternal", ""),
     ],
     history: [
-      discovered("CAND-260816-001", "Dokumen internal", "16 Agu 2026, 09.22"),
+      discovered(
+        "CAND-260816-001",
+        "Dokumen internal",
+        "2026-08-16T09:22:00+07:00",
+      ),
       {
         actor: "Sistem pencocokan",
         id: "CAND-260816-001-match",
         label: "Dua rekam serupa ditemukan untuk diperiksa",
-        timeLabel: "16 Agu 2026, 09.23",
+        occurredAt: "2026-08-16T09:23:00+07:00",
       },
     ],
     id: "CAND-260816-001",
@@ -350,7 +366,9 @@ const records: AuditReviewRecord[] = [
       field("year", "Tahun terbit", "2026"),
       field("quartile", "Kuartil", "Q1"),
     ],
-    history: [discovered("WB-KM14-006", workbookSource, "16 Agu 2026, 09.18")],
+    history: [
+      discovered("WB-KM14-006", workbookSource, "2026-08-16T09:18:00+07:00"),
+    ],
     id: "WB-KM14-006",
     kpiLinks: [
       {
@@ -410,7 +428,9 @@ const records: AuditReviewRecord[] = [
       field("year", "Tahun terbit", "2026"),
       field("quartile", "Kuartil", "Q3"),
     ],
-    history: [discovered("WB-KM13-004", workbookSource, "16 Agu 2026, 09.14")],
+    history: [
+      discovered("WB-KM13-004", workbookSource, "2026-08-16T09:14:00+07:00"),
+    ],
     id: "WB-KM13-004",
     kpiLinks: [
       {
@@ -474,7 +494,9 @@ const records: AuditReviewRecord[] = [
       ),
       field("year", "Tahun", "2026"),
     ],
-    history: [discovered("WB-KM11-008", workbookSource, "16 Agu 2026, 09.10")],
+    history: [
+      discovered("WB-KM11-008", workbookSource, "2026-08-16T09:10:00+07:00"),
+    ],
     id: "WB-KM11-008",
     kpiLinks: [
       {
@@ -524,7 +546,9 @@ const records: AuditReviewRecord[] = [
       field("year", "Tahun", "2026"),
       field("ip_type", "Jenis HKI", "Hak Cipta"),
     ],
-    history: [discovered("WB-KM15-004", workbookSource, "16 Agu 2026, 09.06")],
+    history: [
+      discovered("WB-KM15-004", workbookSource, "2026-08-16T09:06:00+07:00"),
+    ],
     id: "WB-KM15-004",
     kpiLinks: [
       {
@@ -573,7 +597,9 @@ const records: AuditReviewRecord[] = [
       field("inventors", "Inventor", "Inventor A; Inventor B"),
       field("submission_date", "Tanggal terbit/submit", "2026"),
     ],
-    history: [discovered("WB-KM16-004", workbookSource, "16 Agu 2026, 09.02")],
+    history: [
+      discovered("WB-KM16-004", workbookSource, "2026-08-16T09:02:00+07:00"),
+    ],
     id: "WB-KM16-004",
     kpiLinks: [
       {
@@ -622,7 +648,9 @@ const records: AuditReviewRecord[] = [
       field("scheme", "Skema", "Skema Riset Nasional A"),
       field("year", "Tahun", "2026"),
     ],
-    history: [discovered("WB-KM17-004", workbookSource, "16 Agu 2026, 08.58")],
+    history: [
+      discovered("WB-KM17-004", workbookSource, "2026-08-16T08:58:00+07:00"),
+    ],
     id: "WB-KM17-004",
     kpiLinks: [
       {
@@ -670,7 +698,9 @@ const records: AuditReviewRecord[] = [
       field("start_date", "Tanggal mulai", "2026"),
       field("end_date", "Tanggal berakhir", "2027"),
     ],
-    history: [discovered("WB-KM19-004", workbookSource, "16 Agu 2026, 08.54")],
+    history: [
+      discovered("WB-KM19-004", workbookSource, "2026-08-16T08:54:00+07:00"),
+    ],
     id: "WB-KM19-004",
     kpiLinks: [
       {
@@ -719,7 +749,9 @@ const records: AuditReviewRecord[] = [
       field("topic", "Topik riset", "Topik Riset Magister A"),
       field("coe", "CoE", "CoE BHT"),
     ],
-    history: [discovered("WB-KM29-005", workbookSource, "16 Agu 2026, 08.50")],
+    history: [
+      discovered("WB-KM29-005", workbookSource, "2026-08-16T08:50:00+07:00"),
+    ],
     id: "WB-KM29-005",
     kpiLinks: [
       {
@@ -777,7 +809,9 @@ const records: AuditReviewRecord[] = [
       field("year", "Tahun terbit", "2026"),
       field("coe", "CoE", "BHT"),
     ],
-    history: [discovered("WB-KM33-004", workbookSource, "16 Agu 2026, 08.46")],
+    history: [
+      discovered("WB-KM33-004", workbookSource, "2026-08-16T08:46:00+07:00"),
+    ],
     id: "WB-KM33-004",
     kpiLinks: [
       {
@@ -826,7 +860,9 @@ const records: AuditReviewRecord[] = [
       field("partner", "Mitra", "Mitra Akademik A; Mitra Industri A"),
       field("grantor", "Pemberi hibah", "Pemberi Hibah A"),
     ],
-    history: [discovered("WB-KM38-002", workbookSource, "16 Agu 2026, 08.42")],
+    history: [
+      discovered("WB-KM38-002", workbookSource, "2026-08-16T08:42:00+07:00"),
+    ],
     id: "WB-KM38-002",
     kpiLinks: [
       {
@@ -886,12 +922,16 @@ const records: AuditReviewRecord[] = [
         "Samakan nama skema dan nilai dana dengan halaman penandatanganan kontrak.",
     },
     history: [
-      discovered("CAND-260815-018", "Dokumen internal", "15 Agu 2026, 15.20"),
+      discovered(
+        "CAND-260815-018",
+        "Dokumen internal",
+        "2026-08-15T15:20:00+07:00",
+      ),
       {
         actor: sessionReviewerActor,
         id: "CAND-260815-018-correction",
         label: "Permintaan perbaikan dibuat",
-        timeLabel: "15 Agu 2026, 16.02",
+        occurredAt: "2026-08-15T16:02:00+07:00",
       },
     ],
     id: "CAND-260815-018",
@@ -925,7 +965,7 @@ const records: AuditReviewRecord[] = [
       kind: "approved_new",
       label: "Disetujui sebagai data baru",
       note: "Identitas kegiatan, periode, dan dokumen pendukung telah diperiksa. Keterkaitan indikator akan ditentukan terpisah setelah klasifikasi tersedia.",
-      timeLabel: "15 Agu 2026, 14.40",
+      occurredAt: "2026-08-15T14:40:00+07:00",
     },
     discoveredAt: "2026-08-15T13:10:00+07:00",
     discoveredAtLabel: "15 Agu 2026, 13.10",
@@ -948,12 +988,16 @@ const records: AuditReviewRecord[] = [
       field("output", "Luaran", "Berita acara kalibrasi"),
     ],
     history: [
-      discovered("CAND-260815-017", "Dokumen internal", "15 Agu 2026, 13.10"),
+      discovered(
+        "CAND-260815-017",
+        "Dokumen internal",
+        "2026-08-15T13:10:00+07:00",
+      ),
       {
         actor: sessionReviewerActor,
         id: "CAND-260815-017-approved",
         label: "Kandidat disetujui sebagai data baru",
-        timeLabel: "15 Agu 2026, 14.40",
+        occurredAt: "2026-08-15T14:40:00+07:00",
       },
     ],
     id: "CAND-260815-017",
@@ -984,6 +1028,24 @@ function replaceSessionActor(actor: string, reviewerLabel: string) {
   return actor === sessionReviewerActor ? reviewerLabel : actor;
 }
 
+function staticSubmitterActorId(record: AuditReviewRecord) {
+  return record.submittedBy === workbookSubmitter
+    ? nexusReviewActorIds.workbookImport
+    : nexusReviewActorIds.dataSteward;
+}
+
+function staticHistoryActorId(entry: AuditReviewHistory) {
+  if (entry.actorId) return entry.actorId;
+  if (entry.actor === sessionReviewerActor) {
+    return nexusReviewActorIds.workspaceAdmin;
+  }
+  if (entry.actor === workbookSource) return nexusReviewActorIds.workbookImport;
+  if (entry.actor === "Sistem pencocokan") {
+    return nexusReviewActorIds.matchingService;
+  }
+  return nexusReviewActorIds.documentPipeline;
+}
+
 /**
  * Serializable route content. Integrasi server kelak cukup mengganti pemasok
  * data pada batas halaman; kontrak interaksi ruang tinjauan tetap sama.
@@ -993,18 +1055,34 @@ export function getNexusAuditReviewContent(
 ): NexusAuditReviewContent {
   return {
     lastUpdatedLabel: "Diperbarui 16 Agu 2026, 09.22 WIB",
-    records: records.map((record) => ({
-      ...record,
-      decision: record.decision
-        ? {
-            ...record.decision,
-            actor: replaceSessionActor(record.decision.actor, reviewerLabel),
-          }
-        : undefined,
-      history: record.history.map((entry) => ({
-        ...entry,
-        actor: replaceSessionActor(entry.actor, reviewerLabel),
-      })),
-    })),
+    records: records.map((record) => {
+      const submittedByActorId =
+        record.submittedByActorId ?? staticSubmitterActorId(record);
+
+      return {
+        ...record,
+        decision: record.decision
+          ? {
+              ...record.decision,
+              actor: replaceSessionActor(record.decision.actor, reviewerLabel),
+              actorId:
+                record.decision.actorId ?? nexusReviewActorIds.workspaceAdmin,
+            }
+          : undefined,
+        fixRequest: record.fixRequest
+          ? {
+              ...record.fixRequest,
+              assigneeActorId:
+                record.fixRequest.assigneeActorId ?? submittedByActorId,
+            }
+          : undefined,
+        history: record.history.map((entry) => ({
+          ...entry,
+          actor: replaceSessionActor(entry.actor, reviewerLabel),
+          actorId: staticHistoryActorId(entry),
+        })),
+        submittedByActorId,
+      };
+    }),
   };
 }
