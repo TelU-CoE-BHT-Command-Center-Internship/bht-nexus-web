@@ -1,5 +1,6 @@
 import type {
   AuditDecisionKind,
+  AuditKpiResolution,
   AuditOfficialMatch,
   AuditReviewRecord,
   AuditReviewStatus,
@@ -20,6 +21,7 @@ export type AuditReviewDrawerProps = {
     note: string,
     fieldIds: string[],
     targetRecordId?: string,
+    kpiResolution?: AuditKpiResolution,
   ) => void;
   onResubmit: (
     values: Record<string, string>,
@@ -124,14 +126,14 @@ export function auditDecisionConsequence(
 ) {
   if (choice === "merged") {
     return {
-      body: `Keputusan untuk menghubungkan kandidat ke ${selectedMatch?.id ?? "rekam terpilih"} dicatat bersama sumber dan perbedaannya. Data resmi diperbarui setelah layanan BHT Nexus mengonfirmasi transaksi.`,
-      title: "Hubungan data dicatat untuk dikonfirmasi",
+      body: `Kandidat akan dihubungkan ke ${selectedMatch?.id ?? "rekam terpilih"}. Sumber dan perbedaannya dipertahankan pada rekam resmi yang sama.`,
+      title: "Kandidat dihubungkan tanpa membuat duplikat",
     };
   }
   if (choice === "approved_update") {
     return {
-      body: `Perubahan yang diperiksa disiapkan untuk ${selectedMatch?.id ?? "rekam resmi terpilih"}. Nilai sebelumnya, sumber, reviewer, waktu, dan versi menyertai konfirmasi layanan BHT Nexus.`,
-      title: "Pembaruan dicatat dengan jejak versi",
+      body: `Perubahan yang diperiksa akan diterapkan ke ${selectedMatch?.id ?? "rekam resmi terpilih"}. Nilai sebelumnya, sumber, reviewer, waktu, dan versi tetap tercatat.`,
+      title: "Rekam resmi diperbarui dengan jejak versi",
     };
   }
   if (choice === "approved_completion") {
@@ -142,8 +144,8 @@ export function auditDecisionConsequence(
   }
   if (choice === "approved_new") {
     return {
-      body: "Keputusan menerima kandidat dicatat bersama bukti, indikator, reviewer, waktu, dan versinya. Rekam resmi dibuat setelah layanan BHT Nexus mengonfirmasi transaksi.",
-      title: "Kandidat disetujui sebagai data baru",
+      body: "Kandidat akan menjadi rekam resmi baru bersama bukti, hasil verifikasi indikator, reviewer, waktu, dan versinya.",
+      title: "Kandidat menjadi data resmi baru",
     };
   }
   if (choice === "changes_requested") {

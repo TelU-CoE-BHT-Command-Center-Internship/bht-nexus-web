@@ -5,6 +5,7 @@ import {
   metadataCompletionAvailabilityLabel,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import type { NexusOfficialSourceMetadataItem } from "@/components/nexus-workspace-ui/nexus-official-source-metadata";
 import {
   kmIndicator,
   type NexusKmIndicator,
@@ -67,6 +68,7 @@ export type OfficialContractProposalRecord = {
   provenance: ContractProposalProvenance[];
   publicId: string;
   quality: ContractProposalQuality;
+  referenceNumber?: string;
   recordStatus: "Aktif" | "Diajukan" | "Tercatat";
   /** Nilai atau pengecualian pelengkapan yang sudah disetujui. */
   resolvedMetadata?: MetadataCompletionResolutions;
@@ -81,6 +83,10 @@ export type OfficialContractProposalRecord = {
     reviewer: string;
   };
   scheme?: string;
+  /** Metadata khusus jenis yang berasal dari pengajuan dan tidak diwakili bidang kanonis di atas. */
+  sourceMetadata?: NexusOfficialSourceMetadataItem[];
+  /** Tanggal submit proposal; berbeda dari tanggal mulai kontrak. */
+  submittedOn?: string;
   title: string;
   updatedAt: string;
 };

@@ -22,6 +22,7 @@ import {
   personInitials,
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspaceTableBadge } from "@/components/nexus-workspace-ui/nexus-workspace-records";
+import { kmIndicator } from "@/content/nexus-km-indicators";
 
 type AuditCandidateDetailsProps = {
   indexes: ReviewSectionIndexes;
@@ -252,8 +253,8 @@ function MatchAssessment({ state }: Pick<AuditCandidateDetailsProps, "state">) {
           <span>Pencocokan perlu diperbarui</span>
           <h3>Skor lama tidak dipakai untuk memutuskan versi terbaru</h3>
           <p>
-            Perubahan kandidat sudah tercatat. Layanan pencocokan perlu
-            menghitung ulang skor dan perbandingan sebelum data dihubungkan.
+            Perubahan kandidat sudah tercatat. Hasil pencocokan perlu diperbarui
+            sebelum data dihubungkan.
           </p>
         </div>
       </section>
@@ -536,6 +537,20 @@ function SourceEvidenceSection({
   selectedMatch,
   state,
 }: AuditCandidateDetailsProps) {
+  const kpiResolution = state.decision?.kpiResolution;
+  const displayedKpiLinks =
+    kpiResolution?.status === "changed" || kpiResolution?.status === "confirmed"
+      ? kpiResolution.indicatorIds.map((indicatorId) => ({
+          evidenceRule:
+            record.kpiLinks.find((link) => link.indicator.id === indicatorId)
+              ?.evidenceRule ??
+            "Keterkaitan ditetapkan reviewer setelah memeriksa metadata dan bukti kandidat.",
+          indicator: kmIndicator(indicatorId),
+        }))
+      : kpiResolution?.status === "removed" ||
+          kpiResolution?.status === "undetermined"
+        ? []
+        : record.kpiLinks;
   return (
     <section
       aria-labelledby="audit-source-title"
@@ -632,20 +647,21 @@ function SourceEvidenceSection({
       </div>
 
       <div className={drawerStyles.reviewKpiLinks}>
-        {record.kpiLinks.length > 0 ? (
-          record.kpiLinks.map((link) => (
+        {displayedKpiLinks.length > 0 ? (
+          displayedKpiLinks.map((link) => (
             <article
               className={drawerStyles.reviewKpiCallout}
               key={link.indicator.id}
             >
               <span>
                 {record.kpiLinksSuggested
-                  ? state.decision?.kind === "approved_new" ||
-                    state.decision?.kind === "merged"
-                    ? "Saran terverifikasi reviewer"
-                    : state.status === "needs_fix"
-                      ? "Saran sistem · perlu ditinjau ulang"
-                      : "Saran sistem · menunggu verifikasi reviewer"
+                  ? kpiResolution?.status === "changed"
+                    ? "Indikator diubah reviewer"
+                    : kpiResolution?.status === "confirmed"
+                      ? "Saran dikonfirmasi reviewer"
+                      : state.status === "needs_fix"
+                        ? "Saran sistem · perlu ditinjau ulang"
+                        : "Saran sistem · menunggu verifikasi reviewer"
                   : "Keterkaitan evaluasi"}{" "}
                 · {link.indicator.id} ·{link.indicator.category}
               </span>
@@ -662,8 +678,11 @@ function SourceEvidenceSection({
           ))
         ) : (
           <NexusWorkspaceNotice>
-            Belum dikaitkan dengan indikator evaluasi. Kandidat tetap dapat
-            ditinjau tanpa menebak klasifikasi KM yang belum didukung bukti.
+            {kpiResolution?.status === "removed"
+              ? "Reviewer menetapkan bahwa rekam ini tidak terkait indikator KM."
+              : kpiResolution?.status === "undetermined"
+                ? "Reviewer belum dapat menentukan keterkaitan indikator KM dari bukti yang tersedia."
+                : "Belum dikaitkan dengan indikator evaluasi. Kandidat tetap dapat ditinjau tanpa menebak klasifikasi KM yang belum didukung bukti."}
           </NexusWorkspaceNotice>
         )}
       </div>

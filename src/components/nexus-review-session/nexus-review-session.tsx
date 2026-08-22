@@ -25,6 +25,8 @@ import type {
 import type {
   OfficialMetadataProjection,
   OfficialMetadataProjectionMap,
+  OfficialRecordDecisionProjection,
+  OfficialRecordDecisionProjectionMap,
 } from "@/components/nexus-review-session/nexus-official-record-projection";
 
 export type NexusReviewActor = {
@@ -80,6 +82,9 @@ type NexusReviewSessionValue = {
     recordId: string,
     projection: OfficialMetadataProjection,
   ) => void;
+  applyOfficialRecordDecision: (
+    projection: OfficialRecordDecisionProjection,
+  ) => void;
   clearCompletionProposal: (recordId: string) => void;
   completionProposals: Record<string, MetadataCompletionProposal>;
   createCompletionProposal: (
@@ -91,6 +96,7 @@ type NexusReviewSessionValue = {
   createSessionRecordId: (idPrefix: string) => string;
   records: AuditReviewRecord[];
   officialMetadataByRecordId: OfficialMetadataProjectionMap;
+  officialRecordDecisions: OfficialRecordDecisionProjectionMap;
   runtimeByRecordId: Record<string, AuditRuntimeState>;
   submitRecord: (record: AuditReviewRecord) => void;
   submitRecords: (records: AuditReviewRecord[]) => void;
@@ -158,6 +164,8 @@ export function NexusReviewSessionProvider({
   const [records, setRecords] = useState<AuditReviewRecord[]>([]);
   const [officialMetadataByRecordId, setOfficialMetadataByRecordId] =
     useState<OfficialMetadataProjectionMap>({});
+  const [officialRecordDecisions, setOfficialRecordDecisions] =
+    useState<OfficialRecordDecisionProjectionMap>({});
   const [runtimeByRecordId, setRuntimeByRecordId] = useState<
     Record<string, AuditRuntimeState>
   >({});
@@ -221,6 +229,15 @@ export function NexusReviewSessionProvider({
     },
     [],
   );
+  const applyOfficialRecordDecision = useCallback(
+    (projection: OfficialRecordDecisionProjection) => {
+      setOfficialRecordDecisions((current) => ({
+        ...current,
+        [projection.candidate.id]: projection,
+      }));
+    },
+    [],
+  );
   const capabilitiesFor = useCallback(
     (
       _record: AuditReviewRecord,
@@ -274,6 +291,7 @@ export function NexusReviewSessionProvider({
     () => ({
       actor,
       applyOfficialMetadataCompletion,
+      applyOfficialRecordDecision,
       capabilities,
       capabilitiesFor,
       clearCompletionProposal,
@@ -282,6 +300,7 @@ export function NexusReviewSessionProvider({
       createSessionRecordId,
       records,
       officialMetadataByRecordId,
+      officialRecordDecisions,
       runtimeByRecordId,
       submitRecord,
       submitRecords,
@@ -290,6 +309,7 @@ export function NexusReviewSessionProvider({
     [
       actor,
       applyOfficialMetadataCompletion,
+      applyOfficialRecordDecision,
       capabilities,
       capabilitiesFor,
       clearCompletionProposal,
@@ -298,6 +318,7 @@ export function NexusReviewSessionProvider({
       createSessionRecordId,
       records,
       officialMetadataByRecordId,
+      officialRecordDecisions,
       runtimeByRecordId,
       submitRecord,
       submitRecords,

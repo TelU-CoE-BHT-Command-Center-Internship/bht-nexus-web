@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
+import { projectManualPublications } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
 import {
   type NexusPublicationsContent,
@@ -336,12 +337,19 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
-      projectOfficialMetadataRecords(
-        content.records,
-        reviewSession.officialMetadataByRecordId,
-        normalizeProjectedPublication,
+      projectManualPublications(
+        projectOfficialMetadataRecords(
+          content.records,
+          reviewSession.officialMetadataByRecordId,
+          normalizeProjectedPublication,
+        ),
+        reviewSession.officialRecordDecisions,
       ),
-    [content.records, reviewSession.officialMetadataByRecordId],
+    [
+      content.records,
+      reviewSession.officialMetadataByRecordId,
+      reviewSession.officialRecordDecisions,
+    ],
   );
   const [activeSourceId, setActiveSourceId] =
     useState<PublicationSourceId>("all");

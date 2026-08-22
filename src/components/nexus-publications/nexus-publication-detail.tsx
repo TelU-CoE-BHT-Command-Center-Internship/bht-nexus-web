@@ -156,6 +156,15 @@ function getMetadataItems(
       ),
     },
     ...optionalItems,
+    ...(publication.identifier && publication.identifier !== publication.doi
+      ? [
+          {
+            key: "identifier",
+            label: "Pengenal resmi",
+            value: publication.identifier,
+          },
+        ]
+      : []),
     {
       key: "quartile",
       label: "Kuartil jurnal",
@@ -179,6 +188,13 @@ function getMetadataItems(
       wide: true,
     },
   ];
+
+  items.push(
+    ...(publication.sourceMetadata ?? []).map((item) => ({
+      ...item,
+      key: `source-${item.key}`,
+    })),
+  );
 
   return items.map((item) => ({
     ...item,

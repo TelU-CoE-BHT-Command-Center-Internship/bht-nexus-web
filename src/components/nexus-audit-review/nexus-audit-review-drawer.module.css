@@ -1127,6 +1127,74 @@
   text-align: left;
 }
 
+.reviewKpiSelection {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.reviewKpiSelection > ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reviewKpiSelection > ul > li {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #ddd9f7;
+  border-radius: 0.55rem;
+  background: #f8f6ff;
+}
+
+.reviewKpiSelection > ul > li > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+  padding: 0.55rem 0 0.55rem 0.7rem;
+  color: #59667c;
+  font-size: 0.6rem;
+  line-height: 1.45;
+}
+
+.reviewKpiSelection > ul > li strong {
+  color: #4a3fb5;
+  font-size: 0.63rem;
+}
+
+.reviewKpiSelection > ul > li > button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-left: 1px solid #ddd9f7;
+  background: #fff;
+  color: #a2344b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.59rem;
+  font-weight: 750;
+}
+
+.reviewKpiSelection > ul > li > button:hover {
+  background: #fff4f5;
+}
+
+.reviewKpiSelection > ul > li > button:focus-visible {
+  outline: 0.16rem solid rgb(108 93 211 / 28%);
+  outline-offset: -0.16rem;
+}
+
+.reviewKpiSelection > small {
+  color: #8b96a8;
+  font-size: 0.56rem;
+  line-height: 1.5;
+}
+
 .reviewDecisionFooter {
   display: flex;
   align-items: center;

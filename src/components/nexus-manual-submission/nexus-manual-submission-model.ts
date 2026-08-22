@@ -31,8 +31,11 @@ export type ManualSubmissionValues = Record<string, string> & {
 
 export type ManualRecordComparisonCandidate = {
   id: string;
+  identifiers?: readonly string[];
+  recordType?: string;
   subtitle?: string;
   title: string;
+  year?: number;
 };
 
 export type ManualFieldChoice = {
@@ -68,9 +71,13 @@ export type ManualSubtypeDefinition = {
   fields: readonly ManualFieldDefinition[];
   id: string;
   label: string;
+  primaryFieldKey?: string;
   suggestion?:
     | KmSuggestionDefinition
     | ((values: ManualSubmissionValues) => KmSuggestionDefinition | null);
+  titleFieldLabel?: string;
+  titlePlaceholder?: string;
+  titleRequired?: boolean;
   typeLabel: string;
 };
 
@@ -127,22 +134,27 @@ const suggestion = (
   reason,
 });
 
-const publicationAuthors = textField(
-  "authors",
-  "Anggota BHT / penulis internal",
-  "Pisahkan beberapa nama dengan titik koma",
-);
-
 const publicationInvolvementFields = [
-  publicationAuthors,
+  textField(
+    "authors",
+    "Daftar penulis",
+    "Pisahkan beberapa nama dengan titik koma",
+    { wide: true },
+  ),
+  textField(
+    "bhtMembers",
+    "Anggota BHT yang terlibat",
+    "Nama penulis yang merupakan anggota CoE BHT",
+  ),
   textField(
     "authorRole",
-    "Penulis utama / peran",
+    "Peran penulis BHT (opsional)",
     "Contoh: penulis pertama atau corresponding author",
+    { required: false },
   ),
   textField(
     "externalCollaborators",
-    "Kolaborator eksternal",
+    "Kolaborator eksternal (opsional)",
     "Nama institusi atau penulis eksternal; pisahkan dengan titik koma",
     { required: false, wide: true },
   ),
@@ -157,10 +169,10 @@ const publicationIdentifier = textField(
   },
 );
 
-const intellectualPropertyFields = [
+const patentFields = [
   textField(
     "creators",
-    "Pencipta / inventor",
+    "Inventor",
     "Pisahkan beberapa nama dengan titik koma",
     { wide: true },
   ),
@@ -176,44 +188,124 @@ const intellectualPropertyFields = [
   },
 ] as const satisfies readonly ManualFieldDefinition[];
 
-const contractFields = [
+const nonPatentIntellectualPropertyFields = [
   textField(
-    "primaryParty",
-    "Mitra / pihak utama",
-    "Nama institusi atau mitra",
-    {
-      wide: true,
-    },
+    "creators",
+    "Pencipta / pemilik",
+    "Pisahkan beberapa nama dengan titik koma",
+    { wide: true },
   ),
   textField(
-    "scheme",
-    "Skema",
-    "Contoh: riset bersama, konsultansi, atau hibah",
+    "applicationNumber",
+    "Nomor pencatatan / permohonan (opsional)",
+    "Masukkan nomor bila sudah diterbitkan",
+    { required: false },
+  ),
+  {
+    hint: "Boleh dikosongkan bila sumber hanya mencatat tahun pengajuan.",
+    key: "submissionDate",
+    label: "Tanggal pengajuan (opsional)",
+    required: false,
+    type: "date",
+  },
+] as const satisfies readonly ManualFieldDefinition[];
+
+const researchContractFields = [
+  textField(
+    "applicants",
+    "Ketua / tim peneliti",
+    "Nama ketua atau tim peneliti; pisahkan dengan titik koma",
+    { wide: true },
+  ),
+  textField("scheme", "Skema riset", "Nama skema atau program riset"),
+  textField(
+    "partner",
+    "Mitra (opsional)",
+    "Nama institusi mitra bila tercantum",
+    { required: false },
+  ),
+  textField(
+    "referenceNumber",
+    "Nomor kontrak (opsional)",
+    "Nomor dokumen resmi bila tersedia",
+    { required: false },
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const commercialContractFields = [
+  textField(
+    "partner",
+    "Pihak kontrak (opsional)",
+    "Nama pihak atau mitra bila tercantum",
+    { required: false, wide: true },
   ),
   {
     key: "startDate",
-    label: "Tanggal mulai",
+    label: "Tanggal mulai kontrak",
     required: true,
     type: "date",
   },
   {
     key: "endDate",
-    label: "Tanggal selesai",
+    label: "Tanggal selesai kontrak",
+    required: true,
+    type: "date",
+  },
+  textField(
+    "referenceNumber",
+    "Nomor kontrak (opsional)",
+    "Nomor dokumen resmi bila tersedia",
+    { required: false },
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const proposalFields = [
+  textField(
+    "applicants",
+    "Pengusul",
+    "Nama ketua dan anggota pengusul; pisahkan dengan titik koma",
+    { wide: true },
+  ),
+  textField("scheme", "Skema / program hibah", "Nama skema atau program"),
+  textField(
+    "partner",
+    "Mitra (opsional)",
+    "Nama mitra yang tercantum pada proposal",
+    { required: false },
+  ),
+  textField("funder", "Instansi pemberi hibah", "Nama lembaga pemberi hibah"),
+  {
+    hint: "Boleh dikosongkan bila bukti submit hanya mencatat periode atau tahun.",
+    key: "submissionDate",
+    label: "Tanggal pengajuan (opsional)",
     required: false,
     type: "date",
   },
   textField(
     "referenceNumber",
-    "Nomor kontrak / proposal",
-    "Nomor dokumen resmi",
-    {
-      required: false,
-    },
+    "Nomor proposal (opsional)",
+    "Nomor registrasi atau identitas pengajuan bila tersedia",
+    { required: false },
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const nonResearchProgramCoreFields = [
+  textField("scheme", "Skema", "Nama skema atau bentuk program"),
+  textField(
+    "team",
+    "Dosen / tim pelaksana",
+    "Nama ketua dan anggota tim; pisahkan dengan titik koma",
+    { wide: true },
+  ),
+  textField(
+    "targetGroup",
+    "Mitra / masyarakat sasaran",
+    "Nama mitra atau kelompok sasaran",
   ),
   {
-    hint: "Masukkan angka tanpa pemisah ribuan. Opsional bila bersifat rahasia atau belum ditetapkan.",
-    key: "value",
-    label: "Nilai (Rp)",
+    hint: "Masukkan angka tanpa pemisah ribuan. Boleh dikosongkan bila nominal belum ditetapkan atau dibatasi aksesnya.",
+    key: "funding",
+    label: "Dana (Rp, opsional)",
     min: "0",
     placeholder: "Contoh: 250000000",
     required: false,
@@ -221,10 +313,55 @@ const contractFields = [
   },
 ] as const satisfies readonly ManualFieldDefinition[];
 
-const academicFields = [
+const nonResearchServiceFields = [
+  ...nonResearchProgramCoreFields,
+  textField(
+    "referenceNumber",
+    "Nomor kontrak / referensi (opsional)",
+    "Nomor dokumen resmi bila tersedia",
+    { required: false },
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const communityServiceFields = [
+  ...nonResearchProgramCoreFields,
+] as const satisfies readonly ManualFieldDefinition[];
+
+const abdimasProposalFields = [
+  ...nonResearchProgramCoreFields,
+  {
+    hint: "Boleh dikosongkan bila bukti submit hanya mencatat periode atau tahun.",
+    key: "submissionDate",
+    label: "Tanggal pengajuan (opsional)",
+    required: false,
+    type: "date",
+  },
+  textField(
+    "referenceNumber",
+    "Nomor proposal (opsional)",
+    "Nomor registrasi atau identitas pengajuan bila tersedia",
+    { required: false },
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const sdgProposalFields = [
+  ...abdimasProposalFields,
+  textField(
+    "sdgAlignment",
+    "Keterkaitan SDGs (opsional)",
+    "Contoh: SDG 3 — Kehidupan Sehat dan Sejahtera",
+    {
+      hint: "Isi bila nomor atau sasaran SDG tercantum pada proposal.",
+      required: false,
+      wide: true,
+    },
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const mentoringFields = [
   textField(
     "participantRef",
-    "Mahasiswa / referensi peserta",
+    "Mahasiswa",
     "Nama atau kode mahasiswa yang sesuai kebijakan akses",
     { wide: true },
   ),
@@ -237,32 +374,104 @@ const academicFields = [
   ),
 ] as const satisfies readonly ManualFieldDefinition[];
 
-const activityFields = [
+const internshipFields = [
+  textField("studentNumber", "NIM", "Nomor induk mahasiswa"),
+  textField("participantRef", "Nama mahasiswa", "Nama mahasiswa"),
+  textField("faculty", "Fakultas", "Nama fakultas"),
+  textField("programStudy", "Program studi", "Nama program studi"),
+  textField("mbkmProgram", "Program MBKM (opsional)", "Nama program MBKM", {
+    required: false,
+  }),
   textField(
-    "primaryParty",
-    "Mitra / pihak utama",
-    "Nama mitra, komunitas, atau unit",
-    {
-      wide: true,
-    },
+    "organizer",
+    "Penyelenggara (opsional)",
+    "Nama unit atau institusi penyelenggara",
+    { required: false },
   ),
+  textField("mentorId", "NIDN pembimbing", "NIDN dosen pembimbing", {
+    required: false,
+  }),
+  textField("mentors", "Dosen pembimbing", "Nama dosen pembimbing"),
+  textField("duration", "Lama kegiatan", "Contoh: 5 bulan"),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const competitionFields = [
+  textField("lecturer", "Dosen pembimbing", "Nama dosen pembimbing"),
+  textField(
+    "studentTeam",
+    "Mahasiswa / tim (opsional)",
+    "Nama atau kode peserta; pisahkan dengan titik koma",
+    { required: false, wide: true },
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const businessUnitFields = [
+  textField("primaryParty", "Dosen / pengelola", "Nama dosen atau pengelola"),
+  textField("role", "Peran", "Peran pada unit bisnis"),
+  textField(
+    "organization",
+    "Unit bisnis",
+    "Nama unit bisnis, LSP, atau start-up",
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const communityCoachingFields = [
+  textField("primaryParty", "Dosen / pembina", "Nama dosen atau pembina"),
+  textField(
+    "organization",
+    "UMKM / komunitas",
+    "Nama UMKM atau komunitas sasaran",
+  ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const conferenceManagementFields = [
   {
-    key: "activityDate",
+    key: "eventDate",
     label: "Tanggal kegiatan",
     required: true,
     type: "date",
   },
+  textField("location", "Tempat", "Kota, negara, atau kanal pelaksanaan"),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const journalAccreditationFields = [
+  textField("journalVolume", "Volume jurnal", "Contoh: Volume 8"),
+  textField("issn", "ISSN", "Contoh: 1234-5678"),
   textField(
-    "location",
-    "Lokasi / cakupan",
-    "Kota, negara, atau kanal pelaksanaan",
+    "publicationFrequency",
+    "Frekuensi terbit",
+    "Contoh: 2 kali per tahun",
   ),
   textField(
-    "beneficiaries",
-    "Sasaran / penerima manfaat",
-    "Contoh: 30 pelaku UMKM alat kesehatan",
-    { required: false, wide: true },
+    "primaryParty",
+    "Pengelola (opsional)",
+    "Nama dosen atau tim pengelola",
+    { required: false },
   ),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const invitedSpeakerFields = [
+  textField("speakerName", "Nama pembicara", "Nama pembicara undangan"),
+  textField("eventName", "Nama acara", "Nama konferensi internasional"),
+  {
+    key: "eventDate",
+    label: "Tanggal",
+    required: true,
+    type: "date",
+  },
+  textField("location", "Tempat", "Kota, negara, atau kanal pelaksanaan"),
+] as const satisfies readonly ManualFieldDefinition[];
+
+const institutionVisitFields = [
+  textField("institution", "Institusi", "Nama lembaga internasional"),
+  textField("delegationLead", "Ketua rombongan", "Nama ketua rombongan"),
+  {
+    key: "eventDate",
+    label: "Tanggal",
+    required: true,
+    type: "date",
+  },
+  textField("location", "Tempat", "Lokasi kunjungan"),
 ] as const satisfies readonly ManualFieldDefinition[];
 
 export const manualSubmissionDefinitions: Record<
@@ -284,6 +493,12 @@ export const manualSubmissionDefinitions: Record<
           textField("venue", "Nama jurnal", "Nama jurnal nasional", {
             wide: true,
           }),
+          {
+            key: "publicationDate",
+            label: "Tanggal publikasi",
+            required: true,
+            type: "date",
+          },
           selectField("sintaRank", "Peringkat SINTA", [
             { label: "S1", value: "S1" },
             { label: "S2", value: "S2" },
@@ -361,7 +576,9 @@ export const manualSubmissionDefinitions: Record<
         category: "academic_hr",
         fields: [
           ...publicationInvolvementFields,
-          textField("publisher", "Penerbit", "Nama penerbit"),
+          textField("publisher", "Penerbit (opsional)", "Nama penerbit", {
+            required: false,
+          }),
           publicationIdentifier,
         ],
         id: "book",
@@ -401,7 +618,7 @@ export const manualSubmissionDefinitions: Record<
     primaryFieldKey: "creators",
     subtypes: [
       {
-        fields: intellectualPropertyFields,
+        fields: patentFields,
         id: "patent",
         label: "Paten / paten sederhana",
         suggestion: suggestion(
@@ -412,7 +629,7 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Paten",
       },
       {
-        fields: intellectualPropertyFields,
+        fields: nonPatentIntellectualPropertyFields,
         id: "copyright",
         label: "Hak cipta",
         suggestion: suggestion(
@@ -423,7 +640,7 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Hak cipta",
       },
       {
-        fields: intellectualPropertyFields,
+        fields: nonPatentIntellectualPropertyFields,
         id: "industrial-design",
         label: "Desain industri",
         suggestion: suggestion(
@@ -434,7 +651,7 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Desain industri",
       },
       {
-        fields: intellectualPropertyFields,
+        fields: nonPatentIntellectualPropertyFields,
         id: "trademark",
         label: "Merek",
         suggestion: suggestion(
@@ -445,7 +662,7 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Merek",
       },
       {
-        fields: intellectualPropertyFields,
+        fields: nonPatentIntellectualPropertyFields,
         id: "other-ip",
         label: "Jenis perlindungan lainnya",
         typeLabel: "Kekayaan intelektual lainnya",
@@ -465,9 +682,10 @@ export const manualSubmissionDefinitions: Record<
     primaryFieldKey: "primaryParty",
     subtypes: [
       {
-        fields: contractFields,
+        fields: researchContractFields,
         id: "national-research-contract",
         label: "Kontrak riset nasional",
+        primaryFieldKey: "applicants",
         suggestion: suggestion(
           "KM-17",
           "Jenis dan cakupan rekam menunjukkan kontrak riset tingkat nasional.",
@@ -476,9 +694,10 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Kontrak riset nasional",
       },
       {
-        fields: contractFields,
+        fields: researchContractFields,
         id: "international-research-contract",
         label: "Kontrak riset internasional",
+        primaryFieldKey: "applicants",
         suggestion: suggestion(
           "KM-18",
           "Jenis dan cakupan rekam menunjukkan kontrak riset tingkat internasional.",
@@ -487,9 +706,10 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Kontrak riset internasional",
       },
       {
-        fields: contractFields,
+        fields: commercialContractFields,
         id: "commercial-contract",
         label: "Kontrak komersialisasi",
+        primaryFieldKey: "partner",
         suggestion: suggestion(
           "KM-19",
           "Jenis rekam menunjukkan kontrak bisnis untuk komersialisasi.",
@@ -498,20 +718,10 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Kontrak komersialisasi",
       },
       {
-        fields: contractFields,
-        id: "non-research-contract",
-        label: "Kontrak non-riset",
-        suggestion: suggestion(
-          "KM-23",
-          "Jenis rekam menunjukkan kontrak pelatihan, konsultansi, industri, komunitas, atau pemerintah.",
-          "Tautan kontrak, ruang lingkup layanan, para pihak, dan periode pelaksanaan.",
-        ),
-        typeLabel: "Kontrak non-riset",
-      },
-      {
-        fields: contractFields,
+        fields: proposalFields,
         id: "national-research-proposal",
         label: "Proposal riset nasional",
+        primaryFieldKey: "applicants",
         suggestion: suggestion(
           "KM-37",
           "Jenis dan cakupan rekam menunjukkan proposal riset tingkat nasional.",
@@ -520,9 +730,10 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Proposal riset nasional",
       },
       {
-        fields: contractFields,
+        fields: proposalFields,
         id: "international-research-proposal",
         label: "Proposal riset internasional",
+        primaryFieldKey: "applicants",
         suggestion: suggestion(
           "KM-38",
           "Jenis dan cakupan rekam menunjukkan proposal riset tingkat internasional.",
@@ -531,21 +742,16 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Proposal riset internasional",
       },
       {
-        fields: contractFields,
+        fields: proposalFields,
         id: "non-research-proposal",
         label: "Proposal non-riset",
+        primaryFieldKey: "applicants",
         suggestion: suggestion(
           "KM-39",
           "Jenis rekam menunjukkan proposal pelatihan, transfer teknologi, konsultansi, hilirisasi, atau pengabdian.",
           "Tautan bukti submit, skema, pengusul, dan tanggal pengajuan.",
         ),
         typeLabel: "Proposal non-riset",
-      },
-      {
-        fields: contractFields,
-        id: "other-contract-proposal",
-        label: "Jenis kontrak / proposal lainnya",
-        typeLabel: "Kontrak atau proposal lainnya",
       },
     ],
     title: "Ajukan Kontrak & Proposal",
@@ -562,7 +768,7 @@ export const manualSubmissionDefinitions: Record<
     primaryFieldKey: "participantRef",
     subtypes: [
       {
-        fields: academicFields,
+        fields: mentoringFields,
         id: "doctoral-mentoring",
         label: "Bimbingan doktor",
         suggestion: suggestion(
@@ -573,7 +779,7 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Bimbingan doktor",
       },
       {
-        fields: academicFields,
+        fields: mentoringFields,
         id: "master-mentoring",
         label: "Bimbingan magister",
         suggestion: suggestion(
@@ -584,17 +790,7 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Bimbingan magister",
       },
       {
-        fields: [
-          ...academicFields,
-          {
-            key: "participantCount",
-            label: "Jumlah peserta",
-            min: "1",
-            placeholder: "Contoh: 12",
-            required: true,
-            type: "number",
-          },
-        ],
+        fields: internshipFields,
         id: "student-internship",
         label: "Magang mahasiswa",
         suggestion: suggestion(
@@ -605,7 +801,7 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Magang mahasiswa",
       },
       {
-        fields: academicFields,
+        fields: mentoringFields,
         id: "final-project",
         label: "Riset tugas akhir D3/S1/S2",
         suggestion: suggestion(
@@ -616,21 +812,16 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Riset tugas akhir",
       },
       {
-        fields: academicFields,
+        fields: competitionFields,
         id: "student-competition",
         label: "Ide / inovasi kompetisi mahasiswa",
+        primaryFieldKey: "lecturer",
         suggestion: suggestion(
           "KM-32",
           "Jenis kegiatan menunjukkan ide atau inovasi untuk kompetisi mahasiswa.",
           "Tautan bukti kompetisi, peserta/tim, pembimbing, dan deskripsi ide atau inovasi.",
         ),
         typeLabel: "Kompetisi mahasiswa",
-      },
-      {
-        fields: academicFields,
-        id: "other-academic",
-        label: "Kegiatan akademik lainnya",
-        typeLabel: "Kegiatan akademik lainnya",
       },
     ],
     title: "Ajukan Kegiatan Akademik",
@@ -648,7 +839,35 @@ export const manualSubmissionDefinitions: Record<
     subtypes: [
       {
         category: "activity_governance",
-        fields: activityFields,
+        fields: invitedSpeakerFields,
+        id: "invited-speaker",
+        label: "Pembicara undangan konferensi internasional",
+        primaryFieldKey: "speakerName",
+        suggestion: suggestion(
+          "KM-9",
+          "Jenis kegiatan menunjukkan peran sebagai pembicara undangan pada konferensi internasional.",
+          "Nama pembicara, nama acara, tanggal, tempat, dan tautan bukti undangan atau acara.",
+        ),
+        titleRequired: false,
+        typeLabel: "Pembicara undangan internasional",
+      },
+      {
+        category: "activity_governance",
+        fields: institutionVisitFields,
+        id: "international-institution-visit",
+        label: "Kunjungan lembaga internasional",
+        primaryFieldKey: "institution",
+        suggestion: suggestion(
+          "KM-10",
+          "Jenis kegiatan menunjukkan kunjungan lembaga internasional ke CoE.",
+          "Nama institusi, ketua rombongan, tanggal, tempat, dan tautan bukti kunjungan.",
+        ),
+        titleRequired: false,
+        typeLabel: "Kunjungan lembaga internasional",
+      },
+      {
+        category: "activity_governance",
+        fields: businessUnitFields,
         id: "business-unit",
         label: "Keterlibatan unit bisnis",
         suggestion: suggestion(
@@ -656,10 +875,11 @@ export const manualSubmissionDefinitions: Record<
           "Jenis kegiatan menunjukkan keterlibatan unit bisnis yang melayani jasa sesuai kompetensi CoE.",
           "Tautan bukti keterlibatan, unit bisnis, layanan, periode, dan peran CoE.",
         ),
+        titleRequired: false,
         typeLabel: "Keterlibatan unit bisnis",
       },
       {
-        fields: activityFields,
+        fields: communityCoachingFields,
         id: "community-coaching",
         label: "Pembinaan UMKM / komunitas",
         suggestion: suggestion(
@@ -667,13 +887,15 @@ export const manualSubmissionDefinitions: Record<
           "Jenis kegiatan menunjukkan pembinaan UMKM atau komunitas.",
           "Tautan bukti kegiatan, mitra/komunitas, sasaran, tanggal, dan peran tim CoE.",
         ),
+        titleRequired: false,
         typeLabel: "Pembinaan UMKM atau komunitas",
       },
       {
         category: "activity_governance",
-        fields: activityFields,
+        fields: conferenceManagementFields,
         id: "international-conference-management",
         label: "Pengelolaan konferensi internasional",
+        primaryFieldKey: "title",
         suggestion: suggestion(
           "KM-22",
           "Jenis kegiatan menunjukkan pengelolaan atau internasionalisasi seminar/konferensi.",
@@ -682,9 +904,10 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Pengelolaan konferensi internasional",
       },
       {
-        fields: activityFields,
+        fields: nonResearchServiceFields,
         id: "non-research-service",
         label: "Layanan / kontrak non-riset",
+        primaryFieldKey: "team",
         suggestion: suggestion(
           "KM-23",
           "Jenis kegiatan menunjukkan pelatihan, konsultansi, atau layanan non-riset.",
@@ -693,9 +916,10 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Layanan non-riset",
       },
       {
-        fields: activityFields,
+        fields: communityServiceFields,
         id: "community-service",
         label: "Community service / CSR",
+        primaryFieldKey: "team",
         suggestion: suggestion(
           "KM-24",
           "Jenis kegiatan menunjukkan pengabdian masyarakat, kolaborasi, atau CSR.",
@@ -704,9 +928,10 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Community service atau CSR",
       },
       {
-        fields: activityFields,
+        fields: abdimasProposalFields,
         id: "drtpm-proposal",
         label: "Proposal abdimas DRTPM",
+        primaryFieldKey: "team",
         suggestion: suggestion(
           "KM-25",
           "Jenis rekam menunjukkan proposal pengabdian DRTPM.",
@@ -715,9 +940,10 @@ export const manualSubmissionDefinitions: Record<
         typeLabel: "Proposal abdimas DRTPM",
       },
       {
-        fields: activityFields,
+        fields: sdgProposalFields,
         id: "sdg-proposal",
         label: "Proposal abdimas terkait SDGs",
+        primaryFieldKey: "team",
         suggestion: suggestion(
           "KM-26",
           "Jenis rekam menunjukkan proposal pengabdian yang berkaitan dengan SDGs.",
@@ -727,21 +953,16 @@ export const manualSubmissionDefinitions: Record<
       },
       {
         category: "activity_governance",
-        fields: activityFields,
+        fields: journalAccreditationFields,
         id: "journal-accreditation",
         label: "Pengelolaan akreditasi jurnal",
+        primaryFieldKey: "primaryParty",
         suggestion: suggestion(
           "KM-27",
           "Jenis kegiatan menunjukkan pengelolaan, peningkatan, atau internasionalisasi akreditasi jurnal.",
           "Tautan jurnal/bukti akreditasi, peran pengelola, periode, dan capaian peningkatan.",
         ),
         typeLabel: "Pengelolaan akreditasi jurnal",
-      },
-      {
-        fields: activityFields,
-        id: "other-activity",
-        label: "Kegiatan / pengabdian lainnya",
-        typeLabel: "Kegiatan atau pengabdian lainnya",
       },
     ],
     title: "Ajukan Kegiatan & Pengabdian",
@@ -766,6 +987,15 @@ export function manualSubtype(
 ) {
   return manualSubmissionDefinitions[domain].subtypes.find(
     (item) => item.id === recordType,
+  );
+}
+
+export function manualSubtypeFieldKeys(
+  domain: ManualSubmissionDomain,
+  recordType: string,
+) {
+  return new Set(
+    manualSubtype(domain, recordType)?.fields.map((field) => field.key) ?? [],
   );
 }
 
@@ -804,21 +1034,23 @@ export function validateManualSubmissionFields(
   if (scope !== "details") {
     if (!values.recordType.trim())
       errors.recordType = `Pilih jenis ${definition.noun}.`;
-    if (!values.title.trim())
-      errors.title = `${definition.titleFieldLabel} wajib diisi.`;
-    const year = Number(values.year);
-    if (!values.year.trim()) {
-      errors.year = "Tahun wajib diisi.";
-    } else if (
-      !Number.isInteger(year) ||
-      year < 2000 ||
-      year > new Date().getFullYear() + 1
-    ) {
-      errors.year = `Gunakan tahun 2000–${new Date().getFullYear() + 1}.`;
+    if (subtype) {
+      if (subtype.titleRequired !== false && !values.title.trim())
+        errors.title = `${subtype.titleFieldLabel ?? definition.titleFieldLabel} wajib diisi.`;
+      const year = Number(values.year);
+      if (!values.year.trim()) {
+        errors.year = "Tahun wajib diisi.";
+      } else if (
+        !Number.isInteger(year) ||
+        year < 2000 ||
+        year > new Date().getFullYear() + 1
+      ) {
+        errors.year = `Gunakan tahun 2000–${new Date().getFullYear() + 1}.`;
+      }
     }
   }
 
-  if (scope !== "identity") {
+  if (scope !== "identity" && subtype) {
     for (const field of subtype?.fields ?? []) {
       if (field.required && !values[field.key]?.trim()) {
         errors[field.key] = `${field.label} wajib diisi.`;
@@ -838,6 +1070,24 @@ export function validateManualSubmissionFields(
     ) {
       errors.endDate =
         "Tanggal selesai tidak boleh lebih awal dari tanggal mulai.";
+    }
+
+    const selectedYear = Number(values.year);
+    const datedFields = [
+      "eventDate",
+      "publicationDate",
+      "submissionDate",
+      "startDate",
+    ];
+    for (const key of datedFields) {
+      const dateValue = values[key];
+      if (!dateValue || !Number.isInteger(selectedYear)) continue;
+      const dateYear = Number(dateValue.slice(0, 4));
+      if (dateYear !== selectedYear) {
+        const label = subtype?.fields.find((field) => field.key === key)?.label;
+        errors[key] =
+          `${label ?? "Tanggal"} harus berada pada tahun ${selectedYear}.`;
+      }
     }
   }
 
@@ -863,38 +1113,125 @@ function titleSimilarity(left: string, right: string) {
   return Math.round((intersection.length / Math.max(union.size, 1)) * 100);
 }
 
-function createOfficialMatches(
-  title: string,
+export function createManualOfficialMatches(
+  values: ManualSubmissionValues,
   candidates: readonly ManualRecordComparisonCandidate[],
 ): AuditOfficialMatch[] {
+  const candidateIdentifiers = manualSubmissionIdentifiers(values);
+  const normalizedIdentifiers = new Set(
+    candidateIdentifiers.map(normalizeIdentifier).filter(Boolean),
+  );
+
   return candidates
-    .map((candidate) => ({
-      candidate,
-      score: titleSimilarity(title, candidate.title),
-    }))
-    .filter(({ score }) => score >= 55)
+    .map((candidate) => {
+      const sameIdentifier = (candidate.identifiers ?? []).some((identifier) =>
+        normalizedIdentifiers.has(normalizeIdentifier(identifier)),
+      );
+      const titleScore = titleSimilarity(values.title, candidate.title);
+      const sameYear =
+        !candidate.year ||
+        !values.year ||
+        candidate.year === Number(values.year);
+      return {
+        candidate,
+        sameIdentifier,
+        score: sameIdentifier
+          ? 100
+          : sameYear
+            ? titleScore
+            : Math.max(titleScore - 12, 0),
+        titleScore,
+      };
+    })
+    .filter(({ sameIdentifier, score }) => sameIdentifier || score >= 55)
     .sort((left, right) => right.score - left.score)
     .slice(0, 3)
-    .map(({ candidate, score }) => ({
+    .map(({ candidate, sameIdentifier, score, titleScore }) => ({
       comparisons: [
-        {
-          candidateValue: title,
-          fieldId: "title",
-          label: "Judul",
-          officialValue: candidate.title,
-          status: score === 100 ? "same" : "similar",
-          statusLabel: comparisonStatusLabel(score),
-        },
+        ...(candidateIdentifiers.length > 0 && candidate.identifiers?.length
+          ? [
+              {
+                candidateValue: candidateIdentifiers.join("; "),
+                fieldId: "identifier",
+                label: "Pengenal resmi",
+                officialValue: candidate.identifiers.join("; "),
+                status: sameIdentifier
+                  ? ("same" as const)
+                  : ("different" as const),
+                statusLabel: sameIdentifier ? "Sama" : "Berbeda",
+              },
+            ]
+          : []),
+        ...(values.title.trim()
+          ? [
+              {
+                candidateValue: values.title,
+                fieldId: "title",
+                label: "Judul",
+                officialValue: candidate.title,
+                status:
+                  titleScore === 100 ? ("same" as const) : ("similar" as const),
+                statusLabel: comparisonStatusLabel(titleScore),
+              },
+            ]
+          : []),
+        ...(candidate.year && values.year
+          ? [
+              {
+                candidateValue: values.year,
+                fieldId: "year",
+                label: "Tahun",
+                officialValue: String(candidate.year),
+                status:
+                  candidate.year === Number(values.year)
+                    ? ("same" as const)
+                    : ("different" as const),
+                statusLabel:
+                  candidate.year === Number(values.year) ? "Sama" : "Berbeda",
+              },
+            ]
+          : []),
       ],
       id: candidate.id,
       score,
       title: candidate.subtitle
         ? `${candidate.title} · ${candidate.subtitle}`
         : candidate.title,
-      verdict: score === 100 ? "strong" : "possible",
-      verdictLabel:
-        score === 100 ? "Judul sama" : "Perlu periksa kemiripan judul",
+      verdict: sameIdentifier
+        ? "same_identifier"
+        : titleScore === 100
+          ? "strong"
+          : "possible",
+      verdictLabel: sameIdentifier
+        ? "Pengenal resmi sama"
+        : titleScore === 100
+          ? "Judul sama"
+          : "Perlu periksa kemiripan judul",
     }));
+}
+
+export function manualSubmissionIdentifiers(values: ManualSubmissionValues) {
+  return [
+    "applicationNumber",
+    "doi",
+    "identifier",
+    "issn",
+    "licenseNumber",
+    "referenceNumber",
+    "registrationNumber",
+    "studentNumber",
+  ]
+    .map((key) => values[key]?.trim())
+    .filter((value): value is string => Boolean(value));
+}
+
+function normalizeIdentifier(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase("id-ID")
+    .replace(/^https?:\/\/(?:dx\.)?doi\.org\//, "")
+    .replace(/^doi:\s*/, "")
+    .replace(/[^a-z0-9]/g, "");
 }
 
 function actorLabel(actor: NexusReviewActor) {
@@ -907,11 +1244,15 @@ function reviewFields(
   values: ManualSubmissionValues,
 ): AuditReviewField[] {
   const fields: AuditReviewField[] = [
-    {
-      id: "title",
-      label: definition.titleFieldLabel,
-      value: values.title.trim(),
-    },
+    ...(values.title.trim()
+      ? [
+          {
+            id: "title",
+            label: subtype.titleFieldLabel ?? definition.titleFieldLabel,
+            value: values.title.trim(),
+          },
+        ]
+      : []),
     { id: "record_type", label: "Jenis rekam", value: subtype.label },
     { id: "year", label: "Tahun", value: values.year },
   ];
@@ -962,10 +1303,15 @@ export function createManualSubmissionReviewRecord({
   const evidenceUrl = normalizeUrl(values.evidenceUrl);
   if (!evidenceUrl) throw new Error("Tautan bukti manual tidak valid.");
   const fields = reviewFields(definition, subtype, values);
-  const matches = createOfficialMatches(values.title, comparisonCandidates);
-  const primaryValue = definition.primaryFieldKey
-    ? values[definition.primaryFieldKey]?.trim()
-    : "";
+  const matches = createManualOfficialMatches(values, comparisonCandidates);
+  const primaryFieldKey = subtype.primaryFieldKey ?? definition.primaryFieldKey;
+  const primaryValue = primaryFieldKey ? values[primaryFieldKey]?.trim() : "";
+  const displayTitle =
+    values.title.trim() ||
+    values.eventName?.trim() ||
+    values.organization?.trim() ||
+    values.institution?.trim() ||
+    `${subtype.label} · ${primaryValue || values.year}`;
 
   return {
     candidateKind: "new_record",
@@ -1020,6 +1366,19 @@ export function createManualSubmissionReviewRecord({
       : [],
     kpiLinksSuggested: Boolean(km),
     matches,
+    manualSubmission: {
+      comparisonCandidates: comparisonCandidates.map((candidate) => ({
+        ...candidate,
+        identifiers: candidate.identifiers
+          ? [...candidate.identifiers]
+          : undefined,
+      })),
+      domain,
+      recordType: subtype.id,
+      values: Object.fromEntries(
+        Object.entries(values).map(([key, value]) => [key, value.trim()]),
+      ),
+    },
     matchingStatus: "current",
     matchingVersion: 1,
     owner: "CoE Biomedical and Healthcare Technology",
@@ -1047,7 +1406,7 @@ export function createManualSubmissionReviewRecord({
     submittedBy: submitter,
     submittedByActorId: actor.id,
     subtitle: `${subtype.label} · periode ${values.year}`,
-    title: values.title.trim(),
+    title: displayTitle,
     typeLabel: subtype.typeLabel,
     version: 1,
   };

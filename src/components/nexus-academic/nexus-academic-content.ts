@@ -5,19 +5,21 @@ import {
   metadataCompletionAvailabilityLabel,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import type { NexusOfficialSourceMetadataItem } from "@/components/nexus-workspace-ui/nexus-official-source-metadata";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   kmIndicator,
   type NexusKmIndicator,
 } from "@/content/nexus-km-indicators";
 
-/** Indikator yang sudah menjadi cakupan halaman Akademik pada tahap ini. */
-type AcademicIndicatorId = "KM-28" | "KM-29" | "KM-30";
+type AcademicIndicatorId = "KM-28" | "KM-29" | "KM-30" | "KM-31" | "KM-32";
 
 type AcademicActivity =
   | "Bimbingan Doktor"
   | "Bimbingan Magister"
-  | "Magang Mahasiswa";
+  | "Magang Mahasiswa"
+  | "Kompetisi Mahasiswa"
+  | "Riset Tugas Akhir";
 
 type AcademicQuality = "Lengkap" | "Perlu dilengkapi";
 
@@ -82,6 +84,8 @@ export type OfficialAcademicRecord = {
     reviewedAt: string;
     reviewer: string;
   };
+  /** Metadata khusus jenis yang berasal dari pengajuan dan tidak diwakili bidang kanonis di atas. */
+  sourceMetadata?: NexusOfficialSourceMetadataItem[];
   title: string;
   updatedAt: string;
   /** `undefined` ketika sumber belum mencatat tahun kegiatan. */
@@ -106,6 +110,10 @@ const kmLinkNotes: Record<AcademicIndicatorId, string> = {
     "Bimbingan magister dihitung ketika topik tesisnya berasal dari riset CoE dan bukti bimbingannya tersedia.",
   "KM-30":
     "Rekam peserta magang menjadi bukti operasional. Nilai KM-30 tetap berupa kapasitas atau daya tampung magang, bukan jumlah mahasiswa aktif.",
+  "KM-31":
+    "Riset tugas akhir dicatat bersama mahasiswa, program studi, pembimbing, topik, dan bukti kegiatan.",
+  "KM-32":
+    "Ide atau inovasi kompetisi mahasiswa dicatat bersama kegiatan, dosen pembimbing, dan bukti pendukung.",
 };
 
 const evidenceNotes: Record<AcademicEvidenceStatus, string> = {
@@ -365,7 +373,7 @@ export function academicKmLabel(record: OfficialAcademicRecord) {
 }
 
 export const academicIndicatorScope: readonly NexusKmIndicator[] = (
-  ["KM-28", "KM-29", "KM-30"] as const
+  ["KM-28", "KM-29", "KM-30", "KM-31", "KM-32"] as const
 ).map(kmIndicator);
 
 /** Batas adapter yang dapat diganti layanan server tanpa mengubah halaman. */

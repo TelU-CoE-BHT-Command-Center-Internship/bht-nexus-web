@@ -9,7 +9,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16.3.0-111827)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933)](https://nodejs.org/)
 
-[Status](#status-saat-ini) · [Cakupan saat ini](docs/current-scope.md) · [Menjalankan proyek](#menjalankan-proyek) · [Kontribusi](CONTRIBUTING.md) · [Keamanan](SECURITY.md)
+[Situs](https://bht-nexus-web.vercel.app) · [Status](#status-saat-ini) · [Cakupan saat ini](docs/current-scope.md) · [Menjalankan proyek](#menjalankan-proyek) · [Kontribusi](CONTRIBUTING.md) · [Keamanan](SECURITY.md)
 
 </div>
 
@@ -45,16 +45,16 @@ Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi
 | Halaman Publikasi BHT Nexus | Tersedia dan responsif; daftar dan rincian membedakan metadata resmi, jenis karya, kuartil jurnal, nilai yang hanya tercatat pada sumber, sitasi, serta jejak tinjauan. Metadata yang belum lengkap diajukan kembali ke Tinjauan dan tidak langsung mengubah rekam resmi |
 | Halaman Kekayaan Intelektual BHT Nexus | Tersedia dan responsif; memuat hak cipta dan paten resmi beserta nomor pencatatan, keberadaan dokumen pendaftaran, dan keterkaitan indikator KM. Baris sumber yang menduplikasi rekam yang sama digabungkan tanpa menghilangkan jejak asalnya |
 | Halaman Kontrak & Proposal BHT Nexus | Tersedia; memisahkan status kontrak dan proposal dalam satu rumah data resmi, mencakup KM-17 sampai KM-19 serta KM-37 sampai KM-39, dan meneruskan usulan pelengkapan metadata ke Tinjauan |
-| Halaman Akademik BHT Nexus | Tersedia dan responsif; memuat bimbingan doktor, bimbingan magister, dan magang mahasiswa beserta pembimbing, bukti kegiatan, dan keterkaitan indikator KM. Bimbingan dengan lebih dari satu pembimbing dihitung sebagai satu kegiatan, identitas mahasiswa diganti penanda rekam, dan peserta magang tidak disalahartikan sebagai nilai kapasitas KM-30 |
-| Halaman Kegiatan & Pengabdian BHT Nexus | Tersedia dan responsif; memuat keterlibatan unit bisnis, pembinaan komunitas, konferensi internasional, layanan non-riset, pengabdian masyarakat, proposal pengabdian, dan pengelolaan jurnal nasional untuk KM-20 sampai KM-27. Metadata yang belum lengkap diajukan ke Tinjauan tanpa langsung mengubah rekam resmi |
+| Halaman Akademik BHT Nexus | Tersedia dan responsif; memuat bimbingan doktor, bimbingan magister, magang, riset tugas akhir, dan kompetisi mahasiswa (KM-28–KM-32) beserta pembimbing, bukti, dan keterkaitan indikator. Bimbingan dengan lebih dari satu pembimbing dihitung sebagai satu kegiatan, identitas mahasiswa memakai penanda rekam, dan peserta magang tidak disalahartikan sebagai nilai kapasitas KM-30 |
+| Halaman Kegiatan & Pengabdian BHT Nexus | Tersedia dan responsif; memuat pembicara dan kunjungan internasional (KM-9–KM-10), keterlibatan unit bisnis, pembinaan komunitas, konferensi internasional, layanan non-riset, pengabdian masyarakat, proposal pengabdian, dan pengelolaan jurnal nasional (KM-20–KM-27). Metadata yang belum lengkap diajukan ke Tinjauan tanpa langsung mengubah rekam resmi |
 | Halaman Pengumpulan BHT Nexus | Tersedia dalam ruang kerja Indonesia; menerima URL profil publik SINTA atau Google Scholar, memperlihatkan status pekerjaan dan kegagalannya, membuat setiap hasil sebagai rekam Tinjauan individual, serta menyediakan pencarian dan filter sumber maupun status pada riwayatnya |
 | Halaman Tinjauan BHT Nexus | Alur Indonesia tersedia dan responsif; seluruh kandidat berada dalam satu antrean, sistem sumber dipisahkan dari pengaju serta penerima koreksi manusia, identitas dan label KM-1 sampai KM-46 mengikuti workbook stakeholder, data yang belum diketahui tidak ditebak, dan riwayat keputusan maupun koreksi tetap dapat ditelusuri |
-| Pengajuan manual Data Resmi | Tersedia untuk Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian. Formulir memakai pola bersama, menerima bukti HTTPS, menyarankan indikator KM untuk diverifikasi, dan mengirim kandidat baru ke Tinjauan tanpa langsung mengubah Data Resmi |
+| Pengajuan manual Data Resmi | Tersedia untuk Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian. Formulir memakai bidang subtype dari workbook, menerima bukti HTTPS, menyimpan draft tab, mencocokkan pengenal resmi, menyarankan indikator KM untuk keputusan reviewer, dan memproyeksikan hasil persetujuan beserta metadata khusus jenis ke rumah Data Resmi. Reviewer dapat menetapkan nol, satu, atau beberapa indikator KM |
 | Ruang kerja Dokumen BHT Nexus | Tersedia dalam ruang kerja Indonesia; mencakup pustaka dengan identitas job dan riwayat proses, tanya jawab bersitasi yang menolak jawaban tanpa dukungan, serta pemeriksaan kandidat ekstraksi per bidang dengan pencegahan pengiriman ganda ke Tinjauan. Ekstraksi tidak memilih dokumen secara diam-diam dan pengguna dapat memilih tetap mengekstrak atau langsung membuka Tinjauan setelah mengirim |
 | Ruang kerja BHT Nexus Inggris | Sedang dibangun; seluruh route workspace Inggris diarahkan ke satu halaman status sampai alur Indonesia selesai, sedangkan landing page dan halaman masuk Inggris tetap tersedia |
 | Login dan hak akses | Antarmuka dan adapter akses frontend tersedia untuk navigasi, pencarian, route, serta aksi Tinjauan; sesi, autentikasi, dan otorisasi server belum dihubungkan |
 | Integrasi dengan server | Belum dibuat |
-| Deployment | Belum menjadi cakupan saat ini |
+| Deployment | Tersedia untuk diakses melalui [bht-nexus-web.vercel.app](https://bht-nexus-web.vercel.app) |
 
 Status ini ditulis sesuai keadaan proyek. Landing page akan terus berkembang dan belum dianggap sebagai versi akhir.
 
@@ -136,7 +136,7 @@ Inventaris fitur, alur kandidat, dan batas implementasi terbaru tersedia di [cak
 | `/nexus/kekayaan-intelektual` | Indonesia | Daftar hak cipta dan paten resmi beserta nomor pencatatan dan dokumennya |
 | `/nexus/kontrak-proposal` | Indonesia | Daftar kontrak dan proposal resmi beserta pihak, skema, bukti, dan indikator KM |
 | `/nexus/akademik` | Indonesia | Daftar bimbingan doktor, bimbingan magister, dan magang mahasiswa resmi |
-| `/nexus/kegiatan` | Indonesia | Daftar kegiatan, bisnis, dan pengabdian masyarakat resmi untuk KM-20 sampai KM-27 |
+| `/nexus/kegiatan` | Indonesia | Daftar kegiatan, jejaring, bisnis, dan pengabdian masyarakat resmi untuk KM-9, KM-10, serta KM-20 sampai KM-27 |
 | `/nexus/tinjauan` | Indonesia | Satu antrean Tinjauan untuk publikasi, pelengkapan metadata, serta kandidat lintas-domain |
 | `/nexus/dokumen` | Indonesia | Pustaka dan status pemrosesan dokumen |
 | `/nexus/tanya-dokumen` | Indonesia | Tanya jawab dokumen dengan sumber dan kutipan |

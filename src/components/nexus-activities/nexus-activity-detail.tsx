@@ -131,6 +131,25 @@ function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
     );
   }
 
+  if (record.referenceNumber) {
+    items.push({
+      key: "referenceNumber",
+      label:
+        record.recordStatus === "Diajukan"
+          ? "Nomor proposal"
+          : "Nomor referensi",
+      value: record.referenceNumber,
+    });
+  }
+
+  if (record.submittedOn) {
+    items.push({
+      key: "submittedOn",
+      label: "Tanggal pengajuan",
+      value: formatDate(record.submittedOn),
+    });
+  }
+
   items.push(
     {
       href:
@@ -146,6 +165,13 @@ function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
       label: "Periode evaluasi KM",
       value: record.evaluationPeriod,
     },
+  );
+
+  items.push(
+    ...(record.sourceMetadata ?? []).map((item) => ({
+      ...item,
+      key: `source-${item.key}`,
+    })),
   );
 
   return items.map((item) => ({

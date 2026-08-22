@@ -60,7 +60,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Setiap keputusan membutuhkan alasan dan tahap konfirmasi sebelum disimpan pada state frontend. Riwayat menyimpan ID pelaku, jenis keputusan, sasaran rekam, bidang yang diminta untuk diperbaiki, alasan, versi, perubahan sebelum–sesudah, serta instant ISO yang baru diformat ke WIB ketika ditampilkan.
 - Kemampuan meninjau dan mengirim koreksi disediakan melalui kontrak sesi serta dihitung per rekam. Identitas pelaku yang tidak diketahui menutup tindakan secara aman; nama tampilan tidak pernah dipakai sebagai identitas otorisasi. Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri dan koreksi hanya dapat dikirim oleh penerima ber-ID yang ditetapkan. Otorisasi sebenarnya tetap menjadi tanggung jawab layanan server.
 - Versi hasil pencocokan dicatat terpisah dari versi kandidat. Setelah V2 dikirim, hasil V1 menjadi kedaluwarsa dan keputusan promosi terkunci sampai layanan pencocokan mengembalikan hasil untuk versi yang sama; riwayat koreksi tetap dipertahankan.
-- Persetujuan pelengkapan metadata langsung tercermin pada rumah data resmi selama sesi frontend. Status penyelesaian membedakan tersedia, memang tidak tersedia, tidak berlaku, dan belum selesai. Keputusan tinjauannya dicatat sebagai pelengkapan metadata, bukan sebagai penggabungan rekam. Keputusan menerima data baru, memperbarui, atau menghubungkan kandidat hanya dicatat sampai layanan server mengonfirmasi transaksi resminya.
+- Persetujuan pelengkapan metadata langsung tercermin pada rumah data resmi selama sesi frontend. Status penyelesaian membedakan tersedia, memang tidak tersedia, tidak berlaku, dan belum selesai. Kandidat manual yang diterima sebagai data baru, diperbarui, atau dihubungkan juga diproyeksikan ke rumah Data Resmi yang sesuai bersama sumber dan jejak keputusan; layanan server nantinya mengganti adapter sesi ini sebagai sumber otoritatif.
 - Usulan pelengkapan yang sudah terminal tidak menutup pekerjaan berikutnya. Jika proyeksi keputusan masih menyisakan bidang wajib—misalnya kuartil setelah jenis berubah menjadi artikel jurnal—pengguna dapat membuat usulan lanjutan khusus untuk bidang tersisa tanpa menghapus riwayat usulan sebelumnya.
 - Tautan rekam sesi yang sudah tidak tersedia menampilkan penjelasan dan jalan kembali ke antrean, bukan halaman kosong atau drawer tanpa isi.
 - Drawer rincian dimuat ketika diperlukan agar halaman antrean tetap ringan.
@@ -68,13 +68,14 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 ### Pengajuan manual lintas-domain
 
 - Setiap rumah Data Resmi menyediakan aksi kontekstual `Ajukan …` yang membuka halaman form penuh, bukan drawer, untuk Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian.
-- Kelima route memakai satu model dan presentasi bersama. Jenis rekam mengubah metadata yang relevan tanpa membuat implementasi form terpisah per domain.
+- Kelima route memakai satu model dan presentasi bersama. Jenis rekam mengubah metadata yang relevan tanpa membuat implementasi form terpisah per domain. Bidang subtype mengikuti worksheet KM terkait; kontrak, proposal, jurnal, kegiatan, paten, dan magang tidak memakai skema generik yang sama.
 - Struktur halaman mengikuti empat seksi bernomor—informasi, pelaku dan keterlibatan BHT, sumber dan bukti, serta keterkaitan evaluasi—dengan ringkasan kelengkapan di kanan dan action bar tetap di bawah. Pada layar sempit seluruh isi menjadi satu kolom tanpa gulir horizontal.
 - Bukti utama dimasukkan sebagai tautan Drive, DOI, repositori, atau laman resmi yang dapat dibuka reviewer. Form ini tidak membuat unggahan baru ketika tautan sudah memadai.
-- Pengaju memilih jenis rekam dan metadata, bukan indikator KM. Sistem dapat menyarankan nol atau satu indikator berdasarkan metadata; saran selalu diberi label menunggu verifikasi reviewer dan ketiadaan saran tidak menghalangi pengiriman.
-- Kandidat manual masuk ke sesi Tinjauan yang sama, membawa URL bukti, provenance manual, saran KM bila tersedia, serta hasil pencocokan judul terhadap Data Resmi. Kecocokan tetap berupa sinyal awal dan tidak mengambil keputusan otomatis.
+- Pengaju memilih jenis rekam dan metadata, bukan indikator KM. Sistem dapat menyarankan nol atau satu indikator berdasarkan metadata; saran selalu diberi label menunggu verifikasi reviewer dan ketiadaan saran tidak menghalangi pengiriman. Untuk setiap kandidat non-metadata-completion, baik dari pengajuan manual, workbook, maupun dokumen, reviewer wajib mengonfirmasi, mengubah, menghapus, atau menandai keterkaitannya belum dapat ditentukan sebelum menerima kandidat. Hasil verifikasi reviewer dapat berisi nol, satu, atau beberapa indikator KM.
+- Kandidat manual masuk ke sesi Tinjauan yang sama, membawa URL bukti, provenance manual, saran KM bila tersedia, serta hasil pencocokan terhadap Data Resmi. DOI, nomor pencatatan, NIM, ISSN, dan pengenal lain diperiksa sebelum kemiripan judul; kecocokan tetap berupa sinyal awal dan tidak mengambil keputusan otomatis.
 - Setelah pengiriman, halaman menampilkan receipt yang dapat disalin atau di-screenshot: kode dan waktu pengajuan, tiga tahap tindak lanjut, serta ringkasan judul, jenis, periode, pengaju, bukti HTTPS, dan saran KM. Pencarian Tinjauan menerima judul maupun kode pengajuan.
-- `Simpan draft` hanya menyatakan penyimpanan dalam sesi tampilan saat ini. Muat ulang penuh mengembalikan form ke keadaan awal sampai layanan penyimpanan server tersedia.
+- `Simpan draft` menyimpan isian per rumah data pada penyimpanan sesi browser dan memulihkannya setelah muat ulang pada tab yang sama. Mengganti subtype membuang nilai yang tidak kompatibel, sedangkan keluar dengan perubahan yang belum disimpan meminta konfirmasi.
+- Setelah koreksi dikirim ulang, pencocokan dihitung ulang terhadap kandidat Data Resmi yang tersedia sehingga skor versi lama tidak menjadi jalan buntu. Rekam manual yang baru disetujui juga ikut menjadi pembanding pada pengajuan berikutnya dalam sesi yang sama.
 
 ### Publikasi
 
@@ -112,7 +113,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 
 ### Akademik
 
-- Rumah data resmi untuk bimbingan doktor, bimbingan magister, dan magang mahasiswa yang sudah lolos Tinjauan (KM-28 sampai KM-30).
+- Rumah data resmi untuk bimbingan doktor, bimbingan magister, magang mahasiswa, riset tugas akhir, dan kompetisi mahasiswa yang sudah lolos Tinjauan (KM-28 sampai KM-32).
 - Bentuk kegiatan merupakan metadata rekam tersendiri dan tidak diturunkan dari indikator KM. Buku (KM-33) berkategori Akademik pada kamus KM, tetapi rekamnya tetap berada di Publikasi karena bentuknya karya terbit.
 - Baris bimbingan dengan promotor dan ko-promotor untuk mahasiswa serta topik yang sama digabungkan menjadi satu kegiatan resmi, agar satu bimbingan tidak terhitung dua kali.
 - Data pengembangan memakai penanda mahasiswa, pembimbing, dan topik yang netral. Identitas lengkap nantinya mengikuti hak akses serta payload dari layanan server, bukan ditanamkan di frontend publik.
@@ -124,7 +125,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 
 ### Kegiatan & Pengabdian
 
-- Rumah data resmi untuk keterlibatan unit bisnis, pembinaan UMKM atau komunitas, pengelolaan konferensi internasional, kontrak non-riset, community services, proposal pengabdian, kegiatan pengabdian, dan pengelolaan jurnal nasional (KM-20 sampai KM-27).
+- Rumah data resmi untuk pembicara dan kunjungan internasional (KM-9–KM-10), keterlibatan unit bisnis, pembinaan UMKM atau komunitas, pengelolaan konferensi internasional, kontrak non-riset, community services, proposal pengabdian, kegiatan pengabdian, dan pengelolaan jurnal nasional (KM-20–KM-27).
 - Setiap indikator mempertahankan bentuk kegiatan serta bidangnya sendiri. Rekam bisnis, komunitas, konferensi, layanan non-riset, pengabdian, proposal, dan jurnal tidak dilebur menjadi satu skema kegiatan generik.
 - Bidang mengikuti kebutuhan worksheet sumber: pihak utama, unit bisnis atau komunitas, tanggal dan tempat acara, skema, tim pelaksana, masyarakat sasaran, dana, serta metadata jurnal sesuai jenis rekamnya.
 - Contoh operasional memakai identitas, judul, organisasi, dan nilai dana yang netral. Keberadaan bukti internal boleh dicatat, tetapi URL penyimpanan privat dan rincian operasional stakeholder tidak dimasukkan ke repository publik.

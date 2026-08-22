@@ -82,32 +82,48 @@ function getComparisonCandidates(
     case "publication":
       return getNexusPublicationsContent().records.map((record) => ({
         id: record.id,
+        identifiers: [record.doi, record.identifier].filter(
+          (value): value is string => Boolean(value),
+        ),
         subtitle: publicationAuthorNames(record),
         title: publicationDisplayTitle(record),
+        year: record.year,
       }));
     case "intellectual-property":
       return getNexusIntellectualPropertyContent().records.map((record) => ({
         id: record.id,
+        identifiers: record.registrationNumber
+          ? [record.registrationNumber]
+          : [],
         subtitle: intellectualPropertyCreatorNames(record),
         title: record.title,
+        year: record.year,
       }));
     case "contract":
       return getNexusContractProposalContent().records.map((record) => ({
         id: record.id,
+        identifiers: record.referenceNumber ? [record.referenceNumber] : [],
         subtitle: contractProposalPrimaryParty(record),
         title: contractProposalDisplayTitle(record),
+        year: Number(record.evaluationPeriod),
       }));
     case "academic":
       return getNexusAcademicContent().records.map((record) => ({
         id: record.id,
+        identifiers: [record.participantCode],
         subtitle: academicMentorNames(record),
         title: academicDisplayTitle(record),
+        year: record.year,
       }));
     case "activity":
       return getNexusActivitiesContent().records.map((record) => ({
         id: record.id,
+        identifiers: [record.issn, record.referenceNumber].filter(
+          (value): value is string => Boolean(value),
+        ),
         subtitle: activityContextLabel(record),
         title: activityDisplayTitle(record),
+        year: Number(record.evaluationPeriod),
       }));
   }
 }

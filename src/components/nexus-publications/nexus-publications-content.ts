@@ -14,6 +14,7 @@ import {
   metadataCompletionFieldState,
   metadataCompletionProvidedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import type { NexusOfficialSourceMetadataItem } from "@/components/nexus-workspace-ui/nexus-official-source-metadata";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   kmIndicator,
@@ -113,6 +114,8 @@ export type OfficialPublication = {
   citationUpdatedAt?: string;
   citations: number | null;
   doi?: string;
+  /** DOI, ISBN, atau pengenal resmi lain yang dicatat sumber. */
+  identifier?: string;
   /** Periode evaluasi KM tempat rekam ini tercatat, bukan tahun terbit. */
   evaluationPeriod: string;
   id: string;
@@ -139,6 +142,8 @@ export type OfficialPublication = {
    * pernah diklaim sebagai kuartil jurnal yang terverifikasi.
    */
   sourceReportedQuartile?: PublicationQuartile;
+  /** Metadata khusus jenis yang berasal dari pengajuan dan tidak diwakili bidang kanonis di atas. */
+  sourceMetadata?: NexusOfficialSourceMetadataItem[];
   quartileSource?: string;
   review: {
     candidateId: string;

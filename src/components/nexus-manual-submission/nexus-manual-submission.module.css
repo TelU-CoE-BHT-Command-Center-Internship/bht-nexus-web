@@ -456,6 +456,8 @@
   border-radius: 0.5rem;
   background: #fff;
   color: #193b69;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 0.75rem;
   font-weight: 680;
   line-height: 1.2;

@@ -13,6 +13,7 @@ import {
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
+import { projectManualIntellectualProperties } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import {
   type MetadataCompletionResolutions,
   metadataCompletionAvailabilityLabel,
@@ -204,12 +205,19 @@ export function NexusIntellectualProperty({
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
-      projectOfficialMetadataRecords(
-        content.records,
-        reviewSession.officialMetadataByRecordId,
-        normalizeProjectedIntellectualProperty,
+      projectManualIntellectualProperties(
+        projectOfficialMetadataRecords(
+          content.records,
+          reviewSession.officialMetadataByRecordId,
+          normalizeProjectedIntellectualProperty,
+        ),
+        reviewSession.officialRecordDecisions,
       ),
-    [content.records, reviewSession.officialMetadataByRecordId],
+    [
+      content.records,
+      reviewSession.officialMetadataByRecordId,
+      reviewSession.officialRecordDecisions,
+    ],
   );
   const [currentPage, setCurrentPage] = useState(1);
   const proposals = reviewSession.completionProposals;

@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   type ChangeEvent,
   type FormEvent,
   type ReactNode,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { AuditReviewRecord } from "@/components/nexus-audit-review/nexus-audit-review-content";
@@ -19,9 +21,12 @@ import {
   type ManualSubmissionValues,
   manualKmSuggestion,
   manualSubmissionDefinitions,
+  manualSubmissionIdentifiers,
   manualSubtype,
+  manualSubtypeFieldKeys,
   validateManualSubmissionFields,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
+import { manualOfficialPublicId } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import { manualSubmissionRoutes } from "@/components/nexus-manual-submission/nexus-manual-submission-routes";
 import { NexusManualSubmissionSuccess } from "@/components/nexus-manual-submission/nexus-manual-submission-success";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
@@ -40,14 +45,42 @@ type NexusManualSubmissionPageProps = {
 const involvementFieldKeys = new Set([
   "authors",
   "authorRole",
-  "beneficiaries",
+  "bhtMembers",
   "creators",
+  "delegationLead",
   "externalCollaborators",
+  "applicants",
+  "lecturer",
   "mentors",
-  "participantCount",
   "participantRef",
   "primaryParty",
+  "relatedPeople",
+  "speakerName",
+  "studentNumber",
+  "studentTeam",
+  "team",
 ]);
+
+const commonFieldKeys = new Set([
+  "evidenceUrl",
+  "note",
+  "recordType",
+  "title",
+  "year",
+]);
+
+type StoredManualDraft = {
+  savedAt: string;
+  values: ManualSubmissionValues;
+};
+
+function draftStorageKey(domain: ManualSubmissionDomain) {
+  return `bht-nexus:manual-submission:${domain}`;
+}
+
+function serializedValues(values: ManualSubmissionValues) {
+  return JSON.stringify(values);
+}
 
 function SuggestionIcon() {
   return (
@@ -169,9 +202,40 @@ export function NexusManualSubmissionPage({
   comparisonCandidates = [],
   domain,
 }: NexusManualSubmissionPageProps) {
+  const router = useRouter();
   const definition = manualSubmissionDefinitions[domain];
   const route = manualSubmissionRoutes[domain];
   const reviewSession = useNexusReviewSession();
+  const effectiveComparisonCandidates = useMemo(() => {
+    const byId = new Map(
+      comparisonCandidates.map((candidate) => [candidate.id, candidate]),
+    );
+
+    for (const projection of Object.values(
+      reviewSession.officialRecordDecisions,
+    )) {
+      const submission = projection.candidate.manualSubmission;
+      if (!submission || submission.domain !== domain) continue;
+      if (projection.decisionKind === "merged") continue;
+      const candidateId =
+        projection.decisionKind === "approved_new"
+          ? manualOfficialPublicId(projection)
+          : projection.targetRecordId;
+      if (!candidateId) continue;
+
+      byId.set(candidateId, {
+        id: candidateId,
+        identifiers: manualSubmissionIdentifiers(
+          submission.values as ManualSubmissionValues,
+        ),
+        subtitle: projection.candidate.subtitle,
+        title: projection.candidate.title,
+        year: Number(submission.values.year),
+      });
+    }
+
+    return [...byId.values()];
+  }, [comparisonCandidates, domain, reviewSession.officialRecordDecisions]);
   const [values, setValues] = useState<ManualSubmissionValues>(() =>
     createEmptyManualSubmissionValues(),
   );
@@ -179,16 +243,20 @@ export function NexusManualSubmissionPage({
   const [submittedRecord, setSubmittedRecord] =
     useState<AuditReviewRecord | null>(null);
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
+  const savedSnapshot = useRef(
+    serializedValues(createEmptyManualSubmissionValues()),
+  );
   const subtype = manualSubtype(domain, values.recordType);
-  const displaySubtype = subtype ?? definition.subtypes[0];
   const kmSuggestion = useMemo(
     () => manualKmSuggestion(domain, values),
     [domain, values],
   );
-  const informationFields = displaySubtype.fields.filter(
+  const informationFields = (subtype?.fields ?? []).filter(
     (field) => !involvementFieldKeys.has(field.key),
   );
-  const involvementFields = displaySubtype.fields.filter((field) =>
+  const involvementFields = (subtype?.fields ?? []).filter((field) =>
     involvementFieldKeys.has(field.key),
   );
   const firstPublicationInformationField =
@@ -205,7 +273,14 @@ export function NexusManualSubmissionPage({
       if (right.key === "identifier") return 1;
       return 0;
     });
-  const identityKeys = ["title", "recordType", "year"];
+  const titleRequired = Boolean(subtype && subtype.titleRequired !== false);
+  const titleFieldLabel =
+    subtype?.titleFieldLabel ?? definition.titleFieldLabel;
+  const titlePlaceholder =
+    subtype?.titlePlaceholder ?? definition.titlePlaceholder;
+  const identityKeys = subtype
+    ? [...(titleRequired ? ["title"] : []), "recordType", "year"]
+    : ["recordType"];
   const identityCompleted = identityKeys.filter((key) =>
     values[key]?.trim(),
   ).length;
@@ -234,8 +309,8 @@ export function NexusManualSubmissionPage({
   const totalCount =
     informationTotal + requiredInvolvementFields.length + 1 + 1;
   const formFieldOrder = [
-    "title",
     "recordType",
+    ...(titleRequired ? ["title"] : []),
     ...(firstPublicationInformationField
       ? [firstPublicationInformationField.key]
       : []),
@@ -248,12 +323,45 @@ export function NexusManualSubmissionPage({
   const completionPercentage = Math.round(
     (completedCount / Math.max(totalCount, 1)) * 100,
   );
+  const isDirty = serializedValues(values) !== savedSnapshot.current;
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem(draftStorageKey(domain));
+    if (stored) {
+      try {
+        const draft = JSON.parse(stored) as StoredManualDraft;
+        const knownSubtype = manualSubtype(domain, draft.values.recordType);
+        if (knownSubtype || draft.values.recordType === "") {
+          setValues(draft.values);
+          setDraftSavedAt(draft.savedAt);
+          setDraftRestored(true);
+          savedSnapshot.current = serializedValues(draft.values);
+        }
+      } catch {
+        sessionStorage.removeItem(draftStorageKey(domain));
+      }
+    }
+    setStorageReady(true);
+  }, [domain]);
+
+  useEffect(() => {
+    if (!storageReady || !isDirty) return;
+    const guardExit = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", guardExit);
+    return () => window.removeEventListener("beforeunload", guardExit);
+  }, [isDirty, storageReady]);
 
   function resetJourney() {
-    setValues(createEmptyManualSubmissionValues());
+    const emptyValues = createEmptyManualSubmissionValues();
+    setValues(emptyValues);
     setErrors({});
     setSubmittedRecord(null);
     setDraftSavedAt(null);
+    setDraftRestored(false);
+    savedSnapshot.current = serializedValues(emptyValues);
+    sessionStorage.removeItem(draftStorageKey(domain));
   }
 
   function changeValue(
@@ -262,14 +370,61 @@ export function NexusManualSubmissionPage({
     >,
   ) {
     const { name, value } = event.currentTarget;
-    setValues((current) => ({ ...current, [name]: value }));
-    setDraftSavedAt(null);
-    setErrors((current) => {
-      if (!current[name]) return current;
-      const next = { ...current };
-      delete next[name];
+    setValues((current) => {
+      if (name !== "recordType") return { ...current, [name]: value };
+
+      const previousSubtypeKeys = manualSubtypeFieldKeys(
+        domain,
+        current.recordType,
+      );
+      const nextSubtypeKeys = manualSubtypeFieldKeys(domain, value);
+      const next: ManualSubmissionValues = { ...current, recordType: value };
+      for (const key of previousSubtypeKeys) {
+        if (!commonFieldKeys.has(key) && !nextSubtypeKeys.has(key)) {
+          delete next[key];
+        }
+      }
       return next;
     });
+    setDraftSavedAt(null);
+    setDraftRestored(false);
+    setErrors((current) => {
+      const next = { ...current };
+      if (name === "recordType") {
+        for (const key of Object.keys(next)) {
+          if (!commonFieldKeys.has(key)) delete next[key];
+        }
+      } else {
+        delete next[name];
+      }
+      return next;
+    });
+  }
+
+  function saveDraft() {
+    const savedAt = `Tersimpan di perangkat ini · ${new Intl.DateTimeFormat(
+      "id-ID",
+      { hour: "2-digit", minute: "2-digit" },
+    ).format(new Date())}`;
+    sessionStorage.setItem(
+      draftStorageKey(domain),
+      JSON.stringify({ savedAt, values } satisfies StoredManualDraft),
+    );
+    savedSnapshot.current = serializedValues(values);
+    setDraftSavedAt(savedAt);
+    setDraftRestored(false);
+  }
+
+  function cancelSubmission() {
+    if (
+      isDirty &&
+      !window.confirm(
+        "Perubahan yang belum disimpan akan hilang. Tetap kembali ke Data Resmi?",
+      )
+    ) {
+      return;
+    }
+    router.push(route.officialHref);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -299,12 +454,14 @@ export function NexusManualSubmissionPage({
     const recordId = reviewSession.createSessionRecordId(idPrefix);
     const record = createManualSubmissionReviewRecord({
       actor: reviewSession.actor,
-      comparisonCandidates,
+      comparisonCandidates: effectiveComparisonCandidates,
       domain,
       id: recordId,
       values,
     });
     reviewSession.submitRecord(record);
+    sessionStorage.removeItem(draftStorageKey(domain));
+    savedSnapshot.current = serializedValues(values);
     setSubmittedRecord(record);
     document.getElementById("main-content")?.focus({ preventScroll: true });
     document.scrollingElement?.scrollTo({ behavior: "smooth", top: 0 });
@@ -348,23 +505,18 @@ export function NexusManualSubmissionPage({
         </p>
       </header>
 
+      {draftRestored ? (
+        <NexusWorkspaceNotice>
+          Draft tersimpan telah dipulihkan. Periksa kembali isinya sebelum
+          mengirim ke Tinjauan.
+        </NexusWorkspaceNotice>
+      ) : null}
+
       <form className={styles.form} noValidate onSubmit={handleSubmit}>
         <div className={styles.contentGrid}>
           <div className={styles.sectionStack}>
             <FormSection number={1} title={`Informasi ${route.officialLabel}`}>
               <div className={styles.fieldGrid}>
-                <ManualField
-                  error={errors.title}
-                  field={{
-                    key: "title",
-                    label: definition.titleFieldLabel,
-                    placeholder: definition.titlePlaceholder,
-                    required: true,
-                    type: "text",
-                  }}
-                  onChange={changeValue}
-                  value={values.title}
-                />
                 <ManualField
                   error={errors.recordType}
                   field={{
@@ -380,42 +532,67 @@ export function NexusManualSubmissionPage({
                   onChange={changeValue}
                   value={values.recordType}
                 />
-                {firstPublicationInformationField ? (
-                  <ManualField
-                    error={errors[firstPublicationInformationField.key]}
-                    field={{
-                      ...firstPublicationInformationField,
-                      wide: false,
-                    }}
-                    onChange={changeValue}
-                    value={values[firstPublicationInformationField.key] ?? ""}
-                  />
-                ) : null}
-                <ManualField
-                  error={errors.year}
-                  field={{
-                    key: "year",
-                    label:
-                      domain === "publication"
-                        ? "Tahun terbit"
-                        : "Tahun / periode evaluasi",
-                    min: "2000",
-                    placeholder: "Pilih atau masukkan tahun",
-                    required: true,
-                    type: "number",
-                  }}
-                  onChange={changeValue}
-                  value={values.year}
-                />
-                {remainingInformationFields.map((field) => (
-                  <ManualField
-                    error={errors[field.key]}
-                    field={field}
-                    key={field.key}
-                    onChange={changeValue}
-                    value={values[field.key] ?? ""}
-                  />
-                ))}
+                {subtype ? (
+                  <>
+                    {titleRequired ? (
+                      <ManualField
+                        error={errors.title}
+                        field={{
+                          key: "title",
+                          label: titleFieldLabel,
+                          placeholder: titlePlaceholder,
+                          required: true,
+                          type: "text",
+                        }}
+                        onChange={changeValue}
+                        value={values.title}
+                      />
+                    ) : null}
+                    {firstPublicationInformationField ? (
+                      <ManualField
+                        error={errors[firstPublicationInformationField.key]}
+                        field={{
+                          ...firstPublicationInformationField,
+                          wide: false,
+                        }}
+                        onChange={changeValue}
+                        value={
+                          values[firstPublicationInformationField.key] ?? ""
+                        }
+                      />
+                    ) : null}
+                    <ManualField
+                      error={errors.year}
+                      field={{
+                        key: "year",
+                        label:
+                          domain === "publication"
+                            ? "Tahun terbit"
+                            : "Tahun / periode evaluasi",
+                        min: "2000",
+                        placeholder: "Pilih atau masukkan tahun",
+                        required: true,
+                        type: "number",
+                      }}
+                      onChange={changeValue}
+                      value={values.year}
+                    />
+                    {remainingInformationFields.map((field) => (
+                      <ManualField
+                        error={errors[field.key]}
+                        field={field}
+                        key={field.key}
+                        onChange={changeValue}
+                        value={values[field.key] ?? ""}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <p className={styles.sectionPlaceholder}>
+                    Pilih jenis rekam terlebih dahulu. Bidang yang sesuai dengan
+                    workbook KM akan ditampilkan setelahnya.
+                  </p>
+                )}
               </div>
             </FormSection>
 
@@ -441,88 +618,101 @@ export function NexusManualSubmissionPage({
                 </div>
               ) : (
                 <p className={styles.sectionPlaceholder}>
-                  Pilih jenis rekam untuk menampilkan pelaku, mitra, atau pihak
-                  terkait yang perlu dicatat.
+                  {subtype
+                    ? "Jenis rekam ini tidak memerlukan bidang pelaku tambahan."
+                    : "Pilih jenis rekam untuk menampilkan pelaku, mitra, atau pihak terkait yang perlu dicatat."}
                 </p>
               )}
             </FormSection>
 
             <FormSection number={3} title="Sumber & Bukti">
-              <div className={styles.fieldGrid}>
-                <ManualField
-                  error={errors.evidenceUrl}
-                  field={{
-                    key: "evidenceUrl",
-                    label: "URL sumber / bukti utama",
-                    placeholder:
-                      "https://drive.google.com/... atau https://doi.org/...",
-                    required: true,
-                    type: "text",
-                  }}
-                  onChange={changeValue}
-                  value={values.evidenceUrl}
-                />
-                <div className={styles.evidenceGuide}>
-                  <span>Akses bukti</span>
-                  <div>
-                    <span className={styles.evidenceGuideIcon}>
-                      <LinkEvidenceIcon />
-                    </span>
-                    <p>
-                      <strong>Tautan dapat dibuka reviewer</strong>
-                      <small>Drive, DOI, repositori, atau laman resmi</small>
-                    </p>
+              {subtype ? (
+                <div className={styles.fieldGrid}>
+                  <ManualField
+                    error={errors.evidenceUrl}
+                    field={{
+                      key: "evidenceUrl",
+                      label: "URL sumber / bukti utama",
+                      placeholder:
+                        "https://drive.google.com/... atau https://doi.org/...",
+                      required: true,
+                      type: "text",
+                    }}
+                    onChange={changeValue}
+                    value={values.evidenceUrl}
+                  />
+                  <div className={styles.evidenceGuide}>
+                    <span>Akses bukti</span>
+                    <div>
+                      <span className={styles.evidenceGuideIcon}>
+                        <LinkEvidenceIcon />
+                      </span>
+                      <p>
+                        <strong>Tautan dapat dibuka reviewer</strong>
+                        <small>Drive, DOI, repositori, atau laman resmi</small>
+                      </p>
+                    </div>
                   </div>
+                  <ManualField
+                    error={errors.note}
+                    field={{
+                      key: "note",
+                      label: "Catatan pendukung (opsional)",
+                      placeholder:
+                        "Informasi tambahan yang membantu proses verifikasi",
+                      required: false,
+                      type: "textarea",
+                      wide: true,
+                    }}
+                    onChange={changeValue}
+                    value={values.note}
+                  />
                 </div>
-                <ManualField
-                  error={errors.note}
-                  field={{
-                    key: "note",
-                    label: "Catatan pendukung (opsional)",
-                    placeholder:
-                      "Informasi tambahan yang membantu proses verifikasi",
-                    required: false,
-                    type: "textarea",
-                    wide: true,
-                  }}
-                  onChange={changeValue}
-                  value={values.note}
-                />
-              </div>
+              ) : (
+                <p className={styles.sectionPlaceholder}>
+                  Pilih jenis rekam untuk menambahkan tautan bukti yang tepat.
+                </p>
+              )}
             </FormSection>
 
             <FormSection number={4} title="Keterkaitan Evaluasi">
-              <div
-                aria-live="polite"
-                className={styles.suggestion}
-                data-available={Boolean(kmSuggestion)}
-              >
-                <span className={styles.suggestionIcon}>
-                  <SuggestionIcon />
-                </span>
-                <div>
-                  {kmSuggestion ? (
-                    <>
-                      <span>
-                        Saran indikator: {kmSuggestion.indicator.id} —{" "}
-                        {kmSuggestion.indicator.label}
-                      </span>
-                      <b>Akan diverifikasi pada Tinjauan</b>
-                      <p>{kmSuggestion.reason}</p>
-                    </>
-                  ) : (
-                    <>
-                      <span>Belum ada saran indikator KM</span>
-                      <b>Tetap dapat dikirim ke Tinjauan</b>
-                      <p>
-                        Metadata saat ini belum cukup untuk saran yang aman.
-                        Reviewer dapat menentukan keterkaitan setelah memeriksa
-                        bukti.
-                      </p>
-                    </>
-                  )}
+              {subtype ? (
+                <div
+                  aria-live="polite"
+                  className={styles.suggestion}
+                  data-available={Boolean(kmSuggestion)}
+                >
+                  <span className={styles.suggestionIcon}>
+                    <SuggestionIcon />
+                  </span>
+                  <div>
+                    {kmSuggestion ? (
+                      <>
+                        <span>
+                          Saran indikator: {kmSuggestion.indicator.id} —{" "}
+                          {kmSuggestion.indicator.label}
+                        </span>
+                        <b>Akan diverifikasi pada Tinjauan</b>
+                        <p>{kmSuggestion.reason}</p>
+                      </>
+                    ) : (
+                      <>
+                        <span>Belum ada saran indikator KM</span>
+                        <b>Tetap dapat dikirim ke Tinjauan</b>
+                        <p>
+                          Metadata saat ini belum cukup untuk saran yang aman.
+                          Reviewer dapat menentukan keterkaitan setelah
+                          memeriksa bukti.
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className={styles.sectionPlaceholder}>
+                  Saran indikator tersedia setelah jenis rekam dipilih.
+                </p>
+              )}
             </FormSection>
           </div>
 
@@ -609,27 +799,14 @@ export function NexusManualSubmissionPage({
             </NexusWorkspaceNotice>
           </div>
           <div className={styles.actionButtons}>
-            <Link
+            <button
               className={styles.cancelButton}
-              href={route.officialHref}
-              prefetch={false}
-            >
-              Batal
-            </Link>
-            <NexusWorkspaceButton
-              onClick={() =>
-                setDraftSavedAt(
-                  `Tersimpan untuk sesi ini · ${new Intl.DateTimeFormat(
-                    "id-ID",
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  ).format(new Date())}`,
-                )
-              }
+              onClick={cancelSubmission}
               type="button"
             >
+              Batal
+            </button>
+            <NexusWorkspaceButton onClick={saveDraft} type="button">
               Simpan draft
             </NexusWorkspaceButton>
             <NexusWorkspaceButton tone="primary" type="submit">

@@ -85,6 +85,7 @@ export type AuditReviewDecision = {
   actor: string;
   actorId?: string;
   kind: AuditDecisionKind;
+  kpiResolution?: AuditKpiResolution;
   label: string;
   note: string;
   /** Instant mesin; format WIB hanya dibuat ketika dirender. */
@@ -121,6 +122,11 @@ export type AuditKpiLink = {
   indicator: NexusKmIndicator;
 };
 
+export type AuditKpiResolution = {
+  indicatorIds: NexusKmIndicator["id"][];
+  status: "changed" | "confirmed" | "removed" | "undetermined";
+};
+
 export type AuditReviewProvenance = {
   attempt?: number;
   fingerprint?: string;
@@ -152,6 +158,24 @@ export type AuditReviewRecord = {
   kpiLinks: AuditKpiLink[];
   /** Tautan KM yang dihasilkan sistem dan belum menjadi pilihan final pengaju. */
   kpiLinksSuggested?: boolean;
+  /** Payload terstruktur dari form manual; dipakai adapter promosi tanpa membaca ulang label UI. */
+  manualSubmission?: {
+    comparisonCandidates?: Array<{
+      id: string;
+      identifiers?: string[];
+      subtitle?: string;
+      title: string;
+      year?: number;
+    }>;
+    domain:
+      | "academic"
+      | "activity"
+      | "contract"
+      | "intellectual-property"
+      | "publication";
+    recordType: string;
+    values: Record<string, string>;
+  };
   /** Versi kandidat yang dipakai layanan pencocokan untuk hasil ini. */
   matchingVersion?: number;
   matchingStatus?: AuditMatchingStatus;

@@ -15,6 +15,7 @@ import {
 } from "@/components/nexus-activities/nexus-activities-content";
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
+import { projectManualActivities } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createActivityCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -88,6 +89,7 @@ const groupConfig: NexusSelectConfig = {
     { label: "Semua kelompok", value: "all" },
     { label: "Bisnis", value: "Bisnis" },
     { label: "Pengabdian masyarakat", value: "Pengabdian masyarakat" },
+    { label: "Riset & jejaring", value: "Riset & jejaring" },
   ],
 };
 
@@ -187,11 +189,18 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
-      projectOfficialMetadataRecords(
-        content.records,
-        reviewSession.officialMetadataByRecordId,
+      projectManualActivities(
+        projectOfficialMetadataRecords(
+          content.records,
+          reviewSession.officialMetadataByRecordId,
+        ),
+        reviewSession.officialRecordDecisions,
       ),
-    [content.records, reviewSession.officialMetadataByRecordId],
+    [
+      content.records,
+      reviewSession.officialMetadataByRecordId,
+      reviewSession.officialRecordDecisions,
+    ],
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [filterValues, setFilterValues] =

@@ -5,6 +5,8 @@ import { useDeferredValue, useMemo, useState } from "react";
 import styles from "@/components/nexus-audit-review/nexus-audit-review.module.css";
 import type {
   AuditDecisionKind,
+  AuditKpiResolution,
+  AuditOfficialMatch,
   AuditReviewCategory,
   AuditReviewRecord,
   AuditReviewSource,
@@ -17,6 +19,10 @@ import {
   auditEffectiveTitle,
   auditEvaluationPeriodLabel,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
+import {
+  createManualOfficialMatches,
+  type ManualSubmissionValues,
+} from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
   type AuditRuntimeState,
@@ -185,6 +191,24 @@ function decisionLabel(kind: AuditDecisionKind) {
   if (kind === "merged") return "Dihubungkan ke data resmi";
   if (kind === "rejected") return "Ditolak";
   return "Perbaikan diminta";
+}
+
+function comparisonCandidatesFromMatches(matches: AuditOfficialMatch[]) {
+  return matches.map((match) => {
+    const comparison = (fieldId: string) =>
+      match.comparisons.find((item) => item.fieldId === fieldId);
+    const yearValue = comparison("year")?.officialValue;
+
+    return {
+      id: match.id,
+      identifiers: (comparison("identifier")?.officialValue ?? "")
+        .split(";")
+        .map((value) => value.trim())
+        .filter(Boolean),
+      title: comparison("title")?.officialValue ?? match.title,
+      year: yearValue ? Number(yearValue) : undefined,
+    };
+  });
 }
 
 function actionLabel(status: AuditReviewStatus) {
@@ -387,6 +411,7 @@ export function NexusAuditReview({
     note: string,
     fieldIds: string[],
     targetRecordId?: string,
+    kpiResolution?: AuditKpiResolution,
   ) => {
     const currentState = runtime[record.id] ?? initialAuditRuntimeState(record);
     const recordCapabilities = reviewSession.capabilitiesFor(
@@ -404,6 +429,34 @@ export function NexusAuditReview({
     const label = decisionLabel(kind);
     const occurredAt = new Date().toISOString();
     const reviewer = `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`;
+    if (
+      kind === "approved_new" ||
+      kind === "approved_update" ||
+      kind === "merged"
+    ) {
+      const candidate = record.manualSubmission
+        ? {
+            ...record,
+            manualSubmission: {
+              ...record.manualSubmission,
+              values: {
+                ...record.manualSubmission.values,
+                ...currentState.correction?.after,
+              },
+            },
+            title: auditEffectiveTitle(record, currentState),
+          }
+        : record;
+      reviewSession.applyOfficialRecordDecision({
+        appliedAt: occurredAt,
+        candidate,
+        decisionKind: kind,
+        kpiResolution,
+        note,
+        reviewer,
+        targetRecordId,
+      });
+    }
     const completionResolutions =
       currentState.correction?.resolutions ?? record.completionResolutions;
     if (
@@ -425,6 +478,7 @@ export function NexusAuditReview({
         actor: reviewer,
         actorId: reviewSession.actor.id,
         kind,
+        kpiResolution,
         label,
         note,
         targetRecordId,
@@ -502,6 +556,34 @@ export function NexusAuditReview({
           ...previous.fixRequest.fieldIds,
         ]),
       );
+      const matchingValues = record.manualSubmission
+        ? {
+            ...record.manualSubmission.values,
+            ...previous.correction?.after,
+            ...changedAfter,
+          }
+        : {
+            ...Object.fromEntries(
+              record.fields.map((field) => [
+                field.id,
+                previous.correction?.after[field.id] ?? field.value,
+              ]),
+            ),
+            ...changedAfter,
+            title:
+              changedAfter.title ??
+              previous.correction?.after.title ??
+              record.title,
+            year: record.evaluationPeriodLabel ?? "",
+          };
+      const refreshedMatches =
+        record.candidateKind === "metadata_completion"
+          ? previous.matches
+          : createManualOfficialMatches(
+              matchingValues as ManualSubmissionValues,
+              record.manualSubmission?.comparisonCandidates ??
+                comparisonCandidatesFromMatches(previous.matches),
+            );
 
       return {
         ...previous,
@@ -539,10 +621,15 @@ export function NexusAuditReview({
         ],
         latestSubmittedBy: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
         latestSubmittedByActorId: reviewSession.actor.id,
+        matches: refreshedMatches,
         matchingStatus:
           record.candidateKind === "metadata_completion"
             ? "not_required"
-            : "stale",
+            : "current",
+        matchingVersion:
+          record.candidateKind === "metadata_completion"
+            ? undefined
+            : nextVersion,
         status: "waiting",
         version: nextVersion,
       };
@@ -876,8 +963,15 @@ export function NexusAuditReview({
           key={`${selected.id}-${selectedState.status}-${selectedState.version}-${selectedState.decision?.kind ?? "open"}`}
           capabilities={reviewSession.capabilitiesFor(selected, selectedState)}
           onClose={() => setOpenId(null)}
-          onDecide={(kind, note, fieldIds, targetRecordId) =>
-            decide(selected, kind, note, fieldIds, targetRecordId)
+          onDecide={(kind, note, fieldIds, targetRecordId, kpiResolution) =>
+            decide(
+              selected,
+              kind,
+              note,
+              fieldIds,
+              targetRecordId,
+              kpiResolution,
+            )
           }
           onResubmit={(values, evidenceNote, resolutions) =>
             resubmit(selected, values, evidenceNote, resolutions)

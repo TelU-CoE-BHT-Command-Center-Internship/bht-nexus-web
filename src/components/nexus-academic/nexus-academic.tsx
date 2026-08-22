@@ -15,6 +15,7 @@ import {
 } from "@/components/nexus-academic/nexus-academic-content";
 import { NexusAcademicIcon } from "@/components/nexus-academic/nexus-academic-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
+import { projectManualAcademics } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createAcademicCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -84,6 +85,8 @@ const activityOrder: Record<string, number> = {
   "Bimbingan Doktor": 0,
   "Bimbingan Magister": 1,
   "Magang Mahasiswa": 2,
+  "Riset Tugas Akhir": 3,
+  "Kompetisi Mahasiswa": 4,
 };
 
 const completenessConfig: NexusSelectConfig = {
@@ -200,11 +203,18 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
-      projectOfficialMetadataRecords(
-        content.records,
-        reviewSession.officialMetadataByRecordId,
+      projectManualAcademics(
+        projectOfficialMetadataRecords(
+          content.records,
+          reviewSession.officialMetadataByRecordId,
+        ),
+        reviewSession.officialRecordDecisions,
       ),
-    [content.records, reviewSession.officialMetadataByRecordId],
+    [
+      content.records,
+      reviewSession.officialMetadataByRecordId,
+      reviewSession.officialRecordDecisions,
+    ],
   );
   const [currentPage, setCurrentPage] = useState(1);
   const proposals = reviewSession.completionProposals;

@@ -5,12 +5,15 @@ import {
   metadataCompletionAvailabilityLabel,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import type { NexusOfficialSourceMetadataItem } from "@/components/nexus-workspace-ui/nexus-official-source-metadata";
 import {
   kmIndicator,
   type NexusKmIndicator,
 } from "@/content/nexus-km-indicators";
 
 type ActivityIndicatorId =
+  | "KM-9"
+  | "KM-10"
   | "KM-20"
   | "KM-21"
   | "KM-22"
@@ -20,9 +23,14 @@ type ActivityIndicatorId =
   | "KM-26"
   | "KM-27";
 
-export type ActivityGroup = "Bisnis" | "Pengabdian masyarakat";
+export type ActivityGroup =
+  | "Bisnis"
+  | "Pengabdian masyarakat"
+  | "Riset & jejaring";
 
 export type ActivityKind =
+  | "Kunjungan Lembaga Internasional"
+  | "Pembicara Undangan Internasional"
   | "Keterlibatan Unit Bisnis"
   | "Pembinaan UMKM / Komunitas"
   | "Pengelolaan Konferensi Internasional"
@@ -73,6 +81,7 @@ export type OfficialActivityRecord = {
   publicId: string;
   publicationFrequency?: string;
   quality: ActivityQuality;
+  referenceNumber?: string;
   recordStatus: "Aktif" | "Diajukan" | "Dikelola" | "Tercatat";
   /** Nilai atau pengecualian pelengkapan yang sudah disetujui. */
   resolvedMetadata?: MetadataCompletionResolutions;
@@ -88,6 +97,10 @@ export type OfficialActivityRecord = {
   };
   role?: string;
   scheme?: string;
+  /** Metadata khusus jenis yang berasal dari pengajuan dan tidak diwakili bidang kanonis di atas. */
+  sourceMetadata?: NexusOfficialSourceMetadataItem[];
+  /** Tanggal submit untuk subtype proposal; bukan tanggal pelaksanaan. */
+  submittedOn?: string;
   targetGroup?: string;
   team?: string;
   /** Tidak dimiliki worksheet KM-20 dan KM-21. */
@@ -107,6 +120,10 @@ const capturedAt = "17 Agu 2026";
 const evaluationPeriod = "2026";
 
 const indicatorNotes: Record<ActivityIndicatorId, string> = {
+  "KM-9":
+    "Pembicara undangan dicatat bersama nama pembicara, acara internasional, tanggal, tempat, dan bukti.",
+  "KM-10":
+    "Kunjungan lembaga internasional dicatat bersama institusi, ketua rombongan, tanggal, tempat, dan bukti.",
   "KM-20":
     "Keterlibatan dicatat bersama peran, unit bisnis, dan bukti layanan yang sesuai kompetensi CoE.",
   "KM-21":
@@ -453,6 +470,8 @@ export function activityContextLabel(record: OfficialActivityRecord) {
 
 export const activityIndicatorScope: readonly NexusKmIndicator[] = (
   [
+    "KM-9",
+    "KM-10",
     "KM-20",
     "KM-21",
     "KM-22",

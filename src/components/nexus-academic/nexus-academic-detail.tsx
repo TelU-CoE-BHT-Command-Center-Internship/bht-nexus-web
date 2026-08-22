@@ -131,6 +131,13 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
     wide: true,
   });
 
+  items.push(
+    ...(record.sourceMetadata ?? []).map((item) => ({
+      ...item,
+      key: `source-${item.key}`,
+    })),
+  );
+
   return items.map((item) => ({
     ...item,
     fieldState: isMetadataCompletionFieldKey(item.key)

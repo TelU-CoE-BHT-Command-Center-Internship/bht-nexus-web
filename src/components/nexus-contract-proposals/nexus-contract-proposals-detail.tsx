@@ -138,6 +138,22 @@ function getMetadataItems(
     );
   }
 
+  if (record.referenceNumber) {
+    items.push({
+      key: "referenceNumber",
+      label: record.group === "Proposal" ? "Nomor proposal" : "Nomor kontrak",
+      value: record.referenceNumber,
+    });
+  }
+
+  if (record.group === "Proposal" && record.submittedOn) {
+    items.push({
+      key: "submittedOn",
+      label: "Tanggal pengajuan",
+      value: formatContractProposalDate(record.submittedOn),
+    });
+  }
+
   items.push(
     {
       href:
@@ -153,6 +169,13 @@ function getMetadataItems(
       label: "Periode evaluasi KM",
       value: record.evaluationPeriod,
     },
+  );
+
+  items.push(
+    ...(record.sourceMetadata ?? []).map((item) => ({
+      ...item,
+      key: `source-${item.key}`,
+    })),
   );
 
   return items.map((item) => ({

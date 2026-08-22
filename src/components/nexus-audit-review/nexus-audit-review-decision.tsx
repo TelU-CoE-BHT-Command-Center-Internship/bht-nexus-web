@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type {
   AuditDecisionKind,
+  AuditKpiResolution,
   AuditOfficialMatch,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import { AuditReviewSectionHeading } from "@/components/nexus-audit-review/nexus-audit-review-detail";
@@ -29,6 +30,11 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  kmIndicator,
+  type NexusKmIndicatorId,
+  nexusKmIndicators,
+} from "@/content/nexus-km-indicators";
 
 type AuditReviewDecisionSectionProps = AuditReviewDrawerProps & {
   decisionIndex: ReviewSectionIndexes["decision"];
@@ -55,6 +61,12 @@ export function AuditReviewDecisionSection({
   const [selectedFieldIds, setSelectedFieldIds] = useState<string[]>([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [evidenceNote, setEvidenceNote] = useState("");
+  const [kpiResolutionStatus, setKpiResolutionStatus] = useState<
+    AuditKpiResolution["status"] | ""
+  >("");
+  const [selectedKpiIds, setSelectedKpiIds] = useState<NexusKmIndicatorId[]>(
+    [],
+  );
   const [draft, setDraft] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       record.fields.map((item) => [
@@ -172,12 +184,36 @@ export function AuditReviewDecisionSection({
       : decisionChoice === "rejected"
         ? capabilities.canReject
         : capabilities.canApprove;
+  const resolvesKpi = record.candidateKind !== "metadata_completion";
+  const approvalChoice = Boolean(
+    decisionChoice &&
+      ["approved_new", "approved_update", "merged"].includes(decisionChoice),
+  );
+  const kpiResolutionReady =
+    !resolvesKpi ||
+    !approvalChoice ||
+    kpiResolutionStatus === "removed" ||
+    kpiResolutionStatus === "undetermined" ||
+    (kpiResolutionStatus === "confirmed" && record.kpiLinks.length > 0) ||
+    (kpiResolutionStatus === "changed" && selectedKpiIds.length > 0);
+  const kpiResolution: AuditKpiResolution | undefined = resolvesKpi
+    ? {
+        indicatorIds:
+          kpiResolutionStatus === "confirmed"
+            ? record.kpiLinks.map((link) => link.indicator.id)
+            : kpiResolutionStatus === "changed"
+              ? selectedKpiIds
+              : [],
+        status: kpiResolutionStatus || "undetermined",
+      }
+    : undefined;
   const decisionReady = Boolean(
     decisionChoice &&
       selectedActionAllowed &&
       note.trim().length > 0 &&
       correctionSelectionReady &&
       targetSelectionReady &&
+      kpiResolutionReady &&
       !(
         matchingIsStale &&
         ["approved_new", "approved_update", "merged"].includes(decisionChoice)
@@ -212,6 +248,7 @@ export function AuditReviewDecisionSection({
       ].includes(decisionChoice)
         ? selectedMatch?.id
         : undefined,
+      approvalChoice ? kpiResolution : undefined,
     );
   };
 
@@ -517,14 +554,13 @@ export function AuditReviewDecisionSection({
         {record.candidateKind === "metadata_completion" &&
         state.decision.kind === "approved_completion" ? (
           <NexusWorkspaceNotice>
-            Pelengkapan yang disetujui sudah tercermin pada data resmi selama
-            sesi ini. Penyimpanan permanen mengikuti konfirmasi layanan BHT
-            Nexus.
+            Pelengkapan yang disetujui sudah tercermin pada Data Resmi dan
+            tercatat bersama jejak tinjauannya.
           </NexusWorkspaceNotice>
         ) : state.decision.kind !== "rejected" ? (
           <NexusWorkspaceNotice>
-            Keputusan sudah dicatat. Perubahan data resmi menunggu konfirmasi
-            layanan BHT Nexus agar transaksi dan jejak audit tetap utuh.
+            Keputusan sudah diterapkan pada Data Resmi bersama sumber, reviewer,
+            waktu, dan jejak auditnya.
           </NexusWorkspaceNotice>
         ) : null}
         <dl className={drawerStyles.reviewFinalMeta}>
@@ -570,7 +606,7 @@ export function AuditReviewDecisionSection({
         />
         <NexusWorkspaceNotice>
           {capabilities.reviewBlockReason === "unknown_submitter"
-            ? "Identitas pengirim belum tersedia, sehingga keputusan ditutup untuk mencegah persetujuan yang tidak sah. Lengkapi identitas aktor dari layanan sumber sebelum meninjau kandidat."
+            ? "Identitas pengirim belum tersedia, sehingga keputusan ditutup untuk mencegah persetujuan yang tidak sah. Lengkapi identitas pengirim sebelum meninjau kandidat."
             : capabilities.reviewBlockReason === "self_submitted"
               ? "Pengirim versi terbaru tidak dapat menyetujui kandidatnya sendiri. Kandidat tetap berada di antrean sampai diperiksa pengguna lain yang berwenang."
               : "Akun ini belum mempunyai kewenangan untuk menetapkan keputusan. Kandidat tetap berada di antrean sampai diperiksa pengguna yang berwenang."}
@@ -599,9 +635,106 @@ export function AuditReviewDecisionSection({
       {matchingIsStale ? (
         <NexusWorkspaceNotice tone="danger">
           Pencocokan versi sebelumnya sudah kedaluwarsa setelah kandidat
-          diperbaiki. Tunggu layanan pencocokan memperbarui skor sebelum
-          menerima, memperbarui, atau menghubungkan data.
+          diperbaiki. Perbarui hasil pencocokan sebelum menerima, memperbarui,
+          atau menghubungkan data.
         </NexusWorkspaceNotice>
+      ) : null}
+
+      {resolvesKpi ? (
+        <div className={drawerStyles.reviewTextField}>
+          <span>Keputusan keterkaitan indikator KM · wajib saat menerima</span>
+          <select
+            aria-label="Keputusan keterkaitan indikator KM"
+            onChange={(event) => {
+              const status = event.currentTarget.value as
+                | AuditKpiResolution["status"]
+                | "";
+              setKpiResolutionStatus(status);
+              setSelectedKpiIds(
+                status === "changed"
+                  ? record.kpiLinks.map((link) => link.indicator.id)
+                  : [],
+              );
+              setShowConfirmation(false);
+            }}
+            value={kpiResolutionStatus}
+          >
+            <option value="">Pilih hasil verifikasi indikator</option>
+            {record.kpiLinks.length > 0 ? (
+              <option value="confirmed">
+                Konfirmasi saran{" "}
+                {record.kpiLinks.map((link) => link.indicator.id).join(", ")}
+              </option>
+            ) : null}
+            <option value="changed">Ubah / tentukan indikator lain</option>
+            <option value="removed">Tidak terkait indikator KM</option>
+            <option value="undetermined">Belum dapat ditentukan</option>
+          </select>
+          {kpiResolutionStatus === "changed" ? (
+            <div className={drawerStyles.reviewKpiSelection}>
+              <select
+                aria-label="Tambahkan indikator KM hasil verifikasi"
+                onChange={(event) => {
+                  const indicatorId = event.currentTarget
+                    .value as NexusKmIndicatorId;
+                  if (indicatorId && !selectedKpiIds.includes(indicatorId)) {
+                    setSelectedKpiIds((current) => [...current, indicatorId]);
+                  }
+                  setShowConfirmation(false);
+                }}
+                value=""
+              >
+                <option value="">Tambahkan indikator KM</option>
+                {nexusKmIndicators
+                  .filter((indicator) => !selectedKpiIds.includes(indicator.id))
+                  .map((indicator) => (
+                    <option key={indicator.id} value={indicator.id}>
+                      {indicator.id} · {indicator.label}
+                    </option>
+                  ))}
+              </select>
+              {selectedKpiIds.length > 0 ? (
+                <ul aria-label="Indikator KM hasil verifikasi">
+                  {selectedKpiIds.map((indicatorId) => {
+                    const indicator = kmIndicator(indicatorId);
+
+                    return (
+                      <li key={indicatorId}>
+                        <span>
+                          <strong>{indicator.id}</strong>
+                          {indicator.label}
+                        </span>
+                        <button
+                          aria-label={`Hapus ${indicator.id} dari hasil verifikasi`}
+                          onClick={() => {
+                            setSelectedKpiIds((current) =>
+                              current.filter((item) => item !== indicatorId),
+                            );
+                            setShowConfirmation(false);
+                          }}
+                          type="button"
+                        >
+                          Hapus
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <small>
+                  Tambahkan sedikitnya satu indikator, atau pilih “Tidak
+                  terkait” maupun “Belum dapat ditentukan”.
+                </small>
+              )}
+            </div>
+          ) : null}
+          <small>
+            Saran sistem tidak pernah menjadi keputusan otomatis. Reviewer harus
+            mengonfirmasi, mengubah, menghapus, atau menandainya belum dapat
+            ditentukan. Satu kandidat boleh terkait dengan lebih dari satu
+            indikator KM.
+          </small>
+        </div>
       ) : null}
 
       <fieldset className={drawerStyles.reviewDecisionChoices}>
