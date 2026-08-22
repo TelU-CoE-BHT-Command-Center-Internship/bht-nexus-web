@@ -19,11 +19,12 @@ import {
   type ManualRecordComparisonCandidate,
   type ManualSubmissionDomain,
   type ManualSubmissionValues,
+  manualEntityYear,
   manualKmSuggestion,
   manualSubmissionDefinitions,
   manualSubmissionIdentifiers,
   manualSubtype,
-  manualSubtypeFieldKeys,
+  manualSubtypeFields,
   validateManualSubmissionFields,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import { manualOfficialPublicId } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
@@ -63,10 +64,10 @@ const involvementFieldKeys = new Set([
 
 const commonFieldKeys = new Set([
   "evidenceUrl",
+  "evaluationPeriod",
   "note",
   "recordType",
   "title",
-  "year",
 ]);
 
 type StoredManualDraft = {
@@ -228,9 +229,10 @@ export function NexusManualSubmissionPage({
         identifiers: manualSubmissionIdentifiers(
           submission.values as ManualSubmissionValues,
         ),
+        recordType: submission.recordType,
         subtitle: projection.candidate.subtitle,
         title: projection.candidate.title,
-        year: Number(submission.values.year),
+        year: manualEntityYear(submission.values as ManualSubmissionValues),
       });
     }
 
@@ -245,9 +247,10 @@ export function NexusManualSubmissionPage({
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
-  const savedSnapshot = useRef(
+  const [savedSnapshot, setSavedSnapshot] = useState(
     serializedValues(createEmptyManualSubmissionValues()),
   );
+  const submissionComplete = useRef(false);
   const subtype = manualSubtype(domain, values.recordType);
   const kmSuggestion = useMemo(
     () => manualKmSuggestion(domain, values),
@@ -273,13 +276,18 @@ export function NexusManualSubmissionPage({
       if (right.key === "identifier") return 1;
       return 0;
     });
-  const titleRequired = Boolean(subtype && subtype.titleRequired !== false);
+  const titleRequired = Boolean(
+    subtype && subtype.titleRequired !== false && !subtype.titleOptional,
+  );
+  const titleVisible = Boolean(
+    subtype && (subtype.titleRequired !== false || subtype.titleOptional),
+  );
   const titleFieldLabel =
     subtype?.titleFieldLabel ?? definition.titleFieldLabel;
   const titlePlaceholder =
     subtype?.titlePlaceholder ?? definition.titlePlaceholder;
   const identityKeys = subtype
-    ? [...(titleRequired ? ["title"] : []), "recordType", "year"]
+    ? [...(titleRequired ? ["title"] : []), "recordType", "evaluationPeriod"]
     : ["recordType"];
   const identityCompleted = identityKeys.filter((key) =>
     values[key]?.trim(),
@@ -310,11 +318,11 @@ export function NexusManualSubmissionPage({
     informationTotal + requiredInvolvementFields.length + 1 + 1;
   const formFieldOrder = [
     "recordType",
-    ...(titleRequired ? ["title"] : []),
+    ...(titleVisible ? ["title"] : []),
     ...(firstPublicationInformationField
       ? [firstPublicationInformationField.key]
       : []),
-    "year",
+    "evaluationPeriod",
     ...remainingInformationFields.map((field) => field.key),
     ...involvementFields.map((field) => field.key),
     "evidenceUrl",
@@ -323,19 +331,29 @@ export function NexusManualSubmissionPage({
   const completionPercentage = Math.round(
     (completedCount / Math.max(totalCount, 1)) * 100,
   );
-  const isDirty = serializedValues(values) !== savedSnapshot.current;
+  const isDirty = serializedValues(values) !== savedSnapshot;
 
   useEffect(() => {
     const stored = sessionStorage.getItem(draftStorageKey(domain));
     if (stored) {
       try {
         const draft = JSON.parse(stored) as StoredManualDraft;
-        const knownSubtype = manualSubtype(domain, draft.values.recordType);
-        if (knownSubtype || draft.values.recordType === "") {
-          setValues(draft.values);
+        const legacyValues = draft.values as ManualSubmissionValues & {
+          year?: string;
+        };
+        const restoredValues = {
+          ...createEmptyManualSubmissionValues(),
+          ...legacyValues,
+          evaluationPeriod:
+            legacyValues.evaluationPeriod || legacyValues.year || "",
+        };
+        delete restoredValues.year;
+        const knownSubtype = manualSubtype(domain, restoredValues.recordType);
+        if (knownSubtype || restoredValues.recordType === "") {
+          setValues(restoredValues);
           setDraftSavedAt(draft.savedAt);
           setDraftRestored(true);
-          savedSnapshot.current = serializedValues(draft.values);
+          setSavedSnapshot(serializedValues(restoredValues));
         }
       } catch {
         sessionStorage.removeItem(draftStorageKey(domain));
@@ -343,6 +361,32 @@ export function NexusManualSubmissionPage({
     }
     setStorageReady(true);
   }, [domain]);
+
+  useEffect(() => {
+    if (!storageReady || submittedRecord) return;
+
+    const persist = (updateUi = true) => {
+      if (submissionComplete.current) return;
+      const savedAt = `Otomatis tersimpan di perangkat ini · ${new Intl.DateTimeFormat(
+        "id-ID",
+        { hour: "2-digit", minute: "2-digit" },
+      ).format(new Date())}`;
+      sessionStorage.setItem(
+        draftStorageKey(domain),
+        JSON.stringify({ savedAt, values } satisfies StoredManualDraft),
+      );
+      if (updateUi) {
+        setSavedSnapshot(serializedValues(values));
+        setDraftSavedAt(savedAt);
+      }
+    };
+    const timer = window.setTimeout(persist, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      persist(false);
+    };
+  }, [domain, storageReady, submittedRecord, values]);
 
   useEffect(() => {
     if (!storageReady || !isDirty) return;
@@ -360,7 +404,8 @@ export function NexusManualSubmissionPage({
     setSubmittedRecord(null);
     setDraftSavedAt(null);
     setDraftRestored(false);
-    savedSnapshot.current = serializedValues(emptyValues);
+    submissionComplete.current = false;
+    setSavedSnapshot(serializedValues(emptyValues));
     sessionStorage.removeItem(draftStorageKey(domain));
   }
 
@@ -373,15 +418,25 @@ export function NexusManualSubmissionPage({
     setValues((current) => {
       if (name !== "recordType") return { ...current, [name]: value };
 
-      const previousSubtypeKeys = manualSubtypeFieldKeys(
+      const previousSubtypeFields = manualSubtypeFields(
         domain,
         current.recordType,
       );
-      const nextSubtypeKeys = manualSubtypeFieldKeys(domain, value);
+      const nextSubtypeFields = new Map(
+        manualSubtypeFields(domain, value).map((field) => [field.key, field]),
+      );
       const next: ManualSubmissionValues = { ...current, recordType: value };
-      for (const key of previousSubtypeKeys) {
-        if (!commonFieldKeys.has(key) && !nextSubtypeKeys.has(key)) {
-          delete next[key];
+      for (const previousField of previousSubtypeFields) {
+        const nextField = nextSubtypeFields.get(previousField.key);
+        const semanticallyCompatible =
+          nextField &&
+          nextField.label === previousField.label &&
+          nextField.type === previousField.type;
+        if (
+          !commonFieldKeys.has(previousField.key) &&
+          !semanticallyCompatible
+        ) {
+          delete next[previousField.key];
         }
       }
       return next;
@@ -410,7 +465,7 @@ export function NexusManualSubmissionPage({
       draftStorageKey(domain),
       JSON.stringify({ savedAt, values } satisfies StoredManualDraft),
     );
-    savedSnapshot.current = serializedValues(values);
+    setSavedSnapshot(serializedValues(values));
     setDraftSavedAt(savedAt);
     setDraftRestored(false);
   }
@@ -419,7 +474,7 @@ export function NexusManualSubmissionPage({
     if (
       isDirty &&
       !window.confirm(
-        "Perubahan yang belum disimpan akan hilang. Tetap kembali ke Data Resmi?",
+        "Pengajuan ini belum dikirim. Tetap kembali ke Data Resmi? Draft akan tetap tersimpan di perangkat ini.",
       )
     ) {
       return;
@@ -460,8 +515,9 @@ export function NexusManualSubmissionPage({
       values,
     });
     reviewSession.submitRecord(record);
+    submissionComplete.current = true;
     sessionStorage.removeItem(draftStorageKey(domain));
-    savedSnapshot.current = serializedValues(values);
+    setSavedSnapshot(serializedValues(values));
     setSubmittedRecord(record);
     document.getElementById("main-content")?.focus({ preventScroll: true });
     document.scrollingElement?.scrollTo({ behavior: "smooth", top: 0 });
@@ -534,14 +590,14 @@ export function NexusManualSubmissionPage({
                 />
                 {subtype ? (
                   <>
-                    {titleRequired ? (
+                    {titleVisible ? (
                       <ManualField
                         error={errors.title}
                         field={{
                           key: "title",
                           label: titleFieldLabel,
                           placeholder: titlePlaceholder,
-                          required: true,
+                          required: titleRequired,
                           type: "text",
                         }}
                         onChange={changeValue}
@@ -562,20 +618,18 @@ export function NexusManualSubmissionPage({
                       />
                     ) : null}
                     <ManualField
-                      error={errors.year}
+                      error={errors.evaluationPeriod}
                       field={{
-                        key: "year",
-                        label:
-                          domain === "publication"
-                            ? "Tahun terbit"
-                            : "Tahun / periode evaluasi",
+                        hint: "Periode pelaporan KM. Tahun atau tanggal data dicatat terpisah bila diperlukan oleh jenis rekam.",
+                        key: "evaluationPeriod",
+                        label: "Periode evaluasi",
                         min: "2000",
                         placeholder: "Pilih atau masukkan tahun",
                         required: true,
                         type: "number",
                       }}
                       onChange={changeValue}
-                      value={values.year}
+                      value={values.evaluationPeriod}
                     />
                     {remainingInformationFields.map((field) => (
                       <ManualField
@@ -636,7 +690,7 @@ export function NexusManualSubmissionPage({
                       placeholder:
                         "https://drive.google.com/... atau https://doi.org/...",
                       required: true,
-                      type: "text",
+                      type: "url",
                     }}
                     onChange={changeValue}
                     value={values.evidenceUrl}

@@ -7,6 +7,7 @@ import drawerStyles from "@/components/nexus-audit-review/nexus-audit-review-dra
 import {
   type AuditRuntimeState,
   auditCurrentValue,
+  auditDisplayValue,
   auditEffectiveSubtitle,
   auditEffectiveTitle,
   auditEvaluationPeriodLabel,
@@ -189,7 +190,7 @@ function MetadataSection({
 }: AuditCandidateDetailsProps) {
   const fields = record.fields.map((item) => ({
     ...item,
-    value: auditCurrentValue(record, state, item.id),
+    value: auditDisplayValue(record, state, item.id),
   }));
   const availableCount = fields.filter(
     (item) => item.value.trim().length > 0 && item.value !== "—",

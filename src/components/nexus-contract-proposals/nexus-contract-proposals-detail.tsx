@@ -23,6 +23,7 @@ import {
   metadataCompletionFieldState,
   metadataCompletionResolvedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -328,16 +329,27 @@ export function NexusContractProposalDetail({
           menggantikan walaupun berasal dari program yang sama.
         </p>
         <ul className={detail.kmLinkList}>
-          {record.kmLinks.map((link) => (
-            <li key={link.indicator.id}>
+          {record.kmLinks.length === 0 ? (
+            <li data-empty="true">
               <strong>
-                {link.indicator.id} · {link.indicator.label}
+                {officialKpiEmptyCopy(record.kpiResolutionStatus).label}
               </strong>
               <small>
-                {link.indicator.category} — {link.note}
+                {officialKpiEmptyCopy(record.kpiResolutionStatus).detail}
               </small>
             </li>
-          ))}
+          ) : (
+            record.kmLinks.map((link) => (
+              <li key={link.indicator.id}>
+                <strong>
+                  {link.indicator.id} · {link.indicator.label}
+                </strong>
+                <small>
+                  {link.indicator.category} — {link.note}
+                </small>
+              </li>
+            ))
+          )}
         </ul>
       </section>
 

@@ -49,7 +49,15 @@ export type AuditComparisonStatus =
 
 export type AuditReviewField = {
   id: string;
+  input?: {
+    choices?: Array<{ label: string; value: string }>;
+    min?: string;
+    required?: boolean;
+    type: "date" | "number" | "select" | "text" | "textarea" | "url";
+  };
   label: string;
+  /** Nilai mesin untuk kontrol koreksi ketika label tampil berbeda. */
+  rawValue?: string;
   value: string;
 };
 
@@ -163,6 +171,7 @@ export type AuditReviewRecord = {
     comparisonCandidates?: Array<{
       id: string;
       identifiers?: string[];
+      recordType?: string;
       subtitle?: string;
       title: string;
       year?: number;
@@ -372,6 +381,15 @@ const records: AuditReviewRecord[] = [
     candidateKind: "new_record",
     category: "publication_conference",
     categoryLabel: "Publikasi & konferensi",
+    decision: {
+      actor: sessionReviewerActor,
+      kind: "merged",
+      kpiResolution: { indicatorIds: ["KM-14"], status: "confirmed" },
+      label: "Dihubungkan ke rekam resmi",
+      note: "Baris workbook ini sudah diwakili oleh rekam publikasi resmi yang sama.",
+      occurredAt: "2026-08-16T10:00:00+07:00",
+      targetRecordId: "PUB-2026-0003",
+    },
     discoveredAt: "2026-08-16T09:18:00+07:00",
     discoveredAtLabel: "16 Agu 2026, 09.18",
     evidence: [
@@ -400,6 +418,16 @@ const records: AuditReviewRecord[] = [
     ],
     history: [
       discovered("WB-KM14-006", workbookSource, "2026-08-16T09:18:00+07:00"),
+      {
+        actor: sessionReviewerActor,
+        decisionKind: "merged",
+        id: "WB-KM14-006-merged",
+        kind: "decision",
+        label: "Dihubungkan ke rekam resmi",
+        occurredAt: "2026-08-16T10:00:00+07:00",
+        targetRecordId: "PUB-2026-0003",
+        version: 1,
+      },
     ],
     id: "WB-KM14-006",
     kpiLinks: [
@@ -409,20 +437,30 @@ const records: AuditReviewRecord[] = [
         indicator: kmIndicator("KM-14"),
       },
     ],
-    matches: [],
+    matches: [
+      {
+        comparisons: [],
+        id: "PUB-2026-0003",
+        score: 100,
+        title:
+          "Artificial Intelligence in Glaucoma Detection System Based on Fundus Images",
+        verdict: "strong",
+        verdictLabel: "Rekam workbook yang sama",
+      },
+    ],
     owner: "CoE BHT",
     evaluationPeriodLabel: "2026",
     primaryPerson: "Sofia Saidah",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.14!A6:L6" },
     signal: {
-      primary: "Bukti penerbit tersedia",
-      secondary: "Kuartil Q1 tercatat",
+      primary: "Sudah terhubung ke Data Resmi",
+      secondary: "PUB-2026-0003",
       tone: "success",
     },
     source: "spreadsheet",
     sourceLabel: workbookSource,
-    status: "waiting",
-    statusLabel: "Menunggu tinjauan",
+    status: "completed",
+    statusLabel: "Selesai ditinjau",
     submittedBy: dataStewardSubmitter,
     subtitle: "Sofia Saidah dkk. · jurnal internasional Q1",
     title:
@@ -434,6 +472,15 @@ const records: AuditReviewRecord[] = [
     candidateKind: "new_record",
     category: "publication_conference",
     categoryLabel: "Publikasi & konferensi",
+    decision: {
+      actor: sessionReviewerActor,
+      kind: "merged",
+      kpiResolution: { indicatorIds: ["KM-13"], status: "confirmed" },
+      label: "Dihubungkan ke rekam resmi",
+      note: "Baris workbook ini sudah diwakili oleh rekam publikasi resmi yang sama.",
+      occurredAt: "2026-08-16T09:58:00+07:00",
+      targetRecordId: "PUB-2026-0017",
+    },
     discoveredAt: "2026-08-16T09:14:00+07:00",
     discoveredAtLabel: "16 Agu 2026, 09.14",
     evidence: [
@@ -462,6 +509,16 @@ const records: AuditReviewRecord[] = [
     ],
     history: [
       discovered("WB-KM13-004", workbookSource, "2026-08-16T09:14:00+07:00"),
+      {
+        actor: sessionReviewerActor,
+        decisionKind: "merged",
+        id: "WB-KM13-004-merged",
+        kind: "decision",
+        label: "Dihubungkan ke rekam resmi",
+        occurredAt: "2026-08-16T09:58:00+07:00",
+        targetRecordId: "PUB-2026-0017",
+        version: 1,
+      },
     ],
     id: "WB-KM13-004",
     kpiLinks: [
@@ -471,20 +528,30 @@ const records: AuditReviewRecord[] = [
         indicator: kmIndicator("KM-13"),
       },
     ],
-    matches: [],
+    matches: [
+      {
+        comparisons: [],
+        id: "PUB-2026-0017",
+        score: 100,
+        title:
+          "Real-Time Hand Gesture-Based Virtual Mouse System Using ESP32-CAM and OpenCV",
+        verdict: "strong",
+        verdictLabel: "Rekam workbook yang sama",
+      },
+    ],
     owner: "CoE BHT",
     evaluationPeriodLabel: "2026",
     primaryPerson: "Sugondo Hadiyoso",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.13!A4:L4" },
     signal: {
-      primary: "Bukti penerbit tersedia",
-      secondary: "Kuartil Q3 tercatat",
+      primary: "Sudah terhubung ke Data Resmi",
+      secondary: "PUB-2026-0017",
       tone: "success",
     },
     source: "spreadsheet",
     sourceLabel: workbookSource,
-    status: "waiting",
-    statusLabel: "Menunggu tinjauan",
+    status: "completed",
+    statusLabel: "Selesai ditinjau",
     submittedBy: dataStewardSubmitter,
     subtitle: "Sugondo Hadiyoso dkk. · jurnal internasional Q3",
     title:
@@ -496,6 +563,15 @@ const records: AuditReviewRecord[] = [
     candidateKind: "new_record",
     category: "publication_conference",
     categoryLabel: "Publikasi & konferensi",
+    decision: {
+      actor: sessionReviewerActor,
+      kind: "merged",
+      kpiResolution: { indicatorIds: ["KM-11"], status: "confirmed" },
+      label: "Dihubungkan ke rekam resmi",
+      note: "Baris workbook ini sudah diwakili oleh rekam publikasi resmi yang sama.",
+      occurredAt: "2026-08-16T09:56:00+07:00",
+      targetRecordId: "PUB-2026-0032",
+    },
     discoveredAt: "2026-08-16T09:10:00+07:00",
     discoveredAtLabel: "16 Agu 2026, 09.10",
     evidence: [
@@ -528,6 +604,16 @@ const records: AuditReviewRecord[] = [
     ],
     history: [
       discovered("WB-KM11-008", workbookSource, "2026-08-16T09:10:00+07:00"),
+      {
+        actor: sessionReviewerActor,
+        decisionKind: "merged",
+        id: "WB-KM11-008-merged",
+        kind: "decision",
+        label: "Dihubungkan ke rekam resmi",
+        occurredAt: "2026-08-16T09:56:00+07:00",
+        targetRecordId: "PUB-2026-0032",
+        version: 1,
+      },
     ],
     id: "WB-KM11-008",
     kpiLinks: [
@@ -537,20 +623,30 @@ const records: AuditReviewRecord[] = [
         indicator: kmIndicator("KM-11"),
       },
     ],
-    matches: [],
+    matches: [
+      {
+        comparisons: [],
+        id: "PUB-2026-0032",
+        score: 100,
+        title:
+          "Effect of Graphite Addition Variations on the Electrical Properties of Graphite Oxide-Based Conductive Inks for Low-Cost Medical Electrodes",
+        verdict: "strong",
+        verdictLabel: "Rekam workbook yang sama",
+      },
+    ],
     owner: "CoE BHT",
     evaluationPeriodLabel: "2026",
     primaryPerson: "Fathur Rahman",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.11!A8:I8" },
     signal: {
-      primary: "Bukti prosiding tersedia",
-      secondary: "Belum ada rekam pembanding",
+      primary: "Sudah terhubung ke Data Resmi",
+      secondary: "PUB-2026-0032",
       tone: "success",
     },
     source: "spreadsheet",
     sourceLabel: workbookSource,
-    status: "waiting",
-    statusLabel: "Menunggu tinjauan",
+    status: "completed",
+    statusLabel: "Selesai ditinjau",
     submittedBy: dataStewardSubmitter,
     subtitle: "Fathur Rahman · prosiding internasional terindeks",
     title:
@@ -816,6 +912,15 @@ const records: AuditReviewRecord[] = [
     candidateKind: "new_record",
     category: "publication_conference",
     categoryLabel: "Publikasi & konferensi",
+    decision: {
+      actor: sessionReviewerActor,
+      kind: "merged",
+      kpiResolution: { indicatorIds: ["KM-33"], status: "confirmed" },
+      label: "Dihubungkan ke rekam resmi",
+      note: "Baris workbook ini sudah diwakili oleh rekam publikasi resmi yang sama.",
+      occurredAt: "2026-08-16T09:54:00+07:00",
+      targetRecordId: "PUB-2026-0047",
+    },
     discoveredAt: "2026-08-16T08:46:00+07:00",
     discoveredAtLabel: "16 Agu 2026, 08.46",
     evidence: [
@@ -843,6 +948,16 @@ const records: AuditReviewRecord[] = [
     ],
     history: [
       discovered("WB-KM33-004", workbookSource, "2026-08-16T08:46:00+07:00"),
+      {
+        actor: sessionReviewerActor,
+        decisionKind: "merged",
+        id: "WB-KM33-004-merged",
+        kind: "decision",
+        label: "Dihubungkan ke rekam resmi",
+        occurredAt: "2026-08-16T09:54:00+07:00",
+        targetRecordId: "PUB-2026-0047",
+        version: 1,
+      },
     ],
     id: "WB-KM33-004",
     kpiLinks: [
@@ -852,20 +967,29 @@ const records: AuditReviewRecord[] = [
         indicator: kmIndicator("KM-33"),
       },
     ],
-    matches: [],
+    matches: [
+      {
+        comparisons: [],
+        id: "PUB-2026-0047",
+        score: 100,
+        title: "Reduced Keratin for Biomedical Application",
+        verdict: "strong",
+        verdictLabel: "Rekam workbook yang sama",
+      },
+    ],
     owner: "CoE BHT",
     evaluationPeriodLabel: "2026",
     primaryPerson: "D. Puspitasari",
     provenance: { sourceKey: "COPY_3 KM 2026.xlsx · no.33!A4:F4" },
     signal: {
-      primary: "Bukti penerbit tersedia",
-      secondary: "Periksa kepemilikan CoE",
+      primary: "Sudah terhubung ke Data Resmi",
+      secondary: "PUB-2026-0047",
       tone: "success",
     },
     source: "spreadsheet",
     sourceLabel: workbookSource,
-    status: "waiting",
-    statusLabel: "Menunggu tinjauan",
+    status: "completed",
+    statusLabel: "Selesai ditinjau",
     submittedBy: dataStewardSubmitter,
     subtitle: "D. Puspitasari dkk. · buku/referensi",
     title: "Reduced Keratin for Biomedical Application",
@@ -992,13 +1116,6 @@ const records: AuditReviewRecord[] = [
     candidateKind: "new_record",
     category: "activity_governance",
     categoryLabel: "Kegiatan & tata kelola",
-    decision: {
-      actor: sessionReviewerActor,
-      kind: "approved_new",
-      label: "Disetujui sebagai data baru",
-      note: "Identitas kegiatan, periode, dan dokumen pendukung telah diperiksa. Keterkaitan indikator akan ditentukan terpisah setelah klasifikasi tersedia.",
-      occurredAt: "2026-08-15T14:40:00+07:00",
-    },
     discoveredAt: "2026-08-15T13:10:00+07:00",
     discoveredAtLabel: "15 Agu 2026, 13.10",
     evidence: [
@@ -1025,12 +1142,6 @@ const records: AuditReviewRecord[] = [
         "Dokumen internal",
         "2026-08-15T13:10:00+07:00",
       ),
-      {
-        actor: sessionReviewerActor,
-        id: "CAND-260815-017-approved",
-        label: "Kandidat disetujui sebagai data baru",
-        occurredAt: "2026-08-15T14:40:00+07:00",
-      },
     ],
     id: "CAND-260815-017",
     kpiLinks: [],
@@ -1040,14 +1151,14 @@ const records: AuditReviewRecord[] = [
     primaryPerson: "Tim Laboratorium A",
     provenance: {},
     signal: {
-      primary: "Keputusan tercatat",
-      secondary: "Disetujui sebagai data baru",
+      primary: "Klasifikasi belum ditetapkan",
+      secondary: "Menunggu keputusan reviewer",
       tone: "neutral",
     },
     source: "document",
     sourceLabel: "Dokumen",
-    status: "completed",
-    statusLabel: "Selesai ditinjau",
+    status: "waiting",
+    statusLabel: "Menunggu tinjauan",
     submittedBy: "Pengelola dokumen",
     subtitle: "Tim Laboratorium A · klasifikasi indikator belum dipastikan",
     title: "Kalibrasi Perangkat Biosinyal Laboratorium",

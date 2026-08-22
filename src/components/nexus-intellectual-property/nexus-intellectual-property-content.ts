@@ -4,6 +4,7 @@ import {
   type MetadataCompletionResolutions,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   kmIndicator,
@@ -57,6 +58,7 @@ export type OfficialIntellectualProperty = {
   filedOn?: string;
   id: string;
   kmLinks: IntellectualPropertyKmLink[];
+  kpiResolutionStatus?: "not_applicable" | "resolved" | "undetermined";
   missingFields: IntellectualPropertyCompletionFieldKey[];
   protection: IntellectualPropertyProtection;
   provenance: IntellectualPropertyProvenance[];
@@ -71,6 +73,7 @@ export type OfficialIntellectualProperty = {
     decision:
       | "Dihubungkan ke rekam resmi"
       | "Disetujui sebagai data baru"
+      | "Rekam resmi diperbarui"
       | "Pelengkapan metadata disetujui";
     note: string;
     reviewedAt: string;
@@ -314,7 +317,8 @@ export function intellectualPropertyCreatorNames(
 export function intellectualPropertyKmLabel(
   record: OfficialIntellectualProperty,
 ) {
-  if (record.kmLinks.length === 0) return "Belum dikaitkan";
+  if (record.kmLinks.length === 0)
+    return officialKpiEmptyCopy(record.kpiResolutionStatus).label;
   return record.kmLinks.map((link) => link.indicator.id).join(", ");
 }
 

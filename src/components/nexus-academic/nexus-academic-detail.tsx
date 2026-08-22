@@ -22,6 +22,7 @@ import {
   metadataCompletionFieldState,
   metadataCompletionResolvedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -211,7 +212,7 @@ export function NexusAcademicDetail({
             <dt>Indikator KM</dt>
             <dd>
               {record.kmLinks.length === 0
-                ? "Belum dikaitkan"
+                ? officialKpiEmptyCopy(record.kpiResolutionStatus).label
                 : record.kmLinks.map((link) => link.indicator.id).join(", ")}
             </dd>
           </div>
@@ -294,10 +295,11 @@ export function NexusAcademicDetail({
         <ul className={detail.kmLinkList}>
           {record.kmLinks.length === 0 ? (
             <li data-empty="true">
-              <strong>Belum dikaitkan dengan indikator KM</strong>
+              <strong>
+                {officialKpiEmptyCopy(record.kpiResolutionStatus).label}
+              </strong>
               <small>
-                Keterkaitan indikator dapat ditetapkan melalui Tinjauan ketika
-                klasifikasinya sudah dipastikan.
+                {officialKpiEmptyCopy(record.kpiResolutionStatus).detail}
               </small>
             </li>
           ) : (

@@ -25,6 +25,7 @@ import {
 } from "@/components/nexus-publications/nexus-publications-content";
 import { NexusPublicationsIcon } from "@/components/nexus-publications/nexus-publications-icons";
 import { getPublicationSourceId } from "@/components/nexus-publications/nexus-publications-utils";
+import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -67,7 +68,8 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 }
 
 function kmLinkLabel(publication: OfficialPublication) {
-  if (publication.kmLinks.length === 0) return "Belum dikaitkan";
+  if (publication.kmLinks.length === 0)
+    return officialKpiEmptyCopy(publication.kpiResolutionStatus).label;
   return publication.kmLinks.map((link) => link.indicator.id).join(", ");
 }
 
@@ -356,10 +358,11 @@ export function NexusPublicationDetail({
         <ul className={detail.kmLinkList}>
           {publication.kmLinks.length === 0 ? (
             <li data-empty="true">
-              <strong>Belum dikaitkan dengan indikator KM</strong>
+              <strong>
+                {officialKpiEmptyCopy(publication.kpiResolutionStatus).label}
+              </strong>
               <small>
-                Keterkaitan indikator dapat ditetapkan melalui Tinjauan ketika
-                klasifikasinya sudah dipastikan.
+                {officialKpiEmptyCopy(publication.kpiResolutionStatus).detail}
               </small>
             </li>
           ) : (

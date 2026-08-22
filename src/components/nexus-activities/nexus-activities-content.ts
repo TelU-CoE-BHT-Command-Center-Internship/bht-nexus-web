@@ -5,6 +5,7 @@ import {
   metadataCompletionAvailabilityLabel,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import type { NexusOfficialSourceMetadataItem } from "@/components/nexus-workspace-ui/nexus-official-source-metadata";
 import {
   kmIndicator,
@@ -38,7 +39,8 @@ export type ActivityKind =
   | "Community Services"
   | "Proposal Abdimas DRTPM"
   | "Proposal Abdimas SDGs"
-  | "Pengelolaan Jurnal Ilmiah";
+  | "Pengelolaan Jurnal Ilmiah"
+  | "Kegiatan Lainnya";
 
 type ActivityQuality = "Lengkap" | "Perlu dilengkapi";
 type ActivityEvidenceStatus = "internal" | "public" | "unrecorded";
@@ -72,6 +74,7 @@ export type OfficialActivityRecord = {
   journalVolume?: string;
   kind: ActivityKind;
   kmLinks: ActivityKmLink[];
+  kpiResolutionStatus?: "not_applicable" | "resolved" | "undetermined";
   location?: string;
   missingFields: ActivityCompletionFieldKey[];
   organization?: string;
@@ -90,6 +93,7 @@ export type OfficialActivityRecord = {
     decision:
       | "Dihubungkan ke rekam resmi"
       | "Disetujui sebagai data baru"
+      | "Rekam resmi diperbarui"
       | "Pelengkapan metadata disetujui";
     note: string;
     reviewedAt: string;
@@ -434,7 +438,8 @@ export function activityEvidenceLabel(record: OfficialActivityRecord) {
 }
 
 export function activityKmLabel(record: OfficialActivityRecord) {
-  if (record.kmLinks.length === 0) return "Belum dikaitkan";
+  if (record.kmLinks.length === 0)
+    return officialKpiEmptyCopy(record.kpiResolutionStatus).label;
   return record.kmLinks.map((link) => link.indicator.id).join(", ");
 }
 

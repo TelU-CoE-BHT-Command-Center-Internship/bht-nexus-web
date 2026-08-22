@@ -62,6 +62,7 @@ export type OfficialContractProposalRecord = {
   id: string;
   kind: ContractProposalKind;
   kmLinks: ContractProposalKmLink[];
+  kpiResolutionStatus?: "not_applicable" | "resolved" | "undetermined";
   missingFields: ContractProposalCompletionFieldKey[];
   ownerUnit: string;
   partner?: string;
@@ -77,6 +78,7 @@ export type OfficialContractProposalRecord = {
     decision:
       | "Dihubungkan ke rekam resmi"
       | "Disetujui sebagai data baru"
+      | "Rekam resmi diperbarui"
       | "Pelengkapan metadata disetujui";
     note: string;
     reviewedAt: string;

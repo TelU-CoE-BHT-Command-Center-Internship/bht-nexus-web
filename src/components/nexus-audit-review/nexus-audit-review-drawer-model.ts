@@ -65,8 +65,22 @@ export function auditCurrentValue(
   state: AuditRuntimeState,
   fieldId: string,
 ) {
-  const original = record.fields.find((item) => item.id === fieldId)?.value;
+  const field = record.fields.find((item) => item.id === fieldId);
+  const original = field?.rawValue ?? field?.value;
   return state.correction?.after[fieldId] ?? original ?? "—";
+}
+
+export function auditDisplayValue(
+  record: AuditReviewRecord,
+  state: AuditRuntimeState,
+  fieldId: string,
+) {
+  const field = record.fields.find((item) => item.id === fieldId);
+  const value = auditCurrentValue(record, state, fieldId);
+  return (
+    field?.input?.choices?.find((choice) => choice.value === value)?.label ??
+    value
+  );
 }
 
 export function auditEffectiveTitle(
@@ -89,7 +103,7 @@ export function auditEffectiveSubtitle(
 
   const values = record.fields
     .filter((item) => !["activity_title", "title"].includes(item.id))
-    .map((item) => auditCurrentValue(record, state, item.id).trim())
+    .map((item) => auditDisplayValue(record, state, item.id).trim())
     .filter((value) => value && value !== "—")
     .slice(0, 2);
 

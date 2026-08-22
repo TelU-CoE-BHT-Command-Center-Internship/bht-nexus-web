@@ -5,6 +5,7 @@ import {
   metadataCompletionAvailabilityLabel,
   metadataCompletionFieldLabels,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import type { NexusOfficialSourceMetadataItem } from "@/components/nexus-workspace-ui/nexus-official-source-metadata";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
@@ -19,7 +20,8 @@ type AcademicActivity =
   | "Bimbingan Magister"
   | "Magang Mahasiswa"
   | "Kompetisi Mahasiswa"
-  | "Riset Tugas Akhir";
+  | "Riset Tugas Akhir"
+  | "Kegiatan Akademik Lainnya";
 
 type AcademicQuality = "Lengkap" | "Perlu dilengkapi";
 
@@ -64,6 +66,7 @@ export type OfficialAcademicRecord = {
   evidenceUrl?: string;
   id: string;
   kmLinks: AcademicKmLink[];
+  kpiResolutionStatus?: "not_applicable" | "resolved" | "undetermined";
   mentors: AcademicMentor[];
   missingFields: AcademicCompletionFieldKey[];
   /** Penanda netral; identitas mahasiswa disediakan server sesuai hak akses. */
@@ -79,6 +82,7 @@ export type OfficialAcademicRecord = {
     decision:
       | "Dihubungkan ke rekam resmi"
       | "Disetujui sebagai data baru"
+      | "Rekam resmi diperbarui"
       | "Pelengkapan metadata disetujui";
     note: string;
     reviewedAt: string;
@@ -368,7 +372,8 @@ export function academicDisplayTitle(record: OfficialAcademicRecord) {
 }
 
 export function academicKmLabel(record: OfficialAcademicRecord) {
-  if (record.kmLinks.length === 0) return "Belum dikaitkan";
+  if (record.kmLinks.length === 0)
+    return officialKpiEmptyCopy(record.kpiResolutionStatus).label;
   return record.kmLinks.map((link) => link.indicator.id).join(", ");
 }
 

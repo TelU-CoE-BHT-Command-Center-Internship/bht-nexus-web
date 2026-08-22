@@ -13,7 +13,7 @@ import {
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
-import { projectManualIntellectualProperties } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { projectOfficialIntellectualProperties } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import {
   type MetadataCompletionResolutions,
   metadataCompletionAvailabilityLabel,
@@ -205,7 +205,7 @@ export function NexusIntellectualProperty({
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
-      projectManualIntellectualProperties(
+      projectOfficialIntellectualProperties(
         projectOfficialMetadataRecords(
           content.records,
           reviewSession.officialMetadataByRecordId,

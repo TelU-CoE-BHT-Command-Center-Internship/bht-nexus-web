@@ -3,6 +3,7 @@ import type {
   AuditDecisionKind,
   AuditKpiResolution,
   AuditOfficialMatch,
+  AuditReviewField,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import { AuditReviewSectionHeading } from "@/components/nexus-audit-review/nexus-audit-review-detail";
 import drawerStyles from "@/components/nexus-audit-review/nexus-audit-review-drawer.module.css";
@@ -12,6 +13,12 @@ import {
   auditDecisionConsequence,
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
+import {
+  type ManualSubmissionValues,
+  manualSubmissionDefinitions,
+  manualSubtype,
+  validateManualSubmissionFields,
+} from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import {
   areMetadataCompletionResolutionsEqual,
   createEmptyMetadataCompletionResolution,
@@ -80,9 +87,110 @@ export function AuditReviewDecisionSection({
       ...record.completionResolutions,
       ...state.correction?.resolutions,
     }));
-  const correctionFields = record.fields.filter((item) =>
+  const allRequestedCorrectionFields = record.fields.filter((item) =>
     state.fixRequest?.fieldIds.includes(item.id),
   );
+  const originalSubtype = record.manualSubmission
+    ? manualSubtype(
+        record.manualSubmission.domain,
+        record.manualSubmission.recordType,
+      )
+    : undefined;
+  const selectedSubtype = record.manualSubmission
+    ? manualSubtype(
+        record.manualSubmission.domain,
+        draft.record_type ?? record.manualSubmission.recordType,
+      )
+    : undefined;
+  const subtypeChanged = Boolean(
+    selectedSubtype && selectedSubtype.id !== originalSubtype?.id,
+  );
+  const selectedSubtypeFields = new Map(
+    (selectedSubtype?.fields ?? []).map((field) => [field.key, field]),
+  );
+  const selectedTitleLabel = record.manualSubmission
+    ? (selectedSubtype?.titleFieldLabel ??
+      manualSubmissionDefinitions[record.manualSubmission.domain]
+        .titleFieldLabel)
+    : undefined;
+  const selectedTitleVisible = Boolean(
+    selectedSubtype &&
+      (selectedSubtype.titleRequired !== false ||
+        selectedSubtype.titleOptional),
+  );
+  const requestedCorrectionFields = allRequestedCorrectionFields.filter(
+    (item) => {
+      if (!subtypeChanged) return true;
+      if (item.id === "title") {
+        return selectedTitleVisible && item.label === selectedTitleLabel;
+      }
+
+      const originalField = originalSubtype?.fields.find(
+        (field) => field.key === item.id,
+      );
+      if (!originalField) return true;
+      const nextField = selectedSubtypeFields.get(item.id);
+      return Boolean(
+        nextField &&
+          nextField.label === item.label &&
+          nextField.type === item.input?.type,
+      );
+    },
+  );
+  const dynamicSubtypeFields: AuditReviewField[] = [];
+  if (
+    record.manualSubmission &&
+    state.fixRequest?.fieldIds.includes("record_type") &&
+    selectedSubtype &&
+    subtypeChanged
+  ) {
+    const definition =
+      manualSubmissionDefinitions[record.manualSubmission.domain];
+    const currentFields = new Map(record.fields.map((item) => [item.id, item]));
+    const existingTitle = currentFields.get("title");
+    if (
+      selectedTitleVisible &&
+      (!existingTitle || existingTitle.label !== selectedTitleLabel)
+    ) {
+      dynamicSubtypeFields.push({
+        id: "title",
+        input: {
+          required:
+            selectedSubtype.titleRequired !== false &&
+            !selectedSubtype.titleOptional,
+          type: "text",
+        },
+        label: selectedTitleLabel ?? definition.titleFieldLabel,
+        rawValue: "",
+        value: "",
+      });
+    }
+    for (const field of selectedSubtype.fields) {
+      const existing = currentFields.get(field.key);
+      const compatible =
+        existing?.label === field.label && existing.input?.type === field.type;
+      if (compatible) continue;
+      dynamicSubtypeFields.push({
+        id: field.key,
+        input: {
+          choices: field.choices ? [...field.choices] : undefined,
+          min: field.min,
+          required: field.required,
+          type: field.type,
+        },
+        label: field.label,
+        rawValue: "",
+        value: "",
+      });
+    }
+  }
+  const correctionFields = [
+    ...requestedCorrectionFields,
+    ...dynamicSubtypeFields.filter(
+      (dynamic) =>
+        !requestedCorrectionFields.some((item) => item.id === dynamic.id),
+    ),
+  ];
   const isCompletionCorrection = record.candidateKind === "metadata_completion";
   const normalizedCorrectionResolutions = Object.fromEntries(
     correctionFields.flatMap((item) =>
@@ -140,6 +248,80 @@ export function AuditReviewDecisionSection({
       return error ? [[item.id, error] as const] : [];
     }),
   ) as Record<string, string>;
+  for (const item of correctionFields) {
+    if (!item.input || isCompletionCorrection) continue;
+    const value = draft[item.id]?.trim() ?? "";
+    if (!value) continue;
+    if (
+      item.input.type === "select" &&
+      !item.input.choices?.some((choice) => choice.value === value)
+    ) {
+      correctionErrors[item.id] = `${item.label} tidak dikenal.`;
+    } else if (item.input.type === "number") {
+      const number = Number(value);
+      if (!Number.isFinite(number)) {
+        correctionErrors[item.id] = `${item.label} harus berupa angka.`;
+      } else if (
+        item.input.min !== undefined &&
+        number < Number(item.input.min)
+      ) {
+        correctionErrors[item.id] = `${item.label} minimal ${item.input.min}.`;
+      }
+    } else if (
+      item.input.type === "date" &&
+      !/^\d{4}-\d{2}-\d{2}$/.test(value)
+    ) {
+      correctionErrors[item.id] =
+        `Gunakan tanggal yang valid untuk ${item.label.toLocaleLowerCase("id-ID")}.`;
+    } else if (item.input.type === "url") {
+      try {
+        if (new URL(value).protocol !== "https:") {
+          correctionErrors[item.id] =
+            "Gunakan tautan lengkap yang diawali https://.";
+        }
+      } catch {
+        correctionErrors[item.id] =
+          "Gunakan tautan lengkap yang diawali https://.";
+      }
+    }
+  }
+  let manualCorrectionIsValid = true;
+  if (record.manualSubmission && !isCompletionCorrection) {
+    const manualValues = {
+      ...record.manualSubmission.values,
+      ...draft,
+      note: draft.submitter_note ?? record.manualSubmission.values.note ?? "",
+      recordType: draft.record_type ?? record.manualSubmission.recordType,
+    } as ManualSubmissionValues;
+    const manualErrors = validateManualSubmissionFields(
+      record.manualSubmission.domain,
+      manualValues,
+      "all",
+    );
+    manualCorrectionIsValid = Object.keys(manualErrors).length === 0;
+    for (const item of correctionFields) {
+      if (manualErrors[item.id]) {
+        correctionErrors[item.id] = manualErrors[item.id];
+      }
+    }
+    if (
+      correctionFields.some((item) => item.id === "startDate") &&
+      manualErrors.endDate
+    ) {
+      correctionErrors.startDate =
+        "Tanggal mulai tidak boleh lebih akhir dari tanggal selesai kontrak.";
+    }
+    const hiddenError = Object.keys(manualErrors).find(
+      (fieldId) => !correctionFields.some((item) => item.id === fieldId),
+    );
+    if (
+      hiddenError &&
+      correctionFields.some((item) => item.id === "record_type")
+    ) {
+      correctionErrors.record_type =
+        "Jenis baru memerlukan metadata yang belum lengkap. Pilih kembali jenisnya lalu lengkapi semua bidang yang ditampilkan.";
+    }
+  }
   if (isCompletionCorrection) {
     const relationalErrors = metadataCompletionResolutionSetErrors(
       effectiveCorrectionResolutions,
@@ -158,17 +340,22 @@ export function AuditReviewDecisionSection({
         "Tanggal mulai tidak boleh lebih akhir dari tanggal selesai kontrak.";
     }
   }
-  const correctionComplete = correctionFields.every((item) => {
-    if (isCompletionCorrection && isMetadataCompletionFieldKey(item.id)) {
-      const resolution = normalizedCorrectionResolutions[item.id];
-      if (!resolution || correctionErrors[item.id]) return false;
-      return resolution.status === "provided"
-        ? resolution.value.length > 0
-        : resolution.reason.length >= 8;
-    }
+  const correctionComplete =
+    manualCorrectionIsValid &&
+    correctionFields.every((item) => {
+      if (isCompletionCorrection && isMetadataCompletionFieldKey(item.id)) {
+        const resolution = normalizedCorrectionResolutions[item.id];
+        if (!resolution || correctionErrors[item.id]) return false;
+        return resolution.status === "provided"
+          ? resolution.value.length > 0
+          : resolution.reason.length >= 8;
+      }
 
-    return draft[item.id]?.trim().length > 0 && !correctionErrors[item.id];
-  });
+      return (
+        (item.input?.required === false || draft[item.id]?.trim().length > 0) &&
+        !correctionErrors[item.id]
+      );
+    });
   const consequence = auditDecisionConsequence(decisionChoice, selectedMatch);
   const correctionSelectionReady =
     decisionChoice !== "changes_requested" || selectedFieldIds.length > 0;
@@ -312,7 +499,7 @@ export function AuditReviewDecisionSection({
         <AuditReviewSectionHeading
           id="audit-correction-title"
           index={decisionIndex}
-          meta={`${correctionFields.length} bidang wajib diperbaiki`}
+          meta={`${correctionFields.length} bidang perbaikan`}
           title="Lengkapi perbaikan kandidat"
         />
         <NexusWorkspaceNotice tone="danger">
@@ -321,12 +508,63 @@ export function AuditReviewDecisionSection({
         <div className={drawerStyles.reviewCorrectionFields}>
           {correctionFields.map((item) => {
             const fieldId = `correction-${record.id}-${item.id}`;
-            const config = isMetadataCompletionFieldKey(item.id)
+            const metadataConfig = isMetadataCompletionFieldKey(item.id)
               ? metadataCompletionFieldConfigs[item.id]
               : undefined;
+            const inputConfig = item.input;
             const error = correctionErrors[item.id];
             const updateDraft = (value: string) =>
-              setDraft((current) => ({ ...current, [item.id]: value }));
+              setDraft((current) => {
+                if (item.id !== "record_type" || !record.manualSubmission) {
+                  return { ...current, [item.id]: value };
+                }
+                const definition =
+                  manualSubmissionDefinitions[record.manualSubmission.domain];
+                const previous = manualSubtype(
+                  record.manualSubmission.domain,
+                  current.record_type ?? record.manualSubmission.recordType,
+                );
+                const nextSubtype = manualSubtype(
+                  record.manualSubmission.domain,
+                  value,
+                );
+                const next: Record<string, string> = {
+                  ...current,
+                  record_type: value,
+                };
+                const nextFields = new Map(
+                  (nextSubtype?.fields ?? []).map((field) => [
+                    field.key,
+                    field,
+                  ]),
+                );
+                for (const previousField of previous?.fields ?? []) {
+                  const nextField = nextFields.get(previousField.key);
+                  if (
+                    !nextField ||
+                    nextField.label !== previousField.label ||
+                    nextField.type !== previousField.type
+                  ) {
+                    next[previousField.key] = "";
+                  }
+                }
+                const previousTitleLabel =
+                  previous?.titleFieldLabel ?? definition.titleFieldLabel;
+                const nextTitleLabel =
+                  nextSubtype?.titleFieldLabel ?? definition.titleFieldLabel;
+                const nextTitleVisible = Boolean(
+                  nextSubtype &&
+                    (nextSubtype.titleRequired !== false ||
+                      nextSubtype.titleOptional),
+                );
+                if (
+                  !nextTitleVisible ||
+                  previousTitleLabel !== nextTitleLabel
+                ) {
+                  next.title = "";
+                }
+                return next;
+              });
 
             if (
               isCompletionCorrection &&
@@ -364,7 +602,7 @@ export function AuditReviewDecisionSection({
                     ))}
                   </select>
                   {resolution.status === "provided" ? (
-                    config?.type === "choice" ? (
+                    metadataConfig?.type === "choice" ? (
                       <select
                         aria-describedby={
                           error ? `${fieldId}-error` : undefined
@@ -376,8 +614,8 @@ export function AuditReviewDecisionSection({
                         }
                         value={resolution.value}
                       >
-                        <option value="">{config.placeholder}</option>
-                        {config.choices?.map((choice) => (
+                        <option value="">{metadataConfig.placeholder}</option>
+                        {metadataConfig.choices?.map((choice) => (
                           <option key={choice} value={choice}>
                             {choice}
                           </option>
@@ -390,12 +628,12 @@ export function AuditReviewDecisionSection({
                         }
                         aria-invalid={error ? true : undefined}
                         id={fieldId}
-                        inputMode={config?.inputMode}
-                        maxLength={config?.maxLength}
+                        inputMode={metadataConfig?.inputMode}
+                        maxLength={metadataConfig?.maxLength}
                         onChange={(event) =>
                           updateResolution({ value: event.currentTarget.value })
                         }
-                        type={config?.type === "url" ? "url" : "text"}
+                        type={metadataConfig?.type === "url" ? "url" : "text"}
                         value={resolution.value}
                       />
                     )
@@ -433,7 +671,7 @@ export function AuditReviewDecisionSection({
                 key={item.id}
               >
                 <span>{item.label}</span>
-                {config?.type === "choice" ? (
+                {inputConfig?.type === "select" ? (
                   <select
                     aria-describedby={error ? `${fieldId}-error` : undefined}
                     aria-invalid={error ? true : undefined}
@@ -441,22 +679,38 @@ export function AuditReviewDecisionSection({
                     onChange={(event) => updateDraft(event.currentTarget.value)}
                     value={draft[item.id] ?? ""}
                   >
-                    <option value="">{config.placeholder}</option>
-                    {config.choices?.map((choice) => (
-                      <option key={choice} value={choice}>
-                        {choice}
+                    <option value="">
+                      Pilih {item.label.toLocaleLowerCase("id-ID")}
+                    </option>
+                    {inputConfig.choices?.map((choice) => (
+                      <option key={choice.value} value={choice.value}>
+                        {choice.label}
                       </option>
                     ))}
                   </select>
+                ) : inputConfig?.type === "textarea" ? (
+                  <textarea
+                    aria-describedby={error ? `${fieldId}-error` : undefined}
+                    aria-invalid={error ? true : undefined}
+                    id={fieldId}
+                    onChange={(event) => updateDraft(event.currentTarget.value)}
+                    rows={3}
+                    value={draft[item.id] ?? ""}
+                  />
                 ) : (
                   <input
                     aria-describedby={error ? `${fieldId}-error` : undefined}
                     aria-invalid={error ? true : undefined}
                     id={fieldId}
-                    inputMode={config?.inputMode}
-                    maxLength={config?.maxLength}
+                    min={inputConfig?.min}
                     onChange={(event) => updateDraft(event.currentTarget.value)}
-                    type={config?.type === "url" ? "url" : "text"}
+                    type={
+                      inputConfig?.type === "date" ||
+                      inputConfig?.type === "number" ||
+                      inputConfig?.type === "url"
+                        ? inputConfig.type
+                        : "text"
+                    }
                     value={draft[item.id] ?? ""}
                   />
                 )}

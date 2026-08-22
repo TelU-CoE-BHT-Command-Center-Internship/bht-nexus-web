@@ -6,7 +6,6 @@ import styles from "@/components/nexus-audit-review/nexus-audit-review.module.cs
 import type {
   AuditDecisionKind,
   AuditKpiResolution,
-  AuditOfficialMatch,
   AuditReviewCategory,
   AuditReviewRecord,
   AuditReviewSource,
@@ -20,8 +19,14 @@ import {
   auditEvaluationPeriodLabel,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import {
+  getManualComparisonCandidates,
+  manualDomainForReviewRecord,
+} from "@/components/nexus-manual-submission/nexus-manual-submission-comparison";
+import {
   createManualOfficialMatches,
   type ManualSubmissionValues,
+  manualKmSuggestion,
+  manualSubmissionPresentation,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
@@ -193,22 +198,74 @@ function decisionLabel(kind: AuditDecisionKind) {
   return "Perbaikan diminta";
 }
 
-function comparisonCandidatesFromMatches(matches: AuditOfficialMatch[]) {
-  return matches.map((match) => {
-    const comparison = (fieldId: string) =>
-      match.comparisons.find((item) => item.fieldId === fieldId);
-    const yearValue = comparison("year")?.officialValue;
+function effectiveReviewRecord(
+  record: AuditReviewRecord,
+  state: AuditRuntimeState,
+): AuditReviewRecord {
+  const submission = record.manualSubmission;
+  const corrected = state.correction?.after ?? {};
+  const correctedRecord: AuditReviewRecord = {
+    ...record,
+    evaluationPeriodLabel:
+      corrected.evaluationPeriod ?? record.evaluationPeriodLabel,
+    fields: record.fields.map((field) => {
+      const value = corrected[field.id];
+      return value === undefined ? field : { ...field, rawValue: value, value };
+    }),
+    title: auditEffectiveTitle(record, state),
+  };
+  if (!submission) return correctedRecord;
 
-    return {
-      id: match.id,
-      identifiers: (comparison("identifier")?.officialValue ?? "")
-        .split(";")
-        .map((value) => value.trim())
-        .filter(Boolean),
-      title: comparison("title")?.officialValue ?? match.title,
-      year: yearValue ? Number(yearValue) : undefined,
-    };
-  });
+  const values = {
+    ...submission.values,
+    ...Object.fromEntries(
+      Object.entries(corrected).filter(
+        ([key]) => !["record_type", "submitter_note"].includes(key),
+      ),
+    ),
+    note: corrected.submitter_note ?? submission.values.note ?? "",
+    recordType: corrected.record_type ?? submission.recordType,
+  } as ManualSubmissionValues;
+  const suggestion = manualKmSuggestion(submission.domain, values);
+  const presentation = manualSubmissionPresentation(
+    submission.domain,
+    values,
+    record.primaryPerson,
+  );
+  const evidenceUrl = values.evidenceUrl?.trim();
+
+  return {
+    ...correctedRecord,
+    category: presentation.category,
+    categoryLabel: presentation.categoryLabel,
+    evaluationPeriodLabel:
+      values.evaluationPeriod || record.evaluationPeriodLabel,
+    evidence: evidenceUrl
+      ? record.evidence.map((item, index) =>
+          index === 0
+            ? { ...item, href: evidenceUrl, reference: evidenceUrl }
+            : item,
+        )
+      : record.evidence,
+    kpiLinks: suggestion
+      ? [
+          {
+            evidenceRule: suggestion.evidenceRule,
+            indicator: suggestion.indicator,
+          },
+        ]
+      : [],
+    kpiLinksSuggested: Boolean(suggestion),
+    manualSubmission: {
+      ...submission,
+      recordType: values.recordType,
+      values,
+    },
+    primaryPerson: presentation.primaryPerson,
+    subtitle: presentation.subtitle,
+    title: presentation.title,
+    typeLabel: presentation.typeLabel,
+  };
 }
 
 function actionLabel(status: AuditReviewStatus) {
@@ -249,7 +306,7 @@ export function NexusAuditReview({
   initialRecordId?: string;
 }) {
   const reviewSession = useNexusReviewSession();
-  const records = useMemo(
+  const allRecords = useMemo(
     () => [
       ...reviewSession.records,
       ...content.records.filter(
@@ -262,6 +319,19 @@ export function NexusAuditReview({
     [content.records, reviewSession.records],
   );
   const runtime = reviewSession.runtimeByRecordId;
+  const records = useMemo(
+    () =>
+      reviewSession.capabilities.canReview
+        ? allRecords
+        : allRecords.filter(
+            (record) =>
+              reviewSession.capabilitiesFor(
+                record,
+                runtime[record.id] ?? initialAuditRuntimeState(record),
+              ).canSubmitCorrection,
+          ),
+    [allRecords, reviewSession, runtime],
+  );
   const [source, setSource] = useState<AuditReviewSource | "all">("all");
   const [status, setStatus] = useState<AuditReviewStatus | "all">("all");
   const [category, setCategory] = useState<AuditReviewCategory | "all">("all");
@@ -434,19 +504,7 @@ export function NexusAuditReview({
       kind === "approved_update" ||
       kind === "merged"
     ) {
-      const candidate = record.manualSubmission
-        ? {
-            ...record,
-            manualSubmission: {
-              ...record.manualSubmission,
-              values: {
-                ...record.manualSubmission.values,
-                ...currentState.correction?.after,
-              },
-            },
-            title: auditEffectiveTitle(record, currentState),
-          }
-        : record;
+      const candidate = effectiveReviewRecord(record, currentState);
       reviewSession.applyOfficialRecordDecision({
         appliedAt: occurredAt,
         candidate,
@@ -535,25 +593,33 @@ export function NexusAuditReview({
     reviewSession.updateRecordRuntime(record, (previous) => {
       if (!previous.fixRequest) return previous;
       const nextVersion = previous.version + 1;
-      const before = Object.fromEntries(
-        previous.fixRequest.fieldIds.map((fieldId) => [
-          fieldId,
-          previous.correction?.after[fieldId] ??
-            record.fields.find((item) => item.id === fieldId)?.value ??
-            "",
+      const currentValue = (fieldId: string) =>
+        previous.correction?.after[fieldId] ??
+        record.fields.find((item) => item.id === fieldId)?.rawValue ??
+        record.fields.find((item) => item.id === fieldId)?.value ??
+        (fieldId === "record_type"
+          ? record.manualSubmission?.recordType
+          : record.manualSubmission?.values[fieldId]) ??
+        "";
+      const submittedFieldIds = Array.from(
+        new Set([
+          ...previous.fixRequest.fieldIds,
+          ...Object.keys(values).filter(
+            (fieldId) => values[fieldId] !== currentValue(fieldId),
+          ),
         ]),
       );
+      const before = Object.fromEntries(
+        submittedFieldIds.map((fieldId) => [fieldId, currentValue(fieldId)]),
+      );
       const changedAfter = Object.fromEntries(
-        previous.fixRequest.fieldIds.map((fieldId) => [
-          fieldId,
-          values[fieldId] ?? "",
-        ]),
+        submittedFieldIds.map((fieldId) => [fieldId, values[fieldId] ?? ""]),
       );
       const after = { ...previous.correction?.after, ...changedAfter };
       const allCorrectedFieldIds = Array.from(
         new Set([
           ...(previous.correction?.fieldIds ?? []),
-          ...previous.fixRequest.fieldIds,
+          ...submittedFieldIds,
         ]),
       );
       const matchingValues = record.manualSubmission
@@ -561,6 +627,10 @@ export function NexusAuditReview({
             ...record.manualSubmission.values,
             ...previous.correction?.after,
             ...changedAfter,
+            recordType:
+              changedAfter.record_type ??
+              previous.correction?.after.record_type ??
+              record.manualSubmission.recordType,
           }
         : {
             ...Object.fromEntries(
@@ -574,7 +644,7 @@ export function NexusAuditReview({
               changedAfter.title ??
               previous.correction?.after.title ??
               record.title,
-            year: record.evaluationPeriodLabel ?? "",
+            evaluationPeriod: record.evaluationPeriodLabel ?? "",
           };
       const refreshedMatches =
         record.candidateKind === "metadata_completion"
@@ -582,7 +652,9 @@ export function NexusAuditReview({
           : createManualOfficialMatches(
               matchingValues as ManualSubmissionValues,
               record.manualSubmission?.comparisonCandidates ??
-                comparisonCandidatesFromMatches(previous.matches),
+                getManualComparisonCandidates(
+                  manualDomainForReviewRecord(record),
+                ),
             );
 
       return {
@@ -606,7 +678,7 @@ export function NexusAuditReview({
           {
             actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
             actorId: reviewSession.actor.id,
-            changes: previous.fixRequest.fieldIds.map((fieldId) => ({
+            changes: submittedFieldIds.map((fieldId) => ({
               after: changedAfter[fieldId] ?? "",
               before: before[fieldId] ?? "",
               fieldId,
@@ -756,7 +828,21 @@ export function NexusAuditReview({
     };
   });
 
-  if (!reviewSession.capabilities.canReview) {
+  const effectiveSelected =
+    selected && selectedState
+      ? effectiveReviewRecord(selected, selectedState)
+      : undefined;
+  const hasReviewWorkspaceAccess =
+    reviewSession.capabilities.canReview ||
+    records.some(
+      (record) =>
+        reviewSession.capabilitiesFor(
+          record,
+          runtime[record.id] ?? initialAuditRuntimeState(record),
+        ).canSubmitCorrection,
+    );
+
+  if (!hasReviewWorkspaceAccess) {
     return (
       <NexusWorkspacePage
         description="Verifikasi kandidat lintas-domain sebelum menjadi data resmi dan masuk ke perhitungan evaluasi CoE."
@@ -958,7 +1044,7 @@ export function NexusAuditReview({
         </NexusWorkspaceTableSection>
       </section>
 
-      {selected && selectedState ? (
+      {selected && selectedState && effectiveSelected ? (
         <NexusAuditReviewDrawer
           key={`${selected.id}-${selectedState.status}-${selectedState.version}-${selectedState.decision?.kind ?? "open"}`}
           capabilities={reviewSession.capabilitiesFor(selected, selectedState)}
@@ -976,7 +1062,7 @@ export function NexusAuditReview({
           onResubmit={(values, evidenceNote, resolutions) =>
             resubmit(selected, values, evidenceNote, resolutions)
           }
-          record={selected}
+          record={effectiveSelected}
           state={selectedState}
         />
       ) : null}

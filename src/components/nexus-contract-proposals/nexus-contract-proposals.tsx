@@ -15,7 +15,7 @@ import {
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
-import { projectManualContractProposals } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { projectOfficialContractProposals } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createContractProposalCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -186,7 +186,7 @@ export function NexusContractProposals({
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
-      projectManualContractProposals(
+      projectOfficialContractProposals(
         projectOfficialMetadataRecords(
           content.records,
           reviewSession.officialMetadataByRecordId,

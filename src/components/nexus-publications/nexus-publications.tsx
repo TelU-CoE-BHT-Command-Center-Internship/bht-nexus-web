@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
-import { projectManualPublications } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { projectOfficialPublications } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
 import {
   type NexusPublicationsContent,
@@ -28,6 +28,7 @@ import {
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createMetadataCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceSearch,
@@ -300,7 +301,7 @@ function KmLinkCell({ publication }: { publication: OfficialPublication }) {
           ? otherLinks.length > 0
             ? `${firstLink.indicator.id} +${otherLinks.length}`
             : firstLink.indicator.id
-          : "Belum dikaitkan"}
+          : officialKpiEmptyCopy(publication.kpiResolutionStatus).label}
       </strong>
       <small>{publication.type}</small>
     </span>
@@ -337,7 +338,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
-      projectManualPublications(
+      projectOfficialPublications(
         projectOfficialMetadataRecords(
           content.records,
           reviewSession.officialMetadataByRecordId,
@@ -592,7 +593,8 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
                 <dt>Indikator</dt>
                 <dd>
                   {publication.kmLinks.length === 0
-                    ? "Belum dikaitkan"
+                    ? officialKpiEmptyCopy(publication.kpiResolutionStatus)
+                        .label
                     : publication.kmLinks
                         .map((link) => link.indicator.id)
                         .join(", ")}{" "}

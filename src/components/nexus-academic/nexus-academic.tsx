@@ -15,7 +15,7 @@ import {
 } from "@/components/nexus-academic/nexus-academic-content";
 import { NexusAcademicIcon } from "@/components/nexus-academic/nexus-academic-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
-import { projectManualAcademics } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { projectOfficialAcademics } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createAcademicCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -203,7 +203,7 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
-      projectManualAcademics(
+      projectOfficialAcademics(
         projectOfficialMetadataRecords(
           content.records,
           reviewSession.officialMetadataByRecordId,

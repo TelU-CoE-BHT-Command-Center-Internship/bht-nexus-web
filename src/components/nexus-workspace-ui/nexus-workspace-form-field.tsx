@@ -23,7 +23,7 @@ type NexusWorkspaceFormFieldProps = {
   options?: readonly NexusWorkspaceFormOption[];
   placeholder?: string;
   required?: boolean;
-  type: "date" | "number" | "select" | "text" | "textarea";
+  type: "date" | "number" | "select" | "text" | "textarea" | "url";
   value: string;
   wide?: boolean;
 };

@@ -65,6 +65,7 @@ export const publicationSourceNames = [
   "Workbook KM 2026",
   "SINTA",
   "Google Scholar",
+  "Dokumen",
   "Manual",
 ] as const;
 
@@ -121,6 +122,7 @@ export type OfficialPublication = {
   id: string;
   issue?: string;
   kmLinks: PublicationKmLink[];
+  kpiResolutionStatus?: "not_applicable" | "resolved" | "undetermined";
   missingFields: PublicationCompletionFieldKey[];
   pages?: string;
   provenance: PublicationProvenance[];
@@ -150,6 +152,7 @@ export type OfficialPublication = {
     decision:
       | "Dihubungkan ke rekam resmi"
       | "Disetujui sebagai data baru"
+      | "Rekam resmi diperbarui"
       | "Pelengkapan metadata disetujui";
     note: string;
     reviewedAt: string;

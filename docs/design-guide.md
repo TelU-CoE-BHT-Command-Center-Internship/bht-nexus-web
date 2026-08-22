@@ -135,4 +135,4 @@ Pemindah bahasa di header memakai bendera Indonesia dan Inggris dengan penanda a
 
 ## Batas implementasi saat ini
 
-Komponen interaktif saat ini memakai adapter data frontend. State hanya bertahan selama halaman dibuka. Autentikasi, otorisasi, penyimpanan, worker, indeks dokumen, audit permanen, dan promosi data resmi adalah tanggung jawab layanan server.
+Komponen interaktif saat ini memakai adapter data frontend pada layout ruang kerja. Kandidat, keputusan, dan proyeksi Data Resmi bertahan selama sesi layout tersebut; draft pengajuan manual disimpan terpisah per rumah data pada `sessionStorage` dan dapat dipulihkan setelah navigasi atau muat ulang pada tab yang sama. Autentikasi, otorisasi, penyimpanan permanen, worker, indeks dokumen, audit permanen, dan promosi lintas perangkat tetap menjadi tanggung jawab layanan server.

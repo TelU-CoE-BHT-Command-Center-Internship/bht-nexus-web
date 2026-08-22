@@ -6,12 +6,14 @@ import {
 
 export type PublicationSourceId =
   | "all"
+  | "document"
   | "google-scholar"
   | "manual"
   | "sinta"
   | "workbook-km-2026";
 
 const sourceIds: Record<PublicationSourceName, PublicationSourceId> = {
+  Dokumen: "document",
   "Google Scholar": "google-scholar",
   Manual: "manual",
   SINTA: "sinta",
