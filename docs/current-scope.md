@@ -65,6 +65,17 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Tautan rekam sesi yang sudah tidak tersedia menampilkan penjelasan dan jalan kembali ke antrean, bukan halaman kosong atau drawer tanpa isi.
 - Drawer rincian dimuat ketika diperlukan agar halaman antrean tetap ringan.
 
+### Pengajuan manual lintas-domain
+
+- Setiap rumah Data Resmi menyediakan aksi kontekstual `Ajukan …` yang membuka halaman form penuh, bukan drawer, untuk Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian.
+- Kelima route memakai satu model dan presentasi bersama. Jenis rekam mengubah metadata yang relevan tanpa membuat implementasi form terpisah per domain.
+- Struktur halaman mengikuti empat seksi bernomor—informasi, pelaku dan keterlibatan BHT, sumber dan bukti, serta keterkaitan evaluasi—dengan ringkasan kelengkapan di kanan dan action bar tetap di bawah. Pada layar sempit seluruh isi menjadi satu kolom tanpa gulir horizontal.
+- Bukti utama dimasukkan sebagai tautan Drive, DOI, repositori, atau laman resmi yang dapat dibuka reviewer. Form ini tidak membuat unggahan baru ketika tautan sudah memadai.
+- Pengaju memilih jenis rekam dan metadata, bukan indikator KM. Sistem dapat menyarankan nol atau satu indikator berdasarkan metadata; saran selalu diberi label menunggu verifikasi reviewer dan ketiadaan saran tidak menghalangi pengiriman.
+- Kandidat manual masuk ke sesi Tinjauan yang sama, membawa URL bukti, provenance manual, saran KM bila tersedia, serta hasil pencocokan judul terhadap Data Resmi. Kecocokan tetap berupa sinyal awal dan tidak mengambil keputusan otomatis.
+- Setelah pengiriman, halaman menampilkan receipt yang dapat disalin atau di-screenshot: kode dan waktu pengajuan, tiga tahap tindak lanjut, serta ringkasan judul, jenis, periode, pengaju, bukti HTTPS, dan saran KM. Pencarian Tinjauan menerima judul maupun kode pengajuan.
+- `Simpan draft` hanya menyatakan penyimpanan dalam sesi tampilan saat ini. Muat ulang penuh mengembalikan form ke keadaan awal sampai layanan penyimpanan server tersedia.
+
 ### Publikasi
 
 - Memuat seluruh publikasi resmi CoE BHT tanpa diseleksi lebih dulu. Indikator KM dan kuartil dipakai untuk pelaporan, bukan sebagai syarat sebuah karya tercatat sebagai data resmi.
@@ -144,6 +155,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/dashboard` | Dashboard ruang kerja |
 | `/nexus/pengumpulan` | Pengumpulan sumber publik |
 | `/nexus/tinjauan` | Tinjauan kandidat sebelum menjadi data resmi |
+| `/nexus/ajukan/[domain]` | Form pengajuan manual penuh untuk lima rumah Data Resmi |
 | `/nexus/publikasi` | Daftar dan rincian publikasi resmi |
 | `/nexus/kekayaan-intelektual` | Daftar dan rincian hak cipta serta paten resmi |
 | `/nexus/kontrak-proposal` | Daftar dan rincian kontrak serta proposal resmi |

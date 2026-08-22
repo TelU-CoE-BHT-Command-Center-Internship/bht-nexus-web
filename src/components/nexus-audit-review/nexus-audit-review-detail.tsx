@@ -639,12 +639,24 @@ function SourceEvidenceSection({
               key={link.indicator.id}
             >
               <span>
-                Keterkaitan evaluasi · {link.indicator.id} ·
-                {link.indicator.category}
+                {record.kpiLinksSuggested
+                  ? state.decision?.kind === "approved_new" ||
+                    state.decision?.kind === "merged"
+                    ? "Saran terverifikasi reviewer"
+                    : state.status === "needs_fix"
+                      ? "Saran sistem · perlu ditinjau ulang"
+                      : "Saran sistem · menunggu verifikasi reviewer"
+                  : "Keterkaitan evaluasi"}{" "}
+                · {link.indicator.id} ·{link.indicator.category}
               </span>
               <strong>{link.indicator.label}</strong>
               <p>
-                <b>Bukti minimum:</b> {link.evidenceRule}
+                <b>
+                  {record.kpiLinksSuggested
+                    ? "Dasar verifikasi:"
+                    : "Bukti minimum:"}
+                </b>{" "}
+                {link.evidenceRule}
               </p>
             </article>
           ))

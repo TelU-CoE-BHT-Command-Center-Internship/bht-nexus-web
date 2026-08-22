@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
+import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
 import {
   type NexusPublicationsContent,
@@ -620,6 +621,12 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
 
   return (
     <NexusWorkspacePage
+      actions={
+        <NexusManualSubmissionLink
+          domain="publication"
+          label="Ajukan publikasi"
+        />
+      }
       description={content.description}
       descriptionId="publications-description"
       meta={content.updatedAt}

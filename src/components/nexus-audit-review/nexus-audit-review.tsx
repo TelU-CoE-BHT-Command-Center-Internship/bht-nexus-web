@@ -195,6 +195,7 @@ function actionLabel(status: AuditReviewStatus) {
 
 function searchableText(record: AuditReviewRecord, state: AuditRuntimeState) {
   return [
+    record.id,
     auditEffectiveTitle(record, state),
     auditEffectiveSubtitle(record, state),
     record.typeLabel,
@@ -778,7 +779,7 @@ export function NexusAuditReview({
               setQuery(value);
               setCurrentPage(1);
             }}
-            placeholder="Cari judul, orang, indikator, atau bukti"
+            placeholder="Cari judul, kode, orang, indikator, atau bukti"
             value={query}
           />
           {[

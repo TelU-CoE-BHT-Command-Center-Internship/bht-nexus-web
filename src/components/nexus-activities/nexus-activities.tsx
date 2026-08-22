@@ -14,6 +14,7 @@ import {
   type OfficialActivityRecord,
 } from "@/components/nexus-activities/nexus-activities-content";
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
+import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createActivityCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -403,6 +404,12 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
 
   return (
     <NexusWorkspacePage
+      actions={
+        <NexusManualSubmissionLink
+          domain="activity"
+          label="Ajukan kegiatan / pengabdian"
+        />
+      }
       description={content.description}
       descriptionId="activities-description"
       meta={content.updatedAt}

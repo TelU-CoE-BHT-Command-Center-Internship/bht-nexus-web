@@ -12,6 +12,7 @@ import {
   type OfficialIntellectualProperty,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
+import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import {
   type MetadataCompletionResolutions,
   metadataCompletionAvailabilityLabel,
@@ -426,6 +427,12 @@ export function NexusIntellectualProperty({
 
   return (
     <NexusWorkspacePage
+      actions={
+        <NexusManualSubmissionLink
+          domain="intellectual-property"
+          label="Ajukan kekayaan intelektual"
+        />
+      }
       description={content.description}
       descriptionId="intellectual-property-description"
       meta={content.updatedAt}

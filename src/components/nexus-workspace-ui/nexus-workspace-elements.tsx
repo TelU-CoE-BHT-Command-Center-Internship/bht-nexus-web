@@ -11,6 +11,11 @@ type NexusWorkspaceButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   tone?: "danger" | "primary" | "secondary";
 };
 
+type NexusWorkspaceBackLinkProps = {
+  href: string;
+  label: string;
+};
+
 type NexusWorkspaceCardProps = {
   actions?: ReactNode;
   children: ReactNode;
@@ -46,6 +51,26 @@ type NexusWorkspaceResultMetaProps = {
   resultLabel: string;
   updatingLabel?: string;
 };
+
+function ArrowBackIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      <path d="M19 12H5M10 7l-5 5 5 5" />
+    </svg>
+  );
+}
+
+export function NexusWorkspaceBackLink({
+  href,
+  label,
+}: NexusWorkspaceBackLinkProps) {
+  return (
+    <Link className={styles.backLink} href={href} prefetch={false}>
+      <ArrowBackIcon />
+      <span>{label}</span>
+    </Link>
+  );
+}
 
 export function NexusWorkspaceButton({
   children,

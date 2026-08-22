@@ -14,6 +14,7 @@ import {
   type OfficialContractProposalRecord,
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
+import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createContractProposalCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -429,6 +430,12 @@ export function NexusContractProposals({
 
   return (
     <NexusWorkspacePage
+      actions={
+        <NexusManualSubmissionLink
+          domain="contract"
+          label="Ajukan kontrak / proposal"
+        />
+      }
       description={content.description}
       descriptionId="contract-proposals-description"
       meta={content.updatedAt}

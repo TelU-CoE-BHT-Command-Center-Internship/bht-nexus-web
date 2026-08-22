@@ -14,6 +14,7 @@ import {
   type OfficialAcademicRecord,
 } from "@/components/nexus-academic/nexus-academic-content";
 import { NexusAcademicIcon } from "@/components/nexus-academic/nexus-academic-icons";
+import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createAcademicCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -429,6 +430,12 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
 
   return (
     <NexusWorkspacePage
+      actions={
+        <NexusManualSubmissionLink
+          domain="academic"
+          label="Ajukan kegiatan akademik"
+        />
+      }
       description={content.description}
       descriptionId="academic-description"
       meta={content.updatedAt}

@@ -50,6 +50,12 @@ Gunakan komponen di `src/components/nexus-workspace-ui` untuk struktur lintas-fi
 - `NexusWorkspaceCard`, `NexusWorkspaceField`, `NexusWorkspaceButton`, dan `NexusWorkspaceNotice` untuk formulir serta umpan balik;
 - `NexusWorkspaceLoading` untuk skeleton halaman penuh yang menyerupai struktur halaman akhir.
 
+Form pengajuan manual Data Resmi merupakan perjalanan halaman penuh, bukan drawer. `NexusManualSubmissionPage` mempertahankan pola empat kartu bernomor, rail ringkasan, dan action bar bawah yang sama untuk lima domain. Variasi bidang dan saran KM berasal dari `nexus-manual-submission-model.ts`; jangan menyalin markup atau aturan KM ke halaman domain. Pada layar sampai 64 rem rail berpindah ke bawah form, dan pada layar ponsel bidang serta aksi menjadi satu kolom tanpa mengubah urutan baca. Action bar desktop mempertahankan pemberitahuan kelengkapan; ponsel memprioritaskan tiga aksi agar tidak menutup sebagian besar form.
+
+Input, select, dan textarea lintas-form memakai `NexusWorkspaceFormField`. Kontrol ini mengadaptasi pola TailAdmin yang relevan ke CSS Modules BHT Nexus—elemen native dengan label yang terlihat, `appearance: none`, chevron absolut, ruang kanan yang aman, dan focus ring—tanpa membawa Tailwind atau sistem komponen kedua. Tombol dan tautan aksi tetap memakai `NexusWorkspaceButton` atau `NexusWorkspaceLinkButton`; komponen fitur hanya menambahkan ikon atau isi domain.
+
+Tombol `Ajukan …` berada pada header rumah Data Resmi sebagai tautan ke route khusus. Drawer tetap dipakai untuk rincian atau keputusan yang menjaga konteks daftar, tetapi tidak untuk pekerjaan input panjang. Bukti pengajuan manual memakai URL HTTPS yang dapat diaudit; jangan mengganti area sumber dengan unggahan jika Drive, DOI, repositori, atau laman resmi sudah memenuhi kebutuhan reviewer. Berkas Excel yang dibagikan tetap harus memakai tautan HTTPS. Pengaju tidak memilih indikator KM. Antarmuka hanya menampilkan saran sistem yang belum terverifikasi, dan kandidat harus tetap dapat dikirim ketika saran tidak tersedia.
+
 Rumah data resmi memakai satu bahasa desain rincian bersama, bukan salinan per halaman:
 
 - `nexus-workspace-detail.module.css` untuk kerangka drawer, yaitu ringkasan atas, seksi bernomor, daftar kelengkapan metadata, jejak sumber, dan keputusan tinjauan;

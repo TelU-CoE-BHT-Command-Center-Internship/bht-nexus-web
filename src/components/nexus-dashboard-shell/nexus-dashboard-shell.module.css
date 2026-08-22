@@ -2,6 +2,7 @@
   --sidebar-width: 18.5rem;
   --sidebar-collapsed-width: 5.25rem;
   --header-height: 5.5rem;
+  --workspace-content-left: var(--sidebar-width);
 
   position: fixed;
   inset: 0;
@@ -17,6 +18,8 @@
 }
 
 .shell[data-sidebar-collapsed="true"] {
+  --workspace-content-left: var(--sidebar-collapsed-width);
+
   grid-template-columns: var(--sidebar-collapsed-width) minmax(0, 1fr);
 }
 
@@ -981,6 +984,7 @@
   .shell,
   .shell[data-sidebar-collapsed="true"] {
     --header-height: 4.75rem;
+    --workspace-content-left: 0;
 
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: var(--header-height) minmax(0, 1fr);

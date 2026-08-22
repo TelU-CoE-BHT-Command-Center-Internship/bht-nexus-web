@@ -1,0 +1,116 @@
+.field {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 0.32rem;
+}
+
+.label {
+  color: #2d405c;
+  font-size: 0.67rem;
+  font-weight: 690;
+  line-height: 1.35;
+}
+
+.label i {
+  margin-left: 0.18rem;
+  color: #cf3349;
+  font-style: normal;
+}
+
+.controlWrap {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.control {
+  width: 100%;
+  min-width: 0;
+  min-height: 2rem;
+  padding: 0.34rem 0.72rem;
+  border: 1px solid #cbd7e5;
+  border-radius: 0.5rem;
+  outline: 0;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 4%);
+  color: #233851;
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.42;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+select.control {
+  padding-right: 2.65rem;
+  appearance: none;
+  cursor: pointer;
+}
+
+textarea.control {
+  min-height: 2.55rem;
+  resize: vertical;
+}
+
+.control::placeholder {
+  color: #8090a4;
+  opacity: 1;
+}
+
+.control:hover {
+  border-color: #aebed1;
+}
+
+.control:focus {
+  border-color: #6ea0d8;
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 4%),
+    0 0 0 0.2rem rgb(24 92 168 / 10%);
+}
+
+.control[aria-invalid="true"] {
+  border-color: #cf6575;
+  background: #fffafb;
+  box-shadow: 0 0 0 0.2rem rgb(207 101 117 / 9%);
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  right: 0.82rem;
+  display: grid;
+  width: 1rem;
+  height: 1rem;
+  place-items: center;
+  color: #64748b;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.chevron svg {
+  width: 100%;
+  height: 100%;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.field small {
+  color: #718198;
+  font-size: 0.61rem;
+  line-height: 1.4;
+}
+
+.field small.error {
+  color: #aa2639;
+  font-weight: 620;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control {
+    transition: none;
+  }
+}

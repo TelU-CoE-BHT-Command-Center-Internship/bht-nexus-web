@@ -169,6 +169,10 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Reviews", id: "Tinjauan" },
   },
   {
+    activeHrefs: {
+      en: ["/en/nexus/publications"],
+      id: ["/nexus/publikasi", "/nexus/ajukan/publikasi"],
+    },
     implemented: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/publications", id: "/nexus/publikasi" },
@@ -177,6 +181,10 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Publications", id: "Publikasi" },
   },
   {
+    activeHrefs: {
+      en: ["/en/nexus/intellectual-property"],
+      id: ["/nexus/kekayaan-intelektual", "/nexus/ajukan/kekayaan-intelektual"],
+    },
     implemented: { en: false, id: true },
     group: "official",
     href: {
@@ -191,6 +199,10 @@ const navigationDefinitions: NavigationDefinition[] = [
     },
   },
   {
+    activeHrefs: {
+      en: ["/en/nexus/contracts"],
+      id: ["/nexus/kontrak-proposal", "/nexus/ajukan/kontrak-proposal"],
+    },
     implemented: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/contracts", id: "/nexus/kontrak-proposal" },
@@ -199,6 +211,10 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Contracts & Proposals", id: "Kontrak & Proposal" },
   },
   {
+    activeHrefs: {
+      en: ["/en/nexus/academic"],
+      id: ["/nexus/akademik", "/nexus/ajukan/akademik"],
+    },
     implemented: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/academic", id: "/nexus/akademik" },
@@ -207,6 +223,10 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Academic", id: "Akademik" },
   },
   {
+    activeHrefs: {
+      en: ["/en/nexus/activities"],
+      id: ["/nexus/kegiatan", "/nexus/ajukan/kegiatan"],
+    },
     implemented: { en: false, id: true },
     group: "official",
     href: { en: "/en/nexus/activities", id: "/nexus/kegiatan" },

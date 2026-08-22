@@ -150,6 +150,8 @@ export type AuditReviewRecord = {
   history: AuditReviewHistory[];
   id: string;
   kpiLinks: AuditKpiLink[];
+  /** Tautan KM yang dihasilkan sistem dan belum menjadi pilihan final pengaju. */
+  kpiLinksSuggested?: boolean;
   /** Versi kandidat yang dipakai layanan pencocokan untuk hasil ini. */
   matchingVersion?: number;
   matchingStatus?: AuditMatchingStatus;
