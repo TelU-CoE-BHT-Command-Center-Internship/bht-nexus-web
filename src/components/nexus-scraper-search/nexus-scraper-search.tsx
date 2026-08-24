@@ -3,6 +3,11 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useDeferredValue, useMemo, useState } from "react";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
+import { NexusMemberContext } from "@/components/nexus-members/nexus-member-context";
+import {
+  knownMemberName,
+  type NexusMemberId,
+} from "@/components/nexus-members/nexus-member-identity";
 import { createCollectionReviewRecords } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import styles from "@/components/nexus-scraper-search/nexus-scraper-search.module.css";
@@ -51,6 +56,13 @@ const pageSizeConfig: NexusSelectConfig = {
     { label: "20 / halaman", value: "20" },
     { label: "50 / halaman", value: "50" },
   ],
+};
+
+export type NexusCollectionRequest = {
+  memberId?: NexusMemberId;
+  memberName?: string;
+  profileUrl?: string;
+  source?: CollectionSource;
 };
 
 const columns: readonly NexusWorkspaceRecordColumn[] = [
@@ -109,15 +121,26 @@ function statusTone(status: CollectionJob["status"]) {
 
 export function NexusScraperSearch({
   content,
+  initialRequest,
 }: {
   content: NexusScraperSearchContent;
+  initialRequest?: NexusCollectionRequest;
 }) {
   const router = useRouter();
   const reviewSession = useOptionalNexusReviewSession();
   const [jobs, setJobs] = useState(content.jobs);
-  const [name, setName] = useState("");
-  const [profileUrl, setProfileUrl] = useState("");
-  const [source, setSource] = useState<CollectionSource>("sinta");
+  const requestedMemberName = initialRequest?.memberName?.trim() || undefined;
+  const initialMemberName = initialRequest?.memberId
+    ? (knownMemberName(initialRequest.memberId) ?? requestedMemberName)
+    : undefined;
+  const [memberId, setMemberId] = useState(initialRequest?.memberId);
+  const [name, setName] = useState(initialMemberName ?? "");
+  const [profileUrl, setProfileUrl] = useState(
+    initialRequest?.profileUrl ?? "",
+  );
+  const [source, setSource] = useState<CollectionSource>(
+    initialRequest?.source ?? "sinta",
+  );
   const [isSourceOpen, setIsSourceOpen] = useState(false);
   const [feedback, setFeedback] = useState<{
     message: string;
@@ -290,6 +313,7 @@ export function NexusScraperSearch({
       candidates: [],
       fullName: cleanName,
       id,
+      memberId,
       profileUrl: cleanUrl,
       source,
       sourceLabel,
@@ -306,6 +330,7 @@ export function NexusScraperSearch({
     setJobs((current) => [queued, ...current]);
     setFeedback({ message: content.queuedLabel, tone: "success" });
     setName("");
+    setMemberId(undefined);
     setProfileUrl("");
     setCurrentPage(1);
   }
@@ -479,12 +504,32 @@ export function NexusScraperSearch({
               : "Submit public profile"
           }
         >
+          {memberId && initialMemberName ? (
+            <div className={styles.feedback}>
+              <NexusMemberContext
+                description="Hasil pengumpulan akan ditautkan ke profil anggota ini."
+                label="Anggota terpilih"
+                memberName={initialMemberName}
+                sourceLabel={source === "sinta" ? "SINTA" : "Google Scholar"}
+              />
+            </div>
+          ) : null}
           <form className={styles.form} onSubmit={submit}>
             <NexusWorkspaceField
               autoComplete="off"
               id="collection-name"
               label={content.nameLabel}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => {
+                const nextName = event.target.value;
+                setName(nextName);
+                if (
+                  initialMemberName &&
+                  normalizeWorkspaceSearch(nextName) !==
+                    normalizeWorkspaceSearch(initialMemberName)
+                ) {
+                  setMemberId(undefined);
+                }
+              }}
               placeholder={content.namePlaceholder}
               value={name}
             />

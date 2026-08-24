@@ -7,6 +7,10 @@ import miftadiSudjaiPhoto from "@/assets/members/miftadi-sudjai.webp";
 import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
 import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
 import {
+  type NexusMemberId,
+  resolveKnownMemberId,
+} from "@/components/nexus-members/nexus-member-identity";
+import {
   type MetadataCompletionFieldKey,
   type MetadataCompletionProposal,
   type MetadataCompletionResolutions,
@@ -77,6 +81,7 @@ type PublicationAuthor = {
   avatarSrc?: ImageProps["src"];
   id: string;
   initials: string;
+  memberId?: NexusMemberId;
   name: string;
 };
 
@@ -863,31 +868,27 @@ const sourceConflictNotes: Partial<Record<string, string>> = {
 };
 
 const memberPhotos: Record<string, ImageProps["src"]> = {
-  "dita-puspitasari": ditaPuspitasariPhoto,
-  "fathur-rahman": fathurRahmanPhoto,
+  "dita-puspitasari-s-t-b-sc-m-t": ditaPuspitasariPhoto,
+  "dr-suksmandhira-harimurti-s-t-m-eng": suksmandhiraHarimurtiPhoto,
+  "fathur-rahman-s-t-m-t": fathurRahmanPhoto,
   "hesty-susanti": hestySusantiPhoto,
-  "laily-ade-oktaviana": lailyAdeOktavianaPhoto,
-  "miftadi-sudjai": miftadiSudjaiPhoto,
-  "salsabila-aurellia": salsabilaAurelliaPhoto,
-  "suksmandhira-harimurti": suksmandhiraHarimurtiPhoto,
+  "ir-miftadi-sudjai-m-sc-ph-d": miftadiSudjaiPhoto,
+  "laily-ade-oktaviana-s-t-m-t": lailyAdeOktavianaPhoto,
+  "salsabila-aurellia-s-t-m-t": salsabilaAurelliaPhoto,
 };
 
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase("id-ID")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function toAuthor(name: string): PublicationAuthor {
-  const id = slugify(name);
+function toAuthor(
+  name: string,
+  index: number,
+  publicationId: string,
+): PublicationAuthor {
+  const memberId = resolveKnownMemberId(name);
 
   return {
-    avatarSrc: memberPhotos[id],
-    id,
+    avatarSrc: memberId ? memberPhotos[memberId] : undefined,
+    id: `${publicationId.toLocaleLowerCase("id-ID")}-author-${index + 1}`,
     initials: personInitials(name),
+    memberId,
     name,
   };
 }
@@ -915,7 +916,9 @@ function createPublication(seed: PublicationSeed): OfficialPublication {
     year,
     url,
   ] = seed;
-  const authors = authorList.split(" / ").map(toAuthor);
+  const authors = authorList
+    .split(" / ")
+    .map((name, index) => toAuthor(name, index, publicId));
   /**
    * Kuartil adalah metrik tingkat jurnal, jadi hanya berlaku untuk artikel
    * jurnal. Makalah konferensi, buku, dan karya yang bentuknya belum

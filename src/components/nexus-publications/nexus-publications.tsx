@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { projectOfficialPublications } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
 import {
   type NexusPublicationsContent,
@@ -68,6 +69,7 @@ const NexusPublicationDetail = dynamic(() =>
 
 type NexusPublicationsProps = {
   content: NexusPublicationsContent;
+  initialMemberId?: string;
 };
 
 type PublicationFilterId =
@@ -334,7 +336,10 @@ function QuartileCell({ publication }: { publication: OfficialPublication }) {
   );
 }
 
-export function NexusPublications({ content }: NexusPublicationsProps) {
+export function NexusPublications({
+  content,
+  initialMemberId,
+}: NexusPublicationsProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
@@ -366,22 +371,36 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
   >(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
+  const contextRecords = useMemo(
+    () =>
+      initialMemberId
+        ? records.filter((publication) =>
+            publication.authors.some(
+              (author) => author.memberId === initialMemberId,
+            ),
+          )
+        : records,
+    [initialMemberId, records],
+  );
 
   const sourceTabs = useMemo(
-    () => getPublicationSourceTabs(records),
-    [records],
+    () => getPublicationSourceTabs(contextRecords),
+    [contextRecords],
   );
   const indicatorConfig = useMemo(
-    () => createIndicatorConfig(records),
-    [records],
+    () => createIndicatorConfig(contextRecords),
+    [contextRecords],
   );
-  const yearConfig = useMemo(() => createYearConfig(records), [records]);
+  const yearConfig = useMemo(
+    () => createYearConfig(contextRecords),
+    [contextRecords],
+  );
   const activeSource =
     sourceTabs.find((source) => source.id === activeSourceId) ?? sourceTabs[0];
 
   const filteredPublications = useMemo(() => {
     const needle = normalizeWorkspaceSearch(deferredSearchQuery);
-    const matching = records.filter(
+    const matching = contextRecords.filter(
       (publication) =>
         publicationHasSource(
           publication,
@@ -419,15 +438,19 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
         ? first.year - second.year
         : second.year - first.year;
     });
-  }, [activeSource.id, deferredSearchQuery, filterValues, records]);
+  }, [activeSource.id, contextRecords, deferredSearchQuery, filterValues]);
 
   const evaluationPeriods = Array.from(
-    new Set(records.map((publication) => publication.evaluationPeriod)),
+    new Set(
+      (contextRecords.length > 0 ? contextRecords : records).map(
+        (publication) => publication.evaluationPeriod,
+      ),
+    ),
   )
     .toSorted()
     .join(", ");
-  const topQuartileCount = records.filter(isTopQuartile).length;
-  const needsCompletionCount = records.filter(
+  const topQuartileCount = contextRecords.filter(isTopQuartile).length;
+  const needsCompletionCount = contextRecords.filter(
     (publication) => publication.quality === "Perlu dilengkapi",
   ).length;
   const pageSize = Number(pageSizeValue);
@@ -440,7 +463,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selectedPublication = records.find(
+  const selectedPublication = contextRecords.find(
     (publication) => publication.id === selectedPublicationId,
   );
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
@@ -643,6 +666,10 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
       title={content.title}
       titleId="publications-title"
     >
+      <NexusMemberContextFilter
+        clearHref="/nexus/publikasi"
+        memberId={initialMemberId}
+      />
       <NexusWorkspaceMetrics
         metrics={[
           {
@@ -651,7 +678,7 @@ export function NexusPublications({ content }: NexusPublicationsProps) {
             label: "Publikasi Resmi",
             tone: "completed",
             unit: "data",
-            value: records.length,
+            value: contextRecords.length,
           },
           {
             icon: <NexusPublicationsIcon name="quartile" />,

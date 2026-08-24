@@ -1,4 +1,8 @@
 import {
+  type NexusMemberId,
+  resolveKnownMemberId,
+} from "@/components/nexus-members/nexus-member-identity";
+import {
   type MetadataCompletionFieldKey,
   type MetadataCompletionProposal,
   type MetadataCompletionResolutions,
@@ -34,6 +38,7 @@ export type AcademicProposal = MetadataCompletionProposal;
 type AcademicMentor = {
   id: string;
   initials: string;
+  memberId?: NexusMemberId;
   name: string;
 };
 
@@ -281,17 +286,17 @@ const seeds: readonly AcademicSeed[] = [
   },
 ];
 
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase("id-ID")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function toMentor(name: string): AcademicMentor {
-  return { id: slugify(name), initials: personInitials(name), name };
+function toMentor(
+  name: string,
+  index: number,
+  recordId: string,
+): AcademicMentor {
+  return {
+    id: `${recordId.toLocaleLowerCase("id-ID")}-mentor-${index + 1}`,
+    initials: personInitials(name),
+    memberId: resolveKnownMemberId(name),
+    name,
+  };
 }
 
 function createRecord(seed: AcademicSeed): OfficialAcademicRecord {
@@ -321,7 +326,9 @@ function createRecord(seed: AcademicSeed): OfficialAcademicRecord {
           },
         ]
       : [],
-    mentors: seed.mentors.map(toMentor),
+    mentors: seed.mentors.map((name, index) =>
+      toMentor(name, index, seed.publicId),
+    ),
     missingFields,
     participantCode: seed.participantCode,
     programStudy: seed.programStudy,

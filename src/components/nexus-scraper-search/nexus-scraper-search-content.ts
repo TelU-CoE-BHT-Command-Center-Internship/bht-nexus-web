@@ -1,6 +1,7 @@
 import type { AuditReviewRecord } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
+import type { NexusMemberId } from "@/components/nexus-members/nexus-member-identity";
 import { nexusReviewActorIds } from "@/components/nexus-review-session/nexus-review-actors";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
@@ -18,6 +19,7 @@ export type CollectionCandidate = Pick<
   | "id"
   | "kpiLinks"
   | "matches"
+  | "memberId"
   | "owner"
   | "primaryPerson"
   | "provenance"
@@ -33,6 +35,7 @@ export type CollectionJob = {
   failureReason?: string;
   fullName: string;
   id: string;
+  memberId?: NexusMemberId;
   profileUrl: string;
   source: CollectionSource;
   sourceLabel: string;
@@ -78,6 +81,7 @@ type PublicationCandidateSeed = {
   candidateKind: CollectionCandidate["candidateKind"];
   doi?: string;
   id: string;
+  memberId?: NexusMemberId;
   owner: string;
   person: string;
   title: string;
@@ -90,6 +94,7 @@ function publicationCandidate({
   candidateKind,
   doi,
   id,
+  memberId,
   owner,
   person,
   title,
@@ -109,6 +114,7 @@ function publicationCandidate({
       { id: "year", label: "Tahun terbit", value: String(year) },
     ],
     id,
+    memberId,
     evidence: [],
     evaluationPeriodLabel: undefined,
     kpiLinks: [],
@@ -131,6 +137,7 @@ const suksmandhiraCandidates: CollectionCandidate[] = [
   publicationCandidate({
     candidateKind: "new_record",
     id: "COL-SINTA-6712043-PUB-001",
+    memberId: "dr-suksmandhira-harimurti-s-t-m-eng",
     owner: "CoE BHT",
     person:
       "Suksmandhira Harimurti; M Rivaldi Ali Septian; Khilda Afifah; Estananto",
@@ -144,6 +151,7 @@ const suksmandhiraCandidates: CollectionCandidate[] = [
   publicationCandidate({
     candidateKind: "new_record",
     id: "COL-SINTA-6712043-PUB-002",
+    memberId: "dr-suksmandhira-harimurti-s-t-m-eng",
     owner: "CoE BHT",
     person:
       "M Rivaldi Ali Septian; Suksmandhira Harimurti; Wahmisari Priharti; Iswahyudi Hidayat; Mohamad Ramdhani",
@@ -159,6 +167,7 @@ const hestyCandidates: CollectionCandidate[] = [
   publicationCandidate({
     candidateKind: "new_record",
     id: "COL-SCHOLAR-HESTY-PUB-001",
+    memberId: "hesty-susanti",
     owner: "CoE BHT",
     person: "Liana Nafisa Saftari; Hesty Susanti",
     title:
@@ -174,6 +183,7 @@ const seeds = [
     candidates: suksmandhiraCandidates,
     fullName: "Suksmandhira Harimurti",
     id: "sinta-profile-6712043",
+    memberId: "dr-suksmandhira-harimurti-s-t-m-eng",
     profileUrl: "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043",
     source: "sinta",
     status: "succeeded",
@@ -185,6 +195,7 @@ const seeds = [
     candidates: hestyCandidates,
     fullName: "Hesty Susanti",
     id: "scholar-profile-example",
+    memberId: "hesty-susanti",
     profileUrl: "https://scholar.google.com/citations?user=3xVn7QsAAAAJ",
     source: "scholar",
     status: "succeeded",
@@ -196,6 +207,7 @@ const seeds = [
     candidates: [],
     fullName: "Dita Puspitasari",
     id: "sinta-profile-6698215",
+    memberId: "dita-puspitasari-s-t-b-sc-m-t",
     profileUrl: "https://sinta.kemdiktisaintek.go.id/authors/profile/6698215",
     source: "sinta",
     status: "running",

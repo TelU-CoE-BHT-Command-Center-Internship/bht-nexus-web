@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { nexusPreviewWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { NexusMembers } from "@/components/nexus-members/nexus-members";
 import { getNexusMembersContent } from "@/components/nexus-members/nexus-members-content";
 
@@ -14,5 +15,10 @@ export const metadata: Metadata = {
 export default function NexusMembersPage() {
   const content = getNexusMembersContent();
 
-  return <NexusMembers content={content} />;
+  return (
+    <NexusMembers
+      capabilities={nexusPreviewWorkspaceAccess.memberCapabilities}
+      content={content}
+    />
+  );
 }

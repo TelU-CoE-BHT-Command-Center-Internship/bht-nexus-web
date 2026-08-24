@@ -19,7 +19,15 @@ export type NexusWorkspaceNavigationId =
  */
 export type NexusWorkspaceAccess = {
   allowedNavigationIds: readonly NexusWorkspaceNavigationId[];
+  memberCapabilities: NexusMemberCapabilities;
   reviewCapabilities: NexusReviewCapabilities;
+};
+
+export type NexusMemberCapabilities = {
+  canCreateMember: boolean;
+  canDeactivateMember: boolean;
+  canEditMember: boolean;
+  canGrantAccess: boolean;
 };
 
 export const nexusPreviewWorkspaceAccess = {
@@ -36,6 +44,12 @@ export const nexusPreviewWorkspaceAccess = {
     "members",
     "administration",
   ],
+  memberCapabilities: {
+    canCreateMember: true,
+    canDeactivateMember: true,
+    canEditMember: true,
+    canGrantAccess: true,
+  },
   reviewCapabilities: {
     canReview: true,
     canSubmitCorrection: true,

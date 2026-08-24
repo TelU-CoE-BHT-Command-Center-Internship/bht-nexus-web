@@ -16,6 +16,7 @@ import {
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { projectOfficialContractProposals } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createContractProposalCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -56,6 +57,7 @@ const NexusContractProposalDetail = dynamic(() =>
 
 type NexusContractProposalsProps = {
   content: NexusContractProposalContent;
+  initialMemberId?: string;
 };
 
 type FilterId = "completeness" | "group" | "indicator" | "sort";
@@ -182,6 +184,7 @@ function createIndicatorConfig(
 
 export function NexusContractProposals({
   content,
+  initialMemberId,
 }: NexusContractProposalsProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
@@ -209,15 +212,24 @@ export function NexusContractProposals({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
+  const contextRecords = useMemo(
+    () =>
+      initialMemberId
+        ? records.filter((record) =>
+            record.relatedMemberIds.includes(initialMemberId),
+          )
+        : records,
+    [initialMemberId, records],
+  );
 
   const indicatorConfig = useMemo(
-    () => createIndicatorConfig(records),
-    [records],
+    () => createIndicatorConfig(contextRecords),
+    [contextRecords],
   );
 
   const filtered = useMemo(() => {
     const needle = normalizeWorkspaceSearch(deferredSearchQuery);
-    const matching = records.filter(
+    const matching = contextRecords.filter(
       (record) =>
         (filterValues.indicator === "all" ||
           record.kmLinks.some(
@@ -251,15 +263,15 @@ export function NexusContractProposals({
             "id-ID",
           );
     });
-  }, [deferredSearchQuery, filterValues, records]);
+  }, [contextRecords, deferredSearchQuery, filterValues]);
 
   const coveredIndicatorCount = contractProposalIndicatorScope.filter(
     (indicator) =>
-      records.some((record) =>
+      contextRecords.some((record) =>
         record.kmLinks.some((link) => link.indicator.id === indicator.id),
       ),
   ).length;
-  const needsCompletionCount = records.filter(
+  const needsCompletionCount = contextRecords.filter(
     (record) => record.quality === "Perlu dilengkapi",
   ).length;
   const pageSize = Number(pageSizeValue);
@@ -269,20 +281,24 @@ export function NexusContractProposals({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = records.find((record) => record.id === selectedId);
+  const selected = contextRecords.find((record) => record.id === selectedId);
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
   ).length;
   const hasActiveFilters = activeFilterCount > 0 || searchQuery.length > 0;
   const evaluationPeriods = Array.from(
-    new Set(records.map((record) => record.evaluationPeriod)),
+    new Set(
+      (contextRecords.length > 0 ? contextRecords : records).map(
+        (record) => record.evaluationPeriod,
+      ),
+    ),
   )
     .toSorted()
     .join(", ");
   const resultSummary = [
     `Periode evaluasi ${evaluationPeriods}`,
-    `${filtered.length} dari ${records.length} rekam sesuai filter`,
+    `${filtered.length} dari ${contextRecords.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
       : "tanpa filter tambahan",
@@ -450,6 +466,10 @@ export function NexusContractProposals({
       title={content.title}
       titleId="contract-proposals-title"
     >
+      <NexusMemberContextFilter
+        clearHref="/nexus/kontrak-proposal"
+        memberId={initialMemberId}
+      />
       <NexusWorkspaceMetrics
         metrics={[
           {
@@ -458,7 +478,7 @@ export function NexusContractProposals({
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: records.length,
+            value: contextRecords.length,
           },
           {
             icon: <NexusContractProposalIcon name="indicator" />,

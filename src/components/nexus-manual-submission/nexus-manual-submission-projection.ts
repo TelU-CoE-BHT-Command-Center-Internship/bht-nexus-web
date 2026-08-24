@@ -3,6 +3,7 @@ import type { OfficialActivityRecord } from "@/components/nexus-activities/nexus
 import type { OfficialContractProposalRecord } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import type { OfficialIntellectualProperty } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { manualSubtype } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
+import { resolveKnownMemberId } from "@/components/nexus-members/nexus-member-identity";
 import type { OfficialPublication } from "@/components/nexus-publications/nexus-publications-content";
 import type {
   OfficialRecordDecisionProjection,
@@ -262,6 +263,44 @@ function mergeProjectedRecord<T extends ProjectableOfficialRecord>(
       link,
     ]),
   );
+  const targetMemberIds = Array.isArray(merged.relatedMemberIds)
+    ? (merged.relatedMemberIds as string[])
+    : [];
+  const projectedMemberIds = Array.isArray(
+    (projected as Record<string, unknown>).relatedMemberIds,
+  )
+    ? ((projected as Record<string, unknown>).relatedMemberIds as string[])
+    : [];
+  if (targetMemberIds.length > 0 || projectedMemberIds.length > 0) {
+    merged.relatedMemberIds = [
+      ...new Set([...targetMemberIds, ...projectedMemberIds]),
+    ];
+  }
+  for (const peopleKey of ["authors", "creators", "mentors"] as const) {
+    const targetPeople = merged[peopleKey];
+    const projectedPeople = (projected as Record<string, unknown>)[peopleKey];
+    if (!Array.isArray(targetPeople) || !Array.isArray(projectedPeople)) {
+      continue;
+    }
+    merged[peopleKey] = targetPeople.map((person) => {
+      if (!person || typeof person !== "object") return person;
+      const typedPerson = person as { memberId?: string; name?: string };
+      if (typedPerson.memberId || !typedPerson.name) return person;
+      const matchingPerson = projectedPeople.find((candidate) => {
+        if (!candidate || typeof candidate !== "object") return false;
+        const typedCandidate = candidate as {
+          memberId?: string;
+          name?: string;
+        };
+        return (
+          typedCandidate.memberId && typedCandidate.name === typedPerson.name
+        );
+      }) as { memberId?: string } | undefined;
+      return matchingPerson?.memberId
+        ? { ...typedPerson, memberId: matchingPerson.memberId }
+        : person;
+    });
+  }
 
   return {
     ...merged,
@@ -290,6 +329,7 @@ function updateProjectedRecord<T extends ProjectableOfficialRecord>(
     "quality",
     "sourceMetadata",
   ]);
+  if (projection.candidate.memberId) writableKeys.add("relatedMemberIds");
   const addWhenPresent = (targetKey: string, ...valueKeys: string[]) => {
     if (valueKeys.some((key) => Boolean(values[key]?.trim()))) {
       writableKeys.add(targetKey);
@@ -408,13 +448,17 @@ function splitPeople(value?: string) {
     .filter(Boolean);
 }
 
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase("id-ID")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+function projectedPersonMemberId(
+  projection: OfficialRecordDecisionProjection,
+  name: string,
+) {
+  const resolvedMemberId = resolveKnownMemberId(name);
+  if (resolvedMemberId) return resolvedMemberId;
+
+  const primaryPeople = splitPeople(projection.candidate.primaryPerson);
+  return primaryPeople.length === 1 && primaryPeople[0] === name
+    ? projection.candidate.memberId
+    : undefined;
 }
 
 export function officialProjectionPublicId(
@@ -663,9 +707,10 @@ function createPublication(
 
   return {
     ...commonProjection(projection),
-    authors: splitPeople(values.authors).map((name) => ({
-      id: slugify(name),
+    authors: splitPeople(values.authors).map((name, index) => ({
+      id: `${officialProjectionPublicId(projection).toLocaleLowerCase("id-ID")}-author-${index + 1}`,
       initials: personInitials(name),
+      memberId: projectedPersonMemberId(projection, name),
       name,
     })),
     citations: null,
@@ -722,9 +767,10 @@ function createIntellectualProperty(
 
   return {
     ...commonProjection(projection),
-    creators: splitPeople(values.creators).map((name) => ({
-      id: slugify(name),
+    creators: splitPeople(values.creators).map((name, index) => ({
+      id: `${officialProjectionPublicId(projection).toLocaleLowerCase("id-ID")}-creator-${index + 1}`,
       initials: personInitials(name),
+      memberId: projectedPersonMemberId(projection, name),
       name,
     })),
     documentAccess: evidence.status,
@@ -822,6 +868,9 @@ function createContractProposal(
     ownerUnit: "CoE BHT",
     partner: values.partner || undefined,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
+    relatedMemberIds: projection.candidate.memberId
+      ? [projection.candidate.memberId]
+      : [],
     referenceNumber: values.referenceNumber || undefined,
     recordStatus: config.status,
     scheme: values.scheme || undefined,
@@ -886,9 +935,10 @@ function createAcademic(
     evidenceStatus: evidence.status,
     evidenceUrl: evidence.url,
     kmLinks: projectionLinks(projection),
-    mentors: mentorNames.map((name) => ({
-      id: slugify(name),
+    mentors: mentorNames.map((name, index) => ({
+      id: `${officialProjectionPublicId(projection).toLocaleLowerCase("id-ID")}-mentor-${index + 1}`,
       initials: personInitials(name),
+      memberId: projectedPersonMemberId(projection, name),
       name,
     })),
     missingFields: [...missingFields],
@@ -1083,6 +1133,9 @@ function createActivity(
     primaryParty,
     publicationFrequency: values.publicationFrequency || undefined,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
+    relatedMemberIds: projection.candidate.memberId
+      ? [projection.candidate.memberId]
+      : [],
     referenceNumber: values.referenceNumber || undefined,
     recordStatus: config.status,
     role: values.role || undefined,

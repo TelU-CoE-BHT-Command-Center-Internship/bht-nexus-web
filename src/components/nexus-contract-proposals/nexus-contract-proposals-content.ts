@@ -69,6 +69,7 @@ export type OfficialContractProposalRecord = {
   provenance: ContractProposalProvenance[];
   publicId: string;
   quality: ContractProposalQuality;
+  relatedMemberIds: string[];
   referenceNumber?: string;
   recordStatus: "Aktif" | "Diajukan" | "Tercatat";
   /** Nilai atau pengecualian pelengkapan yang sudah disetujui. */
@@ -316,6 +317,7 @@ function createRecord(
     provenance: [...seed.sources],
     publicId: seed.publicId,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
+    relatedMemberIds: [],
     recordStatus: seed.recordStatus,
     review: {
       candidateId: `KPR-CAND-${seed.publicId.slice(-4)}`,

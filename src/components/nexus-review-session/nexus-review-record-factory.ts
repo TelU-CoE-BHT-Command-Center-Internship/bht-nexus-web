@@ -90,6 +90,7 @@ function createBaseRecord(
     | "id"
     | "kpiLinks"
     | "matches"
+    | "memberId"
     | "owner"
     | "evaluationPeriodLabel"
     | "primaryPerson"
@@ -157,6 +158,7 @@ export function createCollectionReviewRecords(
         },
         source,
         sourceLabel: job.sourceLabel,
+        memberId: candidate.memberId ?? job.memberId,
       },
       job.submittedByActorId,
       nexusReviewActorIds.collectionService,

@@ -662,6 +662,18 @@
   opacity: 1;
 }
 
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  margin: -1px;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .detailPanel {
   min-height: 25rem;
   padding: 0.85rem clamp(1.25rem, 2.3vw, 2.2rem) 1.1rem;
@@ -745,38 +757,122 @@
   font-weight: 620;
 }
 
-.infoNote {
+.guidanceCard {
+  display: flex;
   grid-column: 1 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
   padding: 0.9rem 1rem;
-  border: 1px solid #cfe0f5;
-  border-left: 0.2rem solid #3575c9;
-  border-radius: 0.55rem;
-  background: #f5f9fe;
+  border: 1px solid #d9e3ef;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(16 24 40 / 4%);
 }
 
-.infoNote strong {
-  color: #16385f;
-  font-size: 0.74rem;
+.guidanceIcon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  background: #eaf2ff;
+  color: #2864b8;
 }
 
-.infoNote p {
-  max-width: 44rem;
-  margin: 0.28rem 0 0;
+.guidanceIcon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.guidanceCopy {
+  min-width: 0;
+  max-width: 42rem;
+  flex: 0 1 42rem;
+}
+
+.guidanceCopy strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.76rem;
+  font-weight: 720;
+}
+
+.guidanceCopy p {
+  max-width: 46rem;
+  margin: 0.2rem 0 0;
   color: #60738b;
   font-size: 0.67rem;
   line-height: 1.5;
 }
 
-.noteAction {
-  min-height: 2.25rem;
-  margin-top: 0.65rem;
-  padding: 0.45rem 0.72rem;
-  font-size: 0.68rem;
+.guidanceAction {
+  display: inline-flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.guidanceAction > a,
+.guidanceAction > button {
+  min-height: 2.45rem;
+  padding: 0.52rem 0.78rem;
+  font-size: 0.69rem;
+  white-space: nowrap;
+}
+
+.guidanceAction svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.guidanceAction small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.67rem;
+  line-height: 1.45;
 }
 
 .accessSection {
   display: grid;
   gap: 0.8rem;
+  container-type: inline-size;
+}
+
+@container (max-width: 58rem) {
+  .guidanceCard {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
+  .guidanceCopy {
+    max-width: none;
+  }
+
+  .guidanceAction {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+@container (max-width: 34rem) {
+  .guidanceAction {
+    width: 100%;
+  }
+
+  .guidanceAction > a,
+  .guidanceAction > button {
+    flex: 1 1 12rem;
+  }
 }
 
 .accessEmpty {
@@ -884,6 +980,23 @@
 .accountBoundary strong {
   color: #214468;
   font-size: 0.68rem;
+}
+
+.accountBoundary p {
+  margin: 0.35rem 0 0;
+  color: #5f7187;
+  font-size: 0.63rem;
+  line-height: 1.55;
+}
+
+.accountBoundary[data-tone="positive"] {
+  border-color: #b9dfcd;
+  background: #f1faf6;
+}
+
+.accountBoundary[data-tone="danger"] {
+  border-color: #f0c5cc;
+  background: #fff6f7;
 }
 
 .accountBoundary ul {
@@ -1045,6 +1158,276 @@
   grid-column: 1 / -1;
 }
 
+.profilePhotoField {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border: 1.5px dashed #bfd0e4;
+  border-radius: 0.65rem;
+  background: #f8fbff;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.profilePhotoField[data-dragging="true"] {
+  border-color: #2563b9;
+  background: #eef5ff;
+  box-shadow: 0 0 0 3px rgb(37 99 185 / 12%);
+}
+
+.profilePhotoPreview {
+  position: relative;
+  display: grid;
+  width: 4.5rem;
+  height: 4.5rem;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid #d2deeb;
+  border-radius: 50%;
+  background: #eaf2fc;
+  color: #225b9f;
+  font-size: 1.15rem;
+  font-weight: 760;
+}
+
+.profilePhotoPreview img {
+  object-fit: cover;
+}
+
+.profilePhotoCopy {
+  min-width: 0;
+}
+
+.profilePhotoCopy > strong {
+  color: #17365e;
+  font-size: 0.72rem;
+}
+
+.profilePhotoCopy > p {
+  margin: 0.25rem 0 0;
+  color: #6a7c93;
+  font-size: 0.63rem;
+  line-height: 1.45;
+}
+
+.profilePhotoCopy > .profilePhotoError {
+  color: #b4232d;
+  font-weight: 650;
+}
+
+.profilePhotoActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.profilePhotoActions button,
+.profilePhotoUploadButton {
+  min-height: 2.35rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.66rem;
+}
+
+.profilePhotoActions svg,
+.profilePhotoUploadButton svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.profilePhotoUploadButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  overflow: hidden;
+  border: 1px solid #cbd8e8;
+  border-radius: 0.5rem;
+  background: #f5f8fc;
+  color: #173b68;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.profilePhotoUploadButton:hover {
+  border-color: #9fb8d5;
+  background: #eef4fb;
+}
+
+.profilePhotoUploadButton:focus-within {
+  border-color: #1e63b7;
+  box-shadow: 0 0 0 3px rgb(30 99 183 / 14%);
+}
+
+.profilePhotoInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.profilePhotoPosition {
+  grid-column: 1 / -1;
+  padding-top: 0.7rem;
+  border-top: 1px solid #dce6f1;
+}
+
+.profilePhotoPosition summary {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #234467;
+  cursor: pointer;
+  list-style: none;
+}
+
+.profilePhotoPosition summary::-webkit-details-marker {
+  display: none;
+}
+
+.profilePhotoPosition summary::after {
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: auto;
+  border-right: 1.5px solid currentcolor;
+  border-bottom: 1.5px solid currentcolor;
+  content: "";
+  transform: rotate(45deg) translateY(-0.1rem);
+  transition: transform 160ms ease;
+}
+
+.profilePhotoPosition[open] summary::after {
+  transform: rotate(225deg) translate(-0.05rem, -0.05rem);
+}
+
+.profilePhotoPosition summary > span {
+  font-size: 0.68rem;
+  font-weight: 720;
+}
+
+.profilePhotoPosition summary > small {
+  color: #708197;
+  font-size: 0.61rem;
+}
+
+.profilePhotoPositionBody {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.7rem;
+}
+
+.profilePhotoCropViewport {
+  position: relative;
+  display: block;
+  width: 11rem;
+  max-width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  justify-self: center;
+  padding: 0;
+  border: 0.3rem solid #fff;
+  border-radius: 50%;
+  background: #dfe8f2;
+  box-shadow:
+    0 0 0 1px #b9c9dc,
+    0 0.55rem 1.5rem rgb(15 35 65 / 12%);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.profilePhotoCropViewport:focus-visible {
+  outline: 3px solid rgb(32 103 191 / 25%);
+  outline-offset: 0.2rem;
+}
+
+.profilePhotoCropViewport[data-positioning="true"] {
+  cursor: grabbing;
+}
+
+.profilePhotoCropViewport img {
+  pointer-events: none;
+  object-fit: cover;
+  user-select: none;
+}
+
+.profilePhotoCropHint {
+  position: absolute;
+  bottom: 0.7rem;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 999px;
+  background: rgb(7 28 58 / 72%);
+  color: #fff;
+  font-size: 0.59rem;
+  font-weight: 680;
+  line-height: 1;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.profilePhotoCropHint svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.profilePhotoCropHelp {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  justify-items: start;
+  gap: 0.4rem;
+}
+
+.profilePhotoCropHelp > strong {
+  color: #17365e;
+  font-size: 0.71rem;
+}
+
+.profilePhotoCropHelp > p {
+  max-width: 25rem;
+  margin: 0;
+  color: #687b92;
+  font-size: 0.63rem;
+  line-height: 1.5;
+}
+
+.profilePhotoCropHelp > button {
+  min-height: 2.25rem;
+  margin-top: 0.25rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.64rem;
+}
+
 .visibilityControl {
   display: flex;
   align-items: flex-start;
@@ -1153,7 +1536,7 @@
   }
 
   .detailCard[data-wide="true"],
-  .infoNote {
+  .guidanceCard {
     grid-column: auto;
   }
 }
@@ -1240,6 +1623,24 @@
 }
 
 @media (max-width: 36rem) {
+  .profilePhotoField {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
+
+  .profilePhotoActions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+
+  .profilePhotoPositionBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profilePhotoCropHelp {
+    justify-items: center;
+    text-align: center;
+  }
+
   .directoryHeader {
     padding: 1.1rem 1rem 0.9rem;
   }

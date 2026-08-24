@@ -1,4 +1,8 @@
 import {
+  type NexusMemberId,
+  resolveKnownMemberId,
+} from "@/components/nexus-members/nexus-member-identity";
+import {
   type MetadataCompletionFieldKey,
   type MetadataCompletionProposal,
   type MetadataCompletionResolutions,
@@ -31,6 +35,7 @@ export type IntellectualPropertyProposal = MetadataCompletionProposal;
 type IntellectualPropertyCreator = {
   id: string;
   initials: string;
+  memberId?: NexusMemberId;
   name: string;
 };
 
@@ -207,17 +212,17 @@ const seeds: readonly IntellectualPropertySeed[] = [
   },
 ];
 
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase("id-ID")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function toCreator(name: string): IntellectualPropertyCreator {
-  return { id: slugify(name), initials: personInitials(name), name };
+function toCreator(
+  name: string,
+  index: number,
+  recordId: string,
+): IntellectualPropertyCreator {
+  return {
+    id: `${recordId.toLocaleLowerCase("id-ID")}-creator-${index + 1}`,
+    initials: personInitials(name),
+    memberId: resolveKnownMemberId(name),
+    name,
+  };
 }
 
 function createRecord(
@@ -233,7 +238,9 @@ function createRecord(
   ];
 
   return {
-    creators: seed.creators.map(toCreator),
+    creators: seed.creators.map((name, index) =>
+      toCreator(name, index, seed.publicId),
+    ),
     documentAccess: seed.documentAccess,
     documentNote: documentNotes[seed.documentAccess],
     documentUrl: seed.documentUrl,

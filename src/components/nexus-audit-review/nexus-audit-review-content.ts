@@ -192,6 +192,8 @@ export type AuditReviewRecord = {
   owner: string;
   /** Periode evaluasi KM; kosong bila sumber belum menentukan periodenya. */
   evaluationPeriodLabel?: string;
+  /** ID anggota kanonis; tidak pernah diturunkan hanya dari teks nama. */
+  memberId?: string;
   primaryPerson: string;
   provenance: AuditReviewProvenance;
   signal: AuditReviewSignal;

@@ -1,0 +1,124 @@
+.contextCard {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #74b8ef;
+  border-radius: 0.75rem;
+  background: #f0f8ff;
+}
+
+.iconWrap {
+  display: inline-flex;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #dceeff;
+  color: #1683d8;
+}
+
+.iconWrap svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.identity {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 0.12rem;
+}
+
+.label {
+  color: #4b6f96;
+  font-size: 0.64rem;
+  font-weight: 680;
+  letter-spacing: 0.02em;
+}
+
+.memberLine {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.memberLine strong {
+  overflow: hidden;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.78rem;
+  font-weight: 720;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+}
+
+.sourceBadge {
+  display: inline-flex;
+  min-height: 1.35rem;
+  align-items: center;
+  padding: 0.18rem 0.48rem;
+  border-radius: 999px;
+  background: #dceeff;
+  color: #176aaf;
+  font-size: 0.6rem;
+  font-weight: 720;
+  line-height: 1;
+}
+
+.identity p {
+  margin: 0.08rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+
+.action {
+  flex: 0 0 auto;
+}
+
+.action a {
+  min-height: 2.35rem;
+  padding: 0.5rem 0.72rem;
+  border-color: #b9d8f2;
+  background: rgb(255 255 255 / 72%);
+  font-size: 0.69rem;
+  white-space: nowrap;
+}
+
+.action svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+@media (max-width: 36rem) {
+  .contextCard {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .identity {
+    padding-top: 0.08rem;
+  }
+
+  .action {
+    width: 100%;
+    padding-left: 3.15rem;
+  }
+
+  .action a {
+    width: 100%;
+  }
+}

@@ -16,6 +16,7 @@ import {
 import { NexusAcademicIcon } from "@/components/nexus-academic/nexus-academic-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { projectOfficialAcademics } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createAcademicCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -56,6 +57,7 @@ const NexusAcademicDetail = dynamic(() =>
 
 type NexusAcademicProps = {
   content: NexusAcademicContent;
+  initialMemberId?: string;
 };
 
 type FilterId = "activity" | "completeness" | "indicator" | "sort";
@@ -199,7 +201,10 @@ function createActivityConfig(
   };
 }
 
-export function NexusAcademic({ content }: NexusAcademicProps) {
+export function NexusAcademic({
+  content,
+  initialMemberId,
+}: NexusAcademicProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
@@ -226,19 +231,30 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
+  const contextRecords = useMemo(
+    () =>
+      initialMemberId
+        ? records.filter((record) =>
+            record.mentors.some(
+              (mentor) => mentor.memberId === initialMemberId,
+            ),
+          )
+        : records,
+    [initialMemberId, records],
+  );
 
   const indicatorConfig = useMemo(
-    () => createIndicatorConfig(records),
-    [records],
+    () => createIndicatorConfig(contextRecords),
+    [contextRecords],
   );
   const activityConfig = useMemo(
-    () => createActivityConfig(records),
-    [records],
+    () => createActivityConfig(contextRecords),
+    [contextRecords],
   );
 
   const filtered = useMemo(() => {
     const needle = normalizeWorkspaceSearch(deferredSearchQuery);
-    const matching = records.filter(
+    const matching = contextRecords.filter(
       (record) =>
         (filterValues.indicator === "all" ||
           (filterValues.indicator === unlinkedIndicatorValue
@@ -276,14 +292,14 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
             "id-ID",
           );
     });
-  }, [deferredSearchQuery, filterValues, records]);
+  }, [contextRecords, deferredSearchQuery, filterValues]);
 
   const coveredIndicatorCount = academicIndicatorScope.filter((indicator) =>
-    records.some((record) =>
+    contextRecords.some((record) =>
       record.kmLinks.some((link) => link.indicator.id === indicator.id),
     ),
   ).length;
-  const needsCompletionCount = records.filter(
+  const needsCompletionCount = contextRecords.filter(
     (record) => record.quality === "Perlu dilengkapi",
   ).length;
   const pageSize = Number(pageSizeValue);
@@ -293,20 +309,24 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = records.find((record) => record.id === selectedId);
+  const selected = contextRecords.find((record) => record.id === selectedId);
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
   ).length;
   const hasActiveFilters = activeFilterCount > 0 || searchQuery.length > 0;
   const evaluationPeriods = Array.from(
-    new Set(records.map((record) => record.evaluationPeriod)),
+    new Set(
+      (contextRecords.length > 0 ? contextRecords : records).map(
+        (record) => record.evaluationPeriod,
+      ),
+    ),
   )
     .toSorted()
     .join(", ");
   const resultSummary = [
     `Periode evaluasi ${evaluationPeriods}`,
-    `${filtered.length} dari ${records.length} rekam sesuai filter`,
+    `${filtered.length} dari ${contextRecords.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
       : "tanpa filter tambahan",
@@ -452,6 +472,10 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
       title={content.title}
       titleId="academic-title"
     >
+      <NexusMemberContextFilter
+        clearHref="/nexus/akademik"
+        memberId={initialMemberId}
+      />
       <NexusWorkspaceMetrics
         metrics={[
           {
@@ -460,7 +484,7 @@ export function NexusAcademic({ content }: NexusAcademicProps) {
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: records.length,
+            value: contextRecords.length,
           },
           {
             icon: <NexusAcademicIcon name="indicator" />,

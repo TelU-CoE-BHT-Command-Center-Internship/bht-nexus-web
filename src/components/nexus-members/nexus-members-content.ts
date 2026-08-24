@@ -8,22 +8,25 @@ import muhammadAmmarAsyrafPhoto from "@/assets/members/muhammad-ammar-asyraf.web
 import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
 import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
 import { getMembersContent } from "@/components/members/members-content";
-import {
-  COE_BHT_LINKS,
-  COE_BHT_PRIMARY_LOCATION,
-  COE_BHT_RESEARCH_SPACE,
-} from "@/content/coe-bht";
+import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
+import { COE_BHT_RESEARCH_SPACE } from "@/content/coe-bht";
 
 export type NexusMemberStatus = "active" | "inactive" | "on_leave";
 
 export type NexusMemberAccountStatus = "active" | "invited" | "suspended";
 
+export type NexusMemberAccount = {
+  email: string;
+  roleLabels: string[];
+  status: NexusMemberAccountStatus;
+};
+
+export type NexusMemberUnlinkedAccount = NexusMemberAccount & {
+  name: string;
+};
+
 export type NexusMemberRecord = {
-  account?: {
-    email: string;
-    roleLabels: string[];
-    status: NexusMemberAccountStatus;
-  };
+  account?: NexusMemberAccount;
   academic: {
     googleScholar?: string;
     orcid?: string;
@@ -33,19 +36,16 @@ export type NexusMemberRecord = {
   };
   coeAssignment: string;
   affiliation: {
-    employmentStatus?: string;
-    functionalPosition?: string;
     institution: string;
     office?: string;
     primaryUnit: string;
-    secondaryUnit?: string;
   };
+  avatarPosition?: NexusMemberAvatarPosition;
   avatarSrc?: ImageProps["src"];
   biography: string;
   contact: {
     alternateEmail?: string;
     institutionalEmail?: string;
-    location?: string;
     phone?: string;
   };
   expertise: {
@@ -54,25 +54,22 @@ export type NexusMemberRecord = {
   };
   id: string;
   identity: {
-    citizenship?: string;
-    dateOfBirth?: string;
-    gender?: string;
     preferredName: string;
   };
   membership: {
     joinedAt?: string;
-    memberCode?: string;
     publicProfile: boolean;
     status: NexusMemberStatus;
   };
   name: string;
-  updatedAt: string;
+  updatedAt?: string;
 };
 
 export type NexusMembersContent = {
   description: string;
   records: NexusMemberRecord[];
   title: string;
+  unlinkedAccounts: NexusMemberUnlinkedAccount[];
 };
 
 const publicContent = getMembersContent("id");
@@ -103,18 +100,13 @@ const sharedAffiliation = {
   primaryUnit: "CoE Biomedical & Healthcare Technology",
 } as const;
 
-const sharedContact = {
-  institutionalEmail: COE_BHT_LINKS.email.replace("mailto:", ""),
-  location: COE_BHT_PRIMARY_LOCATION.address,
-} as const;
-
 const chair: NexusMemberRecord = {
   academic: {},
   affiliation: sharedAffiliation,
   avatarSrc: portraits.hesty,
   biography: publicContent.chair.description,
   coeAssignment: publicContent.leadershipTitle,
-  contact: sharedContact,
+  contact: {},
   expertise: {
     primary: publicContent.chair.discipline,
     secondary: publicContent.chair.expertise
@@ -130,7 +122,6 @@ const chair: NexusMemberRecord = {
     status: "active",
   },
   name: publicContent.chair.name,
-  updatedAt: "22 Agustus 2026",
 };
 
 const managementProfiles = publicContent.managementMembers.map(
@@ -143,9 +134,8 @@ const managementProfiles = publicContent.managementMembers.map(
       avatarSrc: portraits[member.portrait],
       biography: member.description,
       coeAssignment: member.field,
-      contact: sharedContact,
+      contact: {},
       expertise: {
-        primary: member.field,
         secondary: [],
       },
       id,
@@ -157,7 +147,6 @@ const managementProfiles = publicContent.managementMembers.map(
         status: "active",
       },
       name: member.name,
-      updatedAt: "22 Agustus 2026",
     };
   },
 );
@@ -173,5 +162,13 @@ export function getNexusMembersContent(): NexusMembersContent {
       "Kelola identitas dan keanggotaan CoE BHT yang menghubungkan orang dengan data organisasi.",
     records: [chair, ...managementProfiles],
     title: "Anggota",
+    unlinkedAccounts: [
+      {
+        email: "operator.bht@telkomuniversity.ac.id",
+        name: "Operator BHT",
+        roleLabels: ["Operator"],
+        status: "active",
+      },
+    ],
   };
 }

@@ -28,7 +28,11 @@
 }
 
 .feedback {
-  margin-top: 0.85rem;
+  margin-bottom: 0.95rem;
+}
+
+.form + .feedback {
+  margin: 0.8rem 0 0;
 }
 
 .noAction {

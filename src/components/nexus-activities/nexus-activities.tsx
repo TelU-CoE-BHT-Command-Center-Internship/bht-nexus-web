@@ -16,6 +16,7 @@ import {
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { projectOfficialActivities } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createActivityCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
@@ -56,6 +57,7 @@ const NexusActivityDetail = dynamic(() =>
 
 type NexusActivitiesProps = {
   content: NexusActivitiesContent;
+  initialMemberId?: string;
 };
 
 type FilterId = "completeness" | "group" | "indicator" | "sort";
@@ -185,7 +187,10 @@ function createIndicatorConfig(
   };
 }
 
-export function NexusActivities({ content }: NexusActivitiesProps) {
+export function NexusActivities({
+  content,
+  initialMemberId,
+}: NexusActivitiesProps) {
   const reviewSession = useNexusReviewSession();
   const records = useMemo(
     () =>
@@ -212,15 +217,24 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
+  const contextRecords = useMemo(
+    () =>
+      initialMemberId
+        ? records.filter((record) =>
+            record.relatedMemberIds.includes(initialMemberId),
+          )
+        : records,
+    [initialMemberId, records],
+  );
 
   const indicatorConfig = useMemo(
-    () => createIndicatorConfig(records),
-    [records],
+    () => createIndicatorConfig(contextRecords),
+    [contextRecords],
   );
 
   const filtered = useMemo(() => {
     const needle = normalizeWorkspaceSearch(deferredSearchQuery);
-    const matching = records.filter(
+    const matching = contextRecords.filter(
       (record) =>
         (filterValues.indicator === "all" ||
           (filterValues.indicator === unlinkedIndicatorValue
@@ -250,14 +264,14 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
         second.kmLinks[0]?.indicator.number ?? Number.MAX_SAFE_INTEGER;
       return firstIndicator - secondIndicator;
     });
-  }, [deferredSearchQuery, filterValues, records]);
+  }, [contextRecords, deferredSearchQuery, filterValues]);
 
   const coveredIndicatorCount = activityIndicatorScope.filter((indicator) =>
-    records.some((record) =>
+    contextRecords.some((record) =>
       record.kmLinks.some((link) => link.indicator.id === indicator.id),
     ),
   ).length;
-  const needsCompletionCount = records.filter(
+  const needsCompletionCount = contextRecords.filter(
     (record) => record.quality === "Perlu dilengkapi",
   ).length;
   const pageSize = Number(pageSizeValue);
@@ -267,15 +281,15 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = records.find((record) => record.id === selectedId);
+  const selected = contextRecords.find((record) => record.id === selectedId);
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
   ).length;
   const hasActiveFilters = activeFilterCount > 0 || searchQuery.length > 0;
   const resultSummary = [
-    `Periode evaluasi ${records[0]?.evaluationPeriod ?? "—"}`,
-    `${filtered.length} dari ${records.length} rekam sesuai filter`,
+    `Periode evaluasi ${contextRecords[0]?.evaluationPeriod ?? records[0]?.evaluationPeriod ?? "—"}`,
+    `${filtered.length} dari ${contextRecords.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
       : "tanpa filter tambahan",
@@ -425,6 +439,10 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
       title={content.title}
       titleId="activities-title"
     >
+      <NexusMemberContextFilter
+        clearHref="/nexus/kegiatan"
+        memberId={initialMemberId}
+      />
       <NexusWorkspaceMetrics
         metrics={[
           {
@@ -433,7 +451,7 @@ export function NexusActivities({ content }: NexusActivitiesProps) {
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: records.length,
+            value: contextRecords.length,
           },
           {
             icon: <NexusActivitiesIcon name="indicator" />,

@@ -84,6 +84,7 @@ export type OfficialActivityRecord = {
   publicId: string;
   publicationFrequency?: string;
   quality: ActivityQuality;
+  relatedMemberIds: string[];
   referenceNumber?: string;
   recordStatus: "Aktif" | "Diajukan" | "Dikelola" | "Tercatat";
   /** Nilai atau pengecualian pelengkapan yang sudah disetujui. */
@@ -163,6 +164,7 @@ type ActivitySeed = Omit<
   | "missingFields"
   | "ownerUnit"
   | "quality"
+  | "relatedMemberIds"
   | "review"
   | "updatedAt"
 > & {
@@ -398,6 +400,7 @@ function createRecord(seed: ActivitySeed): OfficialActivityRecord {
     missingFields,
     ownerUnit: "CoE BHT",
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
+    relatedMemberIds: [],
     review: {
       candidateId: `KGT-CAND-${seed.indicatorId.slice(3).padStart(2, "0")}`,
       decision: "Disetujui sebagai data baru",
