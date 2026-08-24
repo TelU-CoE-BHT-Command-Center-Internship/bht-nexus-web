@@ -235,7 +235,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Activities & Outreach", id: "Kegiatan & Pengabdian" },
   },
   {
-    implemented: { en: false, id: false },
+    implemented: { en: false, id: true },
     group: "administration",
     href: { en: "/en/nexus/members", id: "/nexus/anggota" },
     icon: "members",
@@ -395,7 +395,7 @@ export function getNexusDashboardShellPreviewContent(
     searchItems,
     searchLabel: isId ? "Cari di BHT Nexus" : "Search BHT Nexus",
     searchPlaceholder: isId
-      ? "Cari pengumpulan, tinjauan, publikasi, kontrak, kegiatan, atau dokumen"
+      ? "Cari anggota, pengumpulan, tinjauan, data resmi, atau dokumen"
       : "Search collection, reviews, publications, or documents",
     signOutHref: isId ? "/nexus/masuk" : "/en/nexus/sign-in",
     signOutLabel: isId ? "Keluar" : "Sign out",

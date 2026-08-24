@@ -13,6 +13,7 @@ Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di rep
 | Kontrak & Proposal | `getNexusContractProposalContent` | daftar rekam resmi, pemisahan kontrak dan proposal, filter indikator KM, rincian, jejak sumber, dan pengajuan pelengkapan |
 | Akademik | `getNexusAcademicContent` | daftar rekam resmi, filter indikator KM, bentuk kegiatan, kelengkapan, rincian, dan pengajuan pelengkapan |
 | Kegiatan & Pengabdian | `getNexusActivitiesContent` | daftar rekam resmi KM-9, KM-10, dan KM-20 sampai KM-27, filter indikator dan kelompok kegiatan, metadata adaptif per jenis, rincian, jejak sumber, dan pengajuan pelengkapan |
+| Anggota | `getNexusMembersContent` | direktori master–detail, tambah dan ubah profil, pencarian, filter status dan bidang, keanggotaan, identitas akademik, jalur data terkait, serta hubungan akun opsional |
 | Pengajuan manual Data Resmi | `manualSubmissionDefinitions`, `createManualSubmissionReviewRecord`, dan route `/nexus/ajukan/[domain]` | form penuh untuk lima domain, bidang subtype berdasarkan workbook, periode evaluasi yang terpisah dari tahun/tanggal entitas, validasi metadata/tanggal/angka/URL, saran KM berbasis aturan, pencocokan pengenal dan judul termasuk rekam yang telah disetujui, draft sesi browser otomatis, serta pengiriman kandidat manual ke Tinjauan |
 | Pengumpulan | `getNexusScraperSearchContent` | validasi host publik, status pekerjaan, daftar kandidat individual, serta pengiriman kandidat ke sesi Tinjauan Indonesia |
 | Tinjauan Indonesia | `getNexusAuditReviewContent` | satu antrean lintas-domain termasuk impor lembar kerja, filter sumber dan jenis data, metadata adaptif, pembanding, bukti, keputusan, status koreksi, versi, dan riwayat |
@@ -35,6 +36,8 @@ Model Kekayaan Intelektual memisahkan bentuk perlindungan, klasifikasi pelaporan
 Model Akademik memisahkan bentuk kegiatan, klasifikasi pelaporan, dan bukti. Cakupannya adalah KM-28 sampai KM-32. Kegiatan dengan beberapa pembimbing tetap menjadi satu rekam dan dapat mempertahankan beberapa jejak sumber. Magang memakai NIM, mahasiswa, fakultas, program studi, program MBKM, penyelenggara, pembimbing, durasi, tahun, dan bukti; kompetisi tidak dipaksa memakai bidang magang. Topik, pembimbing, mahasiswa, serta referensi sumber pada adapter frontend bersifat netral.
 
 Model Kegiatan & Pengabdian memisahkan pembicara dan kunjungan internasional (KM-9–KM-10) serta delapan bentuk rekam pada KM-20–KM-27. Unit bisnis, komunitas, konferensi, program pengabdian, proposal, dan jurnal hanya menampilkan bidang worksheet masing-masing. Pihak, program, komunitas, nilai dana, serta referensi sumber pada adapter frontend bersifat netral.
+
+Model Anggota mengikuti kebutuhan identitas pada SRS: profil, status aktif/cuti/nonaktif, visibilitas publik, unit, bidang keahlian, dan pengenal eksternal dipisahkan dari akun login serta role/permission. Adapter menggunakan kembali nama, foto, penugasan, serta deskripsi yang sudah dipublikasikan pada halaman institusional. Tanggal bergabung, kode anggota, telepon, atribut kepegawaian, dan pengenal akademik yang belum tersedia dibiarkan kosong. Anggota baru dapat dicatat tanpa email atau foto; avatar inisial menjadi fallback dan visibilitas publik tidak aktif secara bawaan. Form tambah dan ubah memakai bentuk data serta validasi yang sama, termasuk keunikan SINTA ID dan ORCID iD selama halaman aktif. Anggota boleh belum mempunyai akun; undangan menghubungkan akun ke ID anggota yang dipilih secara eksplisit dan tidak memakai kecocokan email sebagai bukti identitas. Perubahan form dan status undangan hanya hidup selama halaman aktif sampai endpoint anggota serta kebijakan akses server dihubungkan.
 
 Form pelengkapan metadata dipakai bersama oleh seluruh rumah data resmi melalui `NexusMetadataCompletionForm`. Kosakata bidang, aturan pengecualian, normalisasi DOI, hubungan tanggal kontrak, dan validasinya berada pada satu model sehingga alur usulan tidak bercabang per domain. Koreksi pada Tinjauan memakai aturan nilai yang sama; nilai atau pengecualian yang disetujui ditampilkan kembali pada halaman asal selama sesi. Usulan terminal yang ditolak atau masih meninggalkan bidang wajib dapat dilanjutkan tanpa menghapus rekam tinjauan sebelumnya.
 
@@ -59,7 +62,21 @@ Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan ke
 11. promosi kandidat melalui transaksi server setelah keputusan yang sah;
 12. ekspor dan audit sesuai izin.
 
-Jangan menambahkan URL API spekulatif ke komponen. Tempatkan pemanggilan jaringan pada adapter server yang menggantikan fungsi konten saat kontrak sudah disepakati.
+### Kontrak integrasi Anggota
+
+Audit terhadap `bht-nexus-server` branch `main` pada commit `87e0f0fe1ec06ea1d0f2b5001d1293e05b63bc7f` menemukan batas berikut:
+
+- tabel `member` baru menyimpan `user_id`, status keanggotaan, visibilitas publik, dan tanggal bergabung;
+- `user_id` wajib, unik, dan terhubung ke `user`, sehingga anggota tanpa akun belum dapat disimpan, sedangkan akun tanpa anggota sudah dimungkinkan;
+- nama, email, dan foto masih berada pada entitas `user`; unit, bidang keahlian, penugasan CoE, serta pengenal SINTA, ORCID, Google Scholar, Scopus, dan ResearcherID belum mempunyai kontrak penyimpanan anggota;
+- `AppModule` belum memasang modul atau endpoint CRUD Anggota;
+- autentikasi menyediakan registrasi email mandiri, tetapi belum menyediakan undangan admin yang membuat akun lalu menautkannya secara eksplisit ke ID anggota;
+- role, permission, dan penugasan role sudah dimodelkan terpisah dari `member`, sejalan dengan batas halaman ini bahwa profil anggota tidak menjadi tempat mengubah hak akses.
+
+Sebelum adapter frontend dihubungkan, kontrak server perlu memungkinkan profil anggota dibuat tanpa akun, menyediakan hubungan akun-ke-anggota yang eksplisit dan opsional, menyediakan CRUD/pencarian/filter/nonaktif sesuai izin beserta audit, menerapkan keunikan pengenal eksternal, dan menyediakan alur undangan akun administratif. Bentuk tabel akhirnya merupakan keputusan tim backend; frontend hanya mensyaratkan perilaku tersebut dan tidak menebak hubungan identitas dari email.
+
+Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pemanggilan jaringan nantinya ditempatkan pada adapter server yang menggantikan fungsi konten tanpa mengubah kontrak visual utama.
+
 
 ## Aturan keamanan
 

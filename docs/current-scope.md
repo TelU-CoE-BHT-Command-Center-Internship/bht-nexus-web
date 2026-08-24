@@ -146,6 +146,15 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Seluruh bidang pada profil aktif harus diputuskan dan minimal satu bidang harus disertakan sebelum hasil beserta kutipannya dibuat sebagai rekam Tinjauan. Identitas kandidat diturunkan dari dokumen, profil, versi profil, dan extraction run sehingga pengiriman ulang hasil yang sama membuka kandidat lama dan tidak membuat duplikat.
 - Pustaka, Tanya jawab, dan Ekstraksi tetap berada dalam satu ruang kerja Dokumen.
 
+### Anggota
+
+- Direktori menempatkan penambahan anggota, pencarian, filter status, filter bidang, daftar anggota, pagination, dan rincian profil dalam satu alur master–detail. Anggota baru dicatat melalui drawer pada halaman yang sama dan langsung menjadi profil terpilih; direktori yang benar-benar kosong tetap menyediakan tindakan penambahan pertama tanpa mencoba membuka profil yang tidak ada. Pada ponsel, daftar dan rincian menjadi dua keadaan berurutan dengan tindakan kembali yang jelas. Tombol, bidang form, select, drawer, dan pagination memakai komponen workspace bersama yang sama dengan alur Nexus lain.
+- Rincian memisahkan profil, keanggotaan CoE, identitas akademik, data terkait, dan hubungan akun BHT Nexus. Atribut yang belum mempunyai sumber resmi dinyatakan belum tercatat dan tidak diisi dengan identitas personal rekaan.
+- Data yang telah dipublikasikan pada halaman institusional dipakai kembali sebagai sumber presentasi. Foto dan identitas nyata tidak digunakan untuk skenario keanggotaan nonaktif atau keadaan privat yang belum dapat diverifikasi.
+- Penambahan serta perubahan identitas, status keanggotaan, penugasan CoE, unit, dan visibilitas diterapkan pada state frontend selama halaman aktif. Form tambah dan ubah memakai editor bersama, menerima anggota tanpa email, serta mencegah SINTA ID atau ORCID iD dipakai oleh lebih dari satu anggota. Bentuk data anggota dipisahkan dari presentasi agar layanan server dapat menggantinya tanpa mengubah struktur halaman.
+- Anggota, akun login, serta role/permission merupakan tiga konsep terpisah. Anggota boleh belum mempunyai akun, sedangkan akun operator, administrator, reviewer, atau intern boleh ada tanpa menjadi anggota dan tidak otomatis muncul di direktori. Pemberian akses kepada anggota dimulai secara eksplisit dari profil yang dipilih, tidak ditebak dari kesamaan email; setelah tertaut, halaman ini hanya merangkum akun. Pengelolaan role dan permission tetap menjadi tanggung jawab ruang Administrasi, bukan form Anggota.
+- Jalur Data Terkait membuka lima rumah data resmi yang sudah tersedia sehingga pengguna tidak berhenti pada kartu atau angka tanpa tujuan.
+
 ## Route utama
 
 | Route | Cakupan |
@@ -162,6 +171,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/kontrak-proposal` | Daftar dan rincian kontrak serta proposal resmi |
 | `/nexus/akademik` | Daftar dan rincian bimbingan serta magang mahasiswa resmi |
 | `/nexus/kegiatan` | Daftar dan rincian kegiatan, bisnis, serta pengabdian masyarakat resmi |
+| `/nexus/anggota` | Direktori dan rincian identitas anggota CoE BHT |
 | `/nexus/dokumen` | Pustaka dokumen |
 | `/nexus/tanya-dokumen` | Tanya jawab bersitasi |
 | `/nexus/ekstraksi` | Ekstraksi kandidat dari dokumen |

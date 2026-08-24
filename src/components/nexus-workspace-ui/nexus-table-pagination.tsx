@@ -15,9 +15,9 @@ type NexusTablePaginationProps = {
   navigationLabel: string;
   nextPageLabel: string;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (value: string) => void;
+  onPageSizeChange?: (value: string) => void;
   pageLabel: string;
-  pageSizeConfig: NexusSelectConfig;
+  pageSizeConfig?: NexusSelectConfig;
   pageSizeValue: string;
   previousPageLabel: string;
   rangePrefix: string;
@@ -89,13 +89,14 @@ export function NexusTablePagination({
   const startIndex = (safeCurrentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, itemCount);
   const paginationItems = getPaginationItems(safeCurrentPage, totalPages);
+  const hasPageSizeControl = Boolean(pageSizeConfig && onPageSizeChange);
 
   const changePage = (page: number) => {
     onPageChange(Math.min(Math.max(page, 1), totalPages));
   };
 
   return (
-    <footer className={styles.footer}>
+    <footer className={styles.footer} data-has-page-size={hasPageSizeControl}>
       <p className={styles.range}>
         {rangePrefix} {itemCount === 0 ? 0 : startIndex + 1}–{endIndex} dari{" "}
         {itemCount} {totalUnit}
@@ -143,17 +144,19 @@ export function NexusTablePagination({
         </button>
       </nav>
 
-      <div className={styles.pageSize}>
-        <NexusWorkspaceSelect
-          config={pageSizeConfig}
-          isOpen={isPageSizeOpen}
-          name={`workspace-${pageSizeConfig.id}`}
-          onOpenChange={setIsPageSizeOpen}
-          onValueChange={onPageSizeChange}
-          placement="top"
-          value={pageSizeValue}
-        />
-      </div>
+      {pageSizeConfig && onPageSizeChange ? (
+        <div className={styles.pageSize}>
+          <NexusWorkspaceSelect
+            config={pageSizeConfig}
+            isOpen={isPageSizeOpen}
+            name={`workspace-${pageSizeConfig.id}`}
+            onOpenChange={setIsPageSizeOpen}
+            onValueChange={onPageSizeChange}
+            placement="top"
+            value={pageSizeValue}
+          />
+        </div>
+      ) : null}
     </footer>
   );
 }
