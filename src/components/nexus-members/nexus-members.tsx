@@ -78,6 +78,7 @@ function recordFromDraft(
       office: draft.office.trim() || undefined,
       primaryUnit: draft.primaryUnit.trim(),
     },
+    avatarOriginalSrc: draft.avatarSrc ? draft.avatarOriginalSrc : undefined,
     avatarPosition: draft.avatarSrc ? draft.avatarPosition : undefined,
     avatarSrc: draft.avatarSrc,
     biography: draft.biography.trim(),

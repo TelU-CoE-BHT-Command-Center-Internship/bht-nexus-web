@@ -10,6 +10,7 @@ import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-
 
 export type MemberProfileDraft = {
   alternateEmail: string;
+  avatarOriginalSrc?: NexusMemberRecord["avatarOriginalSrc"];
   avatarPosition: NexusMemberAvatarPosition;
   avatarSrc?: NexusMemberRecord["avatarSrc"];
   biography: string;
@@ -62,6 +63,7 @@ export function createEditDraft(member: NexusMemberRecord): MemberProfileDraft {
     avatarPosition: {
       ...(member.avatarPosition ?? DEFAULT_MEMBER_AVATAR_POSITION),
     },
+    avatarOriginalSrc: member.avatarOriginalSrc,
     avatarSrc: member.avatarSrc,
     biography: member.biography,
     coeAssignment: member.coeAssignment,
@@ -87,6 +89,7 @@ export function createEditDraft(member: NexusMemberRecord): MemberProfileDraft {
 export function createNewMemberDraft(): MemberProfileDraft {
   return {
     alternateEmail: "",
+    avatarOriginalSrc: undefined,
     avatarPosition: { ...DEFAULT_MEMBER_AVATAR_POSITION },
     avatarSrc: undefined,
     biography: "",

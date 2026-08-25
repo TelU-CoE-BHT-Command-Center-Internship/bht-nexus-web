@@ -1,0 +1,586 @@
+.field {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.05rem 1.1rem;
+  border: 1px solid #dbe4ef;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.field[data-dragging="true"] {
+  border-color: #2e72ca;
+  background: #edf5ff;
+  box-shadow: 0 0 0 3px rgb(46 114 202 / 12%);
+}
+
+.preview {
+  position: relative;
+  display: grid;
+  width: 4.5rem;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #eaf1fa;
+  box-shadow:
+    0 0 0 1px #d8e2ef,
+    0 4px 12px rgb(8 40 92 / 10%);
+  color: #285e9d;
+  font-size: 1.15rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.preview img {
+  object-fit: cover;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.copy > strong {
+  display: block;
+  color: #071c41;
+  font-size: 0.78rem;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+.copy > p {
+  max-width: 34rem;
+  margin: 0.25rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.69rem;
+  line-height: 1.5;
+}
+
+.copy > .error,
+.editorError {
+  color: var(--color-nexus-danger);
+  font-weight: 650;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.actions > button,
+.uploadButton {
+  min-height: 2.6rem;
+  padding: 0.58rem 0.78rem;
+  font-size: 0.7rem;
+}
+
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  border: 1px solid #aebfd5;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--color-brand-navy);
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1.2;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.uploadButton:hover {
+  border-color: #7f99ba;
+  background: #f2f6fb;
+}
+
+.uploadButton:focus-within {
+  outline: 3px solid rgb(243 189 37 / 65%);
+  outline-offset: 2px;
+}
+
+.actions svg,
+.uploadButton svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.input,
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.editorDialog {
+  width: min(62rem, calc(100vw - 2rem));
+  max-width: none;
+  height: min(48rem, calc(100dvh - 2rem));
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 1rem;
+  background: #fff;
+  color: var(--color-nexus-text);
+  box-shadow: 0 24px 80px rgb(0 13 38 / 32%);
+}
+
+.editorDialog::backdrop {
+  background: rgb(3 15 35 / 70%);
+  backdrop-filter: blur(3px);
+}
+
+.editorShell {
+  display: grid;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(17rem, 1fr) auto auto auto;
+  background: #fff;
+}
+
+.editorHeader {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid #dfe5ed;
+}
+
+.editorHeader > div {
+  min-width: 0;
+}
+
+.editorHeader p {
+  margin: 0 0 0.25rem;
+  color: #2367bd;
+  font-size: 0.65rem;
+  font-weight: 760;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+}
+
+.editorHeader h2 {
+  margin: 0;
+  color: #071c41;
+  font-size: 1.25rem;
+  font-weight: 760;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+
+.editorHeader span {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.editorCloseButton {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #d8e2ef;
+  border-radius: 0.55rem;
+  background: #f5f7fa;
+  color: #40516a;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.editorCloseButton:hover:not(:disabled) {
+  border-color: #aebfd5;
+  background: #eaf0f8;
+  color: #071c41;
+}
+
+.editorCloseButton svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.cropStage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 50%, rgb(25 56 96 / 88%), transparent 56%),
+    #061832;
+}
+
+.cropperContainer {
+  inset: 1.25rem 1.25rem 2.85rem;
+  border-radius: 0.75rem;
+  background: #031126;
+}
+
+.cropperMedia {
+  will-change: transform;
+}
+
+.cropperArea {
+  border: 2px solid rgb(255 255 255 / 96%);
+  box-shadow:
+    0 0 0 9999em rgb(1 10 25 / 62%),
+    0 0 0 1px rgb(255 255 255 / 28%),
+    0 12px 32px rgb(0 0 0 / 34%);
+}
+
+.cropStageHint {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0.75rem;
+  left: 0;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  margin: auto;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 999px;
+  background: rgb(1 10 25 / 72%);
+  color: rgb(255 255 255 / 88%);
+  font-size: 0.68rem;
+  font-weight: 620;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.editorControls {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(18rem, 1fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid #dfe5ed;
+  background: #f8fafc;
+}
+
+.zoomControl {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(13rem, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.zoomControl > span {
+  color: #233a5b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.zoomControl > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2.25rem minmax(7rem, 1fr) 2.25rem 3.2rem;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.zoomControl button,
+.editorToolButtons button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid #d1dceb;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #183d70;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.zoomControl button:hover:not(:disabled),
+.editorToolButtons button:hover:not(:disabled) {
+  border-color: #9fb4d0;
+  background: #edf3fb;
+}
+
+.zoomControl button:disabled,
+.editorToolButtons button:disabled,
+.editorCloseButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.zoomControl svg,
+.editorToolButtons svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.zoomControl input {
+  width: 100%;
+  min-width: 0;
+  height: 1.5rem;
+  margin: 0;
+  accent-color: #276ac2;
+  cursor: pointer;
+}
+
+.zoomControl output {
+  color: var(--color-nexus-text-soft);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.editorToolButtons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.editorToolButtons button {
+  min-width: 6.8rem;
+  padding: 0.55rem 0.72rem;
+}
+
+.editorError {
+  margin: 0;
+  padding: 0.65rem 1.25rem;
+  border-top: 1px solid #f2c6ce;
+  background: #fff4f6;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.editorFooter {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid #dfe5ed;
+  background: #fff;
+}
+
+.editorFooter > p {
+  margin: 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.editorFooter > div {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.6rem;
+}
+
+.editorFooter button {
+  min-width: 7rem;
+}
+
+.editorCloseButton:focus-visible,
+.zoomControl button:focus-visible,
+.editorToolButtons button:focus-visible {
+  outline: 3px solid rgb(243 189 37 / 70%);
+  outline-offset: 2px;
+}
+
+@media (max-width: 90rem) {
+  .field {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+  }
+
+  .actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 52rem) {
+  .editorControls {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .editorToolButtons {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 40rem) {
+  .field {
+    grid-template-columns: 3.75rem minmax(0, 1fr);
+    align-items: start;
+    gap: 0.8rem;
+    padding: 0.95rem;
+  }
+
+  .preview {
+    width: 3.75rem;
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .actions > button,
+  .uploadButton {
+    flex: 1 1 7rem;
+  }
+
+  .editorDialog {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .editorShell {
+    grid-template-rows: auto minmax(15rem, 1fr) auto auto auto;
+  }
+
+  .editorHeader {
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+  }
+
+  .editorHeader h2 {
+    font-size: 1.1rem;
+  }
+
+  .editorHeader span {
+    max-width: 27rem;
+    font-size: 0.68rem;
+  }
+
+  .cropperContainer {
+    inset: 0.75rem 0.75rem 2.65rem;
+  }
+
+  .editorControls {
+    padding: 0.75rem 1rem;
+  }
+
+  .zoomControl {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .zoomControl > div {
+    grid-template-columns: 2.25rem minmax(5rem, 1fr) 2.25rem 2.8rem;
+  }
+
+  .editorToolButtons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .editorToolButtons button {
+    min-width: 0;
+  }
+
+  .editorError {
+    padding: 0.6rem 1rem;
+  }
+
+  .editorFooter {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .editorFooter > p {
+    display: none;
+  }
+
+  .editorFooter > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .editorFooter button {
+    min-width: 0;
+  }
+}
+
+@media (max-height: 43rem) and (min-width: 40.01rem) {
+  .editorDialog {
+    height: calc(100dvh - 1rem);
+  }
+
+  .editorShell {
+    grid-template-rows: auto minmax(12rem, 1fr) auto auto auto;
+  }
+
+  .editorHeader {
+    padding-block: 0.75rem;
+  }
+
+  .editorHeader span,
+  .editorFooter > p {
+    display: none;
+  }
+
+  .editorControls,
+  .editorFooter {
+    padding-block: 0.65rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field,
+  .uploadButton,
+  .editorCloseButton,
+  .zoomControl button,
+  .editorToolButtons button {
+    transition: none;
+  }
+}

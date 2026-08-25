@@ -40,6 +40,7 @@ export type NexusMemberRecord = {
     office?: string;
     primaryUnit: string;
   };
+  avatarOriginalSrc?: ImageProps["src"];
   avatarPosition?: NexusMemberAvatarPosition;
   avatarSrc?: ImageProps["src"];
   biography: string;

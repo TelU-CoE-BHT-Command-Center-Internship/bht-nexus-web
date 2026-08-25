@@ -74,16 +74,18 @@ export function NexusMemberProfileDrawer({
           <div className={styles.formGrid}>
             <NexusMemberProfilePhoto
               memberName={draft.name}
-              onChange={({ avatarSrc, position }) =>
+              onChange={({ avatarSrc, originalSrc, position }) =>
                 onEditorChange({
                   ...editor,
                   value: {
                     ...editor.value,
+                    avatarOriginalSrc: originalSrc,
                     avatarPosition: position,
                     avatarSrc,
                   },
                 })
               }
+              originalValue={draft.avatarOriginalSrc}
               position={draft.avatarPosition}
               value={draft.avatarSrc}
             />
