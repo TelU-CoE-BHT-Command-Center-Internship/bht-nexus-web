@@ -25,6 +25,11 @@ import type {
   OfficialIntellectualProperty,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { intellectualPropertyCreatorNames } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
+import { getManualComparisonCandidates } from "@/components/nexus-manual-submission/nexus-manual-submission-comparison";
+import {
+  createManualOfficialMatches,
+  type ManualSubmissionValues,
+} from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import {
   metadataCompletionFieldLabels,
   metadataCompletionProvidedValue,
@@ -42,8 +47,12 @@ import type {
   ExtractionProfileDefinition,
   NexusRagExtractionContent,
 } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
+import { bindingMatchesFields } from "@/components/nexus-review-session/nexus-member-person-binding";
 import { nexusReviewActorIds } from "@/components/nexus-review-session/nexus-review-actors";
-import type { CollectionJob } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
+import type {
+  CollectionCandidate,
+  CollectionJob,
+} from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type FrontendActor = { id: string; name: string; roleLabel: string };
@@ -91,6 +100,7 @@ function createBaseRecord(
     | "kpiLinks"
     | "matches"
     | "memberId"
+    | "memberPersonBinding"
     | "owner"
     | "evaluationPeriodLabel"
     | "primaryPerson"
@@ -129,12 +139,66 @@ function createBaseRecord(
   };
 }
 
+function collectionCandidateMatches(candidate: CollectionCandidate) {
+  if (
+    candidate.matches.length > 0 ||
+    candidate.candidateKind !== "new_record"
+  ) {
+    return candidate.matches;
+  }
+  if (candidate.category !== "publication_conference") return [];
+
+  const values = Object.fromEntries(
+    candidate.fields.map((field) => [field.id, field.rawValue ?? field.value]),
+  );
+  const recordType = candidate.typeLabel
+    .toLocaleLowerCase("id-ID")
+    .includes("konferensi")
+    ? "international-conference"
+    : "other-publication";
+  const comparisonValues: ManualSubmissionValues = {
+    ...values,
+    evaluationPeriod: candidate.evaluationPeriodLabel ?? "",
+    evidenceUrl: "",
+    note: "",
+    recordType,
+    title: values.title || candidate.title,
+  };
+
+  return createManualOfficialMatches(
+    comparisonValues,
+    getManualComparisonCandidates("publication"),
+  );
+}
+
+function collectionCandidateMemberBinding(
+  job: CollectionJob,
+  candidate: CollectionCandidate,
+) {
+  const jobBinding = job.memberBinding;
+  const candidateBinding = candidate.memberPersonBinding;
+  if (!jobBinding || !candidateBinding) return undefined;
+  if (!bindingMatchesFields(candidateBinding, candidate.fields))
+    return undefined;
+  if (
+    candidateBinding.memberId !== jobBinding.memberId ||
+    candidateBinding.sourcePersonId !== jobBinding.sourcePersonId
+  ) {
+    return undefined;
+  }
+  return candidateBinding;
+}
+
 export function createCollectionReviewRecords(
   job: CollectionJob,
 ): AuditReviewRecord[] {
   const source = job.source satisfies AuditReviewSource;
-  return job.candidates.map((candidate) =>
-    createBaseRecord(
+  return job.candidates.map((candidate) => {
+    const memberPersonBinding = collectionCandidateMemberBinding(
+      job,
+      candidate,
+    );
+    return createBaseRecord(
       job.submittedBy,
       {
         ...candidate,
@@ -156,14 +220,16 @@ export function createCollectionReviewRecords(
           retrievedAt: job.submittedAt,
           sourceKey: `${job.source}:${candidate.id}`,
         },
+        matches: collectionCandidateMatches(candidate),
+        memberId: memberPersonBinding?.memberId,
+        memberPersonBinding,
         source,
         sourceLabel: job.sourceLabel,
-        memberId: candidate.memberId ?? job.memberId,
       },
       job.submittedByActorId,
       nexusReviewActorIds.collectionService,
-    ),
-  );
+    );
+  });
 }
 
 export function createExtractionReviewRecord(

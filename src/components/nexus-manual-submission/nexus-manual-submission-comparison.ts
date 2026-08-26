@@ -55,6 +55,12 @@ export function getManualComparisonCandidates(
         identifiers: [record.doi, record.identifier].filter(
           (value): value is string => Boolean(value),
         ),
+        people: record.authors.map((author) => ({
+          fieldId: "authors",
+          id: author.id,
+          memberId: author.memberId,
+          name: author.name,
+        })),
         recordType:
           record.type === "Buku / Book Chapter"
             ? "book"
@@ -75,6 +81,12 @@ export function getManualComparisonCandidates(
         identifiers: record.registrationNumber
           ? [record.registrationNumber]
           : [],
+        people: record.creators.map((creator) => ({
+          fieldId: "creators",
+          id: creator.id,
+          memberId: creator.memberId,
+          name: creator.name,
+        })),
         recordType:
           record.protection === "Paten"
             ? "patent"
@@ -113,6 +125,12 @@ export function getManualComparisonCandidates(
       return getNexusAcademicContent().records.map((record) => ({
         id: record.id,
         identifiers: [],
+        people: record.mentors.map((mentor) => ({
+          fieldId: "mentors",
+          id: mentor.id,
+          memberId: mentor.memberId,
+          name: mentor.name,
+        })),
         recordType:
           record.activity === "Bimbingan Doktor"
             ? "doctoral-mentoring"

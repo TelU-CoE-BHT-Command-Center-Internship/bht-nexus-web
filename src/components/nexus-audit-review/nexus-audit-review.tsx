@@ -6,6 +6,8 @@ import styles from "@/components/nexus-audit-review/nexus-audit-review.module.cs
 import type {
   AuditDecisionKind,
   AuditKpiResolution,
+  AuditMemberPersonBinding,
+  AuditPersonMapping,
   AuditReviewCategory,
   AuditReviewRecord,
   AuditReviewSource,
@@ -29,6 +31,7 @@ import {
   manualSubmissionPresentation,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { reconcileMemberPersonBinding } from "@/components/nexus-review-session/nexus-member-person-binding";
 import {
   type AuditRuntimeState,
   initialAuditRuntimeState,
@@ -214,7 +217,7 @@ function effectiveReviewRecord(
     }),
     title: auditEffectiveTitle(record, state),
   };
-  if (!submission) return correctedRecord;
+  if (!submission) return reconcileMemberPersonBinding(correctedRecord);
 
   const values = {
     ...submission.values,
@@ -234,7 +237,7 @@ function effectiveReviewRecord(
   );
   const evidenceUrl = values.evidenceUrl?.trim();
 
-  return {
+  return reconcileMemberPersonBinding({
     ...correctedRecord,
     category: presentation.category,
     categoryLabel: presentation.categoryLabel,
@@ -265,7 +268,7 @@ function effectiveReviewRecord(
     subtitle: presentation.subtitle,
     title: presentation.title,
     typeLabel: presentation.typeLabel,
-  };
+  });
 }
 
 function actionLabel(status: AuditReviewStatus) {
@@ -482,6 +485,9 @@ export function NexusAuditReview({
     fieldIds: string[],
     targetRecordId?: string,
     kpiResolution?: AuditKpiResolution,
+    memberPersonBinding?: AuditMemberPersonBinding,
+    targetPersonId?: string,
+    personMappings?: AuditPersonMapping[],
   ) => {
     const currentState = runtime[record.id] ?? initialAuditRuntimeState(record);
     const recordCapabilities = reviewSession.capabilitiesFor(
@@ -504,15 +510,24 @@ export function NexusAuditReview({
       kind === "approved_update" ||
       kind === "merged"
     ) {
-      const candidate = effectiveReviewRecord(record, currentState);
+      const effectiveCandidate = effectiveReviewRecord(record, currentState);
+      const candidate = memberPersonBinding
+        ? {
+            ...effectiveCandidate,
+            memberId: memberPersonBinding.memberId,
+            memberPersonBinding,
+          }
+        : effectiveCandidate;
       reviewSession.applyOfficialRecordDecision({
         appliedAt: occurredAt,
         candidate,
         decisionKind: kind,
         kpiResolution,
         note,
+        personMappings,
         reviewer,
         targetRecordId,
+        targetPersonId,
       });
     }
     const completionResolutions =
@@ -537,9 +552,12 @@ export function NexusAuditReview({
         actorId: reviewSession.actor.id,
         kind,
         kpiResolution,
+        memberPersonBinding,
+        personMappings,
         label,
         note,
         targetRecordId,
+        targetPersonId,
         occurredAt,
       },
       fixRequest:
@@ -1049,7 +1067,16 @@ export function NexusAuditReview({
           key={`${selected.id}-${selectedState.status}-${selectedState.version}-${selectedState.decision?.kind ?? "open"}`}
           capabilities={reviewSession.capabilitiesFor(selected, selectedState)}
           onClose={() => setOpenId(null)}
-          onDecide={(kind, note, fieldIds, targetRecordId, kpiResolution) =>
+          onDecide={(
+            kind,
+            note,
+            fieldIds,
+            targetRecordId,
+            kpiResolution,
+            memberPersonBinding,
+            targetPersonId,
+            personMappings,
+          ) =>
             decide(
               selected,
               kind,
@@ -1057,6 +1084,9 @@ export function NexusAuditReview({
               fieldIds,
               targetRecordId,
               kpiResolution,
+              memberPersonBinding,
+              targetPersonId,
+              personMappings,
             )
           }
           onResubmit={(values, evidenceNote, resolutions) =>

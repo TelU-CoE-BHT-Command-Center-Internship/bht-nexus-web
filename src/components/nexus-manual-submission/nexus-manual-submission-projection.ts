@@ -3,8 +3,8 @@ import type { OfficialActivityRecord } from "@/components/nexus-activities/nexus
 import type { OfficialContractProposalRecord } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import type { OfficialIntellectualProperty } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { manualSubtype } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
-import { resolveKnownMemberId } from "@/components/nexus-members/nexus-member-identity";
 import type { OfficialPublication } from "@/components/nexus-publications/nexus-publications-content";
+import { reviewPeople } from "@/components/nexus-review-session/nexus-member-person-binding";
 import type {
   OfficialRecordDecisionProjection,
   OfficialRecordDecisionProjectionMap,
@@ -233,6 +233,7 @@ type ProjectableOfficialRecord = {
 function mergeProjectedRecord<T extends ProjectableOfficialRecord>(
   target: T,
   projected: T,
+  projection: OfficialRecordDecisionProjection,
 ): T {
   const merged: Record<string, unknown> = { ...target };
   const protectedKeys = new Set([
@@ -257,12 +258,12 @@ function mergeProjectedRecord<T extends ProjectableOfficialRecord>(
     if (currentIsEmpty) merged[key] = value;
   }
 
-  const linksByIndicator = new Map(
-    [...target.kmLinks, ...projected.kmLinks].map((link) => [
-      link.indicator.id,
-      link,
-    ]),
-  );
+  const preservesExistingKpi =
+    !projection.kpiResolution ||
+    projection.kpiResolution.status === "undetermined";
+  const mergedKpiLinks = preservesExistingKpi
+    ? target.kmLinks
+    : projected.kmLinks;
   const targetMemberIds = Array.isArray(merged.relatedMemberIds)
     ? (merged.relatedMemberIds as string[])
     : [];
@@ -276,37 +277,29 @@ function mergeProjectedRecord<T extends ProjectableOfficialRecord>(
       ...new Set([...targetMemberIds, ...projectedMemberIds]),
     ];
   }
-  for (const peopleKey of ["authors", "creators", "mentors"] as const) {
-    const targetPeople = merged[peopleKey];
-    const projectedPeople = (projected as Record<string, unknown>)[peopleKey];
-    if (!Array.isArray(targetPeople) || !Array.isArray(projectedPeople)) {
-      continue;
+  const binding = projection.candidate.memberPersonBinding;
+  const targetPersonId = projection.targetPersonId;
+  if (binding && targetPersonId) {
+    const targetPeople = merged[binding.fieldId];
+    if (Array.isArray(targetPeople)) {
+      merged[binding.fieldId] = targetPeople.map((person) => {
+        if (!person || typeof person !== "object") return person;
+        const typedPerson = person as { id?: string; memberId?: string };
+        if (typedPerson.id !== targetPersonId) return person;
+        if (typedPerson.memberId && typedPerson.memberId !== binding.memberId) {
+          return person;
+        }
+        return { ...typedPerson, memberId: binding.memberId };
+      });
     }
-    merged[peopleKey] = targetPeople.map((person) => {
-      if (!person || typeof person !== "object") return person;
-      const typedPerson = person as { memberId?: string; name?: string };
-      if (typedPerson.memberId || !typedPerson.name) return person;
-      const matchingPerson = projectedPeople.find((candidate) => {
-        if (!candidate || typeof candidate !== "object") return false;
-        const typedCandidate = candidate as {
-          memberId?: string;
-          name?: string;
-        };
-        return (
-          typedCandidate.memberId && typedCandidate.name === typedPerson.name
-        );
-      }) as { memberId?: string } | undefined;
-      return matchingPerson?.memberId
-        ? { ...typedPerson, memberId: matchingPerson.memberId }
-        : person;
-    });
   }
 
   return {
     ...merged,
-    kmLinks: [...linksByIndicator.values()],
-    kpiResolutionStatus:
-      linksByIndicator.size > 0 ? "resolved" : projected.kpiResolutionStatus,
+    kmLinks: mergedKpiLinks,
+    kpiResolutionStatus: preservesExistingKpi
+      ? target.kpiResolutionStatus
+      : projected.kpiResolutionStatus,
     provenance: [...target.provenance, ...projected.provenance],
     review: projected.review,
     updatedAt: projected.updatedAt,
@@ -408,6 +401,54 @@ function updateProjectedRecord<T extends ProjectableOfficialRecord>(
       writableKeys.add(key);
     }
   }
+
+  const completePersonMapping = (
+    peopleKey: "authors" | "creators" | "mentors",
+  ) => {
+    const targetPeople = (target as Record<string, unknown>)[peopleKey];
+    const projectedPeople = (projected as Record<string, unknown>)[peopleKey];
+    if (!Array.isArray(targetPeople) || !Array.isArray(projectedPeople)) {
+      return false;
+    }
+
+    const mappings =
+      projection.personMappings?.filter(
+        (mapping) => mapping.fieldId === peopleKey,
+      ) ?? [];
+    if (mappings.length !== projectedPeople.length) return false;
+
+    const existingTargetIds = mappings.flatMap((mapping) =>
+      mapping.resolution === "existing" && mapping.targetPersonId
+        ? [mapping.targetPersonId]
+        : [],
+    );
+    if (new Set(existingTargetIds).size !== existingTargetIds.length) {
+      return false;
+    }
+
+    return projectedPeople.every((_, index) => {
+      const mapping = mappings.find(
+        (item) => item.candidatePersonId === `${peopleKey}:${index + 1}`,
+      );
+      if (!mapping) return false;
+      if (mapping.resolution === "new") return !mapping.targetPersonId;
+      return Boolean(
+        mapping.targetPersonId &&
+          targetPeople.some(
+            (person) =>
+              person &&
+              typeof person === "object" &&
+              (person as { id?: string }).id === mapping.targetPersonId,
+          ),
+      );
+    });
+  };
+
+  for (const peopleKey of ["authors", "creators", "mentors"] as const) {
+    if (writableKeys.has(peopleKey) && !completePersonMapping(peopleKey)) {
+      writableKeys.delete(peopleKey);
+    }
+  }
   const protectedKeys = new Set([
     "id",
     "provenance",
@@ -429,11 +470,55 @@ function updateProjectedRecord<T extends ProjectableOfficialRecord>(
     next[key] = value;
   }
 
+  if (projection.personMappings) {
+    for (const peopleKey of ["authors", "creators", "mentors"] as const) {
+      const targetPeople = (target as Record<string, unknown>)[peopleKey];
+      const projectedPeople = (projected as Record<string, unknown>)[peopleKey];
+      if (
+        !Array.isArray(targetPeople) ||
+        !Array.isArray(projectedPeople) ||
+        !completePersonMapping(peopleKey)
+      ) {
+        continue;
+      }
+      next[peopleKey] = projectedPeople.map((person, index) => {
+        if (!person || typeof person !== "object") return person;
+        const mapping = projection.personMappings?.find(
+          (item) =>
+            item.fieldId === peopleKey &&
+            item.candidatePersonId === `${peopleKey}:${index + 1}` &&
+            item.resolution === "existing" &&
+            item.targetPersonId,
+        );
+        if (!mapping) return person;
+        const targetPerson = targetPeople.find(
+          (item) =>
+            item &&
+            typeof item === "object" &&
+            (item as { id?: string }).id === mapping.targetPersonId,
+        ) as { id: string; memberId?: string } | undefined;
+        if (!targetPerson) return person;
+        const projectedPerson = person as { memberId?: string };
+        return {
+          ...projectedPerson,
+          id: targetPerson.id,
+          memberId: projectedPerson.memberId ?? targetPerson.memberId,
+        };
+      });
+    }
+  }
+
+  const preservesExistingKpi =
+    !projection.kpiResolution ||
+    projection.kpiResolution.status === "undetermined";
+
   return {
     ...next,
     id: target.id,
-    kmLinks: projected.kmLinks,
-    kpiResolutionStatus: projected.kpiResolutionStatus,
+    kmLinks: preservesExistingKpi ? target.kmLinks : projected.kmLinks,
+    kpiResolutionStatus: preservesExistingKpi
+      ? target.kpiResolutionStatus
+      : projected.kpiResolutionStatus,
     provenance: [...target.provenance, ...projected.provenance],
     publicId: target.publicId,
     review: projected.review,
@@ -441,23 +526,14 @@ function updateProjectedRecord<T extends ProjectableOfficialRecord>(
   } as T;
 }
 
-function splitPeople(value?: string) {
-  return (value ?? "")
-    .split(/[;/]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 function projectedPersonMemberId(
   projection: OfficialRecordDecisionProjection,
-  name: string,
+  fieldId: string,
+  personId: string,
 ) {
-  const resolvedMemberId = resolveKnownMemberId(name);
-  if (resolvedMemberId) return resolvedMemberId;
-
-  const primaryPeople = splitPeople(projection.candidate.primaryPerson);
-  return primaryPeople.length === 1 && primaryPeople[0] === name
-    ? projection.candidate.memberId
+  const binding = projection.candidate.memberPersonBinding;
+  return binding?.fieldId === fieldId && binding.personId === personId
+    ? binding.memberId
     : undefined;
 }
 
@@ -466,7 +542,6 @@ export function officialProjectionPublicId(
 ) {
   const submission = structuredSubmission(projection);
   const year = submission?.values.evaluationPeriod || "0000";
-  const suffix = projection.candidate.id.split("-").at(-1) ?? "00000";
   const prefix =
     submission?.domain === "publication"
       ? "PUB"
@@ -477,7 +552,19 @@ export function officialProjectionPublicId(
           : submission?.domain === "academic"
             ? "AKD"
             : "KGT";
-  return `${prefix}-${year}-M${suffix.slice(-4)}`;
+  const source = projection.candidate.source.toUpperCase();
+  const candidateId = projection.candidate.id
+    .replace(/[^A-Za-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toUpperCase();
+  return `${prefix}-${year}-${source}-${candidateId || "CANDIDATE"}`;
+}
+
+export function officialProjectionRecordId(
+  projection: OfficialRecordDecisionProjection,
+) {
+  const domain = structuredSubmission(projection)?.domain ?? "unknown";
+  return `official:${domain}:${projection.candidate.source}:${projection.candidate.id}`;
 }
 
 /** Dipertahankan sementara untuk pemanggil lama selama migrasi nama adapter. */
@@ -599,7 +686,7 @@ function commonProjection(projection: OfficialRecordDecisionProjection) {
   const reviewedAt = formatAuditTimestamp(projection.appliedAt);
   const publicId = officialProjectionPublicId(projection);
   return {
-    id: publicId.toLocaleLowerCase("id-ID"),
+    id: officialProjectionRecordId(projection),
     provenance: [
       {
         capturedAt: reviewedAt,
@@ -664,7 +751,7 @@ function applyProjections<T extends ProjectableOfficialRecord>(
       projection.decisionKind === "approved_update"
         ? updateProjectedRecord(target, projected, projection)
         : {
-            ...mergeProjectedRecord(target, projected),
+            ...mergeProjectedRecord(target, projected, projection),
           };
   }
 
@@ -707,11 +794,11 @@ function createPublication(
 
   return {
     ...commonProjection(projection),
-    authors: splitPeople(values.authors).map((name, index) => ({
-      id: `${officialProjectionPublicId(projection).toLocaleLowerCase("id-ID")}-author-${index + 1}`,
-      initials: personInitials(name),
-      memberId: projectedPersonMemberId(projection, name),
-      name,
+    authors: reviewPeople("authors", values.authors).map((person, index) => ({
+      id: `${officialProjectionRecordId(projection)}:author:${index + 1}`,
+      initials: personInitials(person.name),
+      memberId: projectedPersonMemberId(projection, "authors", person.id),
+      name: person.name,
     })),
     citations: null,
     doi,
@@ -767,12 +854,14 @@ function createIntellectualProperty(
 
   return {
     ...commonProjection(projection),
-    creators: splitPeople(values.creators).map((name, index) => ({
-      id: `${officialProjectionPublicId(projection).toLocaleLowerCase("id-ID")}-creator-${index + 1}`,
-      initials: personInitials(name),
-      memberId: projectedPersonMemberId(projection, name),
-      name,
-    })),
+    creators: reviewPeople("creators", values.creators).map(
+      (person, index) => ({
+        id: `${officialProjectionRecordId(projection)}:creator:${index + 1}`,
+        initials: personInitials(person.name),
+        memberId: projectedPersonMemberId(projection, "creators", person.id),
+        name: person.name,
+      }),
+    ),
     documentAccess: evidence.status,
     documentNote: evidence.note,
     documentUrl: evidence.url,
@@ -908,7 +997,10 @@ function createAcademic(
     "other-academic": "Kegiatan Akademik Lainnya" as const,
   }[recordType];
   if (!activity) return null;
-  const mentorNames = splitPeople(values.mentors || values.lecturer);
+  const mentorPeople = reviewPeople(
+    "mentors",
+    values.mentors || values.lecturer,
+  );
   const participantCode =
     [values.studentNumber, values.participantRef].filter(Boolean).join(" · ") ||
     values.studentTeam ||
@@ -935,11 +1027,11 @@ function createAcademic(
     evidenceStatus: evidence.status,
     evidenceUrl: evidence.url,
     kmLinks: projectionLinks(projection),
-    mentors: mentorNames.map((name, index) => ({
-      id: `${officialProjectionPublicId(projection).toLocaleLowerCase("id-ID")}-mentor-${index + 1}`,
-      initials: personInitials(name),
-      memberId: projectedPersonMemberId(projection, name),
-      name,
+    mentors: mentorPeople.map((person, index) => ({
+      id: `${officialProjectionRecordId(projection)}:mentor:${index + 1}`,
+      initials: personInitials(person.name),
+      memberId: projectedPersonMemberId(projection, "mentors", person.id),
+      name: person.name,
     })),
     missingFields: [...missingFields],
     participantCode,

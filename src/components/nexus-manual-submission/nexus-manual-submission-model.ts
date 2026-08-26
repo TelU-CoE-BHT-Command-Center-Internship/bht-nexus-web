@@ -1,5 +1,6 @@
 import type {
   AuditOfficialMatch,
+  AuditOfficialPerson,
   AuditReviewCategory,
   AuditReviewField,
   AuditReviewRecord,
@@ -32,6 +33,7 @@ export type ManualSubmissionValues = Record<string, string> & {
 export type ManualRecordComparisonCandidate = {
   id: string;
   identifiers?: readonly string[];
+  people?: readonly AuditOfficialPerson[];
   recordType?: string;
   subtitle?: string;
   title: string;
@@ -1346,6 +1348,7 @@ export function createManualOfficialMatches(
           : []),
       ],
       id: candidate.id,
+      people: candidate.people ? [...candidate.people] : undefined,
       score,
       title: candidate.subtitle
         ? `${candidate.title} · ${candidate.subtitle}`
@@ -1583,6 +1586,9 @@ export function createManualSubmissionReviewRecord({
         ...candidate,
         identifiers: candidate.identifiers
           ? [...candidate.identifiers]
+          : undefined,
+        people: candidate.people
+          ? candidate.people.map((person) => ({ ...person }))
           : undefined,
       })),
       domain,

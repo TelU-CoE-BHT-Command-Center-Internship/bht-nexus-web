@@ -2,7 +2,9 @@ import type { AuditReviewRecord } from "@/components/nexus-audit-review/nexus-au
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
 import type { NexusMemberId } from "@/components/nexus-members/nexus-member-identity";
+import { reviewPeople } from "@/components/nexus-review-session/nexus-member-person-binding";
 import { nexusReviewActorIds } from "@/components/nexus-review-session/nexus-review-actors";
+import type { CollectionMemberBinding } from "@/components/nexus-scraper-search/nexus-collection-identity";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import type { Locale } from "@/i18n/locales";
 
@@ -20,6 +22,7 @@ export type CollectionCandidate = Pick<
   | "kpiLinks"
   | "matches"
   | "memberId"
+  | "memberPersonBinding"
   | "owner"
   | "primaryPerson"
   | "provenance"
@@ -35,7 +38,7 @@ export type CollectionJob = {
   failureReason?: string;
   fullName: string;
   id: string;
-  memberId?: NexusMemberId;
+  memberBinding?: CollectionMemberBinding;
   profileUrl: string;
   source: CollectionSource;
   sourceLabel: string;
@@ -82,10 +85,13 @@ type PublicationCandidateSeed = {
   doi?: string;
   id: string;
   memberId?: NexusMemberId;
+  memberPersonIndex?: number;
+  memberName?: string;
   owner: string;
   person: string;
   title: string;
   typeLabel?: string;
+  sourcePersonId?: string;
   venue: string;
   year: number;
 };
@@ -95,13 +101,21 @@ function publicationCandidate({
   doi,
   id,
   memberId,
+  memberPersonIndex,
+  memberName,
   owner,
   person,
   title,
   typeLabel = "Artikel jurnal",
+  sourcePersonId,
   venue,
   year,
 }: PublicationCandidateSeed): CollectionCandidate {
+  const authorPeople = reviewPeople("authors", person);
+  const memberPerson =
+    memberPersonIndex === undefined
+      ? undefined
+      : authorPeople[memberPersonIndex];
   return {
     candidateKind,
     category: "publication_conference",
@@ -115,6 +129,17 @@ function publicationCandidate({
     ],
     id,
     memberId,
+    memberPersonBinding:
+      memberId && memberPerson && memberName
+        ? {
+            fieldId: "authors",
+            memberId,
+            memberName,
+            personId: memberPerson.id,
+            personName: memberPerson.name,
+            sourcePersonId,
+          }
+        : undefined,
     evidence: [],
     evaluationPeriodLabel: undefined,
     kpiLinks: [],
@@ -138,12 +163,15 @@ const suksmandhiraCandidates: CollectionCandidate[] = [
     candidateKind: "new_record",
     id: "COL-SINTA-6712043-PUB-001",
     memberId: "dr-suksmandhira-harimurti-s-t-m-eng",
+    memberName: "Dr. Suksmandhira Harimurti, S.T., M.Eng.",
+    memberPersonIndex: 0,
     owner: "CoE BHT",
     person:
       "Suksmandhira Harimurti; M Rivaldi Ali Septian; Khilda Afifah; Estananto",
     title:
       "Design of Electrochemical Biosensor Output Reader through Modelling the Electrochemical Cell System and Designing a 90nm CMOS Transimpedance Amplifier with Self-Biasing",
     typeLabel: "Makalah konferensi",
+    sourcePersonId: "6712043",
     venue:
       "International Symposium on Intelligent Signal Processing and Communication Systems (ISPACS)",
     year: 2026,
@@ -152,6 +180,8 @@ const suksmandhiraCandidates: CollectionCandidate[] = [
     candidateKind: "new_record",
     id: "COL-SINTA-6712043-PUB-002",
     memberId: "dr-suksmandhira-harimurti-s-t-m-eng",
+    memberName: "Dr. Suksmandhira Harimurti, S.T., M.Eng.",
+    memberPersonIndex: 1,
     owner: "CoE BHT",
     person:
       "M Rivaldi Ali Septian; Suksmandhira Harimurti; Wahmisari Priharti; Iswahyudi Hidayat; Mohamad Ramdhani",
@@ -160,6 +190,7 @@ const suksmandhiraCandidates: CollectionCandidate[] = [
     venue:
       "ELKOMIKA: Jurnal Teknik Energi Elektrik, Teknik Telekomunikasi, & Teknik Elektronika",
     year: 2026,
+    sourcePersonId: "6712043",
   }),
 ];
 
@@ -168,6 +199,8 @@ const hestyCandidates: CollectionCandidate[] = [
     candidateKind: "new_record",
     id: "COL-SCHOLAR-HESTY-PUB-001",
     memberId: "hesty-susanti",
+    memberName: "Dr. Hesty Susanti, S.T., M.T.",
+    memberPersonIndex: 1,
     owner: "CoE BHT",
     person: "Liana Nafisa Saftari; Hesty Susanti",
     title:
@@ -175,6 +208,7 @@ const hestyCandidates: CollectionCandidate[] = [
     venue:
       "Indonesian Journal of Electronics, Electromedical Engineering, and Medical Informatics",
     year: 2026,
+    sourcePersonId: "3xVn7QsAAAAJ",
   }),
 ];
 
@@ -183,7 +217,13 @@ const seeds = [
     candidates: suksmandhiraCandidates,
     fullName: "Suksmandhira Harimurti",
     id: "sinta-profile-6712043",
-    memberId: "dr-suksmandhira-harimurti-s-t-m-eng",
+    memberBinding: {
+      memberId: "dr-suksmandhira-harimurti-s-t-m-eng",
+      memberName: "Dr. Suksmandhira Harimurti, S.T., M.Eng.",
+      profileUrl: "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043",
+      source: "sinta",
+      sourcePersonId: "6712043",
+    },
     profileUrl: "https://sinta.kemdiktisaintek.go.id/authors/profile/6712043",
     source: "sinta",
     status: "succeeded",
@@ -195,7 +235,13 @@ const seeds = [
     candidates: hestyCandidates,
     fullName: "Hesty Susanti",
     id: "scholar-profile-example",
-    memberId: "hesty-susanti",
+    memberBinding: {
+      memberId: "hesty-susanti",
+      memberName: "Dr. Hesty Susanti, S.T., M.T.",
+      profileUrl: "https://scholar.google.com/citations?user=3xVn7QsAAAAJ",
+      source: "scholar",
+      sourcePersonId: "3xVn7QsAAAAJ",
+    },
     profileUrl: "https://scholar.google.com/citations?user=3xVn7QsAAAAJ",
     source: "scholar",
     status: "succeeded",
@@ -207,7 +253,13 @@ const seeds = [
     candidates: [],
     fullName: "Dita Puspitasari",
     id: "sinta-profile-6698215",
-    memberId: "dita-puspitasari-s-t-b-sc-m-t",
+    memberBinding: {
+      memberId: "dita-puspitasari-s-t-b-sc-m-t",
+      memberName: "Dita Puspitasari, S.T., B.Sc., M.T.",
+      profileUrl: "https://sinta.kemdiktisaintek.go.id/authors/profile/6698215",
+      source: "sinta",
+      sourcePersonId: "6698215",
+    },
     profileUrl: "https://sinta.kemdiktisaintek.go.id/authors/profile/6698215",
     source: "sinta",
     status: "running",

@@ -94,12 +94,15 @@ export type AuditReviewDecision = {
   actorId?: string;
   kind: AuditDecisionKind;
   kpiResolution?: AuditKpiResolution;
+  memberPersonBinding?: AuditMemberPersonBinding;
+  personMappings?: AuditPersonMapping[];
   label: string;
   note: string;
   /** Instant mesin; format WIB hanya dibuat ketika dirender. */
   occurredAt: string;
   /** Rekam resmi yang dipilih reviewer untuk merge, update, atau pelengkapan. */
   targetRecordId?: string;
+  targetPersonId?: string;
 };
 
 export type AuditFixRequest = {
@@ -119,10 +122,49 @@ export type AuditOfficialMatch = {
     statusLabel: string;
   }>;
   id: string;
+  people?: AuditOfficialPerson[];
   score: number;
   title: string;
   verdict: "possible" | "same_identifier" | "strong";
   verdictLabel: string;
+};
+
+/**
+ * Orang pada rekam resmi yang dapat dipilih secara eksplisit saat sebuah
+ * kandidat dihubungkan ke rekam yang sudah ada. `id` adalah identitas orang
+ * pada rekam tersebut; nama hanya dipakai untuk presentasi, bukan pencocokan.
+ */
+export type AuditOfficialPerson = {
+  fieldId: string;
+  id: string;
+  memberId?: string;
+  name: string;
+};
+
+/**
+ * Relasi anggota-ke-orang yang dibawa kandidat dari sumbernya. Relasi ini
+ * sengaja menunjuk field dan nama orang tertentu agar `memberId` tidak pernah
+ * ditempelkan ke seluruh record multi-orang secara ambigu.
+ */
+export type AuditMemberPersonBinding = {
+  fieldId: string;
+  memberId: string;
+  memberName: string;
+  personId: string;
+  personName: string;
+  sourcePersonId?: string;
+};
+
+/**
+ * Pemetaan eksplisit antara orang pada kandidat dan orang pada rekam resmi.
+ * Keputusan `new` disimpan eksplisit agar backend tidak perlu menebak apakah
+ * mapping memang belum diisi atau reviewer menyatakan orang tersebut baru.
+ */
+export type AuditPersonMapping = {
+  candidatePersonId: string;
+  fieldId: string;
+  resolution: "existing" | "new";
+  targetPersonId?: string;
 };
 
 export type AuditKpiLink = {
@@ -171,6 +213,7 @@ export type AuditReviewRecord = {
     comparisonCandidates?: Array<{
       id: string;
       identifiers?: string[];
+      people?: AuditOfficialPerson[];
       recordType?: string;
       subtitle?: string;
       title: string;
@@ -194,6 +237,8 @@ export type AuditReviewRecord = {
   evaluationPeriodLabel?: string;
   /** ID anggota kanonis; tidak pernah diturunkan hanya dari teks nama. */
   memberId?: string;
+  /** Orang tertentu pada kandidat yang secara eksplisit mewakili anggota. */
+  memberPersonBinding?: AuditMemberPersonBinding;
   primaryPerson: string;
   provenance: AuditReviewProvenance;
   signal: AuditReviewSignal;

@@ -2,7 +2,9 @@ import { useState } from "react";
 import type {
   AuditDecisionKind,
   AuditKpiResolution,
+  AuditMemberPersonBinding,
   AuditOfficialMatch,
+  AuditPersonMapping,
   AuditReviewField,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import { AuditReviewSectionHeading } from "@/components/nexus-audit-review/nexus-audit-review-detail";
@@ -19,6 +21,7 @@ import {
   manualSubtype,
   validateManualSubmissionFields,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
+import { knownMemberName } from "@/components/nexus-members/nexus-member-identity";
 import {
   areMetadataCompletionResolutionsEqual,
   createEmptyMetadataCompletionResolution,
@@ -31,6 +34,10 @@ import {
   metadataCompletionValueError,
   normalizeMetadataCompletionResolution,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import {
+  memberPersonField,
+  reviewPeople,
+} from "@/components/nexus-review-session/nexus-member-person-binding";
 import { auditMatchingIsCurrent } from "@/components/nexus-review-session/nexus-review-session";
 import {
   NexusWorkspaceButton,
@@ -47,6 +54,8 @@ type AuditReviewDecisionSectionProps = AuditReviewDrawerProps & {
   decisionIndex: ReviewSectionIndexes["decision"];
   selectedMatch?: AuditOfficialMatch;
 };
+
+const newOfficialPersonValue = "__new_person__";
 
 export function AuditReviewDecisionSection({
   capabilities,
@@ -74,6 +83,27 @@ export function AuditReviewDecisionSection({
   const [selectedKpiIds, setSelectedKpiIds] = useState<NexusKmIndicatorId[]>(
     [],
   );
+  const personField = memberPersonField(record.fields);
+  const personOptions = personField
+    ? reviewPeople(
+        personField.id,
+        auditCurrentValue(record, state, personField.id),
+      )
+    : [];
+  const [selectedMemberPersonId, setSelectedMemberPersonId] = useState(() =>
+    record.memberPersonBinding &&
+    personOptions.some(
+      (person) =>
+        person.id === record.memberPersonBinding?.personId &&
+        person.name === record.memberPersonBinding.personName,
+    )
+      ? record.memberPersonBinding.personId
+      : "",
+  );
+  const [selectedTargetPersonId, setSelectedTargetPersonId] = useState("");
+  const [personMappingSelections, setPersonMappingSelections] = useState<
+    Record<string, string>
+  >({});
   const [draft, setDraft] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       record.fields.map((item) => [
@@ -376,6 +406,93 @@ export function AuditReviewDecisionSection({
     decisionChoice &&
       ["approved_new", "approved_update", "merged"].includes(decisionChoice),
   );
+  const memberPersonBindingRequired = Boolean(
+    approvalChoice && record.memberId && personField,
+  );
+  const selectedMemberPerson = personOptions.find(
+    (person) => person.id === selectedMemberPersonId,
+  );
+  const resolvedMemberPersonBinding: AuditMemberPersonBinding | undefined =
+    memberPersonBindingRequired &&
+    record.memberId &&
+    personField &&
+    selectedMemberPerson
+      ? {
+          fieldId: personField.id,
+          memberId: record.memberId,
+          memberName:
+            record.memberPersonBinding?.memberName ??
+            knownMemberName(record.memberId) ??
+            record.primaryPerson,
+          personId: selectedMemberPerson.id,
+          personName: selectedMemberPerson.name,
+          sourcePersonId: record.memberPersonBinding?.sourcePersonId,
+        }
+      : undefined;
+  const targetPeople = (selectedMatch?.people ?? []).filter(
+    (person) => person.fieldId === personField?.id,
+  );
+  const compatibleMemberTargets = targetPeople.filter(
+    (person) => !person.memberId || person.memberId === record.memberId,
+  );
+  const existingBoundTarget = compatibleMemberTargets.find(
+    (person) => person.memberId === record.memberId,
+  );
+  const selectedTargetPerson = compatibleMemberTargets.find(
+    (person) => person.id === selectedTargetPersonId,
+  );
+  const effectiveTargetPersonId =
+    selectedTargetPerson?.id ?? existingBoundTarget?.id;
+  const updatePersonMappingRequired = Boolean(
+    decisionChoice === "approved_update" && personField && selectedMatch,
+  );
+  const personMappingChoices = Object.fromEntries(
+    personOptions.map((person) => {
+      const automaticallyBoundTarget =
+        person.id === selectedMemberPersonId
+          ? existingBoundTarget?.id
+          : undefined;
+      return [
+        person.id,
+        personMappingSelections[person.id] ?? automaticallyBoundTarget ?? "",
+      ];
+    }),
+  );
+  const selectedOfficialPersonIds = Object.values(personMappingChoices).filter(
+    (value) => value && value !== newOfficialPersonValue,
+  );
+  const personMappingsUnique =
+    new Set(selectedOfficialPersonIds).size ===
+    selectedOfficialPersonIds.length;
+  const personMappingsReady =
+    !updatePersonMappingRequired ||
+    (personOptions.length > 0 &&
+      personOptions.every((person) =>
+        Boolean(personMappingChoices[person.id]),
+      ) &&
+      personMappingsUnique);
+  const resolvedPersonMappings: AuditPersonMapping[] =
+    updatePersonMappingRequired && personField
+      ? personOptions.map((person) => {
+          const targetPersonId = personMappingChoices[person.id];
+          return {
+            candidatePersonId: person.id,
+            fieldId: personField.id,
+            resolution:
+              targetPersonId === newOfficialPersonValue ? "new" : "existing",
+            targetPersonId:
+              targetPersonId === newOfficialPersonValue
+                ? undefined
+                : targetPersonId,
+          };
+        })
+      : [];
+  const memberPersonBindingReady =
+    !memberPersonBindingRequired || Boolean(resolvedMemberPersonBinding);
+  const targetPersonBindingReady =
+    decisionChoice !== "merged" ||
+    !memberPersonBindingRequired ||
+    Boolean(effectiveTargetPersonId);
   const kpiResolutionReady =
     !resolvesKpi ||
     !approvalChoice ||
@@ -400,6 +517,9 @@ export function AuditReviewDecisionSection({
       note.trim().length > 0 &&
       correctionSelectionReady &&
       targetSelectionReady &&
+      memberPersonBindingReady &&
+      targetPersonBindingReady &&
+      personMappingsReady &&
       kpiResolutionReady &&
       !(
         matchingIsStale &&
@@ -436,6 +556,9 @@ export function AuditReviewDecisionSection({
         ? selectedMatch?.id
         : undefined,
       approvalChoice ? kpiResolution : undefined,
+      approvalChoice ? resolvedMemberPersonBinding : undefined,
+      decisionChoice === "merged" ? effectiveTargetPersonId : undefined,
+      decisionChoice === "approved_update" ? resolvedPersonMappings : undefined,
     );
   };
 
@@ -989,6 +1112,123 @@ export function AuditReviewDecisionSection({
             indikator KM.
           </small>
         </div>
+      ) : null}
+
+      {memberPersonBindingRequired ? (
+        <div className={drawerStyles.reviewTextField}>
+          <span>Orang yang mewakili anggota · wajib</span>
+          <select
+            aria-label="Orang pada kandidat yang mewakili anggota"
+            onChange={(event) => {
+              setSelectedMemberPersonId(event.currentTarget.value);
+              setSelectedTargetPersonId("");
+              setShowConfirmation(false);
+            }}
+            value={selectedMemberPersonId}
+          >
+            <option value="">Pilih orang pada kandidat</option>
+            {personOptions.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+              </option>
+            ))}
+          </select>
+          <small>
+            Pilihan ini menautkan ID anggota ke orang yang tepat. Sistem tidak
+            menebak hubungan hanya dari kemiripan nama atau urutan penulis.
+          </small>
+        </div>
+      ) : null}
+
+      {updatePersonMappingRequired && personField ? (
+        <div className={drawerStyles.reviewTextField}>
+          <span>Pemetaan orang ke rekam resmi · wajib</span>
+          <small>
+            Tentukan apakah setiap orang pada kandidat adalah orang yang sudah
+            ada atau orang baru. Pemetaan ini menjaga ID dan hubungan anggota
+            pada coauthor lain ketika rekam diperbarui.
+          </small>
+          {personOptions.map((candidatePerson) => {
+            const isMemberPerson =
+              candidatePerson.id === selectedMemberPersonId;
+            const availableTargets = targetPeople.filter(
+              (targetPerson) =>
+                !isMemberPerson ||
+                !targetPerson.memberId ||
+                targetPerson.memberId === record.memberId,
+            );
+            return (
+              <label key={candidatePerson.id}>
+                <span>{candidatePerson.name}</span>
+                <select
+                  aria-label={`Pemetaan ${candidatePerson.name} ke rekam resmi`}
+                  onChange={(event) => {
+                    setPersonMappingSelections((current) => ({
+                      ...current,
+                      [candidatePerson.id]: event.currentTarget.value,
+                    }));
+                    setShowConfirmation(false);
+                  }}
+                  value={personMappingChoices[candidatePerson.id] ?? ""}
+                >
+                  <option value="">Pilih identitas tujuan</option>
+                  <option value={newOfficialPersonValue}>
+                    Orang baru / tidak sama
+                  </option>
+                  {availableTargets.map((targetPerson) => (
+                    <option key={targetPerson.id} value={targetPerson.id}>
+                      {targetPerson.name}
+                      {targetPerson.memberId ? " · terhubung anggota" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            );
+          })}
+          {!personMappingsUnique ? (
+            <small role="alert">
+              Satu orang resmi tidak boleh dipetakan ke lebih dari satu orang
+              pada kandidat.
+            </small>
+          ) : null}
+        </div>
+      ) : null}
+
+      {decisionChoice === "merged" && memberPersonBindingRequired ? (
+        compatibleMemberTargets.length > 0 ? (
+          <div className={drawerStyles.reviewTextField}>
+            <span>Orang tujuan pada rekam resmi · wajib</span>
+            <select
+              aria-label="Orang tujuan pada rekam resmi"
+              disabled={Boolean(existingBoundTarget)}
+              onChange={(event) => {
+                setSelectedTargetPersonId(event.currentTarget.value);
+                setShowConfirmation(false);
+              }}
+              value={effectiveTargetPersonId ?? ""}
+            >
+              <option value="">Pilih orang pada rekam resmi</option>
+              {compatibleMemberTargets.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                  {person.memberId === record.memberId
+                    ? " · sudah terhubung"
+                    : ""}
+                </option>
+              ))}
+            </select>
+            <small>
+              Hubungan anggota akan diterapkan ke ID orang yang dipilih pada
+              rekam tujuan, bukan melalui pencocokan teks nama.
+            </small>
+          </div>
+        ) : (
+          <NexusWorkspaceNotice tone="danger">
+            Rekam resmi ini belum menyediakan daftar orang terstruktur yang
+            dapat dipilih. Kandidat tidak dapat dihubungkan dengan aman; pilih
+            data baru atau perbarui kontrak rekam tujuan terlebih dahulu.
+          </NexusWorkspaceNotice>
+        )
       ) : null}
 
       <fieldset className={drawerStyles.reviewDecisionChoices}>

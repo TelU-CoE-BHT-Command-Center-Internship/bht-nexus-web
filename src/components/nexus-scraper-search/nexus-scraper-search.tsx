@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useDeferredValue, useMemo, useState } from "react";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import { NexusMemberContext } from "@/components/nexus-members/nexus-member-context";
-import {
-  knownMemberName,
-  type NexusMemberId,
-} from "@/components/nexus-members/nexus-member-identity";
+import { knownMemberName } from "@/components/nexus-members/nexus-member-identity";
 import { createCollectionReviewRecords } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import {
+  collectionMemberBindingMatches,
+  collectionProfileMatchesSource,
+  createCollectionMemberBinding,
+} from "@/components/nexus-scraper-search/nexus-collection-identity";
 import styles from "@/components/nexus-scraper-search/nexus-scraper-search.module.css";
 import type {
   CollectionJob,
@@ -60,7 +62,7 @@ const pageSizeConfig: NexusSelectConfig = {
 };
 
 export type NexusCollectionRequest = {
-  memberId?: NexusMemberId;
+  memberId?: string;
   memberName?: string;
   profileUrl?: string;
   source?: CollectionSource;
@@ -81,18 +83,6 @@ function CollectionIcon({ name }: { name: "check" | "clock" | "search" }) {
       <NexusWorkspaceIconPaths name={name} />
     </svg>
   );
-}
-
-function matchesSource(urlValue: string, source: CollectionSource) {
-  try {
-    const url = new URL(urlValue);
-    if (url.protocol !== "https:") return false;
-    return source === "sinta"
-      ? url.hostname === "sinta.kemdiktisaintek.go.id"
-      : url.hostname === "scholar.google.com";
-  } catch {
-    return false;
-  }
 }
 
 function statusTone(status: CollectionJob["status"]) {
@@ -117,7 +107,6 @@ export function NexusScraperSearch({
   const initialMemberName = initialRequest?.memberId
     ? (knownMemberName(initialRequest.memberId) ?? requestedMemberName)
     : undefined;
-  const [memberId, setMemberId] = useState(initialRequest?.memberId);
   const [name, setName] = useState(initialMemberName ?? "");
   const [profileUrl, setProfileUrl] = useState(
     initialRequest?.profileUrl ?? "",
@@ -125,6 +114,16 @@ export function NexusScraperSearch({
   const [source, setSource] = useState<CollectionSource>(
     initialRequest?.source ?? "sinta",
   );
+  const initialMemberBinding = createCollectionMemberBinding({
+    ...initialRequest,
+    memberName: initialMemberName,
+  });
+  const activeMemberBinding = collectionMemberBindingMatches(
+    initialMemberBinding,
+    { memberName: name, profileUrl, source },
+  )
+    ? initialMemberBinding
+    : undefined;
   const [isSourceOpen, setIsSourceOpen] = useState(false);
   const [feedback, setFeedback] = useState<{
     message: string;
@@ -283,7 +282,7 @@ export function NexusScraperSearch({
     event.preventDefault();
     const cleanName = name.trim();
     const cleanUrl = profileUrl.trim();
-    if (!cleanName || !matchesSource(cleanUrl, source)) {
+    if (!cleanName || !collectionProfileMatchesSource(cleanUrl, source)) {
       setFeedback({ message: content.errorLabel, tone: "danger" });
       return;
     }
@@ -297,7 +296,7 @@ export function NexusScraperSearch({
       candidates: [],
       fullName: cleanName,
       id,
-      memberId,
+      memberBinding: activeMemberBinding,
       profileUrl: cleanUrl,
       source,
       sourceLabel,
@@ -314,7 +313,6 @@ export function NexusScraperSearch({
     setJobs((current) => [queued, ...current]);
     setFeedback({ message: content.queuedLabel, tone: "success" });
     setName("");
-    setMemberId(undefined);
     setProfileUrl("");
     setCurrentPage(1);
   }
@@ -488,12 +486,12 @@ export function NexusScraperSearch({
               : "Submit public profile"
           }
         >
-          {memberId && initialMemberName ? (
+          {activeMemberBinding ? (
             <div className={styles.feedback}>
               <NexusMemberContext
                 description="Hasil pengumpulan akan ditautkan ke profil anggota ini."
                 label="Anggota terpilih"
-                memberName={initialMemberName}
+                memberName={activeMemberBinding.memberName}
                 sourceLabel={source === "sinta" ? "SINTA" : "Google Scholar"}
               />
             </div>
@@ -503,17 +501,7 @@ export function NexusScraperSearch({
               autoComplete="off"
               id="collection-name"
               label={content.nameLabel}
-              onChange={(event) => {
-                const nextName = event.target.value;
-                setName(nextName);
-                if (
-                  initialMemberName &&
-                  normalizeWorkspaceSearch(nextName) !==
-                    normalizeWorkspaceSearch(initialMemberName)
-                ) {
-                  setMemberId(undefined);
-                }
-              }}
+              onChange={(event) => setName(event.target.value)}
               placeholder={content.namePlaceholder}
               value={name}
             />

@@ -1,7 +1,9 @@
 import type {
   AuditDecisionKind,
   AuditKpiResolution,
+  AuditMemberPersonBinding,
   AuditOfficialMatch,
+  AuditPersonMapping,
   AuditReviewRecord,
   AuditReviewStatus,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
@@ -22,6 +24,9 @@ export type AuditReviewDrawerProps = {
     fieldIds: string[],
     targetRecordId?: string,
     kpiResolution?: AuditKpiResolution,
+    memberPersonBinding?: AuditMemberPersonBinding,
+    targetPersonId?: string,
+    personMappings?: AuditPersonMapping[],
   ) => void;
   onResubmit: (
     values: Record<string, string>,

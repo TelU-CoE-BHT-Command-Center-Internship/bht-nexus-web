@@ -72,6 +72,7 @@ export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
       <AuditReviewDecisionSection
         {...props}
         decisionIndex={sectionIndexes.decision}
+        key={selectedMatch?.id ?? "no-match"}
         selectedMatch={selectedMatch}
       />
     </NexusWorkspaceDrawer>

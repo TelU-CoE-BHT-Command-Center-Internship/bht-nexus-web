@@ -1,6 +1,7 @@
 import type {
   AuditDecisionKind,
   AuditKpiResolution,
+  AuditPersonMapping,
   AuditReviewRecord,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import type {
@@ -31,8 +32,10 @@ export type OfficialRecordDecisionProjection = {
   >;
   kpiResolution?: AuditKpiResolution;
   note: string;
+  personMappings?: AuditPersonMapping[];
   reviewer: string;
   targetRecordId?: string;
+  targetPersonId?: string;
 };
 
 export type OfficialRecordDecisionProjectionMap = Record<
