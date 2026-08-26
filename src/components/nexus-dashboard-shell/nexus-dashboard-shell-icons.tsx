@@ -38,8 +38,8 @@ function IconPaths({ name }: DashboardShellIconProps) {
     case "publications":
       return (
         <>
-          <path d="M6 2h8l5 5v15H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" />
-          <path d="M14 2v6h5M8 13h7M8 17h7" />
+          <path d="M12 7.4C10.4 5.9 8.4 5.2 4.3 5.2v11.6c4.1 0 6.1.7 7.7 2.2 1.6-1.5 3.6-2.2 7.7-2.2V5.2c-4.1 0-6.1.7-7.7 2.2Z" />
+          <path d="M12 7.4V19" />
         </>
       );
     case "documents":
@@ -59,8 +59,9 @@ function IconPaths({ name }: DashboardShellIconProps) {
     case "contracts":
       return (
         <>
-          <path d="M7 3h7l4 4v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
-          <path d="M14 3v5h4M9 12.5h6M9 16h3.5" />
+          <path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" />
+          <path d="M13.5 3v5h5M9 9.5h3M9 13h3" />
+          <path d="m20.4 13.1-5.5 5.5-2.7.8.8-2.7 5.5-5.5a1.3 1.3 0 0 1 1.9 1.9Z" />
         </>
       );
     case "academic":
