@@ -166,6 +166,12 @@
   background: #e8eff8;
 }
 
+.workflow span[data-complete="true"] i {
+  border-color: var(--color-brand-navy);
+  background: var(--color-brand-navy);
+  color: #fff;
+}
+
 .workflow i svg {
   width: 0.75rem;
   height: 0.75rem;
