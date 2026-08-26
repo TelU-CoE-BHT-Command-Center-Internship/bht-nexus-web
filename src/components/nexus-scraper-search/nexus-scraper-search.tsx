@@ -28,6 +28,7 @@ import {
   formatTimestamp,
   normalizeWorkspaceSearch,
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { NexusWorkspaceIconPaths } from "@/components/nexus-workspace-ui/nexus-workspace-icons";
 import { NexusWorkspaceInfoHint } from "@/components/nexus-workspace-ui/nexus-workspace-info-hint";
 import {
   NexusWorkspaceMetrics,
@@ -75,26 +76,9 @@ const columns: readonly NexusWorkspaceRecordColumn[] = [
 ];
 
 function CollectionIcon({ name }: { name: "check" | "clock" | "search" }) {
-  if (name === "check") {
-    return (
-      <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-        <path d="M5 12.5 9.2 17 19 7" />
-        <circle cx="12" cy="12" r="9" />
-      </svg>
-    );
-  }
-  if (name === "clock") {
-    return (
-      <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3.5 2" />
-      </svg>
-    );
-  }
   return (
     <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      <circle cx="10.5" cy="10.5" r="6.5" />
-      <path d="m15.5 15.5 4 4" />
+      <NexusWorkspaceIconPaths name={name} />
     </svg>
   );
 }

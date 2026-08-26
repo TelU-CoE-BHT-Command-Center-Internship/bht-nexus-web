@@ -12,26 +12,19 @@ type NexusContractProposalIconProps = {
   name: ContractProposalIconName;
 };
 
+const sharedIcons = {
+  alert: "alert",
+  check: "check",
+  contract: "contract",
+  database: "database",
+  indicator: "chart",
+} as const;
+
 function IconPaths({ name }: NexusContractProposalIconProps) {
-  if (name === "alert" || name === "check" || name === "database") {
-    return <NexusWorkspaceIconPaths name={name} />;
-  }
+  const shared = sharedIcons[name as keyof typeof sharedIcons];
+  if (shared) return <NexusWorkspaceIconPaths name={shared} />;
 
   switch (name) {
-    case "contract":
-      return (
-        <>
-          <path d="M7 3.5h7l3 3v14H7z" />
-          <path d="M14 3.5v3h3M9.5 11h5M9.5 14h5M9.5 17h3" />
-        </>
-      );
-    case "indicator":
-      return (
-        <>
-          <path d="M4 19.5h16" />
-          <path d="M7 19.5V11M12 19.5V6.5M17 19.5v-5.5" />
-        </>
-      );
     case "proposal":
       return (
         <>

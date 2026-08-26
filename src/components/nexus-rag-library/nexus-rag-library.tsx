@@ -24,6 +24,7 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { NexusWorkspaceIconPaths } from "@/components/nexus-workspace-ui/nexus-workspace-icons";
 import { NexusWorkspaceInfoHint } from "@/components/nexus-workspace-ui/nexus-workspace-info-hint";
 import {
   NexusWorkspaceMetrics,
@@ -51,23 +52,15 @@ const columns: readonly NexusWorkspaceRecordColumn[] = [
 ];
 
 function DocumentIcon({ name }: { name: "document" | "queue" | "ready" }) {
-  if (name === "queue")
-    return (
-      <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3.5 2" />
-      </svg>
-    );
-  if (name === "ready")
-    return (
-      <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-        <path d="M5 12.5 9.2 17 19 7" />
-        <circle cx="12" cy="12" r="9" />
-      </svg>
-    );
+  const shared = {
+    document: "document",
+    queue: "clock",
+    ready: "check",
+  } as const;
+
   return (
     <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      <path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6" />
+      <NexusWorkspaceIconPaths name={shared[name]} />
     </svg>
   );
 }
