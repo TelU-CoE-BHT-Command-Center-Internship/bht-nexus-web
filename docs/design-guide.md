@@ -60,9 +60,19 @@ Rumah data resmi memakai satu bahasa desain rincian bersama, bukan salinan per h
 
 - `nexus-workspace-detail.module.css` untuk kerangka drawer, yaitu ringkasan atas, seksi bernomor, daftar kelengkapan metadata, jejak sumber, dan keputusan tinjauan;
 - `nexus-workspace-badges.module.css` untuk penanda rekam resmi, kelengkapan, dan sumber pembentuk;
-- `nexus-workspace-icons.tsx` untuk ikon kerangka drawer yang bentuknya harus sama di semua domain. Ikon khas satu domain tetap tinggal di komponen ikon domain tersebut.
+- `nexus-workspace-icons.tsx` untuk ikon yang bentuknya harus sama di semua domain, termasuk ikon kartu metrik dan kerangka drawer. Ikon khas satu domain tetap tinggal di komponen ikon domain tersebut.
 
 Nilai pada berkas tersebut mengikuti Publikasi sebagai rujukan, sehingga rumah data resmi berikutnya tampil seragam tanpa menulis ulang gaya.
+
+### Ikon
+
+Ikon digambar pada satu grid: sisi terpanjang sekitar 17 unit dari viewBox 24 dan terpusat pada titik (12, 12). Wadahnya sudah seragam, sehingga ukuran gambar yang berbeda-beda langsung terbaca sebagai kumpulan ikon yang tidak satu set. Ukuran dan titik pusat diukur dari `getBBox()` di peramban, bukan diperkirakan.
+
+Satu konsep hanya boleh punya satu gambar. Ketika dua domain membutuhkan ikon yang sama, keduanya mengambil dari `nexus-workspace-icons.tsx`; menggambar ulang di komponen domain menghasilkan dua versi yang berbeda tipis dan sulit dirawat. Ikon pada satu kelompok navigasi juga harus berbeda siluet, bukan hanya berbeda detail kecil, agar tetap terbaca pada ukuran 20 px.
+
+### Jarak antarblok
+
+Bagian yang menumpuk beberapa blok memakai `gap` pada wadahnya, bukan margin pada masing-masing anak. Margin per anak membuat blok yang baru ditambahkan mudah terlewat sehingga menempel tanpa jarak, dan nilainya cenderung berbeda-beda antarblok.
 
 ### Lebar tabel dan kolom
 
