@@ -44,10 +44,6 @@ function readCookie(name: string): string | undefined {
   return match ? decodeURIComponent(match[1]) : undefined;
 }
 
-// ponytail: nexus-server sets csrf_token as httpOnly, so this header can
-// never actually be populated by a browser client until that's fixed
-// server-side. Left wired so it activates automatically, no frontend change
-// needed, once the cookie stops being httpOnly.
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
