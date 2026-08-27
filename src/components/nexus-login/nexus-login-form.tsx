@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import styles from "@/components/nexus-login/nexus-login.module.css";
 import type { NexusLoginContent } from "@/components/nexus-login/nexus-login-content";
+import { signInWithEmail } from "@/lib/api-auth";
+import { ApiRequestError } from "@/lib/api-client";
 
 type NexusLoginFormProps = {
   content: Pick<
@@ -11,12 +13,14 @@ type NexusLoginFormProps = {
     | "emailLabel"
     | "emailPlaceholder"
     | "destinationHref"
+    | "invalidCredentialsError"
     | "passwordHideLabel"
     | "passwordLabel"
     | "passwordPlaceholder"
     | "passwordShowLabel"
     | "signInLabel"
     | "signingInLabel"
+    | "unexpectedError"
   >;
 };
 
@@ -34,11 +38,28 @@ export function NexusLoginForm({ content }: NexusLoginFormProps) {
   const router = useRouter();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setErrorMessage(null);
     setIsSubmitting(true);
-    router.push(content.destinationHref);
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
+    try {
+      await signInWithEmail({ email, password });
+      router.push(content.destinationHref);
+    } catch (error) {
+      setIsSubmitting(false);
+      if (error instanceof ApiRequestError && error.status === 401) {
+        setErrorMessage(content.invalidCredentialsError);
+        return;
+      }
+      setErrorMessage(content.unexpectedError);
+    }
   }
 
   return (
@@ -84,6 +105,12 @@ export function NexusLoginForm({ content }: NexusLoginFormProps) {
           </button>
         </div>
       </div>
+
+      {errorMessage !== null && (
+        <p aria-live="polite" className={styles.formError}>
+          {errorMessage}
+        </p>
+      )}
 
       <button
         className={styles.submitButton}

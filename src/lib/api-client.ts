@@ -44,6 +44,19 @@ function readCookie(name: string): string | undefined {
   return match ? decodeURIComponent(match[1]) : undefined;
 }
 
+// nexus-server sets csrf_token on any request, including a 404, since the
+// middleware runs before routing. A visitor whose first request is a
+// mutation (e.g. submitting sign-in cold) has no cookie yet, so prime one
+// with a throwaway GET before attaching the header.
+async function ensureCsrfToken(): Promise<string | undefined> {
+  const existing = readCookie(CSRF_COOKIE_NAME);
+  if (existing !== undefined) {
+    return existing;
+  }
+  await fetch(API_BASE_URL, { credentials: "include" }).catch(() => null);
+  return readCookie(CSRF_COOKIE_NAME);
+}
+
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
@@ -55,7 +68,7 @@ export async function apiFetch<T>(
     headers.set("Content-Type", "application/json");
   }
   if (method !== "GET" && method !== "HEAD") {
-    const csrfToken = readCookie(CSRF_COOKIE_NAME);
+    const csrfToken = await ensureCsrfToken();
     if (csrfToken !== undefined) {
       headers.set(CSRF_HEADER_NAME, csrfToken);
     }

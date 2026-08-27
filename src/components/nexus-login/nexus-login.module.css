@@ -180,6 +180,13 @@
   gap: 0.45rem;
 }
 
+.formError {
+  margin: -0.4rem 0 0;
+  color: var(--color-nexus-danger);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 .field label {
   color: var(--color-ink);
   font-size: 0.875rem;
