@@ -1,5 +1,9 @@
+import { NexusAccountSessionProvider } from "@/components/nexus-account-session/nexus-account-session";
+import { getNexusAccountDirectory } from "@/components/nexus-accounts/nexus-account-directory";
 import { NexusDashboardShell } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell";
 import { getNexusDashboardShellPreviewContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import { NexusMemberSessionProvider } from "@/components/nexus-member-session/nexus-member-session";
+import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
 import { NexusReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
 
 export default function NexusWorkspaceLayout({
@@ -8,6 +12,8 @@ export default function NexusWorkspaceLayout({
   children: React.ReactNode;
 }>) {
   const content = getNexusDashboardShellPreviewContent();
+  const accountDirectory = getNexusAccountDirectory();
+  const memberDirectory = getNexusMemberDirectory();
 
   return (
     <NexusReviewSessionProvider
@@ -18,7 +24,17 @@ export default function NexusWorkspaceLayout({
       }}
       capabilities={content.reviewCapabilities}
     >
-      <NexusDashboardShell content={content}>{children}</NexusDashboardShell>
+      <NexusMemberSessionProvider initialRecords={memberDirectory}>
+        <NexusAccountSessionProvider
+          actorName={content.viewer.name}
+          initialAccounts={accountDirectory.accounts}
+          initialRoles={accountDirectory.roles}
+        >
+          <NexusDashboardShell content={content}>
+            {children}
+          </NexusDashboardShell>
+        </NexusAccountSessionProvider>
+      </NexusMemberSessionProvider>
     </NexusReviewSessionProvider>
   );
 }

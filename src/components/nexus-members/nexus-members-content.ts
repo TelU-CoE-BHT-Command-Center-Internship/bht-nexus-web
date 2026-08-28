@@ -9,9 +9,10 @@ import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
 import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
 import { getMembersContent } from "@/components/members/members-content";
 import {
-  getNexusAccountDirectory,
-  type NexusAccountMemberRelationship,
+  type NexusAccountDirectoryRecord,
+  type NexusAccountDirectoryRole,
   type NexusAccountStatus,
+  resolveNexusAccountRelationship,
 } from "@/components/nexus-accounts/nexus-account-directory";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
 import { COE_BHT_RESEARCH_SPACE } from "@/content/coe-bht";
@@ -25,11 +26,6 @@ export type NexusMemberAccount = {
   id: string;
   roleLabels: string[];
   status: NexusMemberAccountStatus;
-};
-
-export type NexusMemberAccountDirectoryEntry = NexusMemberAccount & {
-  name: string;
-  relationship: NexusAccountMemberRelationship;
 };
 
 export type NexusMemberRecord = {
@@ -74,9 +70,7 @@ export type NexusMemberRecord = {
 };
 
 export type NexusMembersContent = {
-  accountDirectory: NexusMemberAccountDirectoryEntry[];
   description: string;
-  records: NexusMemberRecord[];
   title: string;
 };
 
@@ -165,45 +159,50 @@ const managementProfiles = publicContent.managementMembers.map(
  * tersedia dari layanan anggota sengaja dibiarkan kosong.
  */
 export function getNexusMembersContent(): NexusMembersContent {
-  const accountSource = getNexusAccountDirectory();
-  const rolesById = new Map(
-    accountSource.roles.map((role) => [role.id, role.label]),
-  );
-  const accountDirectory = accountSource.accounts.map((account) => ({
-    email: account.email,
-    id: account.id,
-    name: account.displayName,
-    relationship: account.relationship,
-    roleLabels: account.roleId
-      ? [rolesById.get(account.roleId) ?? account.roleId]
-      : [],
-    status: account.status,
-  }));
-  const records = [chair, ...managementProfiles].map((member) => {
-    const account = accountDirectory.find(
-      (candidate) =>
-        candidate.relationship.kind === "LINKED" &&
-        candidate.relationship.memberId === member.id,
-    );
-
-    return account
-      ? {
-          ...member,
-          account: {
-            email: account.email,
-            id: account.id,
-            roleLabels: account.roleLabels,
-            status: account.status,
-          },
-        }
-      : member;
-  });
-
   return {
-    accountDirectory,
     description:
       "Kelola identitas dan keanggotaan CoE BHT yang menghubungkan orang dengan data organisasi.",
-    records,
     title: "Anggota",
   };
+}
+
+export function getNexusMemberDirectory(): NexusMemberRecord[] {
+  return [chair, ...managementProfiles];
+}
+
+/**
+ * Proyeksi akses anggota selalu dibentuk dari state akun sesi yang sama dengan
+ * Administrasi. Hubungan ganda atau konflik tidak dipresentasikan sebagai akun
+ * anggota yang sah.
+ */
+export function projectNexusMemberAccounts(
+  records: readonly NexusMemberRecord[],
+  accounts: readonly NexusAccountDirectoryRecord[],
+  roles: readonly NexusAccountDirectoryRole[],
+) {
+  const rolesById = new Map(roles.map((role) => [role.id, role.label]));
+
+  return records.map((member): NexusMemberRecord => {
+    const projectedMember = { ...member };
+    delete projectedMember.account;
+    const account = accounts.find((candidate) => {
+      const relationship = resolveNexusAccountRelationship(candidate, accounts);
+      return (
+        relationship.kind === "LINKED" && relationship.memberId === member.id
+      );
+    });
+
+    if (!account) return projectedMember;
+    return {
+      ...projectedMember,
+      account: {
+        email: account.email,
+        id: account.id,
+        roleLabels: account.roleId
+          ? [rolesById.get(account.roleId) ?? account.roleId]
+          : [],
+        status: account.status,
+      },
+    };
+  });
 }

@@ -106,7 +106,7 @@ export function NexusWorkspaceConfirmDialog({
           <NexusWorkspaceButton
             className={styles.confirmAction}
             onClick={onConfirm}
-            tone="danger"
+            tone={tone === "danger" ? "danger" : "secondary"}
             type="button"
           >
             {confirmLabel}

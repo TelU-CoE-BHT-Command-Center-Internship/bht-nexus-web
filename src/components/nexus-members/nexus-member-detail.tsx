@@ -71,7 +71,6 @@ type MemberDetailProps = {
   member: NexusMemberRecord;
   onBack: () => void;
   onEdit: () => void;
-  onGrantAccess: () => void;
   onOpenAcademicEditor: () => void;
   onTabChange: (tab: MemberDetailTab) => void;
 };
@@ -91,7 +90,6 @@ export function NexusMemberDetail({
   member,
   onBack,
   onEdit,
-  onGrantAccess,
   onOpenAcademicEditor,
   onTabChange,
 }: MemberDetailProps) {
@@ -157,15 +155,14 @@ export function NexusMemberDetail({
             </NexusWorkspaceButton>
           ) : null}
           {capabilities.canGrantAccess && !member.account ? (
-            <NexusWorkspaceButton
+            <NexusWorkspaceLinkButton
               className={styles.detailActionButton}
-              onClick={onGrantAccess}
+              href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
               tone="primary"
-              type="button"
             >
               <MemberIcon name="lock" />
               Beri akses BHT Nexus
-            </NexusWorkspaceButton>
+            </NexusWorkspaceLinkButton>
           ) : null}
         </div>
       </div>
@@ -467,6 +464,17 @@ export function NexusMemberDetail({
                   />
                 </div>
                 <MemberGuidanceCard
+                  action={
+                    capabilities.canGrantAccess ? (
+                      <NexusWorkspaceLinkButton
+                        href={`/nexus/administrasi?account=${encodeURIComponent(member.account.id)}`}
+                        tone="primary"
+                      >
+                        Kelola akun
+                        <MemberIcon name="chevron" />
+                      </NexusWorkspaceLinkButton>
+                    ) : undefined
+                  }
                   description="Menangguhkan akun tidak menghapus profil atau riwayat keanggotaan orang ini."
                   icon="link"
                   title="Akun terhubung ke profil anggota"
@@ -483,17 +491,15 @@ export function NexusMemberDetail({
                   jika orang ini memang perlu masuk ke sistem.
                 </p>
                 {capabilities.canGrantAccess ? (
-                  <NexusWorkspaceButton
-                    onClick={onGrantAccess}
+                  <NexusWorkspaceLinkButton
+                    href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
                     tone="primary"
-                    type="button"
                   >
                     Beri akses BHT Nexus
-                  </NexusWorkspaceButton>
+                  </NexusWorkspaceLinkButton>
                 ) : null}
                 <small>
-                  Sistem akan memeriksa apakah email belum punya akun, sudah
-                  punya akun, atau sudah terhubung ke anggota lain.
+                  Alur undangan akan dibuka dengan anggota ini sudah terpilih.
                 </small>
               </div>
             )}

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { nexusAccountStatusLabels } from "@/components/nexus-accounts/nexus-account-directory";
 import { DEFAULT_MEMBER_AVATAR_POSITION } from "@/components/nexus-members/nexus-member-avatar";
 import styles from "@/components/nexus-members/nexus-members.module.css";
 import type {
@@ -23,11 +24,8 @@ export type MemberIconName =
   | "plus"
   | "phone";
 
-export const accountStatusLabels: Record<NexusMemberAccountStatus, string> = {
-  ACTIVE: "Aktif",
-  INVITED: "Undangan dikirim",
-  SUSPENDED: "Ditangguhkan",
-};
+export const accountStatusLabels: Record<NexusMemberAccountStatus, string> =
+  nexusAccountStatusLabels;
 
 export function MemberIcon({ name }: { name: MemberIconName }) {
   const paths = {

@@ -32,11 +32,53 @@ export type NexusAccountDirectoryRecord = {
   updatedAt: string;
 };
 
+export type NexusAccountInvitationInput = {
+  displayName: string;
+  email: string;
+  relationship: NexusAccountMemberRelationship;
+  roleId: string;
+};
+
 export const nexusAccountStatusLabels: Record<NexusAccountStatus, string> = {
   ACTIVE: "Aktif",
   INVITED: "Menunggu aktivasi",
   SUSPENDED: "Ditangguhkan",
 };
+
+export function nexusAccountRelationshipMemberId(
+  relationship: NexusAccountMemberRelationship,
+) {
+  return relationship.kind === "LINKED" || relationship.kind === "CONFLICT"
+    ? relationship.memberId
+    : undefined;
+}
+
+/**
+ * Menormalkan konflik yang dapat ditentukan hanya dari direktori akun. Dua
+ * akun tidak boleh sama-sama dianggap terhubung secara sah ke satu anggota.
+ */
+export function resolveNexusAccountRelationship(
+  account: NexusAccountDirectoryRecord,
+  accounts: readonly NexusAccountDirectoryRecord[],
+): NexusAccountMemberRelationship {
+  const relationship = account.relationship;
+  if (relationship.kind !== "LINKED") return { ...relationship };
+
+  const conflictingAccount = accounts.find(
+    (candidate) =>
+      candidate.id !== account.id &&
+      nexusAccountRelationshipMemberId(candidate.relationship) ===
+        relationship.memberId,
+  );
+
+  return conflictingAccount
+    ? {
+        conflictingAccountId: conflictingAccount.id,
+        kind: "CONFLICT",
+        memberId: relationship.memberId,
+      }
+    : { ...relationship };
+}
 
 const roles: readonly NexusAccountDirectoryRole[] = [
   {

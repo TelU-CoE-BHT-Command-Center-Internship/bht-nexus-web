@@ -920,7 +920,7 @@
   line-height: 1.55;
 }
 
-.accessEmpty button {
+.accessEmpty :is(a, button) {
   margin-top: 1rem;
 }
 
@@ -930,89 +930,6 @@
   color: #7a899b;
   font-size: 0.62rem;
   line-height: 1.5;
-}
-
-.linkedMemberCard {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: 3.25rem minmax(0, 1fr);
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border: 1px solid #dce4ee;
-  border-radius: 0.55rem;
-  background: #f8fafc;
-}
-
-.linkedMemberCard > .avatarWrap {
-  width: 3.25rem;
-  height: 3.25rem;
-}
-
-.linkedMemberCard > span:last-child {
-  display: grid;
-  min-width: 0;
-  gap: 0.18rem;
-}
-
-.linkedMemberCard strong {
-  overflow: hidden;
-  color: #173558;
-  font-size: 0.72rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.linkedMemberCard small {
-  color: #65778e;
-  font-size: 0.63rem;
-  line-height: 1.4;
-}
-
-.accountBoundary {
-  grid-column: 1 / -1;
-  padding: 0.75rem 0.8rem;
-  border: 1px solid #d7e4f2;
-  border-radius: 0.5rem;
-  background: #f5f9fe;
-}
-
-.accountBoundary strong {
-  color: #214468;
-  font-size: 0.68rem;
-}
-
-.accountBoundary p {
-  margin: 0.35rem 0 0;
-  color: #5f7187;
-  font-size: 0.63rem;
-  line-height: 1.55;
-}
-
-.accountBoundary[data-tone="positive"] {
-  border-color: #b9dfcd;
-  background: #f1faf6;
-}
-
-.accountBoundary[data-tone="danger"] {
-  border-color: #f0c5cc;
-  background: #fff6f7;
-}
-
-.accountBoundary[data-tone="warning"] {
-  border-color: #ead39a;
-  background: #fffaf0;
-}
-
-.accountBoundary ul {
-  margin: 0;
-  padding: 0.45rem 0 0 1rem;
-}
-
-.accountBoundary li {
-  color: #5f7187;
-  font-size: 0.63rem;
-  line-height: 1.55;
 }
 
 .relatedSection {

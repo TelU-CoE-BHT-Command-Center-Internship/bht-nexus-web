@@ -1,3 +1,4 @@
+import { resolveNexusAccountRelationship } from "@/components/nexus-accounts/nexus-account-directory";
 import type {
   NexusAdministrationAccount,
   NexusAdministrationMemberOption,
@@ -7,13 +8,18 @@ export type NexusResolvedAdministrationRelationship =
   | { kind: "LINKED"; member: NexusAdministrationMemberOption }
   | { kind: "NON_MEMBER" }
   | { kind: "UNLINKED" }
-  | { kind: "CONFLICT"; member?: NexusAdministrationMemberOption };
+  | {
+      conflictingAccountId?: string;
+      kind: "CONFLICT";
+      member?: NexusAdministrationMemberOption;
+    };
 
 export function resolveAdministrationRelationship(
   account: NexusAdministrationAccount,
   members: readonly NexusAdministrationMemberOption[],
+  accounts: readonly NexusAdministrationAccount[],
 ): NexusResolvedAdministrationRelationship {
-  const relationship = account.relationship;
+  const relationship = resolveNexusAccountRelationship(account, accounts);
 
   if (relationship.kind === "NON_MEMBER") return relationship;
   if (relationship.kind === "UNLINKED") return relationship;
@@ -26,7 +32,13 @@ export function resolveAdministrationRelationship(
     return { kind: "LINKED", member };
   }
 
-  return { kind: "CONFLICT", ...(member ? { member } : {}) };
+  return {
+    ...(relationship.kind === "CONFLICT" && relationship.conflictingAccountId
+      ? { conflictingAccountId: relationship.conflictingAccountId }
+      : {}),
+    kind: "CONFLICT",
+    ...(member ? { member } : {}),
+  };
 }
 
 export function administrationRelationshipLabel(

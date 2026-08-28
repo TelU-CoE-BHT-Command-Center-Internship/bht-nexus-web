@@ -17,9 +17,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default function NexusAdministrationPage() {
+type NexusAdministrationPageProps = {
+  searchParams: Promise<{
+    account?: string | string[];
+    inviteMember?: string | string[];
+  }>;
+};
+
+function firstSearchParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function NexusAdministrationPage({
+  searchParams,
+}: NexusAdministrationPageProps) {
   const content = getNexusAdministrationContent();
   const access = nexusPreviewWorkspaceAccess;
+  const params = await searchParams;
 
   if (!nexusWorkspaceCanOpen(access, "administration")) {
     return (
@@ -43,6 +57,8 @@ export default function NexusAdministrationPage() {
     <NexusAdministration
       capabilities={access.administrationCapabilities}
       content={content}
+      initialAccountId={firstSearchParam(params.account)}
+      initialInviteMemberId={firstSearchParam(params.inviteMember)}
     />
   );
 }

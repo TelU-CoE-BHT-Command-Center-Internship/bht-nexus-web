@@ -23,7 +23,8 @@ type NexusAdministrationDetailProps = {
   onCancelInvitation: () => void;
   onClose: () => void;
   onEditAccess: () => void;
-  onResendInvitation: () => void;
+  onEditRelationship: () => void;
+  onRefreshInvitation: () => void;
   onRestore: () => void;
   onSuspend: () => void;
   relationship: NexusResolvedAdministrationRelationship;
@@ -100,6 +101,11 @@ function AccountRelationshipSummary({
           Catatan hubungan akun tidak lengkap atau saling bertentangan. Tinjau
           sebelum mengubah akses.
         </small>
+        {relationship.conflictingAccountId ? (
+          <small>
+            Hubungan juga dicatat pada akun {relationship.conflictingAccountId}.
+          </small>
+        ) : null}
       </div>
       {relationship.member ? (
         <NexusWorkspaceLinkButton
@@ -118,7 +124,8 @@ export function NexusAdministrationDetail({
   onCancelInvitation,
   onClose,
   onEditAccess,
-  onResendInvitation,
+  onEditRelationship,
+  onRefreshInvitation,
   onRestore,
   onSuspend,
   relationship,
@@ -204,6 +211,13 @@ export function NexusAdministrationDetail({
             </div>
           </header>
           <AccountRelationshipSummary relationship={relationship} />
+          {capabilities.canManageAccess ? (
+            <div className={styles.detailActions}>
+              <NexusWorkspaceButton onClick={onEditRelationship} type="button">
+                Kelola hubungan anggota
+              </NexusWorkspaceButton>
+            </div>
+          ) : null}
         </section>
 
         <section className={styles.detailSection}>
@@ -269,10 +283,10 @@ export function NexusAdministrationDetail({
               <>
                 {capabilities.canInviteAccount ? (
                   <NexusWorkspaceButton
-                    onClick={onResendInvitation}
+                    onClick={onRefreshInvitation}
                     type="button"
                   >
-                    Kirim ulang undangan
+                    Perbarui undangan
                   </NexusWorkspaceButton>
                 ) : null}
                 {capabilities.canManageAccountStatus ? (

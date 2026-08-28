@@ -66,6 +66,18 @@
   color: #fff;
 }
 
+.layer[data-tone="warning"] .confirmAction {
+  border-color: #b45309;
+  background: #b45309;
+  color: #fff;
+}
+
+.layer[data-tone="warning"] .confirmAction:hover {
+  border-color: #92400e;
+  background: #92400e;
+  color: #fff;
+}
+
 @media (max-width: 30rem) {
   .actions {
     grid-template-columns: minmax(0, 1fr);

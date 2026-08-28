@@ -1,9 +1,9 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
+import type { NexusAccountInvitationInput } from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import type {
-  NexusAccountMemberRelationship,
   NexusAdministrationMemberOption,
   NexusAdministrationRole,
 } from "@/components/nexus-administration/nexus-administration-content";
@@ -16,16 +16,10 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
 
-export type NexusAccountInvitationInput = {
-  displayName: string;
-  email: string;
-  relationship: NexusAccountMemberRelationship;
-  roleId: string;
-};
-
 type NexusAdministrationInviteDrawerProps = {
   accountEmails: readonly string[];
   availableMembers: readonly NexusAdministrationMemberOption[];
+  initialMemberId?: string;
   onClose: () => void;
   onInvite: (input: NexusAccountInvitationInput) => string;
   onViewAccount: (accountId: string) => void;
@@ -64,12 +58,28 @@ function normalizedEmail(value: string) {
 export function NexusAdministrationInviteDrawer({
   accountEmails,
   availableMembers,
+  initialMemberId,
   onClose,
   onInvite,
   onViewAccount,
   roles,
 }: NexusAdministrationInviteDrawerProps) {
-  const [draft, setDraft] = useState(initialDraft);
+  const initialMember = availableMembers.find(
+    (member) => member.id === initialMemberId,
+  );
+  const startingDraft = useMemo(
+    () =>
+      initialMember
+        ? {
+            ...initialDraft,
+            displayName: initialMember.name,
+            memberChoice: "yes" as const,
+            memberId: initialMember.id,
+          }
+        : initialDraft,
+    [initialMember],
+  );
+  const [draft, setDraft] = useState(startingDraft);
   const [errors, setErrors] = useState<InviteErrors>({});
   const [step, setStep] = useState(1);
   const [createdAccountId, setCreatedAccountId] = useState("");
@@ -90,7 +100,10 @@ export function NexusAdministrationInviteDrawer({
     label,
     number: index + 1,
   }));
-  const draftIsDirty = Object.values(draft).some(Boolean);
+  const draftIsDirty = Object.entries(draft).some(
+    ([field, value]) =>
+      value !== startingDraft[field as keyof typeof startingDraft],
+  );
 
   function requestClose() {
     if (!createdAccountId && draftIsDirty) {
@@ -167,15 +180,26 @@ export function NexusAdministrationInviteDrawer({
       return;
     }
 
-    const accountId = onInvite({
-      displayName: draft.displayName.trim(),
-      email: normalizedEmail(draft.email),
-      relationship:
-        draft.memberChoice === "yes" && selectedMember
-          ? { kind: "LINKED", memberId: selectedMember.id }
-          : { kind: "NON_MEMBER" },
-      roleId: selectedRole.id,
-    });
+    let accountId = "";
+    try {
+      accountId = onInvite({
+        displayName: draft.displayName.trim(),
+        email: normalizedEmail(draft.email),
+        relationship:
+          draft.memberChoice === "yes" && selectedMember
+            ? { kind: "LINKED", memberId: selectedMember.id }
+            : { kind: "NON_MEMBER" },
+        roleId: selectedRole.id,
+      });
+    } catch (caughtError) {
+      setErrors({
+        submit:
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Undangan tidak dapat dibuat.",
+      });
+      return;
+    }
     setCreatedSummary({
       member: draft.memberChoice === "yes" ? selectedMember : undefined,
       role: selectedRole,
@@ -186,23 +210,23 @@ export function NexusAdministrationInviteDrawer({
   return (
     <>
       <NexusWorkspaceDrawer
-        closeLabel="Tutup undangan akun"
+        closeLabel="Tutup pembuatan undangan akun"
         description={
           createdAccountId
-            ? "Undangan telah dibuat dan rincian akun siap ditinjau."
+            ? "Akun menunggu aktivasi dan rinciannya siap ditinjau."
             : "Isi identitas akun, tentukan hubungan anggota, lalu pilih peran."
         }
         eyebrow="Akun & Akses"
         onClose={requestClose}
         steps={workflow}
-        title={createdAccountId ? "Undangan berhasil dibuat" : "Undang akun"}
+        title={createdAccountId ? "Undangan dibuat" : "Buat undangan akun"}
       >
         {createdAccountId ? (
-          <output className={styles.inviteSuccess}>
+          <section aria-live="polite" className={styles.inviteSuccess}>
             <span aria-hidden="true">
               <NexusAdministrationIcon name="email" />
             </span>
-            <h3>Undangan siap dikirim</h3>
+            <h3>Akun menunggu aktivasi</h3>
             <p>
               Undangan untuk <strong>{normalizedEmail(draft.email)}</strong>{" "}
               telah dibuat. Status akun sekarang{" "}
@@ -213,7 +237,7 @@ export function NexusAdministrationInviteDrawer({
                 <small>Hubungan anggota</small>
                 <strong>
                   {createdSummary?.member
-                    ? `${createdSummary.member.id} · ${createdSummary.member.name}`
+                    ? `${createdSummary.member.name} · ${createdSummary.member.id}`
                     : "Tidak dihubungkan ke anggota"}
                 </strong>
               </span>
@@ -238,7 +262,7 @@ export function NexusAdministrationInviteDrawer({
                 Lihat akun
               </NexusWorkspaceButton>
             </footer>
-          </output>
+          </section>
         ) : (
           <form
             className={styles.inviteForm}
@@ -260,7 +284,7 @@ export function NexusAdministrationInviteDrawer({
                 <div className={styles.formGrid}>
                   <NexusWorkspaceFormField
                     error={errors.email}
-                    hint="Undangan aktivasi akan dikirim ke alamat ini."
+                    hint="Alamat ini digunakan untuk undangan aktivasi."
                     id="administration-invite-email"
                     label="Email"
                     name="email"
@@ -359,7 +383,7 @@ export function NexusAdministrationInviteDrawer({
                       updateDraft("memberId", event.currentTarget.value)
                     }
                     options={availableMembers.map((member) => ({
-                      label: `${member.id} — ${member.name}`,
+                      label: `${member.name} — ${member.id}`,
                       value: member.id,
                     }))}
                     required
@@ -422,7 +446,7 @@ export function NexusAdministrationInviteDrawer({
                     <h3>Tinjau undangan</h3>
                     <p>
                       Pastikan identitas, hubungan anggota, dan role sudah tepat
-                      sebelum undangan dikirim.
+                      sebelum undangan dibuat.
                     </p>
                   </div>
                 </header>
@@ -453,7 +477,7 @@ export function NexusAdministrationInviteDrawer({
                 </dl>
                 <NexusWorkspaceNotice>
                   Undangan tidak meminta admin membuat kata sandi. Pengguna akan
-                  menyiapkannya melalui tautan aktivasi yang diterima.
+                  menyiapkannya melalui alur aktivasi undangan.
                 </NexusWorkspaceNotice>
                 {errors.submit ? (
                   <NexusWorkspaceNotice tone="danger">
@@ -473,7 +497,7 @@ export function NexusAdministrationInviteDrawer({
                 {step === 1 ? "Batal" : "Kembali"}
               </NexusWorkspaceButton>
               <NexusWorkspaceButton tone="primary" type="submit">
-                {step === 4 ? "Kirim undangan" : "Lanjutkan"}
+                {step === 4 ? "Buat undangan" : "Lanjutkan"}
               </NexusWorkspaceButton>
             </footer>
           </form>
