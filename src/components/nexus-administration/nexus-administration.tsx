@@ -501,6 +501,14 @@ export function NexusAdministration({
   function cancelInvitation(account: NexusAdministrationAccount) {
     cancelAccountInvitation(account.id);
     setSelectedAccountId(null);
+    if (hasInitialAccountContext && account.id === initialAccountId) {
+      // Undangan yang dibatalkan adalah akun yang dirujuk tautan ?account=.
+      // Tandai konteks tautan sebagai selesai lalu bersihkan parameter yang kini
+      // usang, supaya tindakan yang berhasil tidak terbaca sebagai tautan rusak
+      // pada render berikutnya.
+      setDismissedInvalidContextKey(`account:${account.id}`);
+      router.replace("/nexus/administrasi", { scroll: false });
+    }
     setAnnouncement(
       `Undangan untuk ${account.email} dibatalkan. Tidak ada akun aktif yang dihapus.`,
     );
@@ -644,7 +652,7 @@ export function NexusAdministration({
             id: "active-accounts",
             label: "Aktif",
             tone: "completed",
-            unit: "dapat mengakses sistem",
+            unit: "akun berstatus aktif",
             value: accounts.filter((account) => account.status === "ACTIVE")
               .length,
           },
@@ -653,7 +661,7 @@ export function NexusAdministration({
             id: "invited-accounts",
             label: "Menunggu aktivasi",
             tone: "waiting",
-            unit: "undangan belum diterima",
+            unit: "akun belum diaktifkan",
             value: accounts.filter((account) => account.status === "INVITED")
               .length,
           },
