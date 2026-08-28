@@ -4,14 +4,23 @@ const API_BASE_URL =
 const CSRF_COOKIE_NAME = "csrf_token";
 const CSRF_HEADER_NAME = "x-csrf-token";
 
+export type ApiPaginationMeta = {
+  limit: number;
+  page: number;
+  total: number;
+  totalPages: number;
+};
+
+type ApiSuccessEnvelope<T> = {
+  success: true;
+  statusCode: number;
+  message: string;
+  data: T;
+  meta?: ApiPaginationMeta;
+};
+
 type ApiEnvelope<T> =
-  | {
-      success: true;
-      statusCode: number;
-      message: string;
-      data: T;
-      meta?: unknown;
-    }
+  | ApiSuccessEnvelope<T>
   | {
       success: false;
       statusCode: number;
@@ -57,10 +66,10 @@ async function ensureCsrfToken(): Promise<string | undefined> {
   return readCookie(CSRF_COOKIE_NAME);
 }
 
-export async function apiFetch<T>(
+async function requestEnvelope<T>(
   path: string,
-  init: RequestInit = {},
-): Promise<T> {
+  init: RequestInit,
+): Promise<ApiSuccessEnvelope<T>> {
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
@@ -100,5 +109,28 @@ export async function apiFetch<T>(
     );
   }
 
+  return body;
+}
+
+export async function apiFetch<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const body = await requestEnvelope<T>(path, init);
   return body.data;
+}
+
+export async function apiFetchPaginated<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<{ data: T[]; meta: ApiPaginationMeta }> {
+  const body = await requestEnvelope<T[]>(path, init);
+  if (body.meta === undefined) {
+    throw new ApiRequestError(
+      body.statusCode,
+      "INVALID_RESPONSE",
+      "Respons paginasi tidak menyertakan meta.",
+    );
+  }
+  return { data: body.data, meta: body.meta };
 }

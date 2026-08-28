@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, apiFetchPaginated } from "@/lib/api-client";
 
 export type WorkType =
   | "book_chapter"
@@ -7,12 +7,17 @@ export type WorkType =
   | "other"
   | "patent";
 
+export type Quartile = "Q1" | "Q2" | "Q3" | "Q4";
+
 export type PublicationRecord = {
   citationCount: number;
   createdAt: string;
   doi: string | null;
   isOfficial: boolean;
+  issnL: string | null;
   publicId: string;
+  quartile: Quartile | null;
+  sjr: number | null;
   title: string;
   updatedAt: string;
   venue: string | null;
@@ -33,6 +38,7 @@ export type ListPublicationsParams = {
   isOfficial?: boolean;
   limit?: number;
   page?: number;
+  quartile?: Quartile;
   search?: string;
   sortBy?: "citationCount" | "createdAt" | "title" | "year";
   sortOrder?: "asc" | "desc";
@@ -44,6 +50,9 @@ export type CreatePublicationInput = {
   citationCount?: number;
   doi?: string | null;
   isOfficial?: boolean;
+  issnL?: string | null;
+  quartile?: Quartile | null;
+  sjr?: number | null;
   title: string;
   venue?: string | null;
   workType: WorkType;
@@ -66,7 +75,7 @@ function buildQuery(params: Record<string, unknown>): string {
 export function listPublications(
   params: ListPublicationsParams = {},
 ): Promise<{ data: PublicationRecord[]; meta: PublicationListMeta }> {
-  return apiFetch(`/publications${buildQuery(params)}`);
+  return apiFetchPaginated(`/publications${buildQuery(params)}`);
 }
 
 export function getPublication(publicId: string): Promise<PublicationRecord> {
