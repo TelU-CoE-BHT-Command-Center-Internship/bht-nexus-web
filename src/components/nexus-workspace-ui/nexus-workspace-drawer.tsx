@@ -66,6 +66,11 @@ export function NexusWorkspaceDrawer({
     closeButtonRef.current?.focus({ preventScroll: true });
 
     const handleDialogKeyboard = (event: KeyboardEvent) => {
+      const topModal = Array.from(
+        document.querySelectorAll<HTMLElement>('[aria-modal="true"]'),
+      ).at(-1);
+      if (topModal && topModal !== dialogRef.current) return;
+
       if (event.key === "Escape") {
         event.preventDefault();
         onCloseRef.current();

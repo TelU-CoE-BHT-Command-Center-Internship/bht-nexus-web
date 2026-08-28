@@ -8,8 +8,8 @@ import {
 import styles from "@/components/nexus-members/nexus-members.module.css";
 import type {
   NexusMemberAccount,
+  NexusMemberAccountDirectoryEntry,
   NexusMemberRecord,
-  NexusMemberUnlinkedAccount,
 } from "@/components/nexus-members/nexus-members-content";
 import { statusLabels } from "@/components/nexus-members/nexus-members-model";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -17,16 +17,22 @@ import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-work
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
 
 type AccessOutcome =
-  | { account: NexusMemberUnlinkedAccount; kind: "existing_unlinked" }
-  | { kind: "linked_elsewhere"; member: NexusMemberRecord }
-  | { email: string; kind: "new_account" };
+  | { account: NexusMemberAccountDirectoryEntry; kind: "conflict" }
+  | { account: NexusMemberAccountDirectoryEntry; kind: "existing_unlinked" }
+  | {
+      account: NexusMemberAccountDirectoryEntry;
+      kind: "linked_elsewhere";
+      member: NexusMemberRecord;
+    }
+  | { email: string; kind: "new_account" }
+  | { account: NexusMemberAccountDirectoryEntry; kind: "non_member" };
 
 type AccessDrawerProps = {
+  accountDirectory: readonly NexusMemberAccountDirectoryEntry[];
   member: NexusMemberRecord;
   onClose: () => void;
   onConnect: (account: NexusMemberAccount, announcement: string) => void;
   records: readonly NexusMemberRecord[];
-  unlinkedAccounts: readonly NexusMemberUnlinkedAccount[];
 };
 
 function normalizedEmail(value: string) {
@@ -34,11 +40,11 @@ function normalizedEmail(value: string) {
 }
 
 export function NexusMemberAccessDrawer({
+  accountDirectory,
   member,
   onClose,
   onConnect,
   records,
-  unlinkedAccounts,
 }: AccessDrawerProps) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -56,23 +62,40 @@ export function NexusMemberAccessDrawer({
       return;
     }
 
-    const linkedMember = records.find(
-      (record) => normalizedEmail(record.account?.email ?? "") === normalized,
-    );
-    if (linkedMember) {
-      setOutcome({ kind: "linked_elsewhere", member: linkedMember });
-      return;
-    }
-
-    const unlinkedAccount = unlinkedAccounts.find(
+    const matchedAccount = accountDirectory.find(
       (account) => normalizedEmail(account.email) === normalized,
     );
-    if (unlinkedAccount) {
-      setOutcome({ account: unlinkedAccount, kind: "existing_unlinked" });
+    if (!matchedAccount) {
+      setOutcome({ email: normalized, kind: "new_account" });
       return;
     }
 
-    setOutcome({ email: normalized, kind: "new_account" });
+    if (matchedAccount.relationship.kind === "UNLINKED") {
+      setOutcome({ account: matchedAccount, kind: "existing_unlinked" });
+      return;
+    }
+
+    if (matchedAccount.relationship.kind === "NON_MEMBER") {
+      setOutcome({ account: matchedAccount, kind: "non_member" });
+      return;
+    }
+
+    if (matchedAccount.relationship.kind === "LINKED") {
+      const linkedMemberId = matchedAccount.relationship.memberId;
+      const linkedMember = records.find(
+        (record) => record.id === linkedMemberId,
+      );
+      if (linkedMember) {
+        setOutcome({
+          account: matchedAccount,
+          kind: "linked_elsewhere",
+          member: linkedMember,
+        });
+        return;
+      }
+    }
+
+    setOutcome({ account: matchedAccount, kind: "conflict" });
   }
 
   function resetEmail() {
@@ -94,7 +117,7 @@ export function NexusMemberAccessDrawer({
           <div>
             <span>01</span>
             <h3>Profil yang dipilih</h3>
-            <p>Akun akan dihubungkan setelah pilihan ini dikonfirmasi.</p>
+            <p>Konfirmasi pilihan ini untuk menautkan akun.</p>
           </div>
           <div className={styles.linkedMemberCard}>
             <MemberAvatar member={member} />
@@ -160,6 +183,32 @@ export function NexusMemberAccessDrawer({
               </div>
             ) : null}
 
+            {outcome?.kind === "non_member" ? (
+              <div className={styles.accountBoundary} data-tone="warning">
+                <strong>Akun ditetapkan sebagai akun non-anggota</strong>
+                <p>
+                  {outcome.account.name} · {outcome.account.email}
+                </p>
+                <p>
+                  Ubah hubungan akun dari Administrasi sebelum menautkannya ke
+                  profil anggota.
+                </p>
+              </div>
+            ) : null}
+
+            {outcome?.kind === "conflict" ? (
+              <div className={styles.accountBoundary} data-tone="danger">
+                <strong>Hubungan akun perlu diperiksa</strong>
+                <p>
+                  {outcome.account.name} · {outcome.account.email}
+                </p>
+                <p>
+                  Catatan hubungan akun ini tidak lengkap atau saling
+                  bertentangan. Periksa dari Administrasi sebelum melanjutkan.
+                </p>
+              </div>
+            ) : null}
+
             {outcome?.kind === "new_account" ? (
               <div className={styles.accountBoundary} data-tone="info">
                 <strong>Akun belum ada</strong>
@@ -190,6 +239,7 @@ export function NexusMemberAccessDrawer({
                 onConnect(
                   {
                     email: outcome.account.email,
+                    id: outcome.account.id,
                     roleLabels: outcome.account.roleLabels,
                     status: outcome.account.status,
                   },
@@ -208,8 +258,9 @@ export function NexusMemberAccessDrawer({
                 onConnect(
                   {
                     email: outcome.email,
+                    id: `ACC-BHT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
                     roleLabels: [],
-                    status: "invited",
+                    status: "INVITED",
                   },
                   "Undangan akses BHT Nexus berhasil dikirim.",
                 )

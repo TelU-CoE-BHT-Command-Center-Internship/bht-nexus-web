@@ -161,7 +161,7 @@ export function NexusMemberProfilePhoto({
         <div className={styles.preview}>
           {value ? (
             <Image
-              alt={`Pratinjau foto ${memberName.trim() || "anggota"}`}
+              alt={`Foto ${memberName.trim() || "anggota"} yang dipilih`}
               fill
               sizes="72px"
               src={value}

@@ -999,6 +999,11 @@
   background: #fff6f7;
 }
 
+.accountBoundary[data-tone="warning"] {
+  border-color: #ead39a;
+  background: #fffaf0;
+}
+
 .accountBoundary ul {
   margin: 0;
   padding: 0.45rem 0 0 1rem;

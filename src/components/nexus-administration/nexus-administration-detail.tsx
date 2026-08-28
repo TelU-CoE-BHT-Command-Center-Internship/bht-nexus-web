@@ -7,7 +7,9 @@ import {
   type NexusAdministrationRole,
 } from "@/components/nexus-administration/nexus-administration-content";
 import { NexusAdministrationIcon } from "@/components/nexus-administration/nexus-administration-icons";
+import type { NexusResolvedAdministrationRelationship } from "@/components/nexus-administration/nexus-administration-relationship";
 import type { NexusAdministrationCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { relatedDataHref } from "@/components/nexus-members/nexus-member-identity";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 import {
   NexusWorkspaceButton,
@@ -24,6 +26,7 @@ type NexusAdministrationDetailProps = {
   onResendInvitation: () => void;
   onRestore: () => void;
   onSuspend: () => void;
+  relationship: NexusResolvedAdministrationRelationship;
   role?: NexusAdministrationRole;
 };
 
@@ -31,6 +34,82 @@ function statusTone(status: NexusAdministrationAccount["status"]) {
   if (status === "ACTIVE") return "positive";
   if (status === "INVITED") return "warning";
   return "danger";
+}
+
+function AccountRelationshipSummary({
+  relationship,
+}: {
+  relationship: NexusResolvedAdministrationRelationship;
+}) {
+  if (relationship.kind === "LINKED") {
+    return (
+      <div className={styles.relationCard} data-relationship="LINKED">
+        <div>
+          <span>{relationship.member.id}</span>
+          <strong>{relationship.member.name}</strong>
+          <small>{relationship.member.assignment}</small>
+        </div>
+        <NexusWorkspaceLinkButton
+          href={relatedDataHref("/nexus/anggota", relationship.member.id)}
+        >
+          Buka Anggota
+        </NexusWorkspaceLinkButton>
+      </div>
+    );
+  }
+
+  if (relationship.kind === "NON_MEMBER") {
+    return (
+      <div className={styles.relationCard} data-relationship="NON_MEMBER">
+        <div>
+          <span>Akun non-anggota</span>
+          <strong>Tidak memerlukan profil anggota</strong>
+          <small>
+            Hubungan ini ditetapkan secara eksplisit untuk pengguna di luar
+            keanggotaan CoE BHT.
+          </small>
+        </div>
+      </div>
+    );
+  }
+
+  if (relationship.kind === "UNLINKED") {
+    return (
+      <div className={styles.relationCard} data-relationship="UNLINKED">
+        <div>
+          <span>Belum dihubungkan</span>
+          <strong>Hubungan anggota belum ditentukan</strong>
+          <small>
+            Periksa apakah akun ini perlu ditautkan ke profil anggota atau
+            ditetapkan sebagai akun non-anggota.
+          </small>
+        </div>
+        <NexusWorkspaceLinkButton href="/nexus/anggota">
+          Buka direktori Anggota
+        </NexusWorkspaceLinkButton>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.relationCard} data-relationship="CONFLICT">
+      <div>
+        <span>Perlu diperiksa</span>
+        <strong>Hubungan akun tidak konsisten</strong>
+        <small>
+          Catatan hubungan akun tidak lengkap atau saling bertentangan. Tinjau
+          sebelum mengubah akses.
+        </small>
+      </div>
+      {relationship.member ? (
+        <NexusWorkspaceLinkButton
+          href={relatedDataHref("/nexus/anggota", relationship.member.id)}
+        >
+          Buka Anggota
+        </NexusWorkspaceLinkButton>
+      ) : null}
+    </div>
+  );
 }
 
 export function NexusAdministrationDetail({
@@ -42,13 +121,14 @@ export function NexusAdministrationDetail({
   onResendInvitation,
   onRestore,
   onSuspend,
+  relationship,
   role,
 }: NexusAdministrationDetailProps) {
   return (
     <NexusWorkspaceDrawer
       closeLabel="Tutup detail akun"
       description="Tinjau identitas akun, hubungan anggota, role tingkat tinggi, dan tindakan yang tersedia."
-      eyebrow="Accounts & Access"
+      eyebrow="Akun & Akses"
       onClose={onClose}
       title="Detail akun"
     >
@@ -88,14 +168,6 @@ export function NexusAdministrationDetail({
               <dd>{account.email}</dd>
             </div>
             <div>
-              <dt>Jenis akun</dt>
-              <dd>
-                {account.accountKind === "operational"
-                  ? "Akun operasional"
-                  : "Pengguna individual"}
-              </dd>
-            </div>
-            <div>
               <dt>Dibuat pada</dt>
               <dd>{account.createdAt}</dd>
             </div>
@@ -131,32 +203,7 @@ export function NexusAdministrationDetail({
               </p>
             </div>
           </header>
-          {account.member ? (
-            <div className={styles.relationCard} data-linked="true">
-              <div>
-                <span>{account.member.id}</span>
-                <strong>{account.member.name}</strong>
-                <small>{account.member.assignment}</small>
-              </div>
-              <NexusWorkspaceLinkButton href="/nexus/anggota">
-                Buka Anggota
-              </NexusWorkspaceLinkButton>
-            </div>
-          ) : (
-            <div className={styles.relationCard}>
-              <div>
-                <span>Tidak terhubung</span>
-                <strong>Akun non-anggota</strong>
-                <small>
-                  Keadaan ini valid untuk operator, reviewer, administrator,
-                  intern, atau akun operasional.
-                </small>
-              </div>
-              <NexusWorkspaceLinkButton href="/nexus/anggota">
-                Buka Anggota
-              </NexusWorkspaceLinkButton>
-            </div>
-          )}
+          <AccountRelationshipSummary relationship={relationship} />
         </section>
 
         <section className={styles.detailSection}>
@@ -166,10 +213,7 @@ export function NexusAdministrationDetail({
             </span>
             <div>
               <h3>Role &amp; Akses</h3>
-              <p>
-                Ringkasan ini bukan matriks permission dan tidak menggantikan
-                pemeriksaan server.
-              </p>
+              <p>Ringkasan peran utama yang berlaku untuk akun ini.</p>
             </div>
           </header>
           <div className={styles.roleSummary}>
@@ -255,7 +299,8 @@ export function NexusAdministrationDetail({
             ) : null}
           </div>
           <p className={styles.auditBoundary}>
-            Perubahan final wajib diterapkan dan dicatat oleh layanan server.
+            Pastikan peran dan status akun sesuai kebutuhan pengguna sebelum
+            menyimpan perubahan.
           </p>
         </section>
       </div>

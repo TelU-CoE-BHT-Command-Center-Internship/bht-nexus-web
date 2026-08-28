@@ -1,6 +1,12 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { NexusMemberCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { NexusMemberAccessDrawer } from "@/components/nexus-members/nexus-member-access-drawer";
 import {
@@ -26,6 +32,7 @@ import {
   type statusDefinitions,
   validateMemberProfile,
 } from "@/components/nexus-members/nexus-members-model";
+import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
   formatAuditTimestamp,
@@ -39,6 +46,7 @@ type StatusFilter = (typeof statusDefinitions)[number]["id"];
 type NexusMembersProps = {
   capabilities: NexusMemberCapabilities;
   content: NexusMembersContent;
+  initialMemberId?: string;
 };
 
 function memberMatchesQuery(member: NexusMemberRecord, query: string) {
@@ -110,13 +118,19 @@ function recordFromDraft(
   };
 }
 
-export function NexusMembers({ capabilities, content }: NexusMembersProps) {
+export function NexusMembers({
+  capabilities,
+  content,
+  initialMemberId,
+}: NexusMembersProps) {
   const [records, setRecords] = useState(content.records);
-  const [unlinkedAccounts, setUnlinkedAccounts] = useState(
-    content.unlinkedAccounts,
+  const [accountDirectory, setAccountDirectory] = useState(
+    content.accountDirectory,
   );
   const [selectedMemberId, setSelectedMemberId] = useState(
-    content.records[0]?.id ?? "",
+    content.records.some((member) => member.id === initialMemberId)
+      ? (initialMemberId ?? "")
+      : (content.records[0]?.id ?? ""),
   );
   const [activeStatus, setActiveStatus] = useState<StatusFilter>("all");
   const [activeDetailTab, setActiveDetailTab] =
@@ -132,6 +146,15 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
   const [profileErrors, setProfileErrors] = useState<MemberProfileErrors>({});
   const [accessDrawerOpen, setAccessDrawerOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  const [profileDiscardConfirmationOpen, setProfileDiscardConfirmationOpen] =
+    useState(false);
+
+  useEffect(() => {
+    if (!announcement) return;
+
+    const timeoutId = window.setTimeout(() => setAnnouncement(""), 4500);
+    return () => window.clearTimeout(timeoutId);
+  }, [announcement]);
 
   const fieldOptions = useMemo(
     () =>
@@ -213,15 +236,15 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
   }
 
   function requestCloseProfileEditor() {
-    if (
-      profileEditor &&
-      profileDraftIsDirty(profileEditor) &&
-      !window.confirm(
-        "Perubahan belum disimpan. Batalkan perubahan dan tutup formulir?",
-      )
-    ) {
+    if (profileEditor && profileDraftIsDirty(profileEditor)) {
+      setProfileDiscardConfirmationOpen(true);
       return;
     }
+    closeProfileEditor();
+  }
+
+  function closeProfileEditor() {
+    setProfileDiscardConfirmationOpen(false);
     setProfileErrors({});
     setProfileEditor(null);
   }
@@ -284,18 +307,37 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
   }
 
   function connectAccount(account: NexusMemberAccount, message: string) {
+    if (!selectedMember) return;
     updateSelectedMember((member) => ({
       ...member,
       account,
       updatedAt: formatAuditTimestamp(),
     }));
-    setUnlinkedAccounts((current) =>
-      current.filter(
-        (candidate) =>
-          candidate.email.toLocaleLowerCase("id-ID") !==
-          account.email.toLocaleLowerCase("id-ID"),
-      ),
-    );
+    setAccountDirectory((current) => {
+      const relationship = {
+        kind: "LINKED" as const,
+        memberId: selectedMember.id,
+      };
+      const knownAccount = current.some(
+        (candidate) => candidate.id === account.id,
+      );
+      if (knownAccount) {
+        return current.map((candidate) =>
+          candidate.id === account.id
+            ? { ...candidate, relationship }
+            : candidate,
+        );
+      }
+
+      return [
+        ...current,
+        {
+          ...account,
+          name: selectedMember.name,
+          relationship,
+        },
+      ];
+    });
     setAccessDrawerOpen(false);
     setActiveDetailTab("access");
     setAnnouncement(message);
@@ -404,17 +446,28 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
 
       {accessDrawerOpen && selectedMember ? (
         <NexusMemberAccessDrawer
+          accountDirectory={accountDirectory}
           member={selectedMember}
           onClose={() => setAccessDrawerOpen(false)}
           onConnect={connectAccount}
           records={records}
-          unlinkedAccounts={unlinkedAccounts}
         />
       ) : null}
 
-      <p aria-live="polite" className={styles.announcement}>
+      {profileDiscardConfirmationOpen ? (
+        <NexusWorkspaceConfirmDialog
+          cancelLabel="Lanjutkan mengisi"
+          confirmLabel="Buang perubahan"
+          description="Perubahan pada profil belum disimpan dan akan hilang jika formulir ditutup."
+          onCancel={() => setProfileDiscardConfirmationOpen(false)}
+          onConfirm={closeProfileEditor}
+          title="Buang perubahan profil?"
+        />
+      ) : null}
+
+      <output aria-live="polite" className={styles.announcement}>
         {announcement}
-      </p>
+      </output>
     </section>
   );
 }

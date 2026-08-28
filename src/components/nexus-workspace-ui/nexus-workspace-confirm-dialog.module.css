@@ -1,0 +1,86 @@
+.layer {
+  position: fixed;
+  z-index: 180;
+  display: grid;
+  padding: 1rem;
+  place-items: center;
+  inset: 0;
+}
+
+.backdrop {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  background: rgb(15 23 42 / 58%);
+  inset: 0;
+}
+
+.dialog {
+  position: relative;
+  width: min(100%, 32rem);
+  padding: 1.75rem 1.5rem 1.45rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 1rem;
+  background: var(--color-nexus-surface);
+  box-shadow: 0 1.5rem 4rem rgb(15 23 42 / 24%);
+  text-align: center;
+}
+
+.copy h2 {
+  margin: 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 1.15rem;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+.copy p {
+  max-width: 27rem;
+  margin: 0.55rem auto 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+
+.actions > * {
+  width: 100%;
+  min-height: 3rem;
+}
+
+.actions .confirmAction[data-tone="danger"] {
+  border-color: var(--color-brand-red);
+  background: var(--color-brand-red);
+  color: #fff;
+}
+
+.actions .confirmAction[data-tone="danger"]:hover {
+  border-color: #b91332;
+  background: #b91332;
+  color: #fff;
+}
+
+@media (max-width: 30rem) {
+  .actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog {
+    animation: confirm-in 150ms ease-out;
+  }
+}
+
+@keyframes confirm-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem) scale(0.985);
+  }
+}

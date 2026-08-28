@@ -24,9 +24,9 @@ export type MemberIconName =
   | "phone";
 
 export const accountStatusLabels: Record<NexusMemberAccountStatus, string> = {
-  active: "Aktif",
-  invited: "Undangan dikirim",
-  suspended: "Ditangguhkan",
+  ACTIVE: "Aktif",
+  INVITED: "Undangan dikirim",
+  SUSPENDED: "Ditangguhkan",
 };
 
 export function MemberIcon({ name }: { name: MemberIconName }) {

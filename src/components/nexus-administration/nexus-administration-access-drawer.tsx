@@ -42,7 +42,7 @@ export function NexusAdministrationAccessDrawer({
   return (
     <NexusWorkspaceDrawer
       closeLabel="Tutup perubahan akses"
-      description="Tetapkan satu role tingkat tinggi. Permission dan data scope tetap dihitung serta ditegakkan oleh server."
+      description="Tetapkan satu peran utama sesuai kebutuhan kerja pengguna."
       eyebrow="Role & Akses"
       onClose={onClose}
       title={`Ubah akses · ${account.displayName}`}

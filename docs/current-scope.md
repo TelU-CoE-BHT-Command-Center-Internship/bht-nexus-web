@@ -159,11 +159,11 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 ### Administrasi — Accounts & Access
 
 - Halaman Administrasi menempatkan tiga metrik, pencarian nama atau email, filter status, role, dan hubungan anggota, daftar akun, kartu mobile, pagination, serta rincian akun pada satu route `/nexus/administrasi`.
-- Daftar dan detail mempertahankan perbedaan antara profil anggota, akun login, dan role. Akun boleh tidak terhubung ke anggota; keadaan tersebut dinyatakan valid untuk operator, reviewer, administrator, intern, atau akun operasional. Email akun bersifat baca-saja setelah dibuat.
+- Daftar dan detail mempertahankan perbedaan antara profil anggota, akun login, dan role. Hubungan akun memakai keadaan eksplisit: `LINKED` menunjuk ID anggota kanonis, `NON_MEMBER` menyatakan pengguna memang bukan anggota, `UNLINKED` menandai hubungan yang belum diputuskan, dan `CONFLICT` tetap dapat direpresentasikan ketika catatan hubungan bertentangan. Email akun bersifat baca-saja setelah dibuat.
 - Status akun memakai tiga nilai kanonis `ACTIVE`, `INVITED`, dan `SUSPENDED`. Drawer hanya menampilkan tindakan yang relevan: akun aktif dapat mengubah role tingkat tinggi atau ditangguhkan, undangan dapat dikirim ulang atau dibatalkan, dan akun ditangguhkan dapat dipulihkan.
-- Undangan akun memakai empat langkah: email dan nama tampilan opsional, pilihan eksplisit apakah akun terhubung ke anggota, role tingkat tinggi, serta tinjauan akhir. Hubungan anggota tidak ditebak dari email, dan admin tidak pernah membuat password.
+- Undangan akun memakai empat langkah: email dan nama tampilan opsional, pilihan eksplisit apakah akun terhubung ke anggota, role tingkat tinggi, serta tinjauan akhir. Pilihan anggota berasal dari `getNexusMembersContent`, hubungan tidak ditebak dari email, dan admin tidak pernah membuat password. Escape, backdrop, tombol tutup, dan Batal meminta konfirmasi hanya setelah draft bermakna berubah.
 - Role hanya diringkas sebagai label, deskripsi, serta cakupan tinggi. Halaman tidak membangun pengelolaan role, matriks permission, override granular, audit log, MFA, sesi, perangkat, password reset admin, atau pengaturan keamanan lain.
-- Fixture akun bersifat netral dan perubahan undangan, role, serta status hanya hidup selama halaman aktif. Pengiriman email, token aktivasi, autentikasi, permission, data scope, transaksi status, dan audit tetap menjadi tanggung jawab layanan server.
+- Fixture akun bersifat netral dan perubahan undangan, role, serta status hanya hidup selama halaman aktif. Tindakan menangguhkan akses, membatalkan undangan, dan membuang draft memakai dialog konfirmasi produk bersama, bukan dialog bawaan browser. Route memiliki presentasi loading, error dengan tindakan coba lagi, dan no-access berbasis kontrak kemampuan. Pengiriman email, token aktivasi, autentikasi, permission, data scope, transaksi status, dan audit tetap menjadi tanggung jawab layanan server.
 
 ## Route utama
 

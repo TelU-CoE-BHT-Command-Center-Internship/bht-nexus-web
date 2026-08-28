@@ -112,8 +112,13 @@
   outline-offset: 0.15rem;
 }
 
-.memberCell[data-unlinked="true"] strong {
+.memberCell[data-relationship="NON_MEMBER"] strong,
+.memberCell[data-relationship="UNLINKED"] strong {
   color: #7b8291;
+}
+
+.memberCell[data-relationship="CONFLICT"] strong {
+  color: var(--color-nexus-danger);
 }
 
 .mobileAccountId {
@@ -347,9 +352,24 @@
   background: #fbfcfe;
 }
 
-.relationCard[data-linked="true"] {
+.relationCard[data-relationship="LINKED"] {
   border-color: #cfe0f1;
   background: #f4f8fd;
+}
+
+.relationCard[data-relationship="NON_MEMBER"] {
+  border-color: #dfe3e8;
+  background: #f8f9fb;
+}
+
+.relationCard[data-relationship="UNLINKED"] {
+  border-color: #ead39a;
+  background: #fffaf0;
+}
+
+.relationCard[data-relationship="CONFLICT"] {
+  border-color: #f0c5cc;
+  background: #fff6f7;
 }
 
 .relationCard > div {
