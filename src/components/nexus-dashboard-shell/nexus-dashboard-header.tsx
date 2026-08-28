@@ -11,6 +11,7 @@ import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.mod
 import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
 import type { Locale } from "@/i18n/locales";
+import { signOut } from "@/lib/api-auth";
 
 export type DashboardHeaderPanel = "notifications" | "profile";
 
@@ -70,6 +71,12 @@ export function NexusDashboardHeader({
     setIsSearchOpen(false);
     setSearchQuery("");
     router.push(firstMatch.href);
+  }
+
+  async function handleSignOut() {
+    await signOut().catch(() => undefined);
+    resetDismissedAnnouncementsForSession();
+    router.push(content.signOutHref);
   }
 
   return (
@@ -284,13 +291,9 @@ export function NexusDashboardHeader({
                   {content.viewer.roleLabel}
                 </span>
               </div>
-              <Link
-                href={content.signOutHref}
-                onClick={resetDismissedAnnouncementsForSession}
-                prefetch={false}
-              >
+              <button onClick={handleSignOut} type="button">
                 {content.signOutLabel}
-              </Link>
+              </button>
             </div>
           ) : null}
         </div>

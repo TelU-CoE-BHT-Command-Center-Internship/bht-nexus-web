@@ -914,17 +914,23 @@
   font-size: 0.76rem;
 }
 
-.profilePanel a {
+.profilePanel button {
+  width: 100%;
   margin-top: 0.5rem;
   padding: 0.7rem 0.65rem;
+  border: 0;
   border-radius: 0.4rem;
+  background: transparent;
   color: var(--color-brand-red);
+  font-family: inherit;
   font-size: 0.82rem;
   font-weight: 700;
+  text-align: left;
+  cursor: pointer;
 }
 
-.profilePanel a:hover,
-.profilePanel a:focus-visible {
+.profilePanel button:hover,
+.profilePanel button:focus-visible {
   background: #fff1f4;
 }
 
