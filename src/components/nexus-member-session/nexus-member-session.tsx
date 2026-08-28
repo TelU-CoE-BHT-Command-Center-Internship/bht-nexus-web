@@ -19,9 +19,13 @@ const NexusMemberSessionContext = createContext<NexusMemberSessionValue | null>(
   null,
 );
 
-function withoutAccount(member: NexusMemberRecord): NexusMemberRecord {
-  const profile = { ...member };
-  delete profile.account;
+function withoutAccountProjection(
+  member: NexusMemberRecord,
+): NexusMemberRecord {
+  const { accountAccess: _accountAccess, ...profile } =
+    member as NexusMemberRecord & {
+      accountAccess?: unknown;
+    };
   return profile;
 }
 
@@ -33,11 +37,11 @@ export function NexusMemberSessionProvider({
   initialRecords: NexusMemberRecord[];
 }) {
   const [records, setRecords] = useState(() =>
-    initialRecords.map(withoutAccount),
+    initialRecords.map(withoutAccountProjection),
   );
 
   const saveMember = useCallback((member: NexusMemberRecord) => {
-    const profile = withoutAccount(member);
+    const profile = withoutAccountProjection(member);
     setRecords((current) => {
       const memberExists = current.some(
         (candidate) => candidate.id === profile.id,

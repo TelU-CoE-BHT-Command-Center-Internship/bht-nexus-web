@@ -1,10 +1,10 @@
 "use client";
 
+import type { NexusAccountRoleResolution } from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
   accountStatusLabels,
   type NexusAdministrationAccount,
-  type NexusAdministrationRole,
 } from "@/components/nexus-administration/nexus-administration-content";
 import { NexusAdministrationIcon } from "@/components/nexus-administration/nexus-administration-icons";
 import type { NexusResolvedAdministrationRelationship } from "@/components/nexus-administration/nexus-administration-relationship";
@@ -28,7 +28,7 @@ type NexusAdministrationDetailProps = {
   onRestore: () => void;
   onSuspend: () => void;
   relationship: NexusResolvedAdministrationRelationship;
-  role?: NexusAdministrationRole;
+  role: NexusAccountRoleResolution;
 };
 
 function statusTone(status: NexusAdministrationAccount["status"]) {
@@ -38,23 +38,41 @@ function statusTone(status: NexusAdministrationAccount["status"]) {
 }
 
 function AccountRelationshipSummary({
+  canManageRelationship,
+  onEditRelationship,
   relationship,
 }: {
+  canManageRelationship: boolean;
+  onEditRelationship: () => void;
   relationship: NexusResolvedAdministrationRelationship;
 }) {
+  const manageRelationshipAction = canManageRelationship ? (
+    <NexusWorkspaceButton
+      className={styles.relationManageButton}
+      onClick={onEditRelationship}
+      type="button"
+    >
+      <NexusAdministrationIcon name="link" />
+      Ubah hubungan
+    </NexusWorkspaceButton>
+  ) : null;
+
   if (relationship.kind === "LINKED") {
     return (
       <div className={styles.relationCard} data-relationship="LINKED">
-        <div>
+        <div className={styles.relationCardContent}>
           <span>{relationship.member.id}</span>
           <strong>{relationship.member.name}</strong>
           <small>{relationship.member.assignment}</small>
         </div>
-        <NexusWorkspaceLinkButton
-          href={relatedDataHref("/nexus/anggota", relationship.member.id)}
-        >
-          Buka Anggota
-        </NexusWorkspaceLinkButton>
+        <div className={styles.relationCardActions}>
+          <NexusWorkspaceLinkButton
+            href={relatedDataHref("/nexus/anggota", relationship.member.id)}
+          >
+            Buka Anggota
+          </NexusWorkspaceLinkButton>
+          {manageRelationshipAction}
+        </div>
       </div>
     );
   }
@@ -62,7 +80,7 @@ function AccountRelationshipSummary({
   if (relationship.kind === "NON_MEMBER") {
     return (
       <div className={styles.relationCard} data-relationship="NON_MEMBER">
-        <div>
+        <div className={styles.relationCardContent}>
           <span>Akun non-anggota</span>
           <strong>Tidak memerlukan profil anggota</strong>
           <small>
@@ -70,6 +88,11 @@ function AccountRelationshipSummary({
             keanggotaan CoE BHT.
           </small>
         </div>
+        {manageRelationshipAction ? (
+          <div className={styles.relationCardActions}>
+            {manageRelationshipAction}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -77,7 +100,7 @@ function AccountRelationshipSummary({
   if (relationship.kind === "UNLINKED") {
     return (
       <div className={styles.relationCard} data-relationship="UNLINKED">
-        <div>
+        <div className={styles.relationCardContent}>
           <span>Belum dihubungkan</span>
           <strong>Hubungan anggota belum ditentukan</strong>
           <small>
@@ -85,16 +108,19 @@ function AccountRelationshipSummary({
             ditetapkan sebagai akun non-anggota.
           </small>
         </div>
-        <NexusWorkspaceLinkButton href="/nexus/anggota">
-          Buka direktori Anggota
-        </NexusWorkspaceLinkButton>
+        <div className={styles.relationCardActions}>
+          <NexusWorkspaceLinkButton href="/nexus/anggota">
+            Buka direktori Anggota
+          </NexusWorkspaceLinkButton>
+          {manageRelationshipAction}
+        </div>
       </div>
     );
   }
 
   return (
     <div className={styles.relationCard} data-relationship="CONFLICT">
-      <div>
+      <div className={styles.relationCardContent}>
         <span>Perlu diperiksa</span>
         <strong>Hubungan akun tidak konsisten</strong>
         <small>
@@ -107,12 +133,17 @@ function AccountRelationshipSummary({
           </small>
         ) : null}
       </div>
-      {relationship.member ? (
-        <NexusWorkspaceLinkButton
-          href={relatedDataHref("/nexus/anggota", relationship.member.id)}
-        >
-          Buka Anggota
-        </NexusWorkspaceLinkButton>
+      {relationship.member || manageRelationshipAction ? (
+        <div className={styles.relationCardActions}>
+          {relationship.member ? (
+            <NexusWorkspaceLinkButton
+              href={relatedDataHref("/nexus/anggota", relationship.member.id)}
+            >
+              Buka Anggota
+            </NexusWorkspaceLinkButton>
+          ) : null}
+          {manageRelationshipAction}
+        </div>
       ) : null}
     </div>
   );
@@ -131,6 +162,19 @@ export function NexusAdministrationDetail({
   relationship,
   role,
 }: NexusAdministrationDetailProps) {
+  const roleLabel =
+    role.kind === "KNOWN"
+      ? role.role.label
+      : role.kind === "UNKNOWN"
+        ? "Role perlu ditinjau"
+        : "Belum ditetapkan";
+  const roleDescription =
+    role.kind === "KNOWN"
+      ? role.role.description
+      : role.kind === "UNKNOWN"
+        ? "Role yang tersimpan tidak lagi dikenali. Pilih role yang berlaku sebelum menyimpan perubahan akses."
+        : "Role perlu ditetapkan sebelum akun dapat memakai ruang kerja.";
+
   return (
     <NexusWorkspaceDrawer
       closeLabel="Tutup detail akun"
@@ -210,14 +254,11 @@ export function NexusAdministrationDetail({
               </p>
             </div>
           </header>
-          <AccountRelationshipSummary relationship={relationship} />
-          {capabilities.canManageAccess ? (
-            <div className={styles.detailActions}>
-              <NexusWorkspaceButton onClick={onEditRelationship} type="button">
-                Kelola hubungan anggota
-              </NexusWorkspaceButton>
-            </div>
-          ) : null}
+          <AccountRelationshipSummary
+            canManageRelationship={capabilities.canManageAccess}
+            onEditRelationship={onEditRelationship}
+            relationship={relationship}
+          />
         </section>
 
         <section className={styles.detailSection}>
@@ -233,15 +274,12 @@ export function NexusAdministrationDetail({
           <div className={styles.roleSummary}>
             <div>
               <span>Role saat ini</span>
-              <strong>{role?.label ?? "Belum ditetapkan"}</strong>
-              <p>
-                {role?.description ??
-                  "Role perlu ditetapkan sebelum akun dapat memakai ruang kerja."}
-              </p>
+              <strong>{roleLabel}</strong>
+              <p>{roleDescription}</p>
             </div>
-            {role ? (
-              <ul aria-label="Ringkasan cakupan akses">
-                {role.accessSummary.map((item) => (
+            {role.kind === "KNOWN" ? (
+              <ul aria-label="Ringkasan role, bukan rincian izin">
+                {role.role.accessSummary.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>

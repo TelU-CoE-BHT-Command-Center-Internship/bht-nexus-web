@@ -1,11 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
 import type {
   NexusAccountInvitationInput,
   NexusAccountMemberRelationship,
+} from "@/components/nexus-accounts/nexus-account-directory";
+import {
+  type NexusAccountRoleResolution,
+  resolveNexusAccountRole,
 } from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
@@ -50,6 +55,7 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 
 const NexusAdministrationAccessDrawer = dynamic(() =>
@@ -79,6 +85,8 @@ const NexusAdministrationRelationshipDrawer = dynamic(() =>
 type NexusAdministrationProps = {
   capabilities: NexusAdministrationCapabilities;
   content: NexusAdministrationContent;
+  hasInitialAccountContext: boolean;
+  hasInitialInviteMemberContext: boolean;
   initialAccountId?: string;
   initialInviteMemberId?: string;
 };
@@ -129,6 +137,12 @@ function accountStatusTone(status: NexusAdministrationAccount["status"]) {
   if (status === "ACTIVE") return "success";
   if (status === "INVITED") return "waiting";
   return "danger";
+}
+
+function accountRoleLabel(role: NexusAccountRoleResolution) {
+  if (role.kind === "KNOWN") return role.role.label;
+  if (role.kind === "UNKNOWN") return "Role perlu ditinjau";
+  return "Belum ditetapkan";
 }
 
 function accountMatchesQuery(
@@ -188,9 +202,12 @@ function AccountRelationshipCell({
 export function NexusAdministration({
   capabilities,
   content,
+  hasInitialAccountContext,
+  hasInitialInviteMemberContext,
   initialAccountId,
   initialInviteMemberId,
 }: NexusAdministrationProps) {
+  const router = useRouter();
   const {
     accounts,
     cancelInvitation: cancelAccountInvitation,
@@ -224,6 +241,17 @@ export function NexusAdministration({
   const initialInviteMemberExists = memberDirectory.some(
     (member) => member.id === initialInviteMemberId,
   );
+  const invalidAccountContext =
+    hasInitialAccountContext && !initialAccountExists;
+  const invalidInviteMemberContext =
+    !hasInitialAccountContext &&
+    hasInitialInviteMemberContext &&
+    !initialInviteMemberExists;
+  const invalidContextKey = invalidAccountContext
+    ? `account:${initialAccountId ?? ""}`
+    : invalidInviteMemberContext
+      ? `invite-member:${initialInviteMemberId ?? ""}`
+      : "";
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [filters, setFilters] = useState<Record<FilterId, string>>({
@@ -236,15 +264,17 @@ export function NexusAdministration({
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
     initialAccountExists
       ? (initialAccountId ?? null)
-      : (accountClaimingInitialMember?.id ?? null),
+      : !hasInitialAccountContext && initialInviteMemberExists
+        ? (accountClaimingInitialMember?.id ?? null)
+        : null,
   );
   const [inviteOpen, setInviteOpen] = useState(
-    !initialAccountExists &&
+    !hasInitialAccountContext &&
       initialInviteMemberExists &&
       !accountClaimingInitialMember,
   );
   const [inviteMemberId, setInviteMemberId] = useState(
-    !initialAccountExists &&
+    !hasInitialAccountContext &&
       initialInviteMemberExists &&
       !accountClaimingInitialMember
       ? initialInviteMemberId
@@ -258,6 +288,8 @@ export function NexusAdministration({
   const [announcement, setAnnouncement] = useState("");
   const [pendingAccountAction, setPendingAccountAction] =
     useState<PendingAccountAction | null>(null);
+  const [dismissedInvalidContextKey, setDismissedInvalidContextKey] =
+    useState("");
 
   useEffect(() => {
     if (!announcement) return;
@@ -274,6 +306,11 @@ export function NexusAdministration({
         value: role.id,
       })),
       { label: "Belum ditetapkan", tone: "neutral", value: "unassigned" },
+      {
+        label: "Role perlu ditinjau",
+        tone: "needs-fix",
+        value: "unknown",
+      },
     ];
     return {
       defaultValue: "all",
@@ -283,9 +320,15 @@ export function NexusAdministration({
     };
   }, [roles]);
 
-  const rolesById = useMemo(
-    () => new Map(roles.map((role) => [role.id, role])),
-    [roles],
+  const rolesByAccountId = useMemo(
+    () =>
+      new Map(
+        accounts.map((account) => [
+          account.id,
+          resolveNexusAccountRole(account.roleId, roles),
+        ]),
+      ),
+    [accounts, roles],
   );
 
   const relationshipsByAccountId = useMemo(
@@ -303,14 +346,17 @@ export function NexusAdministration({
     () =>
       accounts.filter((account) => {
         const relationship = relationshipsByAccountId.get(account.id);
-        if (!relationship) return false;
+        const role = rolesByAccountId.get(account.id);
+        if (!relationship || !role) return false;
         const matchesStatus =
           filters.status === "all" || account.status === filters.status;
         const matchesRole =
           filters.role === "all" ||
           (filters.role === "unassigned"
-            ? !account.roleId
-            : account.roleId === filters.role);
+            ? role.kind === "UNASSIGNED"
+            : filters.role === "unknown"
+              ? role.kind === "UNKNOWN"
+              : role.kind === "KNOWN" && role.role.id === filters.role);
         const matchesMember =
           filters.member === "all" || relationship.kind === filters.member;
         return (
@@ -320,7 +366,13 @@ export function NexusAdministration({
           accountMatchesQuery(account, relationship, deferredQuery)
         );
       }),
-    [accounts, deferredQuery, filters, relationshipsByAccountId],
+    [
+      accounts,
+      deferredQuery,
+      filters,
+      relationshipsByAccountId,
+      rolesByAccountId,
+    ],
   );
 
   const totalPages = Math.max(
@@ -376,6 +428,47 @@ export function NexusAdministration({
       })
     : [];
 
+  if (
+    dismissedInvalidContextKey !== invalidContextKey &&
+    (invalidAccountContext || invalidInviteMemberContext)
+  ) {
+    const accountWasRequested = invalidAccountContext;
+    return (
+      <NexusWorkspacePage
+        description={content.description}
+        descriptionId="administration-invalid-context-description"
+        title={content.title}
+        titleId="administration-invalid-context-title"
+      >
+        <NexusWorkspaceState
+          actions={
+            <NexusWorkspaceButton
+              onClick={() => {
+                setDismissedInvalidContextKey(invalidContextKey);
+                router.replace("/nexus/administrasi", { scroll: false });
+              }}
+              type="button"
+            >
+              Kembali ke daftar akun
+            </NexusWorkspaceButton>
+          }
+          description={
+            accountWasRequested
+              ? "Akun pada tautan ini sudah tidak tersedia atau ID-nya tidak dikenali."
+              : "Profil anggota pada tautan ini sudah tidak tersedia atau ID-nya tidak dikenali."
+          }
+          eyebrow="Konteks tautan tidak tersedia"
+          title={
+            accountWasRequested
+              ? "Akun tidak ditemukan"
+              : "Anggota untuk undangan tidak ditemukan"
+          }
+          tone="danger"
+        />
+      </NexusWorkspacePage>
+    );
+  }
+
   function resetFilters() {
     setQuery("");
     setFilters({ member: "all", role: "all", status: "all" });
@@ -414,7 +507,9 @@ export function NexusAdministration({
   }
 
   const rows = visibleAccounts.map((account) => {
-    const role = account.roleId ? rolesById.get(account.roleId) : undefined;
+    const role = rolesByAccountId.get(account.id) ?? {
+      kind: "UNASSIGNED" as const,
+    };
     const relationship = relationshipsByAccountId.get(account.id) ?? {
       kind: "CONFLICT" as const,
     };
@@ -446,8 +541,16 @@ export function NexusAdministration({
           </button>
         ),
         role: (
-          <NexusWorkspaceTableBadge tone={role ? "info" : "neutral"}>
-            {role?.label ?? "Belum ditetapkan"}
+          <NexusWorkspaceTableBadge
+            tone={
+              role.kind === "KNOWN"
+                ? "info"
+                : role.kind === "UNKNOWN"
+                  ? "danger"
+                  : "neutral"
+            }
+          >
+            {accountRoleLabel(role)}
           </NexusWorkspaceTableBadge>
         ),
         status: (
@@ -493,7 +596,7 @@ export function NexusAdministration({
               </div>
               <div>
                 <dt>Role</dt>
-                <dd>{role?.label ?? "Belum ditetapkan"}</dd>
+                <dd>{accountRoleLabel(role)}</dd>
               </div>
             </dl>
           }
@@ -691,9 +794,9 @@ export function NexusAdministration({
             }
           }
           role={
-            selectedAccount.roleId
-              ? rolesById.get(selectedAccount.roleId)
-              : undefined
+            rolesByAccountId.get(selectedAccount.id) ?? {
+              kind: "UNASSIGNED",
+            }
           }
         />
       ) : null}

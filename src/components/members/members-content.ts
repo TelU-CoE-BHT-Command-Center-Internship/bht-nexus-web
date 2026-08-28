@@ -1,3 +1,7 @@
+import {
+  getKnownMemberIdentity,
+  type NexusKnownMemberIdentityKey,
+} from "@/components/nexus-members/nexus-member-identity";
 import type { Locale } from "@/i18n/locales";
 
 export type MemberPortrait =
@@ -24,6 +28,7 @@ type MemberValue = {
 type ManagementMember = {
   description: string;
   field: string;
+  identityKey: NexusKnownMemberIdentityKey;
   name: string;
   portrait: MemberPortrait;
 };
@@ -38,6 +43,7 @@ export type MembersContent = {
     description: string;
     discipline: string;
     expertise: string;
+    identityKey: NexusKnownMemberIdentityKey;
     name: string;
   };
   collaboration: {
@@ -67,7 +73,8 @@ const membersContent = {
       discipline: "Biomedical Engineering",
       expertise:
         "Biomedical Instrumentations, Medical Imaging & Image Processing, & Ultrasound Diagnostics Biomedical Engineering",
-      name: "Dr. Hesty Susanti, S.T., M.T.",
+      identityKey: "hesty",
+      name: getKnownMemberIdentity("hesty").name,
     },
     collaboration: {
       action: "Hubungi Kami",
@@ -86,49 +93,56 @@ const membersContent = {
         description:
           "Mengawal komersialisasi hasil riset dan kekayaan intelektual serta koordinasi pengembangan bersama Bandung Techno Park.",
         field: "Bidang Inovasi dan Hilirisasi",
-        name: "Muhammad Ammar Asyraf, S.T., M.T.",
+        identityKey: "ammar",
+        name: getKnownMemberIdentity("ammar").name,
         portrait: "ammar",
       },
       {
         description:
           "Mengembangkan kolaborasi dengan Fakultas Kedokteran dan rumah sakit, serta merintis bank masalah klinis.",
         field: "Bidang Hubungan Kerjasama Kedokteran",
-        name: "Salsabila Aurellia, S.T., M.T.",
+        identityKey: "salsabila",
+        name: getKnownMemberIdentity("salsabila").name,
         portrait: "salsabila",
       },
       {
         description:
           "Mengelola peluang hibah eksternal nasional dan internasional serta kemitraan dengan industri.",
         field: "Bidang Grant dan Partnership",
-        name: "Dr. Suksmandhira Harimurti, S.T., M.Eng.",
+        identityKey: "suksmandhira",
+        name: getKnownMemberIdentity("suksmandhira").name,
         portrait: "suksmandhira",
       },
       {
         description:
           "Mengelola peluang hibah eksternal nasional dan internasional serta kemitraan dengan industri.",
         field: "Bidang Grant dan Partnership",
-        name: "Fathur Rahman, S.T., M.T.",
+        identityKey: "fathur",
+        name: getKnownMemberIdentity("fathur").name,
         portrait: "fathur",
       },
       {
         description:
           "Mengembangkan program pengabdian masyarakat sekaligus memperkuat branding CoE BHT.",
         field: "Bidang Pengabdian Masyarakat",
-        name: "Laily Ade Oktaviana, S.T., M.T.",
+        identityKey: "laily",
+        name: getKnownMemberIdentity("laily").name,
         portrait: "laily",
       },
       {
         description:
           "Mengembangkan kompetensi dan kapasitas sumber daya manusia di lingkungan CoE BHT.",
         field: "Bidang Pengembangan Sumber Daya Manusia",
-        name: "Ir. Miftadi Sudjai, M.Sc., Ph.D.",
+        identityKey: "miftadi",
+        name: getKnownMemberIdentity("miftadi").name,
         portrait: "miftadi",
       },
       {
         description:
           "Menjaga ketertiban administrasi untuk kebutuhan audit dan Knowledge Management CoE BHT.",
         field: "Bidang Internal Quality dan Audit",
-        name: "Dita Puspitasari, S.T., B.Sc., M.T.",
+        identityKey: "dita",
+        name: getKnownMemberIdentity("dita").name,
         portrait: "dita",
       },
     ],
@@ -167,7 +181,8 @@ const membersContent = {
       discipline: "Biomedical Engineering",
       expertise:
         "Biomedical Instrumentations, Medical Imaging & Image Processing, & Ultrasound Diagnostics Biomedical Engineering",
-      name: "Dr. Hesty Susanti, S.T., M.T.",
+      identityKey: "hesty",
+      name: getKnownMemberIdentity("hesty").name,
     },
     collaboration: {
       action: "Contact Us",
@@ -186,49 +201,56 @@ const membersContent = {
         description:
           "Oversees research commercialization and intellectual property while coordinating development with Bandung Techno Park.",
         field: "Innovation and Downstream Development",
-        name: "Muhammad Ammar Asyraf, S.T., M.T.",
+        identityKey: "ammar",
+        name: getKnownMemberIdentity("ammar").name,
         portrait: "ammar",
       },
       {
         description:
           "Develops collaboration with medical schools and hospitals while initiating a clinical problem bank.",
         field: "Medical Partnership Relations",
-        name: "Salsabila Aurellia, S.T., M.T.",
+        identityKey: "salsabila",
+        name: getKnownMemberIdentity("salsabila").name,
         portrait: "salsabila",
       },
       {
         description:
           "Manages national and international external grant opportunities and industry partnerships.",
         field: "Grants and Partnerships",
-        name: "Dr. Suksmandhira Harimurti, S.T., M.Eng.",
+        identityKey: "suksmandhira",
+        name: getKnownMemberIdentity("suksmandhira").name,
         portrait: "suksmandhira",
       },
       {
         description:
           "Manages national and international external grant opportunities and industry partnerships.",
         field: "Grants and Partnerships",
-        name: "Fathur Rahman, S.T., M.T.",
+        identityKey: "fathur",
+        name: getKnownMemberIdentity("fathur").name,
         portrait: "fathur",
       },
       {
         description:
           "Develops community-service programs while strengthening the CoE BHT institutional brand.",
         field: "Community Service",
-        name: "Laily Ade Oktaviana, S.T., M.T.",
+        identityKey: "laily",
+        name: getKnownMemberIdentity("laily").name,
         portrait: "laily",
       },
       {
         description:
           "Develops the competencies and capacity of people across the CoE BHT environment.",
         field: "Human Resources Development",
-        name: "Ir. Miftadi Sudjai, M.Sc., Ph.D.",
+        identityKey: "miftadi",
+        name: getKnownMemberIdentity("miftadi").name,
         portrait: "miftadi",
       },
       {
         description:
           "Maintains administrative readiness for CoE BHT audit and Knowledge Management activities.",
         field: "Internal Quality and Audit",
-        name: "Dita Puspitasari, S.T., B.Sc., M.T.",
+        identityKey: "dita",
+        name: getKnownMemberIdentity("dita").name,
         portrait: "dita",
       },
     ],

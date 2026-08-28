@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import { resolveNexusAccountRole } from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import type {
   NexusAdministrationAccount,
@@ -26,17 +27,28 @@ export function NexusAdministrationAccessDrawer({
   onSave,
   roles,
 }: NexusAdministrationAccessDrawerProps) {
-  const [roleId, setRoleId] = useState(account.roleId ?? "");
+  const initialRole = resolveNexusAccountRole(account.roleId, roles);
+  const [roleId, setRoleId] = useState(
+    initialRole.kind === "KNOWN" ? initialRole.role.id : "",
+  );
   const [error, setError] = useState("");
   const selectedRole = roles.find((role) => role.id === roleId);
 
   function submitAccess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!roleId) {
-      setError("Pilih role untuk akun ini.");
+    if (!selectedRole) {
+      setError("Pilih role yang masih berlaku untuk akun ini.");
       return;
     }
-    onSave(roleId);
+    try {
+      onSave(selectedRole.id);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Role akun tidak dapat disimpan.",
+      );
+    }
   }
 
   return (
@@ -48,10 +60,17 @@ export function NexusAdministrationAccessDrawer({
       title={`Ubah akses · ${account.displayName}`}
     >
       <form className={styles.accessForm} noValidate onSubmit={submitAccess}>
-        <NexusWorkspaceNotice>
-          Mengubah role tidak mengubah identitas anggota dan tidak dapat
-          mengubah email akun.
-        </NexusWorkspaceNotice>
+        {initialRole.kind === "UNKNOWN" ? (
+          <NexusWorkspaceNotice tone="danger">
+            Role yang tersimpan tidak lagi dikenali. Pilih role yang masih
+            berlaku sebelum menyimpan perubahan.
+          </NexusWorkspaceNotice>
+        ) : (
+          <NexusWorkspaceNotice>
+            Mengubah role tidak mengubah identitas anggota dan tidak dapat
+            mengubah email akun.
+          </NexusWorkspaceNotice>
+        )}
 
         <NexusWorkspaceFormField
           error={error}

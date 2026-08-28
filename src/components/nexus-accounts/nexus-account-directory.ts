@@ -17,6 +17,11 @@ export type NexusAccountDirectoryRole = {
   label: string;
 };
 
+export type NexusAccountRoleResolution =
+  | { kind: "KNOWN"; role: NexusAccountDirectoryRole }
+  | { kind: "UNASSIGNED" }
+  | { kind: "UNKNOWN" };
+
 export type NexusAccountDirectoryRecord = {
   createdAt: string;
   createdBy: string;
@@ -53,6 +58,15 @@ export function nexusAccountRelationshipMemberId(
     : undefined;
 }
 
+export function resolveNexusAccountRole(
+  roleId: string | undefined,
+  roles: readonly NexusAccountDirectoryRole[],
+): NexusAccountRoleResolution {
+  if (!roleId) return { kind: "UNASSIGNED" };
+  const role = roles.find((candidate) => candidate.id === roleId);
+  return role ? { kind: "KNOWN", role } : { kind: "UNKNOWN" };
+}
+
 /**
  * Menormalkan konflik yang dapat ditentukan hanya dari direktori akun. Dua
  * akun tidak boleh sama-sama dianggap terhubung secara sah ke satu anggota.
@@ -82,37 +96,49 @@ export function resolveNexusAccountRelationship(
 
 const roles: readonly NexusAccountDirectoryRole[] = [
   {
-    accessSummary: ["Ringkasan organisasi", "Persetujuan tingkat pimpinan"],
+    accessSummary: [
+      "Tingkat akses pimpinan",
+      "Rincian izin ditetapkan terpisah",
+    ],
     description:
-      "Akses ringkasan strategis dan tindakan persetujuan sesuai kewenangan pimpinan.",
+      "Ringkasan role untuk tanggung jawab pimpinan. Izin efektif mengikuti kebijakan akses akun.",
     id: "pimpinan",
     label: "Pimpinan",
   },
   {
-    accessSummary: ["Administrasi akun", "Konfigurasi ruang kerja"],
+    accessSummary: [
+      "Tingkat akses administrasi",
+      "Rincian izin ditetapkan terpisah",
+    ],
     description:
-      "Mengelola akun, peran, dan konfigurasi operasional BHT Nexus.",
+      "Ringkasan role untuk tanggung jawab administrasi. Izin efektif mengikuti kebijakan akses akun.",
     id: "admin",
     label: "Admin",
   },
   {
-    accessSummary: ["Antrean tinjauan", "Riwayat perubahan"],
+    accessSummary: [
+      "Tingkat akses peninjauan",
+      "Rincian izin ditetapkan terpisah",
+    ],
     description:
-      "Meninjau kandidat perubahan dan riwayat aktivitas sesuai cakupan yang diberikan.",
+      "Ringkasan role untuk tanggung jawab peninjauan. Izin efektif mengikuti kebijakan akses akun.",
     id: "auditor",
     label: "Auditor",
   },
   {
-    accessSummary: ["Ruang kerja anggota", "Data yang diizinkan"],
+    accessSummary: [
+      "Tingkat akses anggota",
+      "Rincian izin ditetapkan terpisah",
+    ],
     description:
-      "Mengakses ruang kerja anggota dan data organisasi yang tersedia untuknya.",
+      "Ringkasan role untuk pengguna anggota. Izin efektif mengikuti kebijakan akses akun.",
     id: "anggota",
     label: "Anggota",
   },
   {
-    accessSummary: ["Ruang kolaborasi", "Data kerja sama yang diizinkan"],
+    accessSummary: ["Tingkat akses mitra", "Rincian izin ditetapkan terpisah"],
     description:
-      "Mengakses ruang kolaborasi dan informasi kerja sama yang tersedia untuk mitra.",
+      "Ringkasan role untuk pengguna mitra. Izin efektif mengikuti kebijakan akses akun.",
     id: "partner_eksternal",
     label: "Mitra Eksternal",
   },
@@ -122,11 +148,11 @@ const accounts: readonly NexusAccountDirectoryRecord[] = [
   {
     createdAt: "12 Mei 2026, 09.18 WIB",
     createdBy: "Administrator Sistem",
-    displayName: "Dr. Hesty Susanti, S.T., M.T.",
-    email: "hesty.susanti@example.org",
+    displayName: "Lintang Maheswari",
+    email: "lintang.maheswari@example.org",
     id: "ACC-BHT-0014",
     lastActiveAt: "28 Agustus 2026, 08.42 WIB",
-    relationship: { kind: "LINKED", memberId: "hesty-susanti" },
+    relationship: { kind: "UNLINKED" },
     roleId: "pimpinan",
     status: "ACTIVE",
     updatedAt: "26 Agustus 2026, 14.10 WIB",
@@ -134,14 +160,11 @@ const accounts: readonly NexusAccountDirectoryRecord[] = [
   {
     createdAt: "18 Mei 2026, 13.04 WIB",
     createdBy: "Administrator Sistem",
-    displayName: "Muhammad Ammar Asyraf, S.T., M.T.",
-    email: "ammar.asyraf@example.org",
+    displayName: "Reza Adiwangsa",
+    email: "reza.adiwangsa@example.org",
     id: "ACC-BHT-0019",
     lastActiveAt: "27 Agustus 2026, 17.26 WIB",
-    relationship: {
-      kind: "LINKED",
-      memberId: "muhammad-ammar-asyraf-s-t-m-t",
-    },
+    relationship: { kind: "UNLINKED" },
     roleId: "admin",
     status: "ACTIVE",
     updatedAt: "18 Mei 2026, 13.04 WIB",
@@ -149,16 +172,13 @@ const accounts: readonly NexusAccountDirectoryRecord[] = [
   {
     createdAt: "22 Agustus 2026, 10.15 WIB",
     createdBy: "Administrator Sistem",
-    displayName: "Salsabila Aurellia, S.T., M.T.",
-    email: "salsabila.aurellia@example.org",
+    displayName: "Maya Kirana",
+    email: "maya.kirana@example.org",
     id: "ACC-BHT-0033",
     invitedAt: "22 Agustus 2026, 10.15 WIB",
     lastInvitationAt: "26 Agustus 2026, 09.30 WIB",
-    relationship: {
-      kind: "LINKED",
-      memberId: "salsabila-aurellia-s-t-m-t",
-    },
-    roleId: "anggota",
+    relationship: { kind: "NON_MEMBER" },
+    roleId: "partner_eksternal",
     status: "INVITED",
     updatedAt: "26 Agustus 2026, 09.30 WIB",
   },
@@ -177,14 +197,11 @@ const accounts: readonly NexusAccountDirectoryRecord[] = [
   {
     createdAt: "07 Juni 2026, 11.24 WIB",
     createdBy: "Administrator Sistem",
-    displayName: "Dr. Suksmandhira Harimurti, S.T., M.Eng.",
-    email: "suksmandhira.harimurti@example.org",
+    displayName: "Galang Saputra",
+    email: "galang.saputra@example.org",
     id: "ACC-BHT-0027",
     lastActiveAt: "14 Agustus 2026, 15.08 WIB",
-    relationship: {
-      kind: "LINKED",
-      memberId: "dr-suksmandhira-harimurti-s-t-m-eng",
-    },
+    relationship: { kind: "UNLINKED" },
     roleId: "auditor",
     status: "SUSPENDED",
     updatedAt: "19 Agustus 2026, 09.12 WIB",

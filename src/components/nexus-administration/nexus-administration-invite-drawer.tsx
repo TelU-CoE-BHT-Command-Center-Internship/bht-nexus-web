@@ -247,8 +247,7 @@ export function NexusAdministrationInviteDrawer({
               </span>
             </div>
             <NexusWorkspaceNotice tone="success">
-              Pengguna perlu mengaktifkan akun melalui tautan undangan sebelum
-              masa berlakunya berakhir.
+              Akun menunggu proses aktivasi sebelum dapat digunakan.
             </NexusWorkspaceNotice>
             <footer className={styles.drawerFooter}>
               <NexusWorkspaceButton onClick={requestClose} type="button">
@@ -284,7 +283,7 @@ export function NexusAdministrationInviteDrawer({
                 <div className={styles.formGrid}>
                   <NexusWorkspaceFormField
                     error={errors.email}
-                    hint="Alamat ini digunakan untuk undangan aktivasi."
+                    hint="Alamat ini digunakan sebagai identitas masuk akun."
                     id="administration-invite-email"
                     label="Email"
                     name="email"
@@ -298,7 +297,7 @@ export function NexusAdministrationInviteDrawer({
                     wide
                   />
                   <NexusWorkspaceFormField
-                    hint="Opsional; pengguna dapat melengkapinya saat aktivasi."
+                    hint="Opsional; dapat diperbarui saat identitas akun sudah lengkap."
                     id="administration-invite-display-name"
                     label="Nama tampilan"
                     name="displayName"
@@ -457,10 +456,7 @@ export function NexusAdministrationInviteDrawer({
                   </div>
                   <div>
                     <dt>Nama tampilan</dt>
-                    <dd>
-                      {draft.displayName.trim() ||
-                        "Belum diisi — dilengkapi saat aktivasi"}
-                    </dd>
+                    <dd>{draft.displayName.trim() || "Belum diisi"}</dd>
                   </div>
                   <div>
                     <dt>Hubungan anggota</dt>
@@ -476,8 +472,7 @@ export function NexusAdministrationInviteDrawer({
                   </div>
                 </dl>
                 <NexusWorkspaceNotice>
-                  Undangan tidak meminta admin membuat kata sandi. Pengguna akan
-                  menyiapkannya melalui alur aktivasi undangan.
+                  Admin tidak menetapkan kata sandi pada langkah ini.
                 </NexusWorkspaceNotice>
                 {errors.submit ? (
                   <NexusWorkspaceNotice tone="danger">

@@ -372,10 +372,34 @@
   background: #fff6f7;
 }
 
-.relationCard > div {
+.relationCardContent {
   display: grid;
   min-width: 0;
   gap: 0.18rem;
+}
+
+.relationCardActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.relationCardActions .relationManageButton {
+  min-height: 2.35rem;
+  padding: 0.48rem 0.72rem;
+  background: #ffffff;
+}
+
+.relationManageButton svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .relationCard span,
@@ -787,6 +811,15 @@
   }
 
   .relationCard > :last-child {
+    width: 100%;
+  }
+
+  .relationCardActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .relationCardActions > * {
     width: 100%;
   }
 

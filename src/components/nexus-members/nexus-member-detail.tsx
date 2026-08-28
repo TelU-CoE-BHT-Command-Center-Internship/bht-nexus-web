@@ -15,7 +15,7 @@ import {
   memberStatusTone,
 } from "@/components/nexus-members/nexus-member-ui";
 import styles from "@/components/nexus-members/nexus-members.module.css";
-import type { NexusMemberRecord } from "@/components/nexus-members/nexus-members-content";
+import type { NexusMemberViewRecord } from "@/components/nexus-members/nexus-members-content";
 import { statusLabels } from "@/components/nexus-members/nexus-members-model";
 import {
   NexusWorkspaceButton,
@@ -68,7 +68,7 @@ const relatedCatalogs = [
 type MemberDetailProps = {
   activeTab: MemberDetailTab;
   capabilities: NexusMemberCapabilities;
-  member: NexusMemberRecord;
+  member: NexusMemberViewRecord;
   onBack: () => void;
   onEdit: () => void;
   onOpenAcademicEditor: () => void;
@@ -93,6 +93,17 @@ export function NexusMemberDetail({
   onOpenAcademicEditor,
   onTabChange,
 }: MemberDetailProps) {
+  const linkedAccount =
+    member.accountAccess.kind === "LINKED"
+      ? member.accountAccess.account
+      : undefined;
+  const accountRoleLabel = linkedAccount
+    ? linkedAccount.role.kind === "KNOWN"
+      ? linkedAccount.role.role.label
+      : linkedAccount.role.kind === "UNKNOWN"
+        ? "Role perlu ditinjau"
+        : "Belum ditetapkan"
+    : undefined;
   const collectionRequests: { href: string; label: string; source: string }[] =
     [];
 
@@ -154,7 +165,8 @@ export function NexusMemberDetail({
               Ubah profil
             </NexusWorkspaceButton>
           ) : null}
-          {capabilities.canGrantAccess && !member.account ? (
+          {capabilities.canGrantAccess &&
+          member.accountAccess.kind === "NONE" ? (
             <NexusWorkspaceLinkButton
               className={styles.detailActionButton}
               href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
@@ -430,15 +442,15 @@ export function NexusMemberDetail({
 
         {activeTab === "access" ? (
           <section className={styles.accessSection}>
-            {member.account ? (
+            {member.accountAccess.kind === "LINKED" && linkedAccount ? (
               <>
                 <div className={styles.cardGrid}>
                   <MemberDetailCard
                     items={[
-                      { label: "Email akun", value: member.account.email },
+                      { label: "Email akun", value: linkedAccount.email },
                       {
                         label: "Status akun",
-                        value: accountStatusLabels[member.account.status],
+                        value: accountStatusLabels[linkedAccount.status],
                       },
                       {
                         label: "Hubungan profil",
@@ -451,13 +463,11 @@ export function NexusMemberDetail({
                     items={[
                       {
                         label: "Role akun",
-                        value:
-                          member.account.roleLabels.join(", ") ||
-                          "Belum ditetapkan",
+                        value: accountRoleLabel,
                       },
                       {
-                        label: "Hak akses",
-                        value: "Mengikuti role dan izin akun",
+                        label: "Ringkasan akses",
+                        value: "Rincian izin mengikuti kebijakan akses akun",
                       },
                     ]}
                     title="Ringkasan akses"
@@ -467,7 +477,7 @@ export function NexusMemberDetail({
                   action={
                     capabilities.canGrantAccess ? (
                       <NexusWorkspaceLinkButton
-                        href={`/nexus/administrasi?account=${encodeURIComponent(member.account.id)}`}
+                        href={`/nexus/administrasi?account=${encodeURIComponent(linkedAccount.id)}`}
                         tone="primary"
                       >
                         Kelola akun
@@ -480,6 +490,32 @@ export function NexusMemberDetail({
                   title="Akun terhubung ke profil anggota"
                 />
               </>
+            ) : member.accountAccess.kind === "CONFLICT" ? (
+              <div className={styles.accessEmpty} data-state="conflict">
+                <span aria-hidden="true">
+                  <MemberIcon name="link" />
+                </span>
+                <h3>Hubungan akun perlu diperiksa</h3>
+                <p>
+                  Terdapat catatan akun yang bertentangan untuk profil anggota
+                  ini.
+                </p>
+                {capabilities.canGrantAccess ? (
+                  <NexusWorkspaceLinkButton
+                    href={
+                      member.accountAccess.accountIds[0]
+                        ? `/nexus/administrasi?account=${encodeURIComponent(member.accountAccess.accountIds[0])}`
+                        : "/nexus/administrasi"
+                    }
+                    tone="primary"
+                  >
+                    Tinjau di Administrasi
+                  </NexusWorkspaceLinkButton>
+                ) : null}
+                <small>
+                  Periksa hubungan yang benar sebelum mengubah akses anggota.
+                </small>
+              </div>
             ) : (
               <div className={styles.accessEmpty}>
                 <span aria-hidden="true">

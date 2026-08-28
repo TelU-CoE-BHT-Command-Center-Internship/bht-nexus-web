@@ -57,6 +57,8 @@ export default async function NexusAdministrationPage({
     <NexusAdministration
       capabilities={access.administrationCapabilities}
       content={content}
+      hasInitialAccountContext={Object.hasOwn(params, "account")}
+      hasInitialInviteMemberContext={Object.hasOwn(params, "inviteMember")}
       initialAccountId={firstSearchParam(params.account)}
       initialInviteMemberId={firstSearchParam(params.inviteMember)}
     />

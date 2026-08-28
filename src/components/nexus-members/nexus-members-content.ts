@@ -11,10 +11,14 @@ import { getMembersContent } from "@/components/members/members-content";
 import {
   type NexusAccountDirectoryRecord,
   type NexusAccountDirectoryRole,
+  type NexusAccountRoleResolution,
   type NexusAccountStatus,
+  nexusAccountRelationshipMemberId,
   resolveNexusAccountRelationship,
+  resolveNexusAccountRole,
 } from "@/components/nexus-accounts/nexus-account-directory";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
+import { getKnownMemberIdentity } from "@/components/nexus-members/nexus-member-identity";
 import { COE_BHT_RESEARCH_SPACE } from "@/content/coe-bht";
 
 export type NexusMemberStatus = "active" | "inactive" | "on_leave";
@@ -24,12 +28,16 @@ export type NexusMemberAccountStatus = NexusAccountStatus;
 export type NexusMemberAccount = {
   email: string;
   id: string;
-  roleLabels: string[];
+  role: NexusAccountRoleResolution;
   status: NexusMemberAccountStatus;
 };
 
+export type NexusMemberAccountAccess =
+  | { kind: "NONE" }
+  | { account: NexusMemberAccount; kind: "LINKED" }
+  | { accountIds: readonly string[]; kind: "CONFLICT" };
+
 export type NexusMemberRecord = {
-  account?: NexusMemberAccount;
   academic: {
     googleScholar?: string;
     orcid?: string;
@@ -69,6 +77,10 @@ export type NexusMemberRecord = {
   updatedAt?: string;
 };
 
+export type NexusMemberViewRecord = NexusMemberRecord & {
+  accountAccess: NexusMemberAccountAccess;
+};
+
 export type NexusMembersContent = {
   description: string;
   title: string;
@@ -86,15 +98,6 @@ const portraits = {
   salsabila: salsabilaAurelliaPhoto,
   suksmandhira: suksmandhiraHarimurtiPhoto,
 } satisfies Record<string, ImageProps["src"]>;
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase("id-ID")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
 
 const sharedAffiliation = {
   institution: "Telkom University",
@@ -115,7 +118,7 @@ const chair: NexusMemberRecord = {
       .split(/\s*,\s*|\s*&\s*/)
       .filter(Boolean),
   },
-  id: "hesty-susanti",
+  id: getKnownMemberIdentity(publicContent.chair.identityKey).id,
   identity: {
     preferredName: "Hesty Susanti",
   },
@@ -128,7 +131,7 @@ const chair: NexusMemberRecord = {
 
 const managementProfiles = publicContent.managementMembers.map(
   (member): NexusMemberRecord => {
-    const id = slugify(member.name);
+    const id = getKnownMemberIdentity(member.identityKey).id;
 
     return {
       academic: {},
@@ -180,28 +183,41 @@ export function projectNexusMemberAccounts(
   accounts: readonly NexusAccountDirectoryRecord[],
   roles: readonly NexusAccountDirectoryRole[],
 ) {
-  const rolesById = new Map(roles.map((role) => [role.id, role.label]));
+  return records.map((member): NexusMemberViewRecord => {
+    const claimingAccounts = accounts.filter(
+      (account) =>
+        nexusAccountRelationshipMemberId(account.relationship) === member.id,
+    );
 
-  return records.map((member): NexusMemberRecord => {
-    const projectedMember = { ...member };
-    delete projectedMember.account;
-    const account = accounts.find((candidate) => {
-      const relationship = resolveNexusAccountRelationship(candidate, accounts);
-      return (
-        relationship.kind === "LINKED" && relationship.memberId === member.id
-      );
-    });
+    if (claimingAccounts.length === 0) {
+      return { ...member, accountAccess: { kind: "NONE" } };
+    }
 
-    if (!account) return projectedMember;
+    const account = claimingAccounts[0];
+    if (
+      claimingAccounts.length === 1 &&
+      account &&
+      resolveNexusAccountRelationship(account, accounts).kind === "LINKED"
+    ) {
+      return {
+        ...member,
+        accountAccess: {
+          account: {
+            email: account.email,
+            id: account.id,
+            role: resolveNexusAccountRole(account.roleId, roles),
+            status: account.status,
+          },
+          kind: "LINKED",
+        },
+      };
+    }
+
     return {
-      ...projectedMember,
-      account: {
-        email: account.email,
-        id: account.id,
-        roleLabels: account.roleId
-          ? [rolesById.get(account.roleId) ?? account.roleId]
-          : [],
-        status: account.status,
+      ...member,
+      accountAccess: {
+        accountIds: claimingAccounts.map((candidate) => candidate.id),
+        kind: "CONFLICT",
       },
     };
   });
