@@ -21,7 +21,7 @@ Aplikasi web dan server dikelola dalam repository terpisah. Repository ini berfo
 
 ## Status Saat Ini
 
-Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk, dashboard, Pengumpulan, Tinjauan, Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Kegiatan & Pengabdian, Anggota, dan Dokumen juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
+Repository sedang mengembangkan landing page sekaligus antarmuka ruang kerja BHT Nexus. Halaman utama dan halaman anggota dalam bahasa Indonesia serta Inggris sudah tersedia dengan tampilan responsif. Antarmuka masuk, dashboard, Pengumpulan, Tinjauan, Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Kegiatan & Pengabdian, Anggota, Administrasi Accounts & Access, dan Dokumen juga telah tersedia sebagai fondasi frontend sebelum autentikasi serta data server dihubungkan.
 
 Landing page belum menjadi versi akhir. Bagian tambahan, tautan, serta informasi berita, kegiatan, dan mitra masih akan dilengkapi atau disesuaikan setelah tim mengonfirmasi data resminya.
 
@@ -138,6 +138,7 @@ Inventaris fitur, alur kandidat, dan batas implementasi terbaru tersedia di [cak
 | `/nexus/akademik` | Indonesia | Daftar bimbingan doktor, bimbingan magister, dan magang mahasiswa resmi |
 | `/nexus/kegiatan` | Indonesia | Daftar kegiatan, jejaring, bisnis, dan pengabdian masyarakat resmi untuk KM-9, KM-10, serta KM-20 sampai KM-27 |
 | `/nexus/anggota` | Indonesia | Direktori, profil, keanggotaan, identitas akademik, data terkait, dan hubungan akun BHT Nexus |
+| `/nexus/administrasi` | Indonesia | Daftar akun, hubungan anggota opsional, role tingkat tinggi, status akses, dan alur undangan akun |
 | `/nexus/tinjauan` | Indonesia | Satu antrean Tinjauan untuk publikasi, pelengkapan metadata, serta kandidat lintas-domain |
 | `/nexus/dokumen` | Indonesia | Pustaka dan status pemrosesan dokumen |
 | `/nexus/tanya-dokumen` | Indonesia | Tanya jawab dokumen dengan sumber dan kutipan |

@@ -243,7 +243,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Members", id: "Anggota" },
   },
   {
-    implemented: { en: false, id: false },
+    implemented: { en: false, id: true },
     group: "administration",
     href: { en: "/en/nexus/administration", id: "/nexus/administrasi" },
     icon: "administration",

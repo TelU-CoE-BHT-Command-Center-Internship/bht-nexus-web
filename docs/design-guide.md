@@ -22,7 +22,7 @@ Navigasi Indonesia dikelompokkan mengikuti perjalanan datanya:
 - **Utama** — Dashboard.
 - **Alur Data** — Pengumpulan, Dokumen, dan Tinjauan. Ketiganya adalah jalur kandidat sebelum menjadi data resmi.
 - **Data Resmi** — Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian sebagai rumah data resmi yang sudah tersedia.
-- **Administrasi** — Anggota dan Administrasi, keduanya belum tersedia.
+- **Administrasi** — Anggota untuk identitas organisasi dan Administrasi untuk Accounts & Access. Keduanya tersedia pada ruang kerja Indonesia dan tetap dipisahkan agar profil anggota tidak berubah menjadi akun login atau role.
 
 Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum tersedia, dan tidak dapat diklik. Pendekatan ini dipilih agar keputusan di Tinjauan selalu mempunyai tujuan yang jelas tanpa membuat halaman kosong.
 
@@ -91,6 +91,8 @@ Rincian Tinjauan yang baru diperlukan setelah tindakan pengguna dimuat sebagai b
 Kandidat dengan beberapa pembanding harus menyediakan pilihan eksplisit. Mengganti pembanding memperbarui skor, perbandingan bidang, sumber, dan akibat keputusan sebagai satu state terkendali. Status perbandingan disimpan sebagai nilai mesin `same`, `similar`, `different`, atau `missing`; label yang dilihat pengguna dipisahkan dari nilai tersebut. Input pilihan tetap menjadi elemen form asli yang dapat diklik dan dioperasikan dengan keyboard; elemen transparan tidak boleh memutus event perubahan React.
 
 Publikasi dan Tinjauan pada `main` adalah acuan visual. Fitur hasil integrasi tidak boleh membawa sistem panel, tabel, dropdown, pagination, token warna, atau loading indicator alternatif. Perbedaan domain boleh mengubah isi dan tindakan, tetapi tidak membuat bahasa visual kedua.
+
+Administrasi Accounts & Access memakai pola daftar desktop, kartu mobile, tiga metrik, filter, pagination, dan drawer yang sama. Drawer detail hanya merangkum informasi akun, hubungan anggota, role tingkat tinggi, serta tindakan sesuai status. Undangan memakai empat langkah—identitas, hubungan anggota eksplisit, role, dan tinjauan—tanpa password atau penyimpanan keamanan di browser. Matriks permission, pengelolaan role, audit log, MFA, sesi, dan policy enforcement tidak dipresentasikan sebagai kemampuan frontend.
 
 ## Warna dan kontras
 

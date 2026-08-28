@@ -18,9 +18,16 @@ export type NexusWorkspaceNavigationId =
  * Adapter API kelak menerjemahkan policy server ke kontrak kecil ini.
  */
 export type NexusWorkspaceAccess = {
+  administrationCapabilities: NexusAdministrationCapabilities;
   allowedNavigationIds: readonly NexusWorkspaceNavigationId[];
   memberCapabilities: NexusMemberCapabilities;
   reviewCapabilities: NexusReviewCapabilities;
+};
+
+export type NexusAdministrationCapabilities = {
+  canInviteAccount: boolean;
+  canManageAccess: boolean;
+  canManageAccountStatus: boolean;
 };
 
 export type NexusMemberCapabilities = {
@@ -31,6 +38,11 @@ export type NexusMemberCapabilities = {
 };
 
 export const nexusPreviewWorkspaceAccess = {
+  administrationCapabilities: {
+    canInviteAccount: true,
+    canManageAccess: true,
+    canManageAccountStatus: true,
+  },
   allowedNavigationIds: [
     "dashboard",
     "collection",

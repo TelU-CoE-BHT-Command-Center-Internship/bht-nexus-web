@@ -108,6 +108,10 @@
   background: var(--color-nexus-surface);
 }
 
+.workflow[data-step-count="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .workflow::before {
   position: absolute;
   top: 50%;
@@ -216,6 +220,18 @@
 
   .body {
     padding: 0.8rem 0.75rem 1.5rem;
+  }
+
+  .workflow[data-step-count="4"] {
+    align-items: start;
+  }
+
+  .workflow[data-step-count="4"] span {
+    align-items: center;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-inline: 0.2rem;
+    text-align: center;
   }
 }
 

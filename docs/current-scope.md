@@ -156,6 +156,15 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Tombol Pengumpulan pada Identitas Akademik membawa ID anggota, nama, sumber, URL profil, dan pengenal orang eksternal ke halaman Pengumpulan. Binding pekerjaan hanya aktif selama seluruh identitas sumber tersebut masih sesuai. Kandidat multi-orang membawa relasi eksplisit ke satu person ID kandidat; correction yang mengubah daftar atau urutan orang membatalkan relasi lama dan mewajibkan pilihan ulang pada Tinjauan. Penulis, pencipta, serta pembimbing mempunyai ID rekam masing-masing dan `memberId` opsional; nama tidak dipakai sebagai keputusan identitas sistem.
 - Jalur Data Terkait membuka lima rumah data resmi dengan parameter ID anggota. Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian membaca parameter tersebut, menampilkan konteks anggota, dan memfilter relasi kanonis alih-alih membuka seluruh katalog.
 
+### Administrasi — Accounts & Access
+
+- Halaman Administrasi menempatkan tiga metrik, pencarian nama atau email, filter status, role, dan hubungan anggota, daftar akun, kartu mobile, pagination, serta rincian akun pada satu route `/nexus/administrasi`.
+- Daftar dan detail mempertahankan perbedaan antara profil anggota, akun login, dan role. Akun boleh tidak terhubung ke anggota; keadaan tersebut dinyatakan valid untuk operator, reviewer, administrator, intern, atau akun operasional. Email akun bersifat baca-saja setelah dibuat.
+- Status akun memakai tiga nilai kanonis `ACTIVE`, `INVITED`, dan `SUSPENDED`. Drawer hanya menampilkan tindakan yang relevan: akun aktif dapat mengubah role tingkat tinggi atau ditangguhkan, undangan dapat dikirim ulang atau dibatalkan, dan akun ditangguhkan dapat dipulihkan.
+- Undangan akun memakai empat langkah: email dan nama tampilan opsional, pilihan eksplisit apakah akun terhubung ke anggota, role tingkat tinggi, serta tinjauan akhir. Hubungan anggota tidak ditebak dari email, dan admin tidak pernah membuat password.
+- Role hanya diringkas sebagai label, deskripsi, serta cakupan tinggi. Halaman tidak membangun pengelolaan role, matriks permission, override granular, audit log, MFA, sesi, perangkat, password reset admin, atau pengaturan keamanan lain.
+- Fixture akun bersifat netral dan perubahan undangan, role, serta status hanya hidup selama halaman aktif. Pengiriman email, token aktivasi, autentikasi, permission, data scope, transaksi status, dan audit tetap menjadi tanggung jawab layanan server.
+
 ## Route utama
 
 | Route | Cakupan |
@@ -173,6 +182,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/akademik` | Daftar dan rincian bimbingan serta magang mahasiswa resmi |
 | `/nexus/kegiatan` | Daftar dan rincian kegiatan, bisnis, serta pengabdian masyarakat resmi |
 | `/nexus/anggota` | Direktori dan rincian identitas anggota CoE BHT |
+| `/nexus/administrasi` | Accounts & Access untuk akun, hubungan anggota opsional, role tingkat tinggi, undangan, dan status akses |
 | `/nexus/dokumen` | Pustaka dokumen |
 | `/nexus/tanya-dokumen` | Tanya jawab bersitasi |
 | `/nexus/ekstraksi` | Ekstraksi kandidat dari dokumen |

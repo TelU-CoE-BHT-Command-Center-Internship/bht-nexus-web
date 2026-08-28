@@ -133,7 +133,11 @@ export function NexusWorkspaceDrawer({
         </header>
 
         {steps ? (
-          <nav className={styles.workflow} aria-label="Tahapan rincian">
+          <nav
+            aria-label="Tahapan rincian"
+            className={styles.workflow}
+            data-step-count={steps.length}
+          >
             {steps.map((step) => (
               <span
                 data-active={step.active || undefined}
