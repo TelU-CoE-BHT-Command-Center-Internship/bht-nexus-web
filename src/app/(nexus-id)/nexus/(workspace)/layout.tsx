@@ -23,7 +23,7 @@ export default async function NexusWorkspaceLayout({
       actor={{
         id: content.viewer.id,
         name: content.viewer.name,
-        roleLabel: content.viewer.roleLabel,
+        roleLabel: content.viewer.roleLabel ?? "",
       }}
       capabilities={content.reviewCapabilities}
     >

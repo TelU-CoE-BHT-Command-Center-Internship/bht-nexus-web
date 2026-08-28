@@ -50,7 +50,7 @@ export type DashboardViewer = {
   id: string;
   initials: string;
   name: string;
-  roleLabel: string;
+  roleLabel?: string;
 };
 export type DashboardSearchItem = {
   description: string;

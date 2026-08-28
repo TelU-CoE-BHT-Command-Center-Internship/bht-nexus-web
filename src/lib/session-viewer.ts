@@ -16,21 +16,30 @@ function initialsFromName(name: string): string {
   return `${first}${last}`.toUpperCase() || "?";
 }
 
+export function viewerNameFromSession(
+  user: ApiSessionUser | undefined,
+): string {
+  if (user === undefined) {
+    return "Pengguna";
+  }
+  return (
+    readStringField(user, "name") ??
+    readStringField(user, "email") ??
+    "Pengguna"
+  );
+}
+
 export function deriveDashboardViewer(
   user: ApiSessionUser,
   fallback: DashboardViewer,
 ): DashboardViewer {
-  const name =
-    readStringField(user, "name") ??
-    readStringField(user, "email") ??
-    fallback.name;
-  const avatarSrc = readStringField(user, "image");
+  const name = viewerNameFromSession(user);
 
   return {
-    avatarSrc: avatarSrc ?? fallback.avatarSrc,
+    avatarSrc: readStringField(user, "image"),
     id: fallback.id,
     initials: initialsFromName(name),
     name,
-    roleLabel: fallback.roleLabel,
+    roleLabel: undefined,
   };
 }

@@ -20,6 +20,12 @@
   padding: clamp(1.1rem, 1.35vw, 1.35rem);
 }
 
+.emptyState {
+  margin: 0.75rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.85rem;
+}
+
 .panelHeader {
   display: flex;
   min-width: 0;
