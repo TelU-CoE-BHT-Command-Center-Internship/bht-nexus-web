@@ -18,6 +18,7 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
+import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type NexusAdministrationAccessDrawerProps = {
   account: NexusAdministrationAccount;
@@ -54,6 +55,14 @@ export function NexusAdministrationAccessDrawer({
   const initialRoleId =
     roleIsAssignable && initialRole.kind === "KNOWN" ? initialRole.role.id : "";
   const isDirty = roleId !== initialRoleId;
+
+  useNexusWorkspaceUnsavedChanges({
+    confirmLabel: "Buang dan keluar",
+    description:
+      "Peran yang baru dipilih belum disimpan dan akan hilang jika Anda meninggalkan halaman ini.",
+    isDirty,
+    title: "Buang perubahan peran akun?",
+  });
 
   function requestClose() {
     if (isDirty) {
