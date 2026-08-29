@@ -25,7 +25,10 @@ import {
   resolveAdministrationRelationship,
 } from "@/components/nexus-administration/nexus-administration-relationship";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
-import type { NexusAdministrationCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import {
+  type NexusAdministrationCapabilities,
+  nexusCanOpenRoleManagement,
+} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
 import { NexusWorkspaceBreadcrumb } from "@/components/nexus-workspace-ui/nexus-workspace-breadcrumb";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
@@ -241,6 +244,10 @@ export function NexusUserAccess({
         ? "Peran perlu ditinjau"
         : "Belum ditetapkan";
   const canEdit = capabilities.canManageUserOverrides && hasUsableRoleBaseline;
+  /* Penugasan peran akun dan permukaan Peran dimiliki kemampuan lain, sehingga
+     tindakannya hanya ditawarkan ketika kewenangannya memang tersedia. */
+  const canAssignAccountRole = capabilities.canManageAccess;
+  const canOpenRoleManagement = nexusCanOpenRoleManagement(capabilities);
 
   function toggleModule(moduleId: NexusAccessModuleId) {
     setOpenModules(
@@ -323,7 +330,7 @@ export function NexusUserAccess({
                 <strong data-unknown={role.kind !== "KNOWN"}>
                   {roleLabel}
                 </strong>
-                {role.kind === "KNOWN" ? (
+                {role.kind === "KNOWN" && canOpenRoleManagement ? (
                   <button
                     className={styles.identityLink}
                     onClick={() =>
@@ -413,17 +420,22 @@ export function NexusUserAccess({
                 : "Akun ini belum mempunyai peran, sehingga tidak ada hak akses bawaan yang dapat dibaca."}{" "}
             Penyesuaian yang sudah tersimpan tetap ada dan akan dihitung kembali
             setelah peran aktif ditetapkan.
+            {canAssignAccountRole
+              ? null
+              : " Peran aktif perlu ditetapkan oleh pengelola akun, karena akun Anda belum memiliki kewenangan untuk mengubah peran akun ini."}
           </NexusWorkspaceNotice>
-          <NexusWorkspaceButton
-            onClick={() =>
-              navigate(
-                `${ADMINISTRATION_HREF}?account=${encodeURIComponent(account.id)}`,
-              )
-            }
-            type="button"
-          >
-            Tetapkan peran akun
-          </NexusWorkspaceButton>
+          {canAssignAccountRole ? (
+            <NexusWorkspaceButton
+              onClick={() =>
+                navigate(
+                  `${ADMINISTRATION_HREF}?account=${encodeURIComponent(account.id)}`,
+                )
+              }
+              type="button"
+            >
+              Tetapkan peran akun
+            </NexusWorkspaceButton>
+          ) : null}
         </div>
       )}
 
