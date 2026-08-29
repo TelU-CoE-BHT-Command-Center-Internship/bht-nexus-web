@@ -1,3 +1,11 @@
+.headerActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .inviteButton svg {
   width: 1rem;
   height: 1rem;
@@ -845,5 +853,55 @@
 @media (prefers-reduced-motion: reduce) {
   .accountCell {
     scroll-behavior: auto;
+  }
+}
+
+.specialAccessCard {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.7rem;
+  margin-top: 0.75rem;
+  background: var(--color-nexus-surface-subtle);
+}
+
+.specialAccessCard > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.specialAccessCard span {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.68rem;
+  font-weight: 620;
+}
+
+.specialAccessCard strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.82rem;
+  font-weight: 680;
+}
+
+.specialAccessCard small {
+  max-width: 34rem;
+  color: var(--color-nexus-text-soft);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 56rem) {
+  .headerActions {
+    justify-content: stretch;
+  }
+
+  .headerActions > * {
+    flex: 1 1 auto;
+    justify-content: center;
   }
 }

@@ -243,6 +243,14 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Members", id: "Anggota" },
   },
   {
+    activeHrefs: {
+      en: ["/en/nexus/administration"],
+      id: [
+        "/nexus/administrasi",
+        "/nexus/administrasi/peran",
+        "/nexus/administrasi/akses",
+      ],
+    },
     implemented: { en: false, id: true },
     group: "administration",
     href: { en: "/en/nexus/administration", id: "/nexus/administrasi" },

@@ -71,7 +71,8 @@ Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan ke
 9. pengambilan jawaban hanya dari dokumen yang diizinkan, beserta kutipan halaman;
 10. profil ekstraksi berversi dan kandidat per bidang;
 11. promosi kandidat melalui transaksi server setelah keputusan yang sah;
-12. ekspor dan audit sesuai izin.
+12. ekspor dan audit sesuai izin;
+13. direktori peran, katalog izin, hak akses bawaan tiap peran, dan penyesuaian izin per akun beserta efek memberi atau membatasi.
 
 ### Kontrak integrasi Anggota
 
@@ -85,6 +86,20 @@ Audit terhadap `bht-nexus-server` branch `main` pada commit `87e0f0fe1ec06ea1d0f
 - role, permission, dan penugasan role sudah dimodelkan terpisah dari `member`, sejalan dengan batas halaman ini bahwa profil anggota tidak menjadi tempat mengubah hak akses.
 
 Sebelum adapter frontend dihubungkan, kontrak server perlu memungkinkan profil anggota dibuat tanpa akun, menyediakan hubungan akun-ke-anggota yang eksplisit dan opsional, menyediakan CRUD/pencarian/filter/nonaktif sesuai izin beserta audit, menerapkan keunikan pengenal eksternal, dan menyediakan alur undangan akun administratif. Bentuk tabel akhirnya merupakan keputusan tim backend; frontend hanya mensyaratkan perilaku tersebut dan tidak menebak hubungan identitas dari email.
+
+### Kontrak integrasi Peran dan Hak Akses
+
+Audit terhadap `bht-nexus-server` branch `main` menemukan batas berikut untuk kebijakan akses:
+
+- entitas `role` menyimpan `public_id`, nama mesin dengan pola `^[a-z][a-z0-9_.]*$`, nama tampilan serta deskripsi dwibahasa, tipe `system` atau `custom`, kategori, dan prioritas; nama mesin terpisah dari nama tampilan, sejalan dengan pengenal peran frontend yang tidak diturunkan dari label;
+- peran sistem tidak dapat dihapus dan hanya dapat mengubah nama tampilan serta deskripsi, sedangkan peran lain dinonaktifkan melalui penghapusan lunak yang ditolak ketika peran masih dipakai; kedua aturan tersebut sudah tercermin pada tindakan halaman peran;
+- entitas `permission` memakai nama datar `sumber_daya.tindakan`, dan `role_permission` hanya mencatat pemberian izin; belum ada kolom efek, sehingga larangan eksplisit belum mempunyai kontrak penyimpanan;
+- belum ada tabel penyesuaian izin per pengguna. Akses khusus akun karena itu merupakan konsep produk yang masih menunggu kontrak server, termasuk penyimpanan, penegakan, dan auditnya;
+- `user_role` memungkinkan satu pengguna memegang beberapa peran dengan masa berlaku opsional, sedangkan antarmuka saat ini masih menetapkan satu peran utama per akun;
+- katalog izin server saat ini baru mencakup area IAM, pekerjaan, dan tinjauan; nama izin untuk modul data resmi, dokumen, pengumpulan, anggota, dan administrasi belum disepakati, begitu pula izin ekspor yang belum dipakai antarmuka;
+- izin terhadap data tertentu pada REQ-FUNC-019 berada di luar matriks modul dan tindakan ini dan tetap perlu kontrak tersendiri.
+
+Sebelum adapter dihubungkan, kontrak server perlu menyepakati nama izin per modul, cara menyimpan penyesuaian per akun beserta efeknya, serta cara membaca akses efektif satu akun. Bentuk tabel akhirnya merupakan keputusan tim backend; frontend hanya mensyaratkan perilaku tersebut.
 
 Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pemanggilan jaringan nantinya ditempatkan pada adapter server yang menggantikan fungsi konten tanpa mengubah kontrak visual utama.
 
@@ -107,6 +122,7 @@ Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pe
 2. Ganti daftar pekerjaan serta kandidat individual dengan query server.
 3. Pertahankan status dan bentuk keputusan yang sudah dipakai komponen.
 4. Ganti provider sesi lintas halaman dengan endpoint staging dan kemampuan server tanpa mengubah model presentasi.
+4b. Ganti kebijakan akses tampilan dengan direktori peran, katalog izin, dan penyesuaian akun dari server.
 5. Hubungkan unggahan dan polling status dokumen.
 6. Hubungkan tanya jawab ke retriever yang mengembalikan kutipan terstruktur.
 7. Hubungkan ekstraksi ke profil berversi dan staging kandidat.

@@ -1,7 +1,10 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
-import { resolveNexusAccountRole } from "@/components/nexus-accounts/nexus-account-directory";
+import {
+  nexusRoleAccessSummary,
+  resolveNexusRole,
+} from "@/components/nexus-access-policy/nexus-access-policy";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import type {
   NexusAdministrationAccount,
@@ -16,28 +19,39 @@ import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-w
 
 type NexusAdministrationAccessDrawerProps = {
   account: NexusAdministrationAccount;
+  allRoles: readonly NexusAdministrationRole[];
   onClose: () => void;
   onSave: (roleId: string) => void;
   roles: readonly NexusAdministrationRole[];
+  specialAccessCount: number;
 };
 
 export function NexusAdministrationAccessDrawer({
   account,
+  allRoles,
   onClose,
   onSave,
   roles,
+  specialAccessCount,
 }: NexusAdministrationAccessDrawerProps) {
-  const initialRole = resolveNexusAccountRole(account.roleId, roles);
+  const initialRole = resolveNexusRole(account.roleId, allRoles);
+  const roleIsAssignable =
+    initialRole.kind === "KNOWN" &&
+    roles.some((role) => role.id === initialRole.role.id);
   const [roleId, setRoleId] = useState(
-    initialRole.kind === "KNOWN" ? initialRole.role.id : "",
+    roleIsAssignable && initialRole.kind === "KNOWN" ? initialRole.role.id : "",
   );
   const [error, setError] = useState("");
   const selectedRole = roles.find((role) => role.id === roleId);
+  const roleWillChange = Boolean(
+    selectedRole &&
+      (initialRole.kind !== "KNOWN" || selectedRole.id !== initialRole.role.id),
+  );
 
   function submitAccess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedRole) {
-      setError("Pilih role yang masih berlaku untuk akun ini.");
+      setError("Pilih peran yang masih berlaku untuk akun ini.");
       return;
     }
     try {
@@ -46,7 +60,7 @@ export function NexusAdministrationAccessDrawer({
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Role akun tidak dapat disimpan.",
+          : "Peran akun tidak dapat disimpan.",
       );
     }
   }
@@ -55,19 +69,24 @@ export function NexusAdministrationAccessDrawer({
     <NexusWorkspaceDrawer
       closeLabel="Tutup perubahan akses"
       description="Tetapkan satu peran utama sesuai kebutuhan kerja pengguna."
-      eyebrow="Role & Akses"
+      eyebrow="Peran & Hak Akses"
       onClose={onClose}
       title={`Ubah akses · ${account.displayName}`}
     >
       <form className={styles.accessForm} noValidate onSubmit={submitAccess}>
         {initialRole.kind === "UNKNOWN" ? (
           <NexusWorkspaceNotice tone="danger">
-            Role yang tersimpan tidak lagi dikenali. Pilih role yang masih
+            Peran yang tersimpan tidak lagi dikenali. Pilih peran yang masih
             berlaku sebelum menyimpan perubahan.
+          </NexusWorkspaceNotice>
+        ) : initialRole.kind === "KNOWN" && !roleIsAssignable ? (
+          <NexusWorkspaceNotice tone="danger">
+            Peran {initialRole.role.label} sudah dinonaktifkan dan tidak dapat
+            dipakai lagi. Pilih peran aktif untuk akun ini.
           </NexusWorkspaceNotice>
         ) : (
           <NexusWorkspaceNotice>
-            Mengubah role tidak mengubah identitas anggota dan tidak dapat
+            Mengubah peran tidak mengubah identitas anggota dan tidak dapat
             mengubah email akun.
           </NexusWorkspaceNotice>
         )}
@@ -75,7 +94,7 @@ export function NexusAdministrationAccessDrawer({
         <NexusWorkspaceFormField
           error={error}
           id="administration-edit-role"
-          label="Role"
+          label="Peran"
           name="roleId"
           onChange={(event) => {
             setRoleId(event.currentTarget.value);
@@ -93,15 +112,25 @@ export function NexusAdministrationAccessDrawer({
 
         {selectedRole ? (
           <section className={styles.rolePreview}>
-            <span>Ringkasan role</span>
+            <span>Cakupan peran</span>
             <h3>{selectedRole.label}</h3>
             <p>{selectedRole.description}</p>
             <ul>
-              {selectedRole.accessSummary.map((item) => (
+              {nexusRoleAccessSummary(selectedRole).map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
           </section>
+        ) : null}
+
+        {specialAccessCount > 0 ? (
+          <NexusWorkspaceNotice tone={roleWillChange ? "danger" : "info"}>
+            Akun ini memiliki {specialAccessCount} penyesuaian akses khusus.
+            Penyesuaian tetap tersimpan
+            {roleWillChange
+              ? " dan dihitung ulang terhadap peran yang baru."
+              : " dan tetap dihitung terhadap peran ini."}
+          </NexusWorkspaceNotice>
         ) : null}
 
         <footer className={styles.drawerFooter}>

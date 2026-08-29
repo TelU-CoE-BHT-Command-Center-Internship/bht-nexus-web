@@ -9,9 +9,13 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  type NexusRoleRecord,
+  nexusAssignableRoles,
+} from "@/components/nexus-access-policy/nexus-access-policy";
+import { useNexusAccessPolicySession } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import type {
   NexusAccountDirectoryRecord,
-  NexusAccountDirectoryRole,
   NexusAccountInvitationInput,
   NexusAccountMemberRelationship,
   NexusAccountStatus,
@@ -27,7 +31,6 @@ type NexusAccountSessionValue = {
   ) => NexusAccountDirectoryRecord;
   refreshInvitation: (accountId: string) => void;
   restoreAccount: (accountId: string) => void;
-  roles: NexusAccountDirectoryRole[];
   suspendAccount: (accountId: string) => void;
   updateRelationship: (
     accountId: string,
@@ -56,6 +59,15 @@ function displayNameFromInvitation(input: NexusAccountInvitationInput) {
     .join(" ");
 }
 
+function assertAssignableRole(
+  roles: readonly NexusRoleRecord[],
+  roleId: string,
+) {
+  if (!nexusAssignableRoles(roles).some((role) => role.id === roleId)) {
+    throw new Error("Peran yang dipilih tidak lagi tersedia.");
+  }
+}
+
 function updateAccountWithStatus(
   accounts: readonly NexusAccountDirectoryRecord[],
   accountId: string,
@@ -73,15 +85,14 @@ export function NexusAccountSessionProvider({
   actorName,
   children,
   initialAccounts,
-  initialRoles,
 }: {
   actorName: string;
   children: ReactNode;
   initialAccounts: NexusAccountDirectoryRecord[];
-  initialRoles: NexusAccountDirectoryRole[];
 }) {
   const [accounts, setAccounts] = useState(initialAccounts);
-  const [roles] = useState(initialRoles);
+  /* Peran dirujuk lewat ID dari satu kebijakan akses bersama, bukan disalin. */
+  const { roles } = useNexusAccessPolicySession();
   const sequence = useRef(accountSequence(initialAccounts));
 
   const createInvitation = useCallback(
@@ -95,9 +106,7 @@ export function NexusAccountSessionProvider({
       ) {
         throw new Error("Email ini sudah digunakan oleh akun lain.");
       }
-      if (!roles.some((role) => role.id === input.roleId)) {
-        throw new Error("Role yang dipilih tidak lagi tersedia.");
-      }
+      assertAssignableRole(roles, input.roleId);
 
       const memberId = nexusAccountRelationshipMemberId(input.relationship);
       if (
@@ -133,9 +142,7 @@ export function NexusAccountSessionProvider({
 
   const updateRole = useCallback(
     (accountId: string, roleId: string) => {
-      if (!roles.some((role) => role.id === roleId)) {
-        throw new Error("Role yang dipilih tidak lagi tersedia.");
-      }
+      assertAssignableRole(roles, roleId);
       setAccounts((current) =>
         current.map((account) =>
           account.id === accountId
@@ -221,7 +228,6 @@ export function NexusAccountSessionProvider({
       createInvitation,
       refreshInvitation,
       restoreAccount,
-      roles,
       suspendAccount,
       updateRelationship,
       updateRole,
@@ -232,7 +238,6 @@ export function NexusAccountSessionProvider({
       createInvitation,
       refreshInvitation,
       restoreAccount,
-      roles,
       suspendAccount,
       updateRelationship,
       updateRole,

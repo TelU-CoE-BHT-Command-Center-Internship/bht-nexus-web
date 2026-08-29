@@ -101,7 +101,7 @@ export function NexusMemberDetail({
     ? linkedAccount.role.kind === "KNOWN"
       ? linkedAccount.role.role.label
       : linkedAccount.role.kind === "UNKNOWN"
-        ? "Role perlu ditinjau"
+        ? "Peran perlu ditinjau"
         : "Belum ditetapkan"
     : undefined;
   const collectionRequests: { href: string; label: string; source: string }[] =
@@ -462,7 +462,7 @@ export function NexusMemberDetail({
                   <MemberDetailCard
                     items={[
                       {
-                        label: "Role akun",
+                        label: "Peran akun",
                         value: accountRoleLabel,
                       },
                       {

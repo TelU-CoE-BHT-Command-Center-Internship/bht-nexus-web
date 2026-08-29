@@ -1,0 +1,61 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.55rem 0.22rem 0.35rem;
+  border: 1px solid #dfe3ea;
+  border-radius: 999px;
+  background: #f2f4f8;
+  color: #5c6a7e;
+  font-size: 0.71rem;
+  font-weight: 660;
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.badge[data-size="small"] {
+  padding: 0.15rem 0.45rem 0.15rem 0.28rem;
+  font-size: 0.66rem;
+}
+
+.badge[data-active="true"] {
+  border-color: #a9d8c1;
+  background: #e9f7ef;
+  color: #076c3e;
+}
+
+.badgeIcon {
+  display: grid;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #d9dee7;
+  color: #6b7789;
+}
+
+.badge[data-size="small"] .badgeIcon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.badge[data-active="true"] .badgeIcon {
+  background: #087443;
+  color: #ffffff;
+}
+
+.badgeIcon svg {
+  width: 0.68rem;
+  height: 0.68rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.badge[data-size="small"] .badgeIcon svg {
+  width: 0.6rem;
+  height: 0.6rem;
+}

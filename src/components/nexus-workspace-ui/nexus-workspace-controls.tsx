@@ -4,7 +4,8 @@ import type { KeyboardEvent } from "react";
 import styles from "@/components/nexus-workspace-ui/nexus-workspace-controls.module.css";
 
 export type NexusWorkspaceTab = {
-  count: number;
+  /** Jumlah hanya ditampilkan ketika angkanya memang bermakna bagi tab itu. */
+  count?: number;
   id: string;
   label: string;
 };
@@ -119,7 +120,9 @@ export function NexusWorkspaceTabs({
             type="button"
           >
             <span>{tab.label}</span>
-            <span className={styles.tabCount}>{tab.count}</span>
+            {tab.count === undefined ? null : (
+              <span className={styles.tabCount}>{tab.count}</span>
+            )}
           </button>
         );
       })}

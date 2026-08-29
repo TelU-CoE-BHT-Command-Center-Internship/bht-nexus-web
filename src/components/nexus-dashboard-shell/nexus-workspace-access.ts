@@ -28,6 +28,9 @@ export type NexusAdministrationCapabilities = {
   canInviteAccount: boolean;
   canManageAccess: boolean;
   canManageAccountStatus: boolean;
+  canManageRolePermissions: boolean;
+  canManageRoles: boolean;
+  canManageUserOverrides: boolean;
 };
 
 export type NexusMemberCapabilities = {
@@ -42,6 +45,9 @@ export const nexusPreviewWorkspaceAccess = {
     canInviteAccount: true,
     canManageAccess: true,
     canManageAccountStatus: true,
+    canManageRolePermissions: true,
+    canManageRoles: true,
+    canManageUserOverrides: true,
   },
   allowedNavigationIds: [
     "dashboard",

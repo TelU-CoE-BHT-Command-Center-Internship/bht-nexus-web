@@ -1,6 +1,9 @@
 "use client";
 
-import type { NexusAccountRoleResolution } from "@/components/nexus-accounts/nexus-account-directory";
+import {
+  type NexusRoleResolution,
+  nexusRoleAccessSummary,
+} from "@/components/nexus-access-policy/nexus-access-policy";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
   accountStatusLabels,
@@ -24,11 +27,13 @@ type NexusAdministrationDetailProps = {
   onClose: () => void;
   onEditAccess: () => void;
   onEditRelationship: () => void;
+  onManageSpecialAccess: () => void;
   onRefreshInvitation: () => void;
   onRestore: () => void;
   onSuspend: () => void;
   relationship: NexusResolvedAdministrationRelationship;
-  role: NexusAccountRoleResolution;
+  role: NexusRoleResolution;
+  specialAccessCount: number;
 };
 
 function statusTone(status: NexusAdministrationAccount["status"]) {
@@ -156,29 +161,31 @@ export function NexusAdministrationDetail({
   onClose,
   onEditAccess,
   onEditRelationship,
+  onManageSpecialAccess,
   onRefreshInvitation,
   onRestore,
   onSuspend,
   relationship,
   role,
+  specialAccessCount,
 }: NexusAdministrationDetailProps) {
   const roleLabel =
     role.kind === "KNOWN"
       ? role.role.label
       : role.kind === "UNKNOWN"
-        ? "Role perlu ditinjau"
+        ? "Peran perlu ditinjau"
         : "Belum ditetapkan";
   const roleDescription =
     role.kind === "KNOWN"
       ? role.role.description
       : role.kind === "UNKNOWN"
-        ? "Role yang tersimpan tidak lagi dikenali. Pilih role yang berlaku sebelum menyimpan perubahan akses."
-        : "Role perlu ditetapkan sebelum akun dapat memakai ruang kerja.";
+        ? "Peran yang tersimpan tidak lagi dikenali. Pilih peran yang berlaku sebelum menyimpan perubahan akses."
+        : "Peran perlu ditetapkan sebelum akun dapat memakai ruang kerja.";
 
   return (
     <NexusWorkspaceDrawer
       closeLabel="Tutup detail akun"
-      description="Tinjau identitas akun, hubungan anggota, role tingkat tinggi, dan tindakan yang tersedia."
+      description="Tinjau identitas akun, hubungan anggota, peran, akses khusus, dan tindakan yang tersedia."
       eyebrow="Akun & Akses"
       onClose={onClose}
       title="Detail akun"
@@ -267,22 +274,45 @@ export function NexusAdministrationDetail({
               <NexusAdministrationIcon name="shield" />
             </span>
             <div>
-              <h3>Role &amp; Akses</h3>
-              <p>Ringkasan peran utama yang berlaku untuk akun ini.</p>
+              <h3>Peran &amp; Hak Akses</h3>
+              <p>Peran menetapkan hak akses bawaan untuk akun ini.</p>
             </div>
           </header>
           <div className={styles.roleSummary}>
             <div>
-              <span>Role saat ini</span>
+              <span>Peran saat ini</span>
               <strong>{roleLabel}</strong>
               <p>{roleDescription}</p>
             </div>
             {role.kind === "KNOWN" ? (
-              <ul aria-label="Ringkasan role, bukan rincian izin">
-                {role.role.accessSummary.map((item) => (
+              <ul aria-label="Cakupan hak akses bawaan peran">
+                {nexusRoleAccessSummary(role.role).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
+            ) : null}
+          </div>
+          <div className={styles.specialAccessCard}>
+            <div>
+              <span>Akses khusus</span>
+              <strong>
+                {specialAccessCount > 0
+                  ? `${specialAccessCount} penyesuaian`
+                  : "Mengikuti peran"}
+              </strong>
+              <small>
+                {role.kind === "KNOWN"
+                  ? "Penyesuaian berlaku hanya untuk akun ini dan tidak mengubah peran bagi akun lain."
+                  : "Tetapkan peran yang berlaku lebih dahulu supaya hasil akses khusus dapat dibaca dengan pasti."}
+              </small>
+            </div>
+            {capabilities.canManageUserOverrides ? (
+              <NexusWorkspaceButton
+                onClick={onManageSpecialAccess}
+                type="button"
+              >
+                Kelola akses khusus
+              </NexusWorkspaceButton>
             ) : null}
           </div>
         </section>

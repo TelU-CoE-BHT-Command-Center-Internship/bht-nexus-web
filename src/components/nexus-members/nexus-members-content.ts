@@ -9,13 +9,15 @@ import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
 import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
 import { getMembersContent } from "@/components/members/members-content";
 import {
+  type NexusRoleRecord,
+  type NexusRoleResolution,
+  resolveNexusRole,
+} from "@/components/nexus-access-policy/nexus-access-policy";
+import {
   type NexusAccountDirectoryRecord,
-  type NexusAccountDirectoryRole,
-  type NexusAccountRoleResolution,
   type NexusAccountStatus,
   nexusAccountRelationshipMemberId,
   resolveNexusAccountRelationship,
-  resolveNexusAccountRole,
 } from "@/components/nexus-accounts/nexus-account-directory";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
 import { getKnownMemberIdentity } from "@/components/nexus-members/nexus-member-identity";
@@ -28,7 +30,7 @@ export type NexusMemberAccountStatus = NexusAccountStatus;
 export type NexusMemberAccount = {
   email: string;
   id: string;
-  role: NexusAccountRoleResolution;
+  role: NexusRoleResolution;
   status: NexusMemberAccountStatus;
 };
 
@@ -181,7 +183,7 @@ export function getNexusMemberDirectory(): NexusMemberRecord[] {
 export function projectNexusMemberAccounts(
   records: readonly NexusMemberRecord[],
   accounts: readonly NexusAccountDirectoryRecord[],
-  roles: readonly NexusAccountDirectoryRole[],
+  roles: readonly NexusRoleRecord[],
 ) {
   return records.map((member): NexusMemberViewRecord => {
     const claimingAccounts = accounts.filter(
@@ -205,7 +207,7 @@ export function projectNexusMemberAccounts(
           account: {
             email: account.email,
             id: account.id,
-            role: resolveNexusAccountRole(account.roleId, roles),
+            role: resolveNexusRole(account.roleId, roles),
             status: account.status,
           },
           kind: "LINKED",

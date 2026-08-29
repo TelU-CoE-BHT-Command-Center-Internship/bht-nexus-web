@@ -1,3 +1,8 @@
+import {
+  getNexusRoleDirectory,
+  getNexusUserPermissionOverrides,
+} from "@/components/nexus-access-policy/nexus-access-policy";
+import { NexusAccessPolicySessionProvider } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import { NexusAccountSessionProvider } from "@/components/nexus-account-session/nexus-account-session";
 import { getNexusAccountDirectory } from "@/components/nexus-accounts/nexus-account-directory";
 import { NexusDashboardShell } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell";
@@ -12,7 +17,7 @@ export default function NexusWorkspaceLayout({
   children: React.ReactNode;
 }>) {
   const content = getNexusDashboardShellPreviewContent();
-  const accountDirectory = getNexusAccountDirectory();
+  const accounts = getNexusAccountDirectory();
   const memberDirectory = getNexusMemberDirectory();
 
   return (
@@ -25,15 +30,19 @@ export default function NexusWorkspaceLayout({
       capabilities={content.reviewCapabilities}
     >
       <NexusMemberSessionProvider initialRecords={memberDirectory}>
-        <NexusAccountSessionProvider
-          actorName={content.viewer.name}
-          initialAccounts={accountDirectory.accounts}
-          initialRoles={accountDirectory.roles}
+        <NexusAccessPolicySessionProvider
+          initialOverrides={getNexusUserPermissionOverrides()}
+          initialRoles={getNexusRoleDirectory()}
         >
-          <NexusDashboardShell content={content}>
-            {children}
-          </NexusDashboardShell>
-        </NexusAccountSessionProvider>
+          <NexusAccountSessionProvider
+            actorName={content.viewer.name}
+            initialAccounts={accounts}
+          >
+            <NexusDashboardShell content={content}>
+              {children}
+            </NexusDashboardShell>
+          </NexusAccountSessionProvider>
+        </NexusAccessPolicySessionProvider>
       </NexusMemberSessionProvider>
     </NexusReviewSessionProvider>
   );

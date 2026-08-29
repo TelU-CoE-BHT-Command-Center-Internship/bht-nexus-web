@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useNexusAccessPolicySession } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
 import type { NexusMemberCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
@@ -125,7 +126,8 @@ export function NexusMembers({
   initialMemberId,
 }: NexusMembersProps) {
   const router = useRouter();
-  const { accounts, roles } = useNexusAccountSession();
+  const { accounts } = useNexusAccountSession();
+  const { roles } = useNexusAccessPolicySession();
   const { records: memberRecords, saveMember } = useNexusMemberSession();
   const records = useMemo(
     () => projectNexusMemberAccounts(memberRecords, accounts, roles),

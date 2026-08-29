@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
+import { nexusRoleAccessSummary } from "@/components/nexus-access-policy/nexus-access-policy";
 import type { NexusAccountInvitationInput } from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import type {
@@ -49,7 +50,7 @@ const initialDraft: InviteDraft = {
   roleId: "",
 };
 
-const workflowLabels = ["Identitas", "Hubungan Anggota", "Role", "Tinjau"];
+const workflowLabels = ["Identitas", "Hubungan Anggota", "Peran", "Tinjau"];
 
 function normalizedEmail(value: string) {
   return value.trim().toLocaleLowerCase("id-ID");
@@ -149,7 +150,7 @@ export function NexusAdministrationInviteDrawer({
     }
 
     if (currentStep === 3 && !draft.roleId) {
-      nextErrors.roleId = "Pilih role untuk akun ini.";
+      nextErrors.roleId = "Pilih peran untuk akun ini.";
     }
 
     setErrors(nextErrors);
@@ -175,7 +176,7 @@ export function NexusAdministrationInviteDrawer({
     }
 
     if (!selectedRole) {
-      setErrors({ submit: "Role tidak lagi tersedia. Pilih role kembali." });
+      setErrors({ submit: "Peran tidak lagi tersedia. Pilih peran kembali." });
       setStep(3);
       return;
     }
@@ -242,7 +243,7 @@ export function NexusAdministrationInviteDrawer({
                 </strong>
               </span>
               <span>
-                <small>Role</small>
+                <small>Peran</small>
                 <strong>{createdSummary?.role.label}</strong>
               </span>
             </div>
@@ -399,7 +400,7 @@ export function NexusAdministrationInviteDrawer({
                 <header>
                   <span>03</span>
                   <div>
-                    <h3>Role</h3>
+                    <h3>Peran</h3>
                     <p>
                       Pilih satu peran utama sesuai kebutuhan kerja pengguna.
                     </p>
@@ -408,7 +409,7 @@ export function NexusAdministrationInviteDrawer({
                 <NexusWorkspaceFormField
                   error={errors.roleId}
                   id="administration-invite-role"
-                  label="Role"
+                  label="Peran"
                   name="roleId"
                   onChange={(event) =>
                     updateDraft("roleId", event.currentTarget.value)
@@ -424,11 +425,11 @@ export function NexusAdministrationInviteDrawer({
                 />
                 {selectedRole ? (
                   <section className={styles.rolePreview}>
-                    <span>Ringkasan role</span>
+                    <span>Cakupan peran</span>
                     <h3>{selectedRole.label}</h3>
                     <p>{selectedRole.description}</p>
                     <ul>
-                      {selectedRole.accessSummary.map((item) => (
+                      {nexusRoleAccessSummary(selectedRole).map((item) => (
                         <li key={item}>{item}</li>
                       ))}
                     </ul>
@@ -467,7 +468,7 @@ export function NexusAdministrationInviteDrawer({
                     </dd>
                   </div>
                   <div>
-                    <dt>Role</dt>
+                    <dt>Peran</dt>
                     <dd>{selectedRole?.label ?? "Belum dipilih"}</dd>
                   </div>
                 </dl>

@@ -1,12 +1,12 @@
+import type { NexusRoleRecord } from "@/components/nexus-access-policy/nexus-access-policy";
 import {
   type NexusAccountDirectoryRecord,
-  type NexusAccountDirectoryRole,
   type NexusAccountMemberRelationship,
   type NexusAccountStatus,
   nexusAccountStatusLabels,
 } from "@/components/nexus-accounts/nexus-account-directory";
 
-export type NexusAdministrationRole = NexusAccountDirectoryRole;
+export type NexusAdministrationRole = NexusRoleRecord;
 
 export type NexusAdministrationMemberOption = {
   assignment: string;

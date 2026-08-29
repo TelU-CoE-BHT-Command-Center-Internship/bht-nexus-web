@@ -3,14 +3,17 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import {
+  type NexusRoleResolution,
+  nexusAccountOverrides,
+  nexusAssignableRoles,
+  resolveNexusRole,
+} from "@/components/nexus-access-policy/nexus-access-policy";
+import { useNexusAccessPolicySession } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
 import type {
   NexusAccountInvitationInput,
   NexusAccountMemberRelationship,
-} from "@/components/nexus-accounts/nexus-account-directory";
-import {
-  type NexusAccountRoleResolution,
-  resolveNexusAccountRole,
 } from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
@@ -32,6 +35,7 @@ import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-work
 import {
   NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceLinkButton,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -103,7 +107,7 @@ const PAGE_SIZE = 6;
 const columns: readonly NexusWorkspaceRecordColumn[] = [
   { id: "primary", label: "Pengguna", primary: true },
   { id: "member", label: "Hubungan Anggota" },
-  { id: "role", label: "Role" },
+  { id: "role", label: "Peran" },
   { id: "status", label: "Status" },
   { id: "action", label: "Aksi" },
 ];
@@ -139,9 +143,9 @@ function accountStatusTone(status: NexusAdministrationAccount["status"]) {
   return "danger";
 }
 
-function accountRoleLabel(role: NexusAccountRoleResolution) {
+function accountRoleLabel(role: NexusRoleResolution) {
   if (role.kind === "KNOWN") return role.role.label;
-  if (role.kind === "UNKNOWN") return "Role perlu ditinjau";
+  if (role.kind === "UNKNOWN") return "Peran perlu ditinjau";
   return "Belum ditetapkan";
 }
 
@@ -214,11 +218,12 @@ export function NexusAdministration({
     createInvitation: createAccountInvitation,
     refreshInvitation: refreshAccountInvitation,
     restoreAccount: restoreSessionAccount,
-    roles,
     suspendAccount: suspendSessionAccount,
     updateRelationship: setAccountRelationship,
     updateRole: setAccountRole,
   } = useNexusAccountSession();
+  const { overrides, roles } = useNexusAccessPolicySession();
+  const assignableRoles = useMemo(() => nexusAssignableRoles(roles), [roles]);
   const { records: memberRecords } = useNexusMemberSession();
   const memberDirectory = useMemo(
     () =>
@@ -300,14 +305,14 @@ export function NexusAdministration({
 
   const roleConfig = useMemo<NexusSelectConfig>(() => {
     const options: [NexusSelectOption, ...NexusSelectOption[]] = [
-      { label: "Semua role", value: "all" },
+      { label: "Semua peran", value: "all" },
       ...roles.map((role) => ({
         label: role.label,
         value: role.id,
       })),
       { label: "Belum ditetapkan", tone: "neutral", value: "unassigned" },
       {
-        label: "Role perlu ditinjau",
+        label: "Peran perlu ditinjau",
         tone: "needs-fix",
         value: "unknown",
       },
@@ -315,7 +320,7 @@ export function NexusAdministration({
     return {
       defaultValue: "all",
       id: "role",
-      label: "Filter role",
+      label: "Filter peran",
       options,
     };
   }, [roles]);
@@ -325,7 +330,7 @@ export function NexusAdministration({
       new Map(
         accounts.map((account) => [
           account.id,
-          resolveNexusAccountRole(account.roleId, roles),
+          resolveNexusRole(account.roleId, roles),
         ]),
       ),
     [accounts, roles],
@@ -603,7 +608,7 @@ export function NexusAdministration({
                 </dd>
               </div>
               <div>
-                <dt>Role</dt>
+                <dt>Peran</dt>
                 <dd>{accountRoleLabel(role)}</dd>
               </div>
             </dl>
@@ -617,19 +622,28 @@ export function NexusAdministration({
   return (
     <NexusWorkspacePage
       actions={
-        capabilities.canInviteAccount ? (
-          <NexusWorkspaceButton
-            className={styles.inviteButton}
-            onClick={() => {
-              setInviteMemberId(undefined);
-              setInviteOpen(true);
-            }}
-            tone="primary"
-            type="button"
-          >
-            <NexusAdministrationIcon name="plus" />
-            Undang akun
-          </NexusWorkspaceButton>
+        capabilities.canManageRoles || capabilities.canInviteAccount ? (
+          <div className={styles.headerActions}>
+            {capabilities.canManageRoles ? (
+              <NexusWorkspaceLinkButton href="/nexus/administrasi/peran">
+                Peran &amp; Hak Akses
+              </NexusWorkspaceLinkButton>
+            ) : null}
+            {capabilities.canInviteAccount ? (
+              <NexusWorkspaceButton
+                className={styles.inviteButton}
+                onClick={() => {
+                  setInviteMemberId(undefined);
+                  setInviteOpen(true);
+                }}
+                tone="primary"
+                type="button"
+              >
+                <NexusAdministrationIcon name="plus" />
+                Undang akun
+              </NexusWorkspaceButton>
+            ) : null}
+          </div>
         ) : null
       }
       description={content.description}
@@ -710,13 +724,13 @@ export function NexusAdministration({
         />
 
         <NexusWorkspaceTableSection
-          guidance="Pilih Detail untuk meninjau hubungan anggota, role, dan tindakan sesuai status akun."
+          guidance="Pilih Detail untuk meninjau hubungan anggota, peran, dan tindakan sesuai status akun."
           summary={`${filteredAccounts.length} dari ${accounts.length} akun sesuai pencarian dan filter.`}
           title="Akun & akses"
           titleId="administration-account-list-title"
         >
           <NexusWorkspaceRecordTable
-            caption="Daftar akun BHT Nexus beserta hubungan anggota, role, status, dan tindakan yang tersedia"
+            caption="Daftar akun BHT Nexus beserta hubungan anggota, peran, status, dan tindakan yang tersedia"
             columns={columns}
             empty={
               accounts.length === 0 ? (
@@ -788,6 +802,11 @@ export function NexusAdministration({
             setSelectedAccountId(null);
             setRelationshipEditorAccountId(selectedAccount.id);
           }}
+          onManageSpecialAccess={() =>
+            router.push(
+              `/nexus/administrasi/akses?account=${encodeURIComponent(selectedAccount.id)}`,
+            )
+          }
           onRefreshInvitation={() => refreshInvitation(selectedAccount)}
           onRestore={() => restoreAccount(selectedAccount)}
           onSuspend={() =>
@@ -806,6 +825,9 @@ export function NexusAdministration({
               kind: "UNASSIGNED",
             }
           }
+          specialAccessCount={
+            nexusAccountOverrides(overrides, selectedAccount.id).length
+          }
         />
       ) : null}
 
@@ -820,23 +842,27 @@ export function NexusAdministration({
             setInviteOpen(false);
             setSelectedAccountId(accountId);
           }}
-          roles={roles}
+          roles={assignableRoles}
         />
       ) : null}
 
       {accessEditorAccount ? (
         <NexusAdministrationAccessDrawer
           account={accessEditorAccount}
+          allRoles={roles}
           onClose={() => setAccessEditorAccountId(null)}
           onSave={(roleId) => {
             setAccountRole(accessEditorAccount.id, roleId);
             setAccessEditorAccountId(null);
             setSelectedAccountId(accessEditorAccount.id);
             setAnnouncement(
-              `Role ${accessEditorAccount.displayName} diperbarui.`,
+              `Peran ${accessEditorAccount.displayName} diperbarui.`,
             );
           }}
-          roles={roles}
+          roles={assignableRoles}
+          specialAccessCount={
+            nexusAccountOverrides(overrides, accessEditorAccount.id).length
+          }
         />
       ) : null}
 

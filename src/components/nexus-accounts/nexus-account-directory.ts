@@ -10,18 +10,6 @@ export type NexusAccountMemberRelationship =
       memberId?: string;
     };
 
-export type NexusAccountDirectoryRole = {
-  accessSummary: readonly string[];
-  description: string;
-  id: string;
-  label: string;
-};
-
-export type NexusAccountRoleResolution =
-  | { kind: "KNOWN"; role: NexusAccountDirectoryRole }
-  | { kind: "UNASSIGNED" }
-  | { kind: "UNKNOWN" };
-
 export type NexusAccountDirectoryRecord = {
   createdAt: string;
   createdBy: string;
@@ -58,15 +46,6 @@ export function nexusAccountRelationshipMemberId(
     : undefined;
 }
 
-export function resolveNexusAccountRole(
-  roleId: string | undefined,
-  roles: readonly NexusAccountDirectoryRole[],
-): NexusAccountRoleResolution {
-  if (!roleId) return { kind: "UNASSIGNED" };
-  const role = roles.find((candidate) => candidate.id === roleId);
-  return role ? { kind: "KNOWN", role } : { kind: "UNKNOWN" };
-}
-
 /**
  * Menormalkan konflik yang dapat ditentukan hanya dari direktori akun. Dua
  * akun tidak boleh sama-sama dianggap terhubung secara sah ke satu anggota.
@@ -93,56 +72,6 @@ export function resolveNexusAccountRelationship(
       }
     : { ...relationship };
 }
-
-const roles: readonly NexusAccountDirectoryRole[] = [
-  {
-    accessSummary: [
-      "Tingkat akses pimpinan",
-      "Rincian izin ditetapkan terpisah",
-    ],
-    description:
-      "Ringkasan role untuk tanggung jawab pimpinan. Izin efektif mengikuti kebijakan akses akun.",
-    id: "pimpinan",
-    label: "Pimpinan",
-  },
-  {
-    accessSummary: [
-      "Tingkat akses administrasi",
-      "Rincian izin ditetapkan terpisah",
-    ],
-    description:
-      "Ringkasan role untuk tanggung jawab administrasi. Izin efektif mengikuti kebijakan akses akun.",
-    id: "admin",
-    label: "Admin",
-  },
-  {
-    accessSummary: [
-      "Tingkat akses peninjauan",
-      "Rincian izin ditetapkan terpisah",
-    ],
-    description:
-      "Ringkasan role untuk tanggung jawab peninjauan. Izin efektif mengikuti kebijakan akses akun.",
-    id: "auditor",
-    label: "Auditor",
-  },
-  {
-    accessSummary: [
-      "Tingkat akses anggota",
-      "Rincian izin ditetapkan terpisah",
-    ],
-    description:
-      "Ringkasan role untuk pengguna anggota. Izin efektif mengikuti kebijakan akses akun.",
-    id: "anggota",
-    label: "Anggota",
-  },
-  {
-    accessSummary: ["Tingkat akses mitra", "Rincian izin ditetapkan terpisah"],
-    description:
-      "Ringkasan role untuk pengguna mitra. Izin efektif mengikuti kebijakan akses akun.",
-    id: "partner_eksternal",
-    label: "Mitra Eksternal",
-  },
-];
 
 const accounts: readonly NexusAccountDirectoryRecord[] = [
   {
@@ -246,14 +175,8 @@ const accounts: readonly NexusAccountDirectoryRecord[] = [
 ];
 
 export function getNexusAccountDirectory() {
-  return {
-    accounts: accounts.map((account) => ({
-      ...account,
-      relationship: { ...account.relationship },
-    })),
-    roles: roles.map((role) => ({
-      ...role,
-      accessSummary: [...role.accessSummary],
-    })),
-  };
+  return accounts.map((account) => ({
+    ...account,
+    relationship: { ...account.relationship },
+  }));
 }
