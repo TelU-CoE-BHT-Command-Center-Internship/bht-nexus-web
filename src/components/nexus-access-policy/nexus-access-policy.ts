@@ -387,9 +387,52 @@ export function resolveNexusRole(
   return role ? { kind: "KNOWN", role } : { kind: "UNKNOWN" };
 }
 
+/**
+ * Hanya peran aktif yang dapat menjadi dasar perhitungan akses saat ini.
+ * Rujukan yang hilang, belum ditetapkan, atau sudah nonaktif harus dipulihkan
+ * terlebih dahulu agar penyesuaian akun tidak berubah menjadi izin efektif.
+ */
+export function nexusRoleHasUsableBaseline(resolution: NexusRoleResolution) {
+  return resolution.kind === "KNOWN" && resolution.role.status === "ACTIVE";
+}
+
 /** Peran yang boleh dipilih untuk penugasan akun baru. */
 export function nexusAssignableRoles(roles: readonly NexusRoleRecord[]) {
   return roles.filter((role) => role.status === "ACTIVE");
+}
+
+export type NexusRoleHealth = {
+  isUsable: boolean;
+  /** Nama peran tetap ditampilkan supaya rujukan yang tersimpan tetap dikenali. */
+  label: string;
+  /** Keterangan singkat ketika peran belum dapat dipakai sebagai dasar akses. */
+  note?: string;
+  tone: "danger" | "info" | "neutral";
+};
+
+/**
+ * Satu penyajian keadaan peran akun untuk seluruh permukaan Administrasi.
+ * Peran nonaktif tetap memakai namanya sendiri, tetapi ditandai sebagai dasar
+ * akses yang belum dapat dipakai, mengikuti aturan yang sama dengan mesin akses.
+ */
+export function nexusRoleHealth(
+  resolution: NexusRoleResolution,
+): NexusRoleHealth {
+  const isUsable = nexusRoleHasUsableBaseline(resolution);
+  if (resolution.kind === "UNASSIGNED") {
+    return { isUsable, label: "Belum ditetapkan", tone: "neutral" };
+  }
+  if (resolution.kind === "UNKNOWN") {
+    return { isUsable, label: "Peran perlu ditinjau", tone: "danger" };
+  }
+  return isUsable
+    ? { isUsable, label: resolution.role.label, tone: "info" }
+    : {
+        isUsable,
+        label: resolution.role.label,
+        note: "Peran nonaktif",
+        tone: "danger",
+      };
 }
 
 export function nexusOverrideMode(
@@ -406,11 +449,17 @@ export function nexusOverrideMode(
   );
 }
 
-/** Hak akses bawaan peran ditambah penyesuaian akun menghasilkan akses efektif. */
+/**
+ * Hak akses bawaan peran ditambah penyesuaian akun menghasilkan akses efektif.
+ * `null` berarti dasar peran belum dapat dipastikan dan hasil harus ditampilkan
+ * sebagai belum dapat dihitung, bukan sebagai izin aktif maupun nonaktif.
+ */
 export function nexusEffectiveAccess(
+  hasUsableRoleBaseline: boolean,
   roleGrants: boolean,
   mode: NexusPermissionMode,
 ) {
+  if (!hasUsableRoleBaseline) return null;
   if (mode === "GRANT") return true;
   if (mode === "DENY") return false;
   return roleGrants;

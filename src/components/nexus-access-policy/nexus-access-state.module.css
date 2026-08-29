@@ -19,10 +19,16 @@
   font-size: 0.66rem;
 }
 
-.badge[data-active="true"] {
+.badge[data-state="ACTIVE"] {
   border-color: #a9d8c1;
   background: #e9f7ef;
   color: #076c3e;
+}
+
+.badge[data-state="UNRESOLVED"] {
+  border-color: #e4c885;
+  background: #fff8e8;
+  color: #78520c;
 }
 
 .badgeIcon {
@@ -41,9 +47,14 @@
   height: 0.85rem;
 }
 
-.badge[data-active="true"] .badgeIcon {
+.badge[data-state="ACTIVE"] .badgeIcon {
   background: #087443;
   color: #ffffff;
+}
+
+.badge[data-state="UNRESOLVED"] .badgeIcon {
+  background: #f1d48c;
+  color: #6d4b08;
 }
 
 .badgeIcon svg {

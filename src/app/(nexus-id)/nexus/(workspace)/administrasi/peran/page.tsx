@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NexusRoleManagement } from "@/components/nexus-access-policy/nexus-role-management";
 import {
+  nexusCanOpenRoleManagement,
   nexusPreviewWorkspaceAccess,
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
@@ -32,7 +33,7 @@ export default async function NexusRolePage({
 
   if (
     !nexusWorkspaceCanOpen(access, "administration") ||
-    !access.administrationCapabilities.canManageRoles
+    !nexusCanOpenRoleManagement(access.administrationCapabilities)
   ) {
     return (
       <NexusWorkspacePage

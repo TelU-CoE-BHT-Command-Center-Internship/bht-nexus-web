@@ -11,6 +11,7 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
+import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type NexusRoleFormDrawerProps = {
   duplicateSource?: NexusRoleRecord;
@@ -47,6 +48,17 @@ export function NexusRoleFormDrawer({
     (field) => draft[field] !== startingDraft[field],
   );
   const sourceRole = roles.find((role) => role.id === draft.copyFromRoleId);
+
+  useNexusWorkspaceUnsavedChanges({
+    confirmLabel: "Buang dan keluar",
+    description: duplicateSource
+      ? "Isian duplikasi peran belum disimpan dan akan hilang jika Anda meninggalkan halaman ini."
+      : "Isian peran baru belum disimpan dan akan hilang jika Anda meninggalkan halaman ini.",
+    isDirty: draftIsDirty,
+    title: duplicateSource
+      ? "Buang isian duplikasi peran?"
+      : "Buang isian peran baru?",
+  });
 
   function requestClose() {
     if (draftIsDirty) {

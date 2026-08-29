@@ -4,9 +4,9 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
-  type NexusRoleResolution,
   nexusAccountOverrides,
   nexusAssignableRoles,
+  nexusRoleHealth,
   resolveNexusRole,
 } from "@/components/nexus-access-policy/nexus-access-policy";
 import { useNexusAccessPolicySession } from "@/components/nexus-access-policy/nexus-access-policy-session";
@@ -27,7 +27,10 @@ import {
   type NexusResolvedAdministrationRelationship,
   resolveAdministrationRelationship,
 } from "@/components/nexus-administration/nexus-administration-relationship";
-import type { NexusAdministrationCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import {
+  type NexusAdministrationCapabilities,
+  nexusCanOpenRoleManagement,
+} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
@@ -143,12 +146,6 @@ function accountStatusTone(status: NexusAdministrationAccount["status"]) {
   return "danger";
 }
 
-function accountRoleLabel(role: NexusRoleResolution) {
-  if (role.kind === "KNOWN") return role.role.label;
-  if (role.kind === "UNKNOWN") return "Peran perlu ditinjau";
-  return "Belum ditetapkan";
-}
-
 function accountMatchesQuery(
   account: NexusAdministrationAccount,
   relationship: NexusResolvedAdministrationRelationship,
@@ -223,6 +220,7 @@ export function NexusAdministration({
     updateRole: setAccountRole,
   } = useNexusAccountSession();
   const { overrides, roles } = useNexusAccessPolicySession();
+  const canOpenRoleManagement = nexusCanOpenRoleManagement(capabilities);
   const assignableRoles = useMemo(() => nexusAssignableRoles(roles), [roles]);
   const { records: memberRecords } = useNexusMemberSession();
   const memberDirectory = useMemo(
@@ -526,6 +524,7 @@ export function NexusAdministration({
     const relationship = relationshipsByAccountId.get(account.id) ?? {
       kind: "CONFLICT" as const,
     };
+    const roleHealth = nexusRoleHealth(role);
     const openDetail = () => setSelectedAccountId(account.id);
     return {
       cells: {
@@ -554,17 +553,12 @@ export function NexusAdministration({
           </button>
         ),
         role: (
-          <NexusWorkspaceTableBadge
-            tone={
-              role.kind === "KNOWN"
-                ? "info"
-                : role.kind === "UNKNOWN"
-                  ? "danger"
-                  : "neutral"
-            }
-          >
-            {accountRoleLabel(role)}
-          </NexusWorkspaceTableBadge>
+          <span className={styles.roleCell}>
+            <NexusWorkspaceTableBadge tone={roleHealth.tone}>
+              {roleHealth.label}
+            </NexusWorkspaceTableBadge>
+            {roleHealth.note ? <small>{roleHealth.note}</small> : null}
+          </span>
         ),
         status: (
           <NexusWorkspaceTableBadge tone={accountStatusTone(account.status)}>
@@ -609,7 +603,11 @@ export function NexusAdministration({
               </div>
               <div>
                 <dt>Peran</dt>
-                <dd>{accountRoleLabel(role)}</dd>
+                <dd>
+                  {roleHealth.note
+                    ? `${roleHealth.label} · ${roleHealth.note}`
+                    : roleHealth.label}
+                </dd>
               </div>
             </dl>
           }
@@ -622,9 +620,9 @@ export function NexusAdministration({
   return (
     <NexusWorkspacePage
       actions={
-        capabilities.canManageRoles || capabilities.canInviteAccount ? (
+        canOpenRoleManagement || capabilities.canInviteAccount ? (
           <div className={styles.headerActions}>
-            {capabilities.canManageRoles ? (
+            {canOpenRoleManagement ? (
               <NexusWorkspaceLinkButton href="/nexus/administrasi/peran">
                 Peran &amp; Hak Akses
               </NexusWorkspaceLinkButton>

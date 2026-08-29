@@ -5,14 +5,15 @@ import styles from "@/components/nexus-access-policy/nexus-access-state.module.c
  * aktif dan nonaktif tetap terbaca tanpa mengandalkan warna saja.
  */
 export function NexusAccessStateBadge({
-  isActive,
   size = "medium",
+  state,
 }: {
-  isActive: boolean;
   size?: "medium" | "small";
+  state: "ACTIVE" | "INACTIVE" | "UNRESOLVED";
 }) {
+  const isActive = state === "ACTIVE";
   return (
-    <span className={styles.badge} data-active={isActive} data-size={size}>
+    <span className={styles.badge} data-size={size} data-state={state}>
       <span aria-hidden="true" className={styles.badgeIcon}>
         {isActive ? (
           <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
@@ -24,7 +25,11 @@ export function NexusAccessStateBadge({
           </svg>
         )}
       </span>
-      {isActive ? "Aktif" : "Nonaktif"}
+      {state === "UNRESOLVED"
+        ? "Belum dapat dihitung"
+        : isActive
+          ? "Aktif"
+          : "Nonaktif"}
     </span>
   );
 }

@@ -10,6 +10,7 @@ import { getNexusDashboardShellPreviewContent } from "@/components/nexus-dashboa
 import { NexusMemberSessionProvider } from "@/components/nexus-member-session/nexus-member-session";
 import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
 import { NexusReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
+import { NexusWorkspaceUnsavedChangesProvider } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 export default function NexusWorkspaceLayout({
   children,
@@ -38,9 +39,11 @@ export default function NexusWorkspaceLayout({
             actorName={content.viewer.name}
             initialAccounts={accounts}
           >
-            <NexusDashboardShell content={content}>
-              {children}
-            </NexusDashboardShell>
+            <NexusWorkspaceUnsavedChangesProvider>
+              <NexusDashboardShell content={content}>
+                {children}
+              </NexusDashboardShell>
+            </NexusWorkspaceUnsavedChangesProvider>
           </NexusAccountSessionProvider>
         </NexusAccessPolicySessionProvider>
       </NexusMemberSessionProvider>

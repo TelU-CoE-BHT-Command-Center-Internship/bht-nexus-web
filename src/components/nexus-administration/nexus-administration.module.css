@@ -125,6 +125,23 @@
   color: #7b8291;
 }
 
+.roleCell {
+  display: grid;
+  justify-items: start;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.roleCell small {
+  overflow: hidden;
+  color: var(--color-nexus-danger);
+  font-size: 0.66rem;
+  font-weight: 620;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .memberCell[data-relationship="CONFLICT"] strong {
   color: var(--color-nexus-danger);
 }
@@ -443,6 +460,19 @@
   margin-top: 0.28rem;
   color: var(--color-nexus-text-strong);
   font-size: 0.9rem;
+}
+
+.roleSummary .roleStateFlag {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #fff0e8;
+  color: #b1461b;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .roleSummary p,
