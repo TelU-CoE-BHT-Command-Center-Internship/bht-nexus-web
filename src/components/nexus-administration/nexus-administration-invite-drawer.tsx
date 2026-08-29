@@ -16,6 +16,7 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
+import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type NexusAdministrationInviteDrawerProps = {
   accountEmails: readonly string[];
@@ -105,6 +106,14 @@ export function NexusAdministrationInviteDrawer({
     ([field, value]) =>
       value !== startingDraft[field as keyof typeof startingDraft],
   );
+
+  useNexusWorkspaceUnsavedChanges({
+    confirmLabel: "Buang dan keluar",
+    description:
+      "Identitas, hubungan anggota, dan peran yang sudah diisi akan hilang jika Anda meninggalkan halaman ini.",
+    isDirty: draftIsDirty && !createdAccountId,
+    title: "Buang draft undangan?",
+  });
 
   function requestClose() {
     if (!createdAccountId && draftIsDirty) {

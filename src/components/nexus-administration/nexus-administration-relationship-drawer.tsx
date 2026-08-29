@@ -15,6 +15,7 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
+import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type RelationshipChoice = "" | "linked" | "non-member";
 
@@ -56,6 +57,14 @@ export function NexusAdministrationRelationshipDrawer({
   const selectedMember = availableMembers.find(
     (member) => member.id === memberId,
   );
+
+  useNexusWorkspaceUnsavedChanges({
+    confirmLabel: "Buang dan keluar",
+    description:
+      "Pilihan hubungan akun yang belum disimpan akan hilang jika Anda meninggalkan halaman ini.",
+    isDirty: draftIsDirty,
+    title: "Buang perubahan hubungan?",
+  });
 
   function requestClose() {
     if (draftIsDirty) {

@@ -3,7 +3,7 @@
 import {
   type NexusRoleResolution,
   nexusRoleAccessSummary,
-  nexusRoleHasUsableBaseline,
+  nexusRoleHealth,
 } from "@/components/nexus-access-policy/nexus-access-policy";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
@@ -170,15 +170,12 @@ export function NexusAdministrationDetail({
   role,
   specialAccessCount,
 }: NexusAdministrationDetailProps) {
-  const roleLabel =
-    role.kind === "KNOWN"
-      ? role.role.label
-      : role.kind === "UNKNOWN"
-        ? "Peran perlu ditinjau"
-        : "Belum ditetapkan";
+  const roleHealth = nexusRoleHealth(role);
   const roleDescription =
     role.kind === "KNOWN"
-      ? role.role.description
+      ? roleHealth.isUsable
+        ? role.role.description
+        : "Peran ini sudah dinonaktifkan sehingga belum dapat menjadi dasar hak akses akun. Pilih peran aktif supaya hak akses akun dapat dihitung kembali."
       : role.kind === "UNKNOWN"
         ? "Peran yang tersimpan tidak lagi dikenali. Pilih peran yang berlaku sebelum menyimpan perubahan akses."
         : "Peran perlu ditetapkan sebelum akun dapat memakai ruang kerja.";
@@ -282,10 +279,13 @@ export function NexusAdministrationDetail({
           <div className={styles.roleSummary}>
             <div>
               <span>Peran saat ini</span>
-              <strong>{roleLabel}</strong>
+              <strong>{roleHealth.label}</strong>
+              {roleHealth.note ? (
+                <span className={styles.roleStateFlag}>{roleHealth.note}</span>
+              ) : null}
               <p>{roleDescription}</p>
             </div>
-            {role.kind === "KNOWN" ? (
+            {roleHealth.isUsable && role.kind === "KNOWN" ? (
               <ul aria-label="Cakupan hak akses bawaan peran">
                 {nexusRoleAccessSummary(role.role).map((item) => (
                   <li key={item}>{item}</li>
@@ -302,9 +302,9 @@ export function NexusAdministrationDetail({
                   : "Mengikuti peran"}
               </strong>
               <small>
-                {role.kind === "KNOWN"
+                {roleHealth.isUsable
                   ? "Penyesuaian berlaku hanya untuk akun ini dan tidak mengubah peran bagi akun lain."
-                  : "Tetapkan peran yang berlaku lebih dahulu supaya hasil akses khusus dapat dibaca dengan pasti."}
+                  : "Tetapkan peran aktif lebih dahulu supaya hasil akses khusus dapat dibaca dengan pasti."}
               </small>
             </div>
             {capabilities.canManageUserOverrides ? (
@@ -329,31 +329,22 @@ export function NexusAdministrationDetail({
             </div>
           </header>
           <div className={styles.detailActions}>
-            {account.status !== "ACTIVE" &&
-            capabilities.canManageAccess &&
-            !nexusRoleHasUsableBaseline(role) ? (
+            {capabilities.canManageAccess &&
+            (account.status === "ACTIVE" || !roleHealth.isUsable) ? (
               <NexusWorkspaceButton onClick={onEditAccess} type="button">
-                Tetapkan peran
+                {roleHealth.isUsable ? "Ubah akses" : "Tetapkan peran"}
               </NexusWorkspaceButton>
             ) : null}
 
-            {account.status === "ACTIVE" ? (
-              <>
-                {capabilities.canManageAccess ? (
-                  <NexusWorkspaceButton onClick={onEditAccess} type="button">
-                    Ubah akses
-                  </NexusWorkspaceButton>
-                ) : null}
-                {capabilities.canManageAccountStatus ? (
-                  <NexusWorkspaceButton
-                    onClick={onSuspend}
-                    tone="danger"
-                    type="button"
-                  >
-                    Tangguhkan akses
-                  </NexusWorkspaceButton>
-                ) : null}
-              </>
+            {account.status === "ACTIVE" &&
+            capabilities.canManageAccountStatus ? (
+              <NexusWorkspaceButton
+                onClick={onSuspend}
+                tone="danger"
+                type="button"
+              >
+                Tangguhkan akses
+              </NexusWorkspaceButton>
             ) : null}
 
             {account.status === "INVITED" ? (

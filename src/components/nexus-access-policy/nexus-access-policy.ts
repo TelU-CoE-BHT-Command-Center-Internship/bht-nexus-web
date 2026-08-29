@@ -401,6 +401,40 @@ export function nexusAssignableRoles(roles: readonly NexusRoleRecord[]) {
   return roles.filter((role) => role.status === "ACTIVE");
 }
 
+export type NexusRoleHealth = {
+  isUsable: boolean;
+  /** Nama peran tetap ditampilkan supaya rujukan yang tersimpan tetap dikenali. */
+  label: string;
+  /** Keterangan singkat ketika peran belum dapat dipakai sebagai dasar akses. */
+  note?: string;
+  tone: "danger" | "info" | "neutral";
+};
+
+/**
+ * Satu penyajian keadaan peran akun untuk seluruh permukaan Administrasi.
+ * Peran nonaktif tetap memakai namanya sendiri, tetapi ditandai sebagai dasar
+ * akses yang belum dapat dipakai, mengikuti aturan yang sama dengan mesin akses.
+ */
+export function nexusRoleHealth(
+  resolution: NexusRoleResolution,
+): NexusRoleHealth {
+  const isUsable = nexusRoleHasUsableBaseline(resolution);
+  if (resolution.kind === "UNASSIGNED") {
+    return { isUsable, label: "Belum ditetapkan", tone: "neutral" };
+  }
+  if (resolution.kind === "UNKNOWN") {
+    return { isUsable, label: "Peran perlu ditinjau", tone: "danger" };
+  }
+  return isUsable
+    ? { isUsable, label: resolution.role.label, tone: "info" }
+    : {
+        isUsable,
+        label: resolution.role.label,
+        note: "Peran nonaktif",
+        tone: "danger",
+      };
+}
+
 export function nexusOverrideMode(
   overrides: readonly NexusUserPermissionOverride[],
   accountId: string,

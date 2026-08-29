@@ -422,7 +422,11 @@ export function NexusRoleManagement({
           : "Perubahan peran yang belum disimpan akan dibuang sebelum Anda membuka peran lain."
       : "";
   const restoreDescription = [
-    `Hak akses peran ${selectedRole?.label ?? "ini"} kembali ke bawaan BHT Nexus. Akses khusus pada masing-masing akun tidak ikut berubah.`,
+    `Hak akses peran ${selectedRole?.label ?? "ini"} kembali ke bawaan BHT Nexus.`,
+    accountsByRole.length > 0
+      ? `${accountsByRole.length} akun memakai peran ini dan langsung mengikuti hak akses bawaannya.`
+      : "",
+    "Akses khusus pada masing-masing akun tidak ikut berubah.",
     hasUnsavedPermissions
       ? "Perubahan hak akses yang belum disimpan akan diganti dengan bawaan."
       : "",
