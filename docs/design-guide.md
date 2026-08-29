@@ -80,6 +80,8 @@ Lebar tabel serta lebar kolom pada `nexus-workspace-records.module.css` ditulis 
 
 Kolom `primary` sengaja tidak diberi lebar. Dengan `table-layout: fixed`, kolom tanpa lebar menyerap sisa ruang, sehingga judul tidak pernah tergencet ketika kolom lain bertambah. Kolom lain diberi lebar sesuai isi terpanjangnya yang diukur di peramban, bukan diperkirakan.
 
+Sel tabel tidak boleh dijadikan wadah flex. Begitu sebuah `th` atau `td` diberi `display: flex`, sel tersebut keluar dari perhitungan tinggi baris, sehingga garis bawahnya digambar setinggi isinya sendiri dan tidak lagi sejajar dengan sel lain pada baris yang sama. Tata letak ikon dan teks di dalam sel diletakkan pada pembungkus di dalamnya, bukan pada selnya.
+
 Badge di dalam sel dibatasi `max-width: 100%` dan boleh membungkus. Badge yang tidak boleh membungkus akan keluar dari selnya dan menabrak kolom sebelah, sedangkan memotongnya dengan elipsis justru menyembunyikan status. Lebar kolom filter mengikuti aturan yang sama: lantainya diukur dari kontrol terpanjang, lalu turun ke tiga kolom sebelum menjadi satu kolom.
 
 Logika fitur, isi, dan CSS yang hanya berlaku pada satu domain tetap berada di folder fitur tersebut. Untuk Publikasi yang tersisa hanya panel kuartil, metrik sitasi, dan kartu anggota.
@@ -99,6 +101,12 @@ Peran dan hak akses memakai dua halaman penuh di bawah Administrasi, bukan drawe
 `/nexus/administrasi/akses` menangani satu akun terhadap 32 izin, sehingga daftarnya tidak dibiarkan menjadi gulir panjang. Halaman dibuka dengan ringkasan akses berisi jumlah izin aktif, penyesuaian, tambahan, dan pembatasan, lalu menyediakan saringan Semua, Penyesuaian, Aktif, dan Nonaktif. Setiap modul menjadi bagian yang dapat dibuka-tutup dan hanya modul yang mempunyai penyesuaian yang terbuka lebih dahulu, sehingga pengecualian langsung terlihat tanpa menelusuri seluruh izin. Satu izin ditulis pada satu baris berisi hak akses bawaan peran, kendali penyesuaian, dan hasil akhirnya; baris yang disesuaikan diberi garis tepi hijau untuk tambahan dan merah untuk pembatasan. Baris aksi menempel di bawah layar agar Simpan dan Reset selalu terjangkau tanpa menggulir sampai akhir halaman.
 
 Kendali izin peran memakai sakelar dua keadaan berbasis checkbox dengan nama aksesibel spesifik seperti `Izinkan peran Auditor mengubah Publikasi`, sedangkan penyesuaian akun memakai kendali tiga keadaan berbasis radio: mengikuti peran, tambahan, dan dibatasi. Keadaan tidak pernah disampaikan hanya lewat warna; setiap kendali menyertakan label teks dan kombinasi yang tidak berlaku ditandai sebagai tidak tersedia, bukan sebagai izin nonaktif. Pada lebar tablet ke bawah, matriks dan perbandingan berubah menjadi kartu per modul agar tidak ada gulir horizontal halaman.
+
+### Perbatasan antarbagian
+
+Dua bagian berwarna sama yang hanya bersentuhan di tepi akan menyisakan garis tipis pada sebagian layar. Tepi elemen jarang jatuh tepat pada piksel perangkat, dan peramban membulatkan tepi bawah bagian atas serta tepi atas bagian bawah secara terpisah; selisih kurang dari satu piksel itu cukup untuk memperlihatkan latar di belakangnya. Bagian yang seharusnya menyatu karena itu ditumpangkan satu piksel, bukan dirapatkan.
+
+Bentuk lengkung pada perbatasan digambar selebar bagian yang ditutupinya dan menyentuh kedua sudut. Lengkungan yang dibuat lebih lebar lalu dipotong `overflow` hanya menutup bagian tengah, sehingga di kiri dan kanan tersisa tepi lurus yang terbaca sebagai garis horizontal.
 
 ## Warna dan kontras
 

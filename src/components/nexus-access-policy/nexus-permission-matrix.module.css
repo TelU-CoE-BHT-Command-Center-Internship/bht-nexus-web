@@ -203,12 +203,21 @@
   border-bottom: 0;
 }
 
+/*
+ * Sel baris tetap berupa table-cell. Menjadikannya flex membuat sel keluar
+ * dari perhitungan tinggi baris, sehingga garis bawahnya tidak sejajar dengan
+ * kolom tindakan di kanannya. Tata letak flex dipindahkan ke pembungkus dalam.
+ */
 .desktopMatrix tbody th {
+  min-width: 0;
+  font-weight: 400;
+}
+
+.moduleHead {
   display: flex;
   min-width: 0;
   align-items: center;
   gap: 0.6rem;
-  font-weight: 400;
 }
 
 .desktopMatrix tbody td[data-action] .switchWrap {

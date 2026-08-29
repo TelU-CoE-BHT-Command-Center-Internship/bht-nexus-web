@@ -117,12 +117,14 @@ export function NexusPermissionMatrix({
             {nexusAccessModules.map((module) => (
               <tr key={module.id}>
                 <th scope="row">
-                  <span aria-hidden="true" className={styles.moduleIcon}>
-                    <DashboardShellIcon name={module.icon} />
-                  </span>
-                  <span className={styles.moduleCopy}>
-                    <strong>{module.label}</strong>
-                    <small>{module.description}</small>
+                  <span className={styles.moduleHead}>
+                    <span aria-hidden="true" className={styles.moduleIcon}>
+                      <DashboardShellIcon name={module.icon} />
+                    </span>
+                    <span className={styles.moduleCopy}>
+                      <strong>{module.label}</strong>
+                      <small>{module.description}</small>
+                    </span>
                   </span>
                 </th>
                 {nexusAccessActions.map((action) => {
