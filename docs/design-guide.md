@@ -102,6 +102,8 @@ Peran dan hak akses memakai dua halaman penuh di bawah Administrasi, bukan drawe
 
 Kendali izin peran memakai sakelar dua keadaan berbasis checkbox dengan nama aksesibel spesifik seperti `Izinkan peran Auditor mengubah Publikasi`, sedangkan penyesuaian akun memakai kendali tiga keadaan berbasis radio: mengikuti peran, tambahan, dan dibatasi. Keadaan tidak pernah disampaikan hanya lewat warna; setiap kendali menyertakan label teks dan kombinasi yang tidak berlaku ditandai sebagai tidak tersedia, bukan sebagai izin nonaktif. Pada lebar tablet ke bawah, matriks dan perbandingan berubah menjadi kartu per modul agar tidak ada gulir horizontal halaman.
 
+Matriks peran dan akses khusus mendaftarkan perubahan bermakna pada satu penjaga navigasi ruang kerja. Tautan produk—termasuk sidebar, breadcrumb, pencarian, dan tindakan header—memakai dialog BHT Nexus sebelum membuang perubahan, sedangkan muat ulang atau penutupan tab memakai mekanisme standar browser. Setelah perubahan disimpan atau dibuang, status perubahan belum disimpan dilepas agar navigasi berikutnya tidak menampilkan konfirmasi lama.
+
 ### Perbatasan antarbagian
 
 Dua bagian berwarna sama yang hanya bersentuhan di tepi akan menyisakan garis tipis pada sebagian layar. Tepi elemen jarang jatuh tepat pada piksel perangkat, dan peramban membulatkan tepi bawah bagian atas serta tepi atas bagian bawah secara terpisah; selisih kurang dari satu piksel itu cukup untuk memperlihatkan latar di belakangnya. Bagian yang seharusnya menyatu karena itu ditumpangkan satu piksel, bukan dirapatkan.

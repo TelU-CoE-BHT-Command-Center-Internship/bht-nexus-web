@@ -3,6 +3,7 @@
 import {
   type NexusRoleResolution,
   nexusRoleAccessSummary,
+  nexusRoleHasUsableBaseline,
 } from "@/components/nexus-access-policy/nexus-access-policy";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
@@ -328,6 +329,14 @@ export function NexusAdministrationDetail({
             </div>
           </header>
           <div className={styles.detailActions}>
+            {account.status !== "ACTIVE" &&
+            capabilities.canManageAccess &&
+            !nexusRoleHasUsableBaseline(role) ? (
+              <NexusWorkspaceButton onClick={onEditAccess} type="button">
+                Tetapkan peran
+              </NexusWorkspaceButton>
+            ) : null}
+
             {account.status === "ACTIVE" ? (
               <>
                 {capabilities.canManageAccess ? (

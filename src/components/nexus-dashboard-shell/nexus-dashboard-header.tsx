@@ -2,7 +2,7 @@
 
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { type FormEvent, useMemo, useState } from "react";
 import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
 import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
@@ -10,6 +10,7 @@ import { resetDismissedAnnouncementsForSession } from "@/components/nexus-dashbo
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
 import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
+import { useNexusWorkspaceNavigation } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import type { Locale } from "@/i18n/locales";
 
 export type DashboardHeaderPanel = "notifications" | "profile";
@@ -51,7 +52,7 @@ export function NexusDashboardHeader({
   openPanel,
   pageTitle,
 }: NexusDashboardHeaderProps) {
-  const router = useRouter();
+  const navigate = useNexusWorkspaceNavigation();
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -67,9 +68,10 @@ export function NexusDashboardHeader({
     event.preventDefault();
     const firstMatch = matches[0];
     if (!firstMatch) return;
-    setIsSearchOpen(false);
-    setSearchQuery("");
-    router.push(firstMatch.href);
+    navigate(firstMatch.href, () => {
+      setIsSearchOpen(false);
+      setSearchQuery("");
+    });
   }
 
   return (
@@ -134,9 +136,12 @@ export function NexusDashboardHeader({
                 <Link
                   href={item.href}
                   key={item.id}
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    setSearchQuery("");
+                  onNavigate={(event) => {
+                    event.preventDefault();
+                    navigate(item.href, () => {
+                      setIsSearchOpen(false);
+                      setSearchQuery("");
+                    });
                   }}
                   prefetch={false}
                   role="option"
@@ -160,17 +165,24 @@ export function NexusDashboardHeader({
           {workspaceLanguageOptions.map((option) => {
             const isActive = content.locale === option.locale;
 
+            const href = getWorkspaceLanguageHref(
+              content.locale,
+              pathname,
+              option.locale,
+            );
+
             return (
               <Link
                 aria-current={isActive ? "page" : undefined}
                 aria-label={option.label}
                 data-active={isActive || undefined}
-                href={getWorkspaceLanguageHref(
-                  content.locale,
-                  pathname,
-                  option.locale,
-                )}
+                href={href}
                 key={option.locale}
+                onNavigate={(event) => {
+                  if (href === pathname) return;
+                  event.preventDefault();
+                  navigate(href);
+                }}
                 prefetch={false}
                 title={option.label}
               >
@@ -213,7 +225,12 @@ export function NexusDashboardHeader({
                     className={styles.notificationItem}
                     href={notification.href}
                     key={notification.id}
-                    onClick={() => onTogglePanel("notifications")}
+                    onNavigate={(event) => {
+                      event.preventDefault();
+                      navigate(notification.href, () =>
+                        onTogglePanel("notifications"),
+                      );
+                    }}
                     prefetch={false}
                   >
                     <span className={styles.notificationMarker} />
@@ -286,7 +303,13 @@ export function NexusDashboardHeader({
               </div>
               <Link
                 href={content.signOutHref}
-                onClick={resetDismissedAnnouncementsForSession}
+                onNavigate={(event) => {
+                  event.preventDefault();
+                  navigate(
+                    content.signOutHref,
+                    resetDismissedAnnouncementsForSession,
+                  );
+                }}
                 prefetch={false}
               >
                 {content.signOutLabel}

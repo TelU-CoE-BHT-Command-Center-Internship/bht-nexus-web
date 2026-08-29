@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   type NexusAccessModuleId,
@@ -10,6 +9,7 @@ import {
   nexusAccessModules,
   nexusAccountOverrides,
   nexusEffectiveAccess,
+  nexusRoleHasUsableBaseline,
   resolveNexusRole,
 } from "@/components/nexus-access-policy/nexus-access-policy";
 import {
@@ -36,13 +36,17 @@ import {
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import {
+  useNexusWorkspaceNavigation,
+  useNexusWorkspaceUnsavedChanges,
+} from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type NexusUserAccessProps = {
   capabilities: NexusAdministrationCapabilities;
   initialAccountId?: string;
 };
 
-type PendingDialog = { href: string; kind: "leave" } | { kind: "reset" };
+type PendingDialog = { kind: "reset" };
 
 type AccessFilterId = "active" | "adjusted" | "all" | "inactive";
 
@@ -70,7 +74,7 @@ export function NexusUserAccess({
   capabilities,
   initialAccountId,
 }: NexusUserAccessProps) {
-  const router = useRouter();
+  const navigate = useNexusWorkspaceNavigation();
   const { overrides, replaceAccountOverrides, roles } =
     useNexusAccessPolicySession();
   const { accounts } = useNexusAccountSession();
@@ -114,9 +118,15 @@ export function NexusUserAccess({
   }, [announcement]);
 
   const role = resolveNexusRole(account?.roleId, roles);
+  const hasUsableRoleBaseline = nexusRoleHasUsableBaseline(role);
   const roleGrants = useMemo(
-    () => new Set(role.kind === "KNOWN" ? role.role.permissions : []),
-    [role],
+    () =>
+      new Set(
+        hasUsableRoleBaseline && role.kind === "KNOWN"
+          ? role.role.permissions
+          : [],
+      ),
+    [hasUsableRoleBaseline, role],
   );
 
   function modeFor(permissionId: NexusPermissionId): NexusPermissionMode {
@@ -129,7 +139,7 @@ export function NexusUserAccess({
       const baseline = roleGrants.has(permission.id);
       return {
         baseline,
-        effective: nexusEffectiveAccess(baseline, mode),
+        effective: nexusEffectiveAccess(hasUsableRoleBaseline, baseline, mode),
         label: nexusAccessActionLabels[permission.action],
         mode,
         name: `${module.label} — ${nexusAccessActionLabels[permission.action]}`,
@@ -143,17 +153,26 @@ export function NexusUserAccess({
   const adjustedCount = allRows.filter((row) => row.mode !== "INHERIT").length;
   const grantedCount = allRows.filter((row) => row.mode === "GRANT").length;
   const deniedCount = allRows.filter((row) => row.mode === "DENY").length;
-  const effectiveCount = allRows.filter((row) => row.effective).length;
+  const effectiveCount = allRows.filter((row) => row.effective === true).length;
+  const inactiveCount = allRows.filter((row) => row.effective === false).length;
 
   const isDirty = Object.entries(draft).some(
     ([permissionId, mode]) => (storedModes[permissionId] ?? "INHERIT") !== mode,
   );
 
+  useNexusWorkspaceUnsavedChanges({
+    confirmLabel: "Buang dan keluar",
+    description:
+      "Perubahan hak akses yang belum disimpan akan hilang jika Anda meninggalkan halaman ini.",
+    isDirty: Boolean(account) && isDirty,
+    title: "Buang perubahan hak akses?",
+  });
+
   const filterCounts: Record<AccessFilterId, number> = {
     active: effectiveCount,
     adjusted: adjustedCount,
     all: allRows.length,
-    inactive: allRows.length - effectiveCount,
+    inactive: inactiveCount,
   };
 
   const visibleGroups = groups
@@ -163,9 +182,9 @@ export function NexusUserAccess({
         filter === "adjusted"
           ? row.mode !== "INHERIT"
           : filter === "active"
-            ? row.effective
+            ? row.effective === true
             : filter === "inactive"
-              ? !row.effective
+              ? row.effective === false
               : true,
       ),
       total: group.rows.length,
@@ -195,7 +214,7 @@ export function NexusUserAccess({
         <NexusWorkspaceState
           actions={
             <NexusWorkspaceButton
-              onClick={() => router.push(ADMINISTRATION_HREF)}
+              onClick={() => navigate(ADMINISTRATION_HREF)}
               type="button"
             >
               Kembali ke daftar akun
@@ -221,15 +240,7 @@ export function NexusUserAccess({
       : role.kind === "UNKNOWN"
         ? "Peran perlu ditinjau"
         : "Belum ditetapkan";
-  const canEdit = capabilities.canManageUserOverrides;
-
-  function leaveTo(href: string) {
-    if (isDirty) {
-      setPendingDialog({ href, kind: "leave" });
-      return;
-    }
-    router.push(href);
-  }
+  const canEdit = capabilities.canManageUserOverrides && hasUsableRoleBaseline;
 
   function toggleModule(moduleId: NexusAccessModuleId) {
     setOpenModules(
@@ -250,8 +261,8 @@ export function NexusUserAccess({
                 next === "adjusted"
                   ? row.mode !== "INHERIT"
                   : next === "active"
-                    ? row.effective
-                    : !row.effective,
+                    ? row.effective === true
+                    : row.effective === false,
               ),
             )
             .map((group) => group.module.id),
@@ -259,7 +270,7 @@ export function NexusUserAccess({
   }
 
   function saveOverrides() {
-    if (!account) return;
+    if (!account || !canEdit) return;
     const drafts: NexusAccountOverrideDraft[] = [];
     for (const row of allRows) {
       if (row.mode === "INHERIT") continue;
@@ -283,7 +294,7 @@ export function NexusUserAccess({
     >
       <NexusWorkspaceBreadcrumb
         current="Akses Khusus Pengguna"
-        onNavigate={leaveTo}
+        onNavigate={navigate}
         trail={[{ href: ADMINISTRATION_HREF, label: "Administrasi" }]}
       />
 
@@ -316,7 +327,7 @@ export function NexusUserAccess({
                   <button
                     className={styles.identityLink}
                     onClick={() =>
-                      leaveTo(
+                      navigate(
                         `/nexus/administrasi/peran?role=${encodeURIComponent(role.role.id)}`,
                       )
                     }
@@ -341,7 +352,7 @@ export function NexusUserAccess({
               </dd>
             </div>
             <div>
-              <dt>Terakhir diperbarui</dt>
+              <dt>Akun diperbarui</dt>
               <dd>
                 <strong>{account.updatedAt}</strong>
               </dd>
@@ -353,19 +364,27 @@ export function NexusUserAccess({
           <header>
             <h3>Ringkasan akses</h3>
             <p>
-              {role.kind === "KNOWN"
+              {hasUsableRoleBaseline
                 ? `Akses dasar mengikuti peran ${roleLabel}, lalu disesuaikan khusus untuk akun ini.`
-                : "Tidak ada hak akses bawaan yang dapat dibaca untuk akun ini."}
+                : "Hasil akses belum dapat dihitung sampai akun memiliki peran aktif yang berlaku."}
             </p>
           </header>
           <dl className={styles.summaryStats}>
             <div data-tone="effective">
-              <dt>Izin aktif</dt>
+              <dt>{hasUsableRoleBaseline ? "Izin aktif" : "Hasil akses"}</dt>
               <dd>
-                {effectiveCount}
-                <span
-                  className={styles.summaryUnit}
-                >{`dari ${allRows.length}`}</span>
+                {hasUsableRoleBaseline ? (
+                  <>
+                    {effectiveCount}
+                    <span
+                      className={styles.summaryUnit}
+                    >{`dari ${allRows.length}`}</span>
+                  </>
+                ) : (
+                  <span className={styles.summaryUnit}>
+                    Belum dapat dihitung
+                  </span>
+                )}
               </dd>
             </div>
             <div data-tone="adjusted">
@@ -384,18 +403,20 @@ export function NexusUserAccess({
         </section>
       </div>
 
-      {role.kind === "KNOWN" ? null : (
+      {hasUsableRoleBaseline ? null : (
         <div className={styles.roleWarning}>
           <NexusWorkspaceNotice tone="danger">
             {role.kind === "UNKNOWN"
               ? "Peran yang tersimpan pada akun ini tidak lagi dikenali, sehingga tidak ada hak akses bawaan yang dapat dibaca."
-              : "Akun ini belum mempunyai peran, sehingga tidak ada hak akses bawaan yang dapat dibaca."}{" "}
-            Tetapkan peran yang berlaku lebih dahulu agar hasil akses khusus
-            dapat dipastikan.
+              : role.kind === "KNOWN"
+                ? `Peran ${role.role.label} sudah nonaktif dan belum dapat menjadi dasar akses akun ini.`
+                : "Akun ini belum mempunyai peran, sehingga tidak ada hak akses bawaan yang dapat dibaca."}{" "}
+            Penyesuaian yang sudah tersimpan tetap ada dan akan dihitung kembali
+            setelah peran aktif ditetapkan.
           </NexusWorkspaceNotice>
           <NexusWorkspaceButton
             onClick={() =>
-              leaveTo(
+              navigate(
                 `${ADMINISTRATION_HREF}?account=${encodeURIComponent(account.id)}`,
               )
             }
@@ -416,8 +437,12 @@ export function NexusUserAccess({
               [
                 { id: "all", label: "Semua izin" },
                 { id: "adjusted", label: "Penyesuaian" },
-                { id: "active", label: "Aktif" },
-                { id: "inactive", label: "Nonaktif" },
+                ...(hasUsableRoleBaseline
+                  ? ([
+                      { id: "active", label: "Aktif" },
+                      { id: "inactive", label: "Nonaktif" },
+                    ] as const)
+                  : []),
               ] as const
             ).map((option) => (
               <button
@@ -474,7 +499,7 @@ export function NexusUserAccess({
                   (row) => row.mode !== "INHERIT",
                 ).length;
                 const moduleActive = group.rows.filter(
-                  (row) => row.effective,
+                  (row) => row.effective === true,
                 ).length;
                 const panelId = `access-module-${group.module.id}`;
                 return (
@@ -495,7 +520,9 @@ export function NexusUserAccess({
                       </span>
                       <span className={styles.moduleMeta}>
                         <span className={styles.moduleCount}>
-                          {`${moduleActive}/${group.rows.length} aktif`}
+                          {hasUsableRoleBaseline
+                            ? `${moduleActive}/${group.rows.length} aktif`
+                            : "Belum dapat dihitung"}
                         </span>
                         {moduleAdjusted > 0 ? (
                           <span className={styles.moduleAdjusted}>
@@ -525,8 +552,14 @@ export function NexusUserAccess({
                           <span className={styles.baselineCell}>
                             <small>Dari peran</small>
                             <NexusAccessStateBadge
-                              isActive={row.baseline}
                               size="small"
+                              state={
+                                hasUsableRoleBaseline
+                                  ? row.baseline
+                                    ? "ACTIVE"
+                                    : "INACTIVE"
+                                  : "UNRESOLVED"
+                              }
                             />
                           </span>
                           <span
@@ -563,7 +596,15 @@ export function NexusUserAccess({
                           </span>
                           <span className={styles.effectiveCell}>
                             <small>Hasil akhir</small>
-                            <NexusAccessStateBadge isActive={row.effective} />
+                            <NexusAccessStateBadge
+                              state={
+                                row.effective === null
+                                  ? "UNRESOLVED"
+                                  : row.effective
+                                    ? "ACTIVE"
+                                    : "INACTIVE"
+                              }
+                            />
                           </span>
                         </div>
                       ))}
@@ -626,23 +667,6 @@ export function NexusUserAccess({
             );
           }}
           title="Hapus seluruh akses khusus akun ini?"
-          tone="warning"
-        />
-      ) : null}
-
-      {pendingDialog?.kind === "leave" ? (
-        <NexusWorkspaceConfirmDialog
-          cancelLabel="Lanjutkan menyunting"
-          confirmLabel="Buang perubahan"
-          description="Penyesuaian akses yang belum disimpan akan dihapus."
-          onCancel={() => setPendingDialog(null)}
-          onConfirm={() => {
-            const target = pendingDialog;
-            setPendingDialog(null);
-            setDraft({});
-            router.push(target.href);
-          }}
-          title="Buang perubahan akses khusus?"
           tone="warning"
         />
       ) : null}

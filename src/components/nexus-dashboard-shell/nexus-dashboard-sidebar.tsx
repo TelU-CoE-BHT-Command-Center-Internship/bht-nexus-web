@@ -5,6 +5,7 @@ import whatsappIcon from "@/assets/whatsapp-svgrepo-com.svg";
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
 import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
+import { useNexusWorkspaceNavigation } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type NexusDashboardSidebarProps = {
   content: NexusDashboardShellContent;
@@ -23,6 +24,8 @@ export function NexusDashboardSidebar({
   onToggle,
   pathname,
 }: NexusDashboardSidebarProps) {
+  const navigate = useNexusWorkspaceNavigation();
+
   return (
     <aside className={styles.sidebar} id="nexus-workspace-navigation">
       <div className={styles.brandRow}>
@@ -30,6 +33,10 @@ export function NexusDashboardSidebar({
           aria-label={content.brandLabel}
           className={styles.brandLink}
           href={content.homeHref}
+          onNavigate={(event) => {
+            event.preventDefault();
+            navigate(content.homeHref, onCloseMobileMenu);
+          }}
           prefetch={false}
         >
           <Image
@@ -111,7 +118,10 @@ export function NexusDashboardSidebar({
                     data-active={isActive}
                     href={item.href}
                     key={item.id}
-                    onClick={onCloseMobileMenu}
+                    onNavigate={(event) => {
+                      event.preventDefault();
+                      navigate(item.href, onCloseMobileMenu);
+                    }}
                     prefetch={false}
                     title={isCollapsed ? item.label : undefined}
                   >

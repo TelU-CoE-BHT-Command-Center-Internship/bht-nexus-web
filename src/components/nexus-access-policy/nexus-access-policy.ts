@@ -387,6 +387,15 @@ export function resolveNexusRole(
   return role ? { kind: "KNOWN", role } : { kind: "UNKNOWN" };
 }
 
+/**
+ * Hanya peran aktif yang dapat menjadi dasar perhitungan akses saat ini.
+ * Rujukan yang hilang, belum ditetapkan, atau sudah nonaktif harus dipulihkan
+ * terlebih dahulu agar penyesuaian akun tidak berubah menjadi izin efektif.
+ */
+export function nexusRoleHasUsableBaseline(resolution: NexusRoleResolution) {
+  return resolution.kind === "KNOWN" && resolution.role.status === "ACTIVE";
+}
+
 /** Peran yang boleh dipilih untuk penugasan akun baru. */
 export function nexusAssignableRoles(roles: readonly NexusRoleRecord[]) {
   return roles.filter((role) => role.status === "ACTIVE");
@@ -406,11 +415,17 @@ export function nexusOverrideMode(
   );
 }
 
-/** Hak akses bawaan peran ditambah penyesuaian akun menghasilkan akses efektif. */
+/**
+ * Hak akses bawaan peran ditambah penyesuaian akun menghasilkan akses efektif.
+ * `null` berarti dasar peran belum dapat dipastikan dan hasil harus ditampilkan
+ * sebagai belum dapat dihitung, bukan sebagai izin aktif maupun nonaktif.
+ */
 export function nexusEffectiveAccess(
+  hasUsableRoleBaseline: boolean,
   roleGrants: boolean,
   mode: NexusPermissionMode,
 ) {
+  if (!hasUsableRoleBaseline) return null;
   if (mode === "GRANT") return true;
   if (mode === "DENY") return false;
   return roleGrants;

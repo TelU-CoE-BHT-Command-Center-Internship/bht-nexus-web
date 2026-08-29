@@ -47,6 +47,10 @@ import {
   NexusWorkspaceTableBadge,
 } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import {
+  useNexusWorkspaceNavigation,
+  useNexusWorkspaceUnsavedChanges,
+} from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 const NexusRoleFormDrawer = dynamic(() =>
   import("@/components/nexus-access-policy/nexus-role-form-drawer").then(
@@ -69,7 +73,7 @@ type RoleDraft = {
 type PendingDialog =
   | { kind: "assigned-role"; count: number }
   | { kind: "deactivate" }
-  | { kind: "discard"; nextRoleId?: string; returnHref?: string }
+  | { kind: "discard"; nextRoleId: string }
   | { kind: "restore" }
   | { kind: "save"; accountCount: number };
 
@@ -114,6 +118,7 @@ export function NexusRoleManagement({
   initialRoleId,
 }: NexusRoleManagementProps) {
   const router = useRouter();
+  const navigate = useNexusWorkspaceNavigation();
   const {
     activateRole,
     createRole,
@@ -173,6 +178,14 @@ export function NexusRoleManagement({
         activeDraft.description !== selectedRole.description ||
         !samePermissions(activeDraft.permissions, selectedRole.permissions)),
   );
+
+  useNexusWorkspaceUnsavedChanges({
+    confirmLabel: "Buang dan keluar",
+    description:
+      "Perubahan peran yang belum disimpan akan hilang jika Anda meninggalkan halaman ini.",
+    isDirty,
+    title: "Buang perubahan peran?",
+  });
 
   const accountsByRole = useMemo(
     () => accounts.filter((account) => account.roleId === selectedRoleId),
@@ -262,14 +275,6 @@ export function NexusRoleManagement({
     setSelectedRoleId(roleId);
     setDraft(null);
     setActiveTab("matrix");
-  }
-
-  function leaveTo(href: string) {
-    if (isDirty) {
-      setPendingDialog({ kind: "discard", returnHref: href });
-      return;
-    }
-    router.push(href);
   }
 
   function applyDraft() {
@@ -365,7 +370,7 @@ export function NexusRoleManagement({
         ? `${specialAccessCount} penyesuaian`
         : "Mengikuti peran";
     const openAccount = () =>
-      leaveTo(
+      navigate(
         `${ADMINISTRATION_HREF}?account=${encodeURIComponent(account.id)}`,
       );
 
@@ -484,7 +489,7 @@ export function NexusRoleManagement({
     >
       <NexusWorkspaceBreadcrumb
         current="Peran & Hak Akses"
-        onNavigate={leaveTo}
+        onNavigate={navigate}
         trail={[{ href: ADMINISTRATION_HREF, label: "Administrasi" }]}
       />
 
@@ -645,7 +650,7 @@ export function NexusRoleManagement({
                           atau ketika mengubah akses akun yang sudah ada.
                         </p>
                         <NexusWorkspaceButton
-                          onClick={() => leaveTo(ADMINISTRATION_HREF)}
+                          onClick={() => navigate(ADMINISTRATION_HREF)}
                           type="button"
                         >
                           Buka daftar akun
@@ -912,9 +917,6 @@ export function NexusRoleManagement({
             if (target.nextRoleId) {
               setSelectedRoleId(target.nextRoleId);
               setActiveTab("matrix");
-            }
-            if (target.returnHref) {
-              router.push(target.returnHref);
             }
           }}
           title="Buang perubahan peran?"
