@@ -102,7 +102,9 @@ Peran dan hak akses memakai dua halaman penuh di bawah Administrasi, bukan drawe
 
 Kendali izin peran memakai sakelar dua keadaan berbasis checkbox dengan nama aksesibel spesifik seperti `Izinkan peran Auditor mengubah Publikasi`, sedangkan penyesuaian akun memakai kendali tiga keadaan berbasis radio: mengikuti peran, tambahan, dan dibatasi. Keadaan tidak pernah disampaikan hanya lewat warna; setiap kendali menyertakan label teks dan kombinasi yang tidak berlaku ditandai sebagai tidak tersedia, bukan sebagai izin nonaktif. Pada lebar tablet ke bawah, matriks dan perbandingan berubah menjadi kartu per modul agar tidak ada gulir horizontal halaman.
 
-Matriks peran dan akses khusus mendaftarkan perubahan bermakna pada satu penjaga navigasi ruang kerja. Tautan produk—termasuk sidebar, breadcrumb, pencarian, dan tindakan header—memakai dialog BHT Nexus sebelum membuang perubahan, sedangkan muat ulang atau penutupan tab memakai mekanisme standar browser. Setelah perubahan disimpan atau dibuang, status perubahan belum disimpan dilepas agar navigasi berikutnya tidak menampilkan konfirmasi lama.
+Matriks peran, akses khusus, dan seluruh drawer Administrasi yang menampung isian mendaftarkan perubahan bermakna pada satu penjaga navigasi ruang kerja. Tautan produk—termasuk sidebar, breadcrumb, pencarian, dan tindakan header—memakai dialog BHT Nexus sebelum membuang perubahan, sedangkan muat ulang atau penutupan tab memakai mekanisme standar browser. Drawer tetap memakai dialog lokalnya untuk tombol tutup, Batal, backdrop, dan Escape, sehingga satu tindakan tidak pernah meminta dua konfirmasi. Setelah perubahan disimpan atau dibuang, status perubahan belum disimpan dilepas agar navigasi berikutnya tidak menampilkan konfirmasi lama.
+
+Tindakan yang mengantar pengguna ke permukaan lain hanya ditampilkan ketika kewenangan di tujuannya memang dimiliki. Antarmuka tidak menawarkan jalan keluar yang berakhir pada halaman tertutup; sebagai gantinya keadaan tetap dijelaskan apa adanya beserta keterangan siapa yang dapat menindaklanjuti.
 
 ### Perbatasan antarbagian
 
