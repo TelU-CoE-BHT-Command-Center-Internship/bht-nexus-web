@@ -284,6 +284,14 @@ export function validateMemberProfile(
   return errors;
 }
 
+/** Satu pemisahan daftar bidang lain untuk setiap permukaan penyuntingan. */
+export function memberSecondaryExpertiseList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function normalizedMemberDraft(draft: MemberProfileDraft) {
   return {
     ...draft,
@@ -330,10 +338,7 @@ export function memberRecordFromDraft(
     },
     expertise: {
       primary: draft.primaryExpertise.trim() || undefined,
-      secondary: draft.secondaryExpertise
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
+      secondary: memberSecondaryExpertiseList(draft.secondaryExpertise),
     },
     id: current?.id ?? `member-${crypto.randomUUID()}`,
     identity: {

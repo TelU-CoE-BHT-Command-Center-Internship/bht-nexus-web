@@ -16,10 +16,14 @@ import {
 import type { NexusMemberRecord } from "@/components/nexus-members/nexus-members-content";
 import {
   createEditDraft,
-  type MemberProfileDraft,
+  memberSecondaryExpertiseList,
   nexusValidEmail,
+  normalizedMemberDraft,
 } from "@/components/nexus-members/nexus-members-model";
-import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatAuditTimestamp,
+  personInitials,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 /**
  * Satu proyeksi profil untuk seluruh permukaan BHT Nexus.
@@ -291,22 +295,124 @@ export function validateNexusProfileDraft(
   return errors;
 }
 
-/** Menyalin bidang pribadi bersama ke draft anggota tanpa menyentuh bidang lain. */
-export function mergeNexusProfileIntoMemberDraft(
+/**
+ * Menuliskan bidang pribadi bersama ke rekam anggota kanonis. Hanya nama,
+ * nama panggilan, kontak personal, ringkasan, dan foto yang ditulis; bidang
+ * organisasi, bidang keahlian, serta pengenal akademik pada rekam yang sama
+ * dipertahankan apa adanya.
+ */
+export function applyNexusPersonalProfileToMember(
   member: NexusMemberRecord,
   draft: NexusProfileDraft,
-): MemberProfileDraft {
+): NexusMemberRecord {
   return {
-    ...createEditDraft(member),
-    alternateEmail: draft.alternateEmail,
-    avatarOriginalSrc: draft.avatarOriginalSrc,
-    avatarPosition: { ...draft.avatarPosition },
+    ...member,
+    avatarOriginalSrc: draft.avatarSrc ? draft.avatarOriginalSrc : undefined,
+    avatarPosition: draft.avatarSrc ? { ...draft.avatarPosition } : undefined,
     avatarSrc: draft.avatarSrc,
-    biography: draft.biography,
-    institutionalEmail: draft.institutionalEmail,
-    name: draft.fullName,
-    phone: draft.phone,
-    preferredName: draft.preferredName,
+    biography: draft.biography.trim(),
+    contact: {
+      ...member.contact,
+      alternateEmail: draft.alternateEmail.trim() || undefined,
+      institutionalEmail: draft.institutionalEmail.trim() || undefined,
+      phone: draft.phone.trim() || undefined,
+    },
+    identity: {
+      ...member.identity,
+      preferredName: draft.preferredName.trim() || draft.fullName.trim(),
+    },
+    name: draft.fullName.trim(),
+    updatedAt: formatAuditTimestamp(),
+  };
+}
+
+/**
+ * Batas kepemilikan penyuntingan profil sendiri.
+ *
+ * Setiap editor pada halaman Profil Saya hanya boleh menyerahkan bidang yang
+ * memang dimilikinya. Bidang milik organisasi—penugasan CoE, unit utama,
+ * status keanggotaan, dan tanggal bergabung—sengaja tidak pernah menjadi
+ * bagian dari kontrak ini, sehingga pemilik akun tidak dapat menulisnya
+ * meskipun sedang menyunting bidang lain. Perubahan bidang tersebut tetap
+ * menjadi kewenangan direktori Anggota.
+ */
+export type NexusMemberProfileSettingsPatch = {
+  office: string;
+  publicProfile: boolean;
+};
+
+export type NexusMemberExpertisePatch = {
+  primaryExpertise: string;
+  secondaryExpertise: string;
+};
+
+export type NexusMemberAcademicPatch = {
+  googleScholar: string;
+  orcid: string;
+  researcherId: string;
+  scopusAuthorId: string;
+  sintaId: string;
+};
+
+export type NexusSelfMemberPatch =
+  | { kind: "academic"; value: NexusMemberAcademicPatch }
+  | { kind: "expertise"; value: NexusMemberExpertisePatch }
+  | { kind: "member"; value: NexusMemberProfileSettingsPatch };
+
+/**
+ * Menerapkan satu patch profil sendiri ke rekam anggota kanonis. Hanya
+ * kelompok bidang yang disebut patch yang ditulis ulang; bidang lain pada
+ * rekam dipertahankan apa adanya sehingga penyuntingan satu kartu tidak
+ * pernah menyentuh nilai kartu lain. Normalisasi pengenal akademik memakai
+ * aturan yang sama dengan direktori Anggota.
+ */
+export function applyNexusSelfMemberPatch(
+  member: NexusMemberRecord,
+  patch: NexusSelfMemberPatch,
+): NexusMemberRecord {
+  const base: NexusMemberRecord = {
+    ...member,
+    updatedAt: formatAuditTimestamp(),
+  };
+
+  if (patch.kind === "member") {
+    return {
+      ...base,
+      affiliation: {
+        ...member.affiliation,
+        office: patch.value.office.trim() || undefined,
+      },
+      membership: {
+        ...member.membership,
+        publicProfile: patch.value.publicProfile,
+      },
+    };
+  }
+
+  if (patch.kind === "expertise") {
+    return {
+      ...base,
+      expertise: {
+        primary: patch.value.primaryExpertise.trim() || undefined,
+        secondary: memberSecondaryExpertiseList(patch.value.secondaryExpertise),
+      },
+    };
+  }
+
+  const normalized = normalizedMemberDraft({
+    ...createEditDraft(member),
+    ...patch.value,
+  });
+
+  return {
+    ...base,
+    academic: {
+      googleScholar: normalized.googleScholar || undefined,
+      orcid: normalized.orcid || undefined,
+      researcherId: normalized.researcherId || undefined,
+      scopusAuthorId: normalized.scopusAuthorId || undefined,
+      sintaId: normalized.sintaId || undefined,
+    },
   };
 }
 

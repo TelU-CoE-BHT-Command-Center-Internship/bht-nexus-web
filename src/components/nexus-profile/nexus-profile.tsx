@@ -32,6 +32,7 @@ import {
   type NexusProfileDraft,
   type NexusProfileErrors,
   type NexusProfileView,
+  type NexusSelfMemberPatch,
   nexusProfileDraftIsDirty,
   nexusProfileRelationshipLabels,
   nexusProfileRequiredFieldLabels,
@@ -81,6 +82,42 @@ const memberEditorFields: Record<
   expertise: ["primaryExpertise", "secondaryExpertise"],
   member: ["office", "publicProfile"],
 };
+
+/**
+ * Mengambil hanya bidang milik kartu yang sedang disunting dari draft formulir.
+ * Draft tetap berbentuk lengkap supaya validasi anggota yang sudah ada dapat
+ * dipakai ulang, tetapi yang diserahkan untuk disimpan hanyalah patch ini.
+ */
+function selfMemberPatch(
+  kind: MemberEditorKind,
+  draft: MemberProfileDraft,
+): NexusSelfMemberPatch {
+  if (kind === "member") {
+    return {
+      kind: "member",
+      value: { office: draft.office, publicProfile: draft.publicProfile },
+    };
+  }
+  if (kind === "expertise") {
+    return {
+      kind: "expertise",
+      value: {
+        primaryExpertise: draft.primaryExpertise,
+        secondaryExpertise: draft.secondaryExpertise,
+      },
+    };
+  }
+  return {
+    kind: "academic",
+    value: {
+      googleScholar: draft.googleScholar,
+      orcid: draft.orcid,
+      researcherId: draft.researcherId,
+      scopusAuthorId: draft.scopusAuthorId,
+      sintaId: draft.sintaId,
+    },
+  };
+}
 
 /**
  * Memindahkan fokus ke kontrol pertama yang bermasalah. Kontrolnya sudah ada
@@ -162,7 +199,7 @@ function EditAction({
 }
 
 export function NexusProfile({ content }: { content: NexusProfileContent }) {
-  const { members, profile, saveMemberDraft, saveProfileDraft } =
+  const { members, profile, saveProfileDraft, saveSelfMemberPatch } =
     useNexusCurrentProfile();
   const [personalEditor, setPersonalEditor] =
     useState<PersonalEditorState | null>(null);
@@ -346,7 +383,7 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
       return;
     }
 
-    saveMemberDraft(memberEditor.value);
+    saveSelfMemberPatch(selfMemberPatch(memberEditor.kind, memberEditor.value));
     setMemberEditor(null);
     setMemberErrors({});
     setAnnouncement(

@@ -5,12 +5,10 @@ import { useNexusAccessPolicySessionIfAvailable } from "@/components/nexus-acces
 import { useNexusAccountSessionIfAvailable } from "@/components/nexus-account-session/nexus-account-session";
 import { useNexusMemberSessionIfAvailable } from "@/components/nexus-member-session/nexus-member-session";
 import {
-  type MemberProfileDraft,
-  memberRecordFromDraft,
-} from "@/components/nexus-members/nexus-members-model";
-import {
-  mergeNexusProfileIntoMemberDraft,
+  applyNexusPersonalProfileToMember,
+  applyNexusSelfMemberPatch,
   type NexusProfileDraft,
+  type NexusSelfMemberPatch,
   nexusAccountPersonalProfileFromDraft,
   resolveNexusProfile,
 } from "@/components/nexus-profile/nexus-profile-model";
@@ -42,12 +40,8 @@ export function useNexusCurrentProfile() {
     (draft: NexusProfileDraft) => {
       if (!profile) return;
       if (profile.relationship.kind === "LINKED") {
-        const { member } = profile.relationship;
         saveMember?.(
-          memberRecordFromDraft(
-            mergeNexusProfileIntoMemberDraft(member, draft),
-            member,
-          ),
+          applyNexusPersonalProfileToMember(profile.relationship.member, draft),
         );
         return;
       }
@@ -59,15 +53,23 @@ export function useNexusCurrentProfile() {
     [profile, saveMember, updatePersonalProfile],
   );
 
-  const saveMemberDraft = useCallback(
-    (draft: MemberProfileDraft) => {
+  /**
+   * Penyuntingan mandiri hanya menerima patch bidang yang dimiliki pemilik
+   * akun. Penugasan CoE, unit utama, status keanggotaan, dan tanggal bergabung
+   * tidak dapat dikirim lewat jalur ini sehingga tidak mungkin ikut tertulis
+   * ketika pengguna menyunting kartu lain pada Profil Saya.
+   */
+  const saveSelfMemberPatch = useCallback(
+    (patch: NexusSelfMemberPatch) => {
       if (profile?.relationship.kind !== "LINKED") return;
-      saveMember?.(memberRecordFromDraft(draft, profile.relationship.member));
+      saveMember?.(
+        applyNexusSelfMemberPatch(profile.relationship.member, patch),
+      );
     },
     [profile, saveMember],
   );
 
-  return { members, profile, saveMemberDraft, saveProfileDraft };
+  return { members, profile, saveProfileDraft, saveSelfMemberPatch };
 }
 
 /**
