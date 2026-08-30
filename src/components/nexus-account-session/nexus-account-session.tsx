@@ -18,9 +18,13 @@ import type {
   NexusAccountDirectoryRecord,
   NexusAccountInvitationInput,
   NexusAccountMemberRelationship,
+  NexusAccountPersonalProfile,
   NexusAccountStatus,
 } from "@/components/nexus-accounts/nexus-account-directory";
-import { nexusAccountRelationshipMemberId } from "@/components/nexus-accounts/nexus-account-directory";
+import {
+  NEXUS_CURRENT_ACCOUNT_ID,
+  nexusAccountRelationshipMemberId,
+} from "@/components/nexus-accounts/nexus-account-directory";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusAccountSessionValue = {
@@ -29,9 +33,15 @@ type NexusAccountSessionValue = {
   createInvitation: (
     input: NexusAccountInvitationInput,
   ) => NexusAccountDirectoryRecord;
+  /** Akun yang sedang diwakili ruang kerja; tidak pernah baris pertama daftar. */
+  currentAccount?: NexusAccountDirectoryRecord;
   refreshInvitation: (accountId: string) => void;
   restoreAccount: (accountId: string) => void;
   suspendAccount: (accountId: string) => void;
+  updatePersonalProfile: (
+    accountId: string,
+    personalProfile: NexusAccountPersonalProfile,
+  ) => void;
   updateRelationship: (
     accountId: string,
     relationship: NexusAccountMemberRelationship,
@@ -221,14 +231,38 @@ export function NexusAccountSessionProvider({
     );
   }, []);
 
+  const updatePersonalProfile = useCallback(
+    (accountId: string, personalProfile: NexusAccountPersonalProfile) => {
+      setAccounts((current) =>
+        current.map((account) =>
+          account.id === accountId
+            ? {
+                ...account,
+                personalProfile: { ...personalProfile },
+                updatedAt: formatAuditTimestamp(),
+              }
+            : account,
+        ),
+      );
+    },
+    [],
+  );
+
+  const currentAccount = useMemo(
+    () => accounts.find((account) => account.id === NEXUS_CURRENT_ACCOUNT_ID),
+    [accounts],
+  );
+
   const value = useMemo(
     () => ({
       accounts,
       cancelInvitation,
       createInvitation,
+      currentAccount,
       refreshInvitation,
       restoreAccount,
       suspendAccount,
+      updatePersonalProfile,
       updateRelationship,
       updateRole,
     }),
@@ -236,9 +270,11 @@ export function NexusAccountSessionProvider({
       accounts,
       cancelInvitation,
       createInvitation,
+      currentAccount,
       refreshInvitation,
       restoreAccount,
       suspendAccount,
+      updatePersonalProfile,
       updateRelationship,
       updateRole,
     ],
@@ -259,4 +295,9 @@ export function useNexusAccountSession() {
     );
   }
   return session;
+}
+
+/** Untuk permukaan bersama yang juga dipakai ruang kerja tanpa direktori akun. */
+export function useNexusAccountSessionIfAvailable() {
+  return useContext(NexusAccountSessionContext);
 }

@@ -29,7 +29,7 @@ import {
   createEditDraft,
   createNewMemberDraft,
   type MemberProfileErrors,
-  normalizedMemberDraft,
+  memberRecordFromDraft,
   type ProfileEditorState,
   profileDraftIsDirty,
   type statusDefinitions,
@@ -37,10 +37,7 @@ import {
 } from "@/components/nexus-members/nexus-members-model";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import {
-  formatAuditTimestamp,
-  normalizeWorkspaceSearch,
-} from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 const PAGE_SIZE = 6;
 
@@ -69,55 +66,6 @@ function memberMatchesQuery(member: NexusMemberRecord, query: string) {
       .join(" "),
   );
   return searchable.includes(normalizeWorkspaceSearch(query));
-}
-
-function recordFromDraft(
-  draftValue: ProfileEditorState["value"],
-  current?: NexusMemberRecord,
-): NexusMemberRecord {
-  const draft = normalizedMemberDraft(draftValue);
-  return {
-    academic: {
-      googleScholar: draft.googleScholar || undefined,
-      orcid: draft.orcid || undefined,
-      researcherId: draft.researcherId || undefined,
-      scopusAuthorId: draft.scopusAuthorId || undefined,
-      sintaId: draft.sintaId || undefined,
-    },
-    affiliation: {
-      institution: current?.affiliation.institution ?? "Telkom University",
-      office: draft.office.trim() || undefined,
-      primaryUnit: draft.primaryUnit.trim(),
-    },
-    avatarOriginalSrc: draft.avatarSrc ? draft.avatarOriginalSrc : undefined,
-    avatarPosition: draft.avatarSrc ? draft.avatarPosition : undefined,
-    avatarSrc: draft.avatarSrc,
-    biography: draft.biography.trim(),
-    coeAssignment: draft.coeAssignment.trim(),
-    contact: {
-      alternateEmail: draft.alternateEmail.trim() || undefined,
-      institutionalEmail: draft.institutionalEmail.trim() || undefined,
-      phone: draft.phone.trim() || undefined,
-    },
-    expertise: {
-      primary: draft.primaryExpertise.trim() || undefined,
-      secondary: draft.secondaryExpertise
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    },
-    id: current?.id ?? `member-${crypto.randomUUID()}`,
-    identity: {
-      preferredName: draft.preferredName.trim() || draft.name.trim(),
-    },
-    membership: {
-      joinedAt: draft.joinedAt || undefined,
-      publicProfile: draft.publicProfile,
-      status: draft.membershipStatus,
-    },
-    name: draft.name.trim(),
-    updatedAt: formatAuditTimestamp(),
-  };
 }
 
 export function NexusMembers({
@@ -294,7 +242,10 @@ export function NexusMembers({
       return;
     }
 
-    const savedMember = recordFromDraft(profileEditor.value, currentMember);
+    const savedMember = memberRecordFromDraft(
+      profileEditor.value,
+      currentMember,
+    );
     saveMember(savedMember);
     if (profileEditor.mode === "create") {
       setAnnouncement("Anggota baru berhasil ditambahkan.");

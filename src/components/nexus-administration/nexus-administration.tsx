@@ -32,6 +32,7 @@ import {
   nexusCanOpenRoleManagement,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
+import { resolveNexusProfile } from "@/components/nexus-profile/nexus-profile-model";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
@@ -813,6 +814,12 @@ export function NexusAdministration({
               kind: "suspend",
             })
           }
+          profile={resolveNexusProfile({
+            account: selectedAccount,
+            accounts,
+            members: memberRecords,
+            roles,
+          })}
           relationship={
             relationshipsByAccountId.get(selectedAccount.id) ?? {
               kind: "CONFLICT",

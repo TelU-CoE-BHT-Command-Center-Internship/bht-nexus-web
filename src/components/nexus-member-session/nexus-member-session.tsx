@@ -72,3 +72,8 @@ export function useNexusMemberSession() {
   }
   return session;
 }
+
+/** Untuk permukaan bersama yang juga dipakai ruang kerja tanpa direktori anggota. */
+export function useNexusMemberSessionIfAvailable() {
+  return useContext(NexusMemberSessionContext);
+}

@@ -87,6 +87,22 @@ Audit terhadap `bht-nexus-server` branch `main` pada commit `87e0f0fe1ec06ea1d0f
 
 Sebelum adapter frontend dihubungkan, kontrak server perlu memungkinkan profil anggota dibuat tanpa akun, menyediakan hubungan akun-ke-anggota yang eksplisit dan opsional, menyediakan CRUD/pencarian/filter/nonaktif sesuai izin beserta audit, menerapkan keunikan pengenal eksternal, dan menyediakan alur undangan akun administratif. Bentuk tabel akhirnya merupakan keputusan tim backend; frontend hanya mensyaratkan perilaku tersebut dan tidak menebak hubungan identitas dari email.
 
+### Kontrak integrasi Profil Saya
+
+Profil pribadi tidak memiliki sumber data tersendiri. `resolveNexusProfile` memproyeksikan satu akun menjadi tampilan profil dan menandai asal informasinya: `MEMBER` ketika akun terhubung ke anggota, dan `ACCOUNT` untuk akun non-anggota, akun yang hubungannya belum ditentukan, serta akun yang hubungannya perlu diperiksa. Penyimpanan mengikuti tanda yang sama, sehingga penyuntingan dari Profil Saya mendarat pada rekam anggota kanonis atau pada informasi pribadi milik akun, tidak pernah pada salinan kedua. Identitas header dan bagian `Profil Pengguna` di Administrasi memakai penyelesai yang sama.
+
+Akun yang sedang diwakili ruang kerja ditentukan `NEXUS_CURRENT_ACCOUNT_ID` pada direktori akun. Nilai ini merupakan pemilihan sementara sampai sesi masuk yang sebenarnya tersedia; ia tidak boleh diganti dengan pemilihan implisit seperti baris pertama daftar akun.
+
+Audit terhadap `bht-nexus-server` branch `main` menemukan batas berikut untuk profil pribadi:
+
+- entitas `user` menyimpan nama, email, status verifikasi email, gambar, dan waktu penggantian kata sandi terakhir; nomor HP, nama panggilan, ringkasan profil, dan email alternatif belum mempunyai kontrak penyimpanan;
+- tabel `account` merupakan catatan kredensial penyedia autentikasi, bukan konsep Akun BHT Nexus pada antarmuka; keduanya tidak boleh disamakan ketika adapter dibuat;
+- `AuthController` menyediakan registrasi, masuk, verifikasi email dengan OTP, permintaan dan pelaksanaan reset kata sandi dengan OTP, keluar, serta pembacaan sesi aktif;
+- belum ada tindakan penggantian kata sandi untuk pengguna yang sudah masuk, belum ada endpoint pencabutan seluruh sesi, dan belum ada penghapusan akun mandiri. Karena itu kartu Keamanan hanya menyatakan bahwa penggantian kata sandi belum dapat dilakukan dari ruang kerja dan mengarahkan pengguna ke Dukungan BHT Nexus; antarmuka tidak menyimpan kata sandi dalam bentuk apa pun dan tidak menyatakan keberhasilan yang tidak dapat dipastikan;
+- MFA tidak dimodelkan pada server maupun antarmuka.
+
+Sebelum adapter dihubungkan, kontrak server perlu menyediakan pembacaan profil pengguna yang sedang masuk, penyimpanan bidang pribadi di atas beserta auditnya, dan—bila penggantian kata sandi mandiri memang diinginkan—satu tindakan terautentikasi yang memverifikasi kata sandi saat ini.
+
 ### Kontrak integrasi Peran dan Hak Akses
 
 Audit terhadap `bht-nexus-server` branch `main` menemukan batas berikut untuk kebijakan akses:

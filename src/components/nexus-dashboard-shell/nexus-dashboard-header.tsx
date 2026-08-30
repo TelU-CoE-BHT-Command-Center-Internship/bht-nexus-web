@@ -8,8 +8,12 @@ import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
 import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
 import { resetDismissedAnnouncementsForSession } from "@/components/nexus-dashboard-announcement/nexus-dashboard-announcement-session";
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
-import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import {
+  type NexusDashboardShellContent,
+  nexusDashboardViewerFromProfile,
+} from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
+import { useNexusCurrentProfile } from "@/components/nexus-profile/nexus-current-profile";
 import { useNexusWorkspaceNavigation } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import type { Locale } from "@/i18n/locales";
 
@@ -54,6 +58,13 @@ export function NexusDashboardHeader({
 }: NexusDashboardHeaderProps) {
   const navigate = useNexusWorkspaceNavigation();
   const pathname = usePathname();
+  /* Identitas mengikuti profil akun yang sedang diwakili, sehingga perubahan
+     nama atau foto pada Profil Saya langsung terlihat di header. */
+  const { profile } = useNexusCurrentProfile();
+  const viewer = profile
+    ? nexusDashboardViewerFromProfile(profile)
+    : content.viewer;
+  const profileHref = content.profileHref;
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const matches = useMemo(() => {
@@ -269,25 +280,31 @@ export function NexusDashboardHeader({
             type="button"
           >
             <span className={styles.avatar}>
-              {content.viewer.avatarSrc ? (
+              {viewer.avatarSrc ? (
                 <Image
                   alt=""
                   aria-hidden="true"
                   className={styles.avatarImage}
                   fill
-                  sizes="3rem"
-                  src={content.viewer.avatarSrc}
+                  sizes="2.75rem"
+                  src={viewer.avatarSrc}
+                  style={
+                    viewer.avatarPosition
+                      ? {
+                          objectPosition: `${viewer.avatarPosition.x}% ${viewer.avatarPosition.y}%`,
+                        }
+                      : undefined
+                  }
+                  unoptimized={
+                    typeof viewer.avatarSrc === "string" &&
+                    viewer.avatarSrc.startsWith("data:")
+                  }
                 />
               ) : (
-                content.viewer.initials
+                viewer.initials
               )}
             </span>
-            <span className={styles.profileCopy}>
-              <strong>{content.viewer.name}</strong>
-              <span className={styles.profileRole}>
-                {content.viewer.roleLabel}
-              </span>
-            </span>
+            <span className={styles.profileCopy}>{viewer.name}</span>
             <span className={styles.profileChevron}>
               <DashboardShellIcon name="chevron-down" />
             </span>
@@ -295,13 +312,29 @@ export function NexusDashboardHeader({
 
           {openPanel === "profile" ? (
             <div className={styles.profilePanel} id="nexus-profile-panel">
-              <div>
-                <strong>{content.viewer.name}</strong>
-                <span className={styles.profilePanelRole}>
-                  {content.viewer.roleLabel}
-                </span>
+              <div className={styles.profilePanelIdentity}>
+                <strong>{viewer.fullName}</strong>
+                <span>{viewer.email}</span>
               </div>
+              {profileHref ? (
+                <ul className={styles.profilePanelMenu}>
+                  <li>
+                    <Link
+                      href={profileHref}
+                      onNavigate={(event) => {
+                        event.preventDefault();
+                        navigate(profileHref, () => onTogglePanel("profile"));
+                      }}
+                      prefetch={false}
+                    >
+                      <DashboardShellIcon name="user" />
+                      {content.profileMenuLabel}
+                    </Link>
+                  </li>
+                </ul>
+              ) : null}
               <Link
+                className={styles.profilePanelSignOut}
                 href={content.signOutHref}
                 onNavigate={(event) => {
                   event.preventDefault();
@@ -312,6 +345,7 @@ export function NexusDashboardHeader({
                 }}
                 prefetch={false}
               >
+                <DashboardShellIcon name="sign-out" />
                 {content.signOutLabel}
               </Link>
             </div>

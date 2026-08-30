@@ -247,3 +247,8 @@ export function useNexusAccessPolicySession() {
   }
   return session;
 }
+
+/** Untuk permukaan bersama yang juga dipakai ruang kerja tanpa kebijakan akses. */
+export function useNexusAccessPolicySessionIfAvailable() {
+  return useContext(NexusAccessPolicySessionContext);
+}

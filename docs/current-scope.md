@@ -157,6 +157,18 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Tombol Pengumpulan pada Identitas Akademik membawa ID anggota, nama, sumber, URL profil, dan pengenal orang eksternal ke halaman Pengumpulan. Binding pekerjaan hanya aktif selama seluruh identitas sumber tersebut masih sesuai. Kandidat multi-orang membawa relasi eksplisit ke satu person ID kandidat; correction yang mengubah daftar atau urutan orang membatalkan relasi lama dan mewajibkan pilihan ulang pada Tinjauan. Penulis, pencipta, serta pembimbing mempunyai ID rekam masing-masing dan `memberId` opsional; nama tidak dipakai sebagai keputusan identitas sistem.
 - Jalur Data Terkait membuka lima rumah data resmi dengan parameter ID anggota. Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian membaca parameter tersebut, menampilkan konteks anggota, dan memfilter relasi kanonis alih-alih membuka seluruh katalog.
 
+### Profil Saya
+
+- `/nexus/profil` merupakan satu-satunya permukaan profil pribadi dan berlaku untuk setiap akun BHT Nexus, baik yang terhubung ke anggota maupun tidak. Tidak ada halaman non-anggota terpisah dan tidak ada butir navigasi utama; Profil Saya dibuka dari menu pengguna di kanan atas sebagai tindakan personal.
+- Akun yang sedang diwakili ruang kerja ditentukan oleh satu pengenal akun eksplisit pada direktori akun kanonis. Identitas header, halaman Profil Saya, dan proyeksi profil di Administrasi memakai penyelesai profil yang sama sehingga tidak ada permukaan yang menebak penggunanya sendiri atau memakai baris pertama daftar akun. Akun yang tidak dapat dikenali berhenti pada keadaan profil tidak tersedia beserta jalan kembali, bukan membuka profil orang lain.
+- Kepemilikan data mengikuti hubungan akun. Ketika akun terhubung ke anggota, informasi pribadi yang beririsan—foto, nama lengkap, nama panggilan, nomor HP, email alternatif, ringkasan profil, dan email institusi personal—dibaca dan ditulis langsung pada rekam anggota kanonis, sehingga perubahan dari Profil Saya langsung terlihat pada direktori Anggota. Akun non-anggota, akun yang hubungannya belum ditentukan, dan akun yang hubungannya perlu diperiksa memakai informasi pribadi milik akun itu sendiri. Tidak pernah ada dua salinan profil yang dapat disunting untuk satu orang yang sama.
+- Kartu keanggotaan, bidang keahlian, dan identitas akademik hanya muncul ketika akun benar-benar terhubung ke anggota. Akun tanpa hubungan anggota tidak menerima bagian anggota kosong. Hubungan yang belum ditentukan maupun yang perlu diperiksa dijelaskan apa adanya tanpa menebak anggota mana pun.
+- Bidang milik organisasi tetap baca-saja: ID anggota, status keanggotaan, bergabung sejak, penugasan CoE, institusi, dan unit utama. Tanggal bergabung berasal dari keanggotaan, bukan dari waktu pembuatan akun. Email masuk, peran, status akun, dan hubungan anggota juga baca-saja; keempatnya dikelola melalui Administrasi. Peran memakai kosakata keadaan yang sama dengan Administrasi.
+- Penyuntingan profil memakai pop-up terpusat, bukan drawer rincian. Formulir informasi pribadi, profil anggota, bidang keahlian, dan identitas akademik memakai kerangka pop-up yang sama dengan isi yang menggulir di dalam panel dan baris aksi yang tetap terjangkau. Foto profil memakai kendali unggah dan editor potong yang sama dengan direktori Anggota, termasuk batas JPG/PNG/WebP 2 MB, pengaturan posisi, ganti, hapus, dan fallback inisial. Validasi identitas akademik memakai aturan Anggota yang sudah ada, termasuk pencegahan duplikasi lintas anggota.
+- Kelengkapan profil mensyaratkan nama lengkap dan nomor HP. Ketika salah satunya kosong, halaman menampilkan pemberitahuan yang menyebut bidang yang belum diisi beserta tindakan untuk melengkapinya. Antarmuka tidak membuat pengalihan wajib setelah masuk karena aktivasi dan sesi nyata belum tersedia.
+- Kartu Keamanan hanya menyatakan apa yang benar-benar diketahui antarmuka. Penggantian kata sandi belum dapat dilakukan dari ruang kerja, sehingga barisnya mengarahkan pengguna ke Dukungan BHT Nexus alih-alih menampilkan formulir yang tidak dapat diselesaikan. Halaman tidak menampilkan MFA, daftar perangkat, pencabutan sesi, maupun penghapusan akun sendiri.
+- Undangan akun tetap minimal. Administrator tidak mengisi foto, nomor HP, ringkasan profil, bidang keahlian, atau pengenal akademik pada saat mengundang; pemilik akun melengkapinya sendiri dari Profil Saya.
+
 ### Administrasi — Accounts & Access
 
 - Halaman Administrasi menempatkan tiga metrik, pencarian nama atau email, filter status, role, dan hubungan anggota, daftar akun, kartu mobile, pagination, serta rincian akun pada satu route `/nexus/administrasi`. Teks pendukung ketiga metrik mengikuti status akun yang memang diketahui antarmuka dan tidak menyatakan hak akses penuh atau penerimaan undangan yang hanya dapat dipastikan layanan server.
@@ -195,6 +207,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/akademik` | Daftar dan rincian bimbingan serta magang mahasiswa resmi |
 | `/nexus/kegiatan` | Daftar dan rincian kegiatan, bisnis, serta pengabdian masyarakat resmi |
 | `/nexus/anggota` | Direktori dan rincian identitas anggota CoE BHT |
+| `/nexus/profil` | Profil pribadi akun yang sedang diwakili ruang kerja |
 | `/nexus/administrasi` | Accounts & Access untuk akun, hubungan anggota opsional, peran, undangan, dan status akses |
 | `/nexus/administrasi/peran` | Peran, hak akses bawaan, akun pemakai peran, dan informasi peran |
 | `/nexus/administrasi/akses` | Akses khusus satu akun terhadap hak akses bawaan perannya |
@@ -217,6 +230,7 @@ Hal-hal berikut belum menjadi kemampuan produksi pada repository web:
 - indeks pencarian dokumen;
 - promosi kandidat menjadi data resmi;
 - integrasi penuh dengan layanan server;
+- penggantian kata sandi dari dalam ruang kerja;
 - deployment produksi final.
 
 Adapter akses frontend menjadi satu sumber untuk navigasi, pencarian, direct-route state, dan kemampuan Tinjauan. Penanggung jawab koreksi memakai identitas pengguna manusia yang terpisah dari sistem sumber. Pemetaan permission final, penugasan lintas pengguna, dan penegakan keamanan tetap perlu dikonfirmasi melalui layanan server; pemeriksaan di browser hanya membentuk perilaku antarmuka dan bukan pengamanan otoritatif.

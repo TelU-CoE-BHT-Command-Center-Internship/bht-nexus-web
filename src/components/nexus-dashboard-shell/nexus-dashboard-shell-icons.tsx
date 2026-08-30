@@ -10,6 +10,7 @@ type IconName =
   | "help"
   | "menu"
   | "search"
+  | "sign-out"
   | "user";
 
 type DashboardShellIconProps = {
@@ -111,6 +112,13 @@ function IconPaths({ name }: DashboardShellIconProps) {
         <>
           <circle cx="12" cy="12" r="9" />
           <path d="M9.7 9a2.6 2.6 0 1 1 3.15 2.54c-.85.24-1.35.73-1.35 1.46v.35M12 17.25h.01" />
+        </>
+      );
+    case "sign-out":
+      return (
+        <>
+          <path d="M14.5 3.5h3.2a2.3 2.3 0 0 1 2.3 2.3v12.4a2.3 2.3 0 0 1-2.3 2.3h-3.2" />
+          <path d="M9.6 16.2 4.5 12l5.1-4.2M4.5 12h10.6" />
         </>
       );
     case "user":
