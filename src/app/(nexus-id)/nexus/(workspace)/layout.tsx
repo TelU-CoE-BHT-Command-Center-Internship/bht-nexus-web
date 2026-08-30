@@ -9,7 +9,7 @@ import { NexusDashboardShell } from "@/components/nexus-dashboard-shell/nexus-da
 import { getNexusDashboardShellPreviewContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { NexusMemberSessionProvider } from "@/components/nexus-member-session/nexus-member-session";
 import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
-import { NexusReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
+import { NexusCurrentUserReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusWorkspaceUnsavedChangesProvider } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 export default function NexusWorkspaceLayout({
@@ -22,31 +22,23 @@ export default function NexusWorkspaceLayout({
   const memberDirectory = getNexusMemberDirectory();
 
   return (
-    <NexusReviewSessionProvider
-      actor={{
-        id: content.viewer.id,
-        name: content.viewer.name,
-        roleLabel: content.viewer.roleLabel,
-      }}
-      capabilities={content.reviewCapabilities}
-    >
-      <NexusMemberSessionProvider initialRecords={memberDirectory}>
-        <NexusAccessPolicySessionProvider
-          initialOverrides={getNexusUserPermissionOverrides()}
-          initialRoles={getNexusRoleDirectory()}
-        >
-          <NexusAccountSessionProvider
-            actorName={content.viewer.name}
-            initialAccounts={accounts}
+    <NexusMemberSessionProvider initialRecords={memberDirectory}>
+      <NexusAccessPolicySessionProvider
+        initialOverrides={getNexusUserPermissionOverrides()}
+        initialRoles={getNexusRoleDirectory()}
+      >
+        <NexusAccountSessionProvider initialAccounts={accounts}>
+          <NexusCurrentUserReviewSessionProvider
+            capabilities={content.reviewCapabilities}
           >
             <NexusWorkspaceUnsavedChangesProvider>
               <NexusDashboardShell content={content}>
                 {children}
               </NexusDashboardShell>
             </NexusWorkspaceUnsavedChangesProvider>
-          </NexusAccountSessionProvider>
-        </NexusAccessPolicySessionProvider>
-      </NexusMemberSessionProvider>
-    </NexusReviewSessionProvider>
+          </NexusCurrentUserReviewSessionProvider>
+        </NexusAccountSessionProvider>
+      </NexusAccessPolicySessionProvider>
+    </NexusMemberSessionProvider>
   );
 }

@@ -3,7 +3,7 @@
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
 import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
 import { resetDismissedAnnouncementsForSession } from "@/components/nexus-dashboard-announcement/nexus-dashboard-announcement-session";
@@ -22,6 +22,7 @@ export type DashboardHeaderPanel = "notifications" | "profile";
 type NexusDashboardHeaderProps = {
   content: NexusDashboardShellContent;
   isMobileMenuOpen: boolean;
+  onClosePanel: () => void;
   onOpenMobileMenu: () => void;
   onTogglePanel: (panel: DashboardHeaderPanel) => void;
   openPanel: DashboardHeaderPanel | null;
@@ -51,6 +52,7 @@ function getWorkspaceLanguageHref(
 export function NexusDashboardHeader({
   content,
   isMobileMenuOpen,
+  onClosePanel,
   onOpenMobileMenu,
   onTogglePanel,
   openPanel,
@@ -65,6 +67,10 @@ export function NexusDashboardHeader({
     ? nexusDashboardViewerFromProfile(profile)
     : content.viewer;
   const profileHref = content.profileHref;
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
+  const notificationTriggerRef = useRef<HTMLButtonElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const profileTriggerRef = useRef<HTMLButtonElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const matches = useMemo(() => {
@@ -74,6 +80,37 @@ export function NexusDashboardHeader({
       `${item.label} ${item.description}`.toLocaleLowerCase().includes(query),
     );
   }, [content.searchItems, searchQuery]);
+
+  useEffect(() => {
+    if (!openPanel) return;
+    const activeMenuRef =
+      openPanel === "profile" ? profileMenuRef : notificationMenuRef;
+    const activeTriggerRef =
+      openPanel === "profile" ? profileTriggerRef : notificationTriggerRef;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !activeMenuRef.current?.contains(event.target)
+      ) {
+        onClosePanel();
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClosePanel();
+      activeTriggerRef.current?.focus({ preventScroll: true });
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClosePanel, openPanel]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -206,13 +243,14 @@ export function NexusDashboardHeader({
           })}
         </nav>
 
-        <div className={styles.actionMenu}>
+        <div className={styles.actionMenu} ref={notificationMenuRef}>
           <button
             aria-controls="nexus-notifications-panel"
             aria-expanded={openPanel === "notifications"}
             aria-label={content.notificationLabel}
             className={styles.iconButton}
             onClick={() => onTogglePanel("notifications")}
+            ref={notificationTriggerRef}
             type="button"
           >
             <DashboardShellIcon name="bell" />
@@ -270,13 +308,14 @@ export function NexusDashboardHeader({
 
         <span aria-hidden="true" className={styles.actionDivider} />
 
-        <div className={styles.actionMenu}>
+        <div className={styles.actionMenu} ref={profileMenuRef}>
           <button
             aria-controls="nexus-profile-panel"
             aria-expanded={openPanel === "profile"}
             aria-label={content.profileLabel}
             className={styles.profileButton}
             onClick={() => onTogglePanel("profile")}
+            ref={profileTriggerRef}
             type="button"
           >
             <span className={styles.avatar}>

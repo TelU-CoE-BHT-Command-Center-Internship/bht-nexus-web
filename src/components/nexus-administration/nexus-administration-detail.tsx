@@ -15,13 +15,15 @@ import { NexusAdministrationIcon } from "@/components/nexus-administration/nexus
 import type { NexusResolvedAdministrationRelationship } from "@/components/nexus-administration/nexus-administration-relationship";
 import type { NexusAdministrationCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { relatedDataHref } from "@/components/nexus-members/nexus-member-identity";
-import type { NexusProfileView } from "@/components/nexus-profile/nexus-profile-model";
+import {
+  type NexusProfileView,
+  nexusProfileRequiredFieldLabels,
+} from "@/components/nexus-profile/nexus-profile-model";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceLinkButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusAdministrationDetailProps = {
   account: NexusAdministrationAccount;
@@ -52,14 +54,11 @@ function statusTone(status: NexusAdministrationAccount["status"]) {
  * pernah menampilkan versi lain dari informasi pribadi yang sama.
  */
 function AccountProfileSummary({ profile }: { profile: NexusProfileView }) {
-  const hasProfile = Boolean(
-    profile.fullName.trim() ||
-      profile.preferredName.trim() ||
-      profile.phone.trim() ||
-      profile.alternateEmail.trim(),
+  const missingLabels = profile.missingRequiredFields.map(
+    (field) => nexusProfileRequiredFieldLabels[field],
   );
 
-  if (!hasProfile) {
+  if (!profile.hasPersonalData) {
     return (
       <div className={styles.relationCard} data-relationship="UNLINKED">
         <div className={styles.relationCardContent}>
@@ -76,6 +75,18 @@ function AccountProfileSummary({ profile }: { profile: NexusProfileView }) {
 
   return (
     <>
+      {!profile.isComplete ? (
+        <div className={styles.relationCard} data-relationship="UNLINKED">
+          <div className={styles.relationCardContent}>
+            <span>Profil pengguna</span>
+            <strong>Profil pengguna terisi sebagian</strong>
+            <small>
+              {missingLabels.join(" dan ")} belum diisi. Pemilik akun dapat
+              melengkapinya dari halaman Profil Saya.
+            </small>
+          </div>
+        </div>
+      ) : null}
       <div className={styles.profileSummary}>
         <span aria-hidden="true" className={styles.profileSummaryAvatar}>
           {profile.avatarSrc ? (
@@ -272,7 +283,23 @@ export function NexusAdministrationDetail({
       <div className={styles.detailStack}>
         <header className={styles.detailHero}>
           <span aria-hidden="true" className={styles.detailAvatar}>
-            {personInitials(account.displayName)}
+            {profile.avatarSrc ? (
+              <Image
+                alt=""
+                fill
+                sizes="64px"
+                src={profile.avatarSrc}
+                style={{
+                  objectPosition: `${profile.avatarPosition.x}% ${profile.avatarPosition.y}%`,
+                }}
+                unoptimized={
+                  typeof profile.avatarSrc === "string" &&
+                  profile.avatarSrc.startsWith("data:")
+                }
+              />
+            ) : (
+              profile.initials
+            )}
           </span>
           <div className={styles.detailIdentity}>
             <span
@@ -281,7 +308,7 @@ export function NexusAdministrationDetail({
             >
               {accountStatusLabels[account.status]}
             </span>
-            <h3>{account.displayName}</h3>
+            <h3>{profile.displayName}</h3>
             <p>{account.email}</p>
             <small>{account.id}</small>
           </div>

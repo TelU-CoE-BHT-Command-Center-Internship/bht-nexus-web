@@ -25,6 +25,11 @@ import {
   NEXUS_CURRENT_ACCOUNT_ID,
   nexusAccountRelationshipMemberId,
 } from "@/components/nexus-accounts/nexus-account-directory";
+import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
+import {
+  type NexusProfileView,
+  resolveNexusProfile,
+} from "@/components/nexus-profile/nexus-profile-model";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusAccountSessionValue = {
@@ -35,6 +40,8 @@ type NexusAccountSessionValue = {
   ) => NexusAccountDirectoryRecord;
   /** Akun yang sedang diwakili ruang kerja; tidak pernah baris pertama daftar. */
   currentAccount?: NexusAccountDirectoryRecord;
+  /** Proyeksi kanonis yang juga menjadi identitas aktor sesi saat ini. */
+  currentProfile?: NexusProfileView;
   refreshInvitation: (accountId: string) => void;
   restoreAccount: (accountId: string) => void;
   suspendAccount: (accountId: string) => void;
@@ -92,18 +99,37 @@ function updateAccountWithStatus(
 }
 
 export function NexusAccountSessionProvider({
-  actorName,
   children,
   initialAccounts,
 }: {
-  actorName: string;
   children: ReactNode;
   initialAccounts: NexusAccountDirectoryRecord[];
 }) {
   const [accounts, setAccounts] = useState(initialAccounts);
   /* Peran dirujuk lewat ID dari satu kebijakan akses bersama, bukan disalin. */
   const { roles } = useNexusAccessPolicySession();
+  const { records: members } = useNexusMemberSession();
   const sequence = useRef(accountSequence(initialAccounts));
+  const currentAccount = useMemo(
+    () => accounts.find((account) => account.id === NEXUS_CURRENT_ACCOUNT_ID),
+    [accounts],
+  );
+  const currentProfile = useMemo(
+    () =>
+      currentAccount
+        ? resolveNexusProfile({
+            account: currentAccount,
+            accounts,
+            members,
+            roles,
+          })
+        : undefined,
+    [accounts, currentAccount, members, roles],
+  );
+  const currentActorName =
+    currentProfile?.displayName ??
+    currentAccount?.displayName ??
+    "Pengguna BHT Nexus";
 
   const createInvitation = useCallback(
     (input: NexusAccountInvitationInput) => {
@@ -133,7 +159,8 @@ export function NexusAccountSessionProvider({
       sequence.current += 1;
       const account: NexusAccountDirectoryRecord = {
         createdAt,
-        createdBy: actorName,
+        createdBy: currentActorName,
+        createdByActorId: currentAccount?.id,
         displayName: displayNameFromInvitation(input),
         email: normalizedEmail,
         id: `ACC-BHT-${String(sequence.current).padStart(4, "0")}`,
@@ -147,7 +174,7 @@ export function NexusAccountSessionProvider({
       setAccounts((current) => [account, ...current]);
       return account;
     },
-    [accounts, actorName, roles],
+    [accounts, currentAccount?.id, currentActorName, roles],
   );
 
   const updateRole = useCallback(
@@ -248,17 +275,13 @@ export function NexusAccountSessionProvider({
     [],
   );
 
-  const currentAccount = useMemo(
-    () => accounts.find((account) => account.id === NEXUS_CURRENT_ACCOUNT_ID),
-    [accounts],
-  );
-
   const value = useMemo(
     () => ({
       accounts,
       cancelInvitation,
       createInvitation,
       currentAccount,
+      currentProfile,
       refreshInvitation,
       restoreAccount,
       suspendAccount,
@@ -271,6 +294,7 @@ export function NexusAccountSessionProvider({
       cancelInvitation,
       createInvitation,
       currentAccount,
+      currentProfile,
       refreshInvitation,
       restoreAccount,
       suspendAccount,

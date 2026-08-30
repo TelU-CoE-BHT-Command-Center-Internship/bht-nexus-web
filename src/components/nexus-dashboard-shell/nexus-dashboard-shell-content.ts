@@ -398,8 +398,6 @@ export function getNexusDashboardShellPreviewContent(
       ? "Saya ingin meminta bantuan terkait penggunaan BHT Nexus."
       : "I would like help using BHT Nexus.",
     "",
-    `${isId ? "Nama" : "Name"}: ${nexusDashboardPreviewViewer.name}`,
-    `${isId ? "Peran/posisi" : "Role"}: ${nexusDashboardPreviewViewer.roleLabel}`,
     isId ? "Halaman/fitur:" : "Page/feature:",
     isId ? "Uraian kendala:" : "Issue description:",
     isId ? "Waktu kejadian:" : "Time of occurrence:",

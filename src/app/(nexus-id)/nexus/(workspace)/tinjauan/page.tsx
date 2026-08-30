@@ -18,9 +18,10 @@ export default async function NexusReviewPage({
   searchParams: Promise<{ record?: string | string[] }>;
 }) {
   const viewer = getNexusDashboardShellPreviewContent().viewer;
-  const content = getNexusAuditReviewContent(
-    `${viewer.name} · ${viewer.roleLabel}`,
-  );
+  const content = getNexusAuditReviewContent({
+    actorId: viewer.id,
+    label: `${viewer.name} · ${viewer.roleLabel}`,
+  });
   const requestedRecord = (await searchParams).record;
   const initialRecordId = Array.isArray(requestedRecord)
     ? requestedRecord[0]

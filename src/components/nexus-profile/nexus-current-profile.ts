@@ -16,6 +16,7 @@ import {
 } from "@/components/nexus-profile/nexus-profile-model";
 
 const noMembers: never[] = [];
+const noAccounts: never[] = [];
 
 /**
  * Profil akun yang sedang diwakili ruang kerja beserta cara menyimpannya.
@@ -31,27 +32,11 @@ const noMembers: never[] = [];
 export function useNexusCurrentProfile() {
   const accountSession = useNexusAccountSessionIfAvailable();
   const memberSession = useNexusMemberSessionIfAvailable();
-  const accessPolicySession = useNexusAccessPolicySessionIfAvailable();
 
-  const accounts = accountSession?.accounts;
-  const currentAccount = accountSession?.currentAccount;
   const members = memberSession?.records ?? noMembers;
-  const roles = accessPolicySession?.roles;
   const saveMember = memberSession?.saveMember;
   const updatePersonalProfile = accountSession?.updatePersonalProfile;
-
-  const profile = useMemo(
-    () =>
-      accounts && currentAccount && roles
-        ? resolveNexusProfile({
-            account: currentAccount,
-            accounts,
-            members,
-            roles,
-          })
-        : undefined,
-    [accounts, currentAccount, members, roles],
-  );
+  const profile = accountSession?.currentProfile;
 
   const saveProfileDraft = useCallback(
     (draft: NexusProfileDraft) => {
@@ -83,4 +68,29 @@ export function useNexusCurrentProfile() {
   );
 
   return { members, profile, saveMemberDraft, saveProfileDraft };
+}
+
+/**
+ * Proyeksi nama, avatar, dan kelengkapan untuk seluruh direktori akun.
+ * Administrasi dan permukaan akses memakai peta ini agar alias akun tidak
+ * berubah menjadi sumber profil manusia kedua.
+ */
+export function useNexusProfileDirectory() {
+  const accountSession = useNexusAccountSessionIfAvailable();
+  const memberSession = useNexusMemberSessionIfAvailable();
+  const accessPolicySession = useNexusAccessPolicySessionIfAvailable();
+  const accounts = accountSession?.accounts ?? noAccounts;
+  const members = memberSession?.records ?? noMembers;
+  const roles = accessPolicySession?.roles ?? noAccounts;
+
+  return useMemo(
+    () =>
+      new Map(
+        accounts.map((account) => [
+          account.id,
+          resolveNexusProfile({ account, accounts, members, roles }),
+        ]),
+      ),
+    [accounts, members, roles],
+  );
 }

@@ -1,6 +1,5 @@
 import type { ImageProps } from "next/image";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
-import { getKnownMemberIdentity } from "@/components/nexus-members/nexus-member-identity";
 
 export type NexusAccountStatus = "ACTIVE" | "INVITED" | "SUSPENDED";
 
@@ -33,6 +32,7 @@ export type NexusAccountMemberRelationship =
 export type NexusAccountDirectoryRecord = {
   createdAt: string;
   createdBy: string;
+  createdByActorId?: string;
   displayName: string;
   email: string;
   id: string;
@@ -100,24 +100,9 @@ export function resolveNexusAccountRelationship(
  * di Administrasi, sehingga tidak ada permukaan yang menebak penggunanya
  * sendiri. Sesi masuk yang sebenarnya akan menggantikan pemilihan ini.
  */
-export const NEXUS_CURRENT_ACCOUNT_ID = "ACC-BHT-0002";
+export const NEXUS_CURRENT_ACCOUNT_ID = "ACC-BHT-0024";
 
 const accounts: readonly NexusAccountDirectoryRecord[] = [
-  {
-    createdAt: "05 Mei 2026, 08.30 WIB",
-    createdBy: "Administrator Sistem",
-    displayName: "Muhammad Ammar Asyraf",
-    email: "ammar.asyraf@example.org",
-    id: "ACC-BHT-0002",
-    lastActiveAt: "29 Agustus 2026, 09.12 WIB",
-    relationship: {
-      kind: "LINKED",
-      memberId: getKnownMemberIdentity("ammar").id,
-    },
-    roleId: "admin",
-    status: "ACTIVE",
-    updatedAt: "24 Agustus 2026, 10.40 WIB",
-  },
   {
     createdAt: "12 Mei 2026, 09.18 WIB",
     createdBy: "Administrator Sistem",
@@ -167,7 +152,6 @@ const accounts: readonly NexusAccountDirectoryRecord[] = [
       biography:
         "Operator audit yang membantu pemeriksaan kelengkapan data capaian CoE.",
       fullName: "Dimas Arya Pradana",
-      phone: "0812-1100-2405",
       preferredName: "Dimas",
     },
     relationship: { kind: "NON_MEMBER" },
@@ -237,7 +221,6 @@ const accounts: readonly NexusAccountDirectoryRecord[] = [
     lastActiveAt: "27 Agustus 2026, 10.02 WIB",
     personalProfile: {
       fullName: "Rangga Wicaksana",
-      phone: "0813-4420-9911",
       preferredName: "Rangga",
     },
     relationship: { kind: "CONFLICT" },

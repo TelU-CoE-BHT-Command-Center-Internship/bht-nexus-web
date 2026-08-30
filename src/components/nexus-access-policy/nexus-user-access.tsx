@@ -30,6 +30,7 @@ import {
   nexusCanOpenRoleManagement,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
+import { useNexusProfileDirectory } from "@/components/nexus-profile/nexus-current-profile";
 import { NexusWorkspaceBreadcrumb } from "@/components/nexus-workspace-ui/nexus-workspace-breadcrumb";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import {
@@ -81,6 +82,7 @@ export function NexusUserAccess({
   const { overrides, replaceAccountOverrides, roles } =
     useNexusAccessPolicySession();
   const { accounts } = useNexusAccountSession();
+  const profilesByAccountId = useNexusProfileDirectory();
   const { records: memberRecords } = useNexusMemberSession();
   const [draft, setDraft] = useState<Record<string, NexusPermissionMode>>({});
   const [pendingDialog, setPendingDialog] = useState<PendingDialog | null>(
@@ -95,6 +97,8 @@ export function NexusUserAccess({
   const account = accounts.find(
     (candidate) => candidate.id === initialAccountId,
   );
+  const profile = account ? profilesByAccountId.get(account.id) : undefined;
+  const personName = profile?.displayName ?? account?.displayName ?? "Pengguna";
   const storedModes = useMemo(() => {
     const modes: Record<string, NexusPermissionMode> = {};
     if (!account) return modes;
@@ -287,8 +291,8 @@ export function NexusUserAccess({
     setDraft({});
     setAnnouncement(
       drafts.length === 0
-        ? `Akses ${account.displayName} kembali mengikuti peran.`
-        : `Akses khusus ${account.displayName} disimpan: ${drafts.length} penyesuaian aktif.`,
+        ? `Akses ${personName} kembali mengikuti peran.`
+        : `Akses khusus ${personName} disimpan: ${drafts.length} penyesuaian aktif.`,
     );
   }
 
@@ -309,10 +313,10 @@ export function NexusUserAccess({
         <section className={styles.identityCard}>
           <div className={styles.identityHead}>
             <span aria-hidden="true" className={styles.identityAvatar}>
-              {personInitials(account.displayName)}
+              {profile?.initials ?? personInitials(personName)}
             </span>
             <div className={styles.identityCopy}>
-              <h3>{account.displayName}</h3>
+              <h3>{personName}</h3>
               <p>{account.email}</p>
               <small>{account.id}</small>
             </div>
@@ -630,8 +634,8 @@ export function NexusUserAccess({
       </section>
 
       <p className={styles.closingNote}>
-        Penyesuaian ini hanya berlaku untuk akun {account.displayName} dan tidak
-        mengubah hak akses akun lain pada peran yang sama.
+        Penyesuaian ini hanya berlaku untuk akun {personName} dan tidak mengubah
+        hak akses akun lain pada peran yang sama.
       </p>
 
       {canEdit ? (
@@ -674,9 +678,7 @@ export function NexusUserAccess({
             setPendingDialog(null);
             replaceAccountOverrides(account.id, []);
             setDraft({});
-            setAnnouncement(
-              `Akses ${account.displayName} kembali mengikuti peran.`,
-            );
+            setAnnouncement(`Akses ${personName} kembali mengikuti peran.`);
           }}
           title="Hapus seluruh akses khusus akun ini?"
           tone="warning"

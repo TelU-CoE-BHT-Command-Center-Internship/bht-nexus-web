@@ -7,6 +7,5 @@ export const nexusReviewActorIds = {
   dataSteward: "USR-DATA-STEWARD-001",
   documentPipeline: "SYS-DOCUMENT-PIPELINE",
   matchingService: "SYS-MATCHING-SERVICE",
-  workspaceAdmin: "USR-COE-BHT-ADMIN-001",
   workbookImport: "SYS-WORKBOOK-KM-2026",
 } as const;

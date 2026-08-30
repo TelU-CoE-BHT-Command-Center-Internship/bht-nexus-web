@@ -56,6 +56,7 @@ export type NexusProfileView = {
   /** Nama yang dipakai pada identitas header dan sapaan singkat. */
   displayName: string;
   fullName: string;
+  hasPersonalData: boolean;
   initials: string;
   institutionalEmail: string;
   isComplete: boolean;
@@ -115,6 +116,14 @@ function missingRequiredFields(fullName: string, phone: string) {
   return missing;
 }
 
+function hasPersonalProfileData(
+  values: Array<ImageProps["src"] | string | undefined>,
+) {
+  return values.some((value) =>
+    typeof value === "string" ? Boolean(value.trim()) : Boolean(value),
+  );
+}
+
 /**
  * Nama tampilan mengikuti urutan yang sama di setiap permukaan: nama panggilan,
  * nama lengkap, nama tampilan akun, lalu email masuk sebagai jalan terakhir.
@@ -164,6 +173,15 @@ export function resolveNexusProfile({
       biography: member.biography,
       displayName: profileDisplayName(preferredName, fullName, account),
       fullName,
+      hasPersonalData: hasPersonalProfileData([
+        fullName,
+        preferredName,
+        phone,
+        member.contact.alternateEmail,
+        member.contact.institutionalEmail,
+        member.biography,
+        member.avatarSrc,
+      ]),
       initials: personInitials(fullName || account.displayName),
       institutionalEmail: member.contact.institutionalEmail ?? "",
       isComplete: missing.length === 0,
@@ -193,6 +211,14 @@ export function resolveNexusProfile({
     biography: personalProfile.biography ?? "",
     displayName: profileDisplayName(preferredName, fullName, account),
     fullName,
+    hasPersonalData: hasPersonalProfileData([
+      fullName,
+      preferredName,
+      phone,
+      personalProfile.alternateEmail,
+      personalProfile.biography,
+      personalProfile.avatarSrc,
+    ]),
     initials: personInitials(fullName || account.displayName),
     institutionalEmail: "",
     isComplete: missing.length === 0,
