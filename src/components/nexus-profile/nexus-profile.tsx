@@ -10,6 +10,7 @@ import {
 } from "react";
 import { nexusRoleHealth } from "@/components/nexus-access-policy/nexus-access-policy";
 import { nexusAccountStatusLabels } from "@/components/nexus-accounts/nexus-account-directory";
+import { NexusAcademicIdentifierValue } from "@/components/nexus-members/nexus-member-academic";
 import {
   createEditDraft,
   type MemberProfileDraft,
@@ -150,12 +151,12 @@ function EditAction({
   return (
     <NexusWorkspaceButton
       aria-label={`Ubah ${section}`}
-      className={styles.cardAction}
+      className={styles.editAction}
       onClick={onClick}
       type="button"
     >
       <NexusProfileIcon name="pencil" />
-      Ubah
+      <span className={styles.editActionLabel}>Ubah</span>
     </NexusWorkspaceButton>
   );
 }
@@ -632,19 +633,34 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
                   </div>
                   <dl className={styles.infoGrid} data-columns="2">
                     <InfoItem label="SINTA ID">
-                      {displayValue(linkedMember.academic.sintaId ?? "")}
+                      <NexusAcademicIdentifierValue
+                        identifier="sintaId"
+                        value={linkedMember.academic.sintaId}
+                      />
                     </InfoItem>
                     <InfoItem label="ORCID iD">
-                      {displayValue(linkedMember.academic.orcid ?? "")}
+                      <NexusAcademicIdentifierValue
+                        identifier="orcid"
+                        value={linkedMember.academic.orcid}
+                      />
                     </InfoItem>
                     <InfoItem label="Google Scholar">
-                      {displayValue(linkedMember.academic.googleScholar ?? "")}
+                      <NexusAcademicIdentifierValue
+                        identifier="googleScholar"
+                        value={linkedMember.academic.googleScholar}
+                      />
                     </InfoItem>
                     <InfoItem label="Scopus Author ID">
-                      {displayValue(linkedMember.academic.scopusAuthorId ?? "")}
+                      <NexusAcademicIdentifierValue
+                        identifier="scopusAuthorId"
+                        value={linkedMember.academic.scopusAuthorId}
+                      />
                     </InfoItem>
                     <InfoItem label="ResearcherID">
-                      {displayValue(linkedMember.academic.researcherId ?? "")}
+                      <NexusAcademicIdentifierValue
+                        identifier="researcherId"
+                        value={linkedMember.academic.researcherId}
+                      />
                     </InfoItem>
                   </dl>
                 </section>

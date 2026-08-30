@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { KeyboardEvent } from "react";
 import type { NexusMemberCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { NexusAcademicIdentifierValue } from "@/components/nexus-members/nexus-member-academic";
 import { relatedDataHref } from "@/components/nexus-members/nexus-member-identity";
 import {
   accountStatusLabels,
@@ -74,15 +75,6 @@ type MemberDetailProps = {
   onOpenAcademicEditor: () => void;
   onTabChange: (tab: MemberDetailTab) => void;
 };
-
-function AcademicLink({ href, label }: { href?: string; label: string }) {
-  if (!href) return <>{displayMemberValue()}</>;
-  return (
-    <a href={href} rel="noreferrer" target="_blank">
-      {label}
-    </a>
-  );
-}
 
 export function NexusMemberDetail({
   activeTab,
@@ -353,30 +345,51 @@ export function NexusMemberDetail({
           <section className={styles.accessSection}>
             <MemberDetailCard
               items={[
-                { label: "SINTA ID", value: member.academic.sintaId },
+                {
+                  label: "SINTA ID",
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="sintaId"
+                      value={member.academic.sintaId}
+                    />
+                  ),
+                },
                 {
                   label: "ORCID iD",
-                  value: member.academic.orcid ? (
-                    <AcademicLink
-                      href={`https://orcid.org/${member.academic.orcid}`}
-                      label={member.academic.orcid}
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="orcid"
+                      value={member.academic.orcid}
                     />
-                  ) : undefined,
+                  ),
                 },
                 {
                   label: "Google Scholar",
-                  value: member.academic.googleScholar ? (
-                    <AcademicLink
-                      href={member.academic.googleScholar}
-                      label="Buka profil"
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="googleScholar"
+                      value={member.academic.googleScholar}
                     />
-                  ) : undefined,
+                  ),
                 },
                 {
                   label: "Scopus Author ID",
-                  value: member.academic.scopusAuthorId,
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="scopusAuthorId"
+                      value={member.academic.scopusAuthorId}
+                    />
+                  ),
                 },
-                { label: "ResearcherID", value: member.academic.researcherId },
+                {
+                  label: "ResearcherID",
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="researcherId"
+                      value={member.academic.researcherId}
+                    />
+                  ),
+                },
               ]}
               title="Identitas akademik & riset"
               wide

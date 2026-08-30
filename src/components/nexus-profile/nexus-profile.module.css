@@ -81,6 +81,7 @@
 }
 
 .card {
+  position: relative;
   display: grid;
   min-width: 0;
   align-content: start;
@@ -195,7 +196,13 @@
   flex: 0 0 auto;
 }
 
-.cardAction svg {
+/* Tindakan ubah milik kartu; pada layar sempit menjadi ikon di pojok kartu. */
+.editAction {
+  flex: 0 0 auto;
+}
+
+.cardAction svg,
+.editAction svg {
   width: 1rem;
   height: 1rem;
   stroke: currentcolor;
@@ -244,6 +251,18 @@
   font-weight: 500;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+/* Tautan pengenal tidak dibedakan hanya oleh warna. */
+.infoGrid dd a {
+  color: var(--color-brand-navy);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.infoGrid dd a:hover,
+.infoGrid dd a:focus-visible {
+  color: #1b5aa3;
 }
 
 .badge {
@@ -395,6 +414,35 @@
   .cardHead {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  /* Ikon ubah menempel di pojok kanan atas kartunya, seperti kebiasaan pada
+     antarmuka ponsel, sehingga isi kartu tidak terdorong oleh tombol lebar. */
+  .editAction {
+    position: absolute;
+    top: 1.15rem;
+    right: 1.15rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0;
+  }
+
+  .editActionLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+    margin: -1px;
+  }
+
+  .hero,
+  .cardHead {
+    padding-right: 3.25rem;
   }
 
   .securityRow {
