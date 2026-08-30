@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { nexusRoleHealth } from "@/components/nexus-access-policy/nexus-access-policy";
 import type {
   AuditFixRequest,
   AuditMatchingStatus,
@@ -22,6 +23,7 @@ import type {
   MetadataCompletionProposal,
   MetadataCompletionResolutions,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { useNexusCurrentProfile } from "@/components/nexus-profile/nexus-current-profile";
 import type {
   OfficialMetadataProjection,
   OfficialMetadataProjectionMap,
@@ -330,6 +332,44 @@ export function NexusReviewSessionProvider({
     <NexusReviewSessionContext.Provider value={value}>
       {children}
     </NexusReviewSessionContext.Provider>
+  );
+}
+
+/**
+ * Mengikat Tinjauan ke Account/Profile sesi yang sama dengan header dan
+ * Administrasi. Perubahan nama berikutnya memengaruhi event baru, sedangkan
+ * snapshot label pada event yang sudah dibuat tetap tidak ditulis ulang.
+ */
+export function NexusCurrentUserReviewSessionProvider({
+  capabilities,
+  children,
+}: {
+  capabilities: NexusReviewCapabilities;
+  children: ReactNode;
+}) {
+  const { profile } = useNexusCurrentProfile();
+  const actor = useMemo<NexusReviewActor>(
+    () => ({
+      id: profile?.account.id ?? "CURRENT-ACCOUNT-UNAVAILABLE",
+      name: profile?.displayName ?? "Pengguna BHT Nexus",
+      roleLabel: profile
+        ? nexusRoleHealth(profile.role).label
+        : "Belum ditetapkan",
+    }),
+    [profile],
+  );
+
+  return (
+    <NexusReviewSessionProvider
+      actor={actor}
+      capabilities={
+        profile
+          ? capabilities
+          : { canReview: false, canSubmitCorrection: false }
+      }
+    >
+      {children}
+    </NexusReviewSessionProvider>
   );
 }
 

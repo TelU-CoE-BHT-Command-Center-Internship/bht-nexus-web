@@ -27,6 +27,7 @@ import {
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
 import type { NexusAdministrationCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
+import { useNexusProfileDirectory } from "@/components/nexus-profile/nexus-current-profile";
 import { NexusWorkspaceBreadcrumb } from "@/components/nexus-workspace-ui/nexus-workspace-breadcrumb";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import {
@@ -140,6 +141,7 @@ export function NexusRoleManagement({
     updateRolePermissions,
   } = useNexusAccessPolicySession();
   const { accounts } = useNexusAccountSession();
+  const profilesByAccountId = useNexusProfileDirectory();
   const { records: memberRecords } = useNexusMemberSession();
   const memberDirectory = useMemo(
     () =>
@@ -438,6 +440,8 @@ export function NexusRoleManagement({
     .join(" ");
 
   const userRows = accountsByRole.map((account) => {
+    const personName =
+      profilesByAccountId.get(account.id)?.displayName ?? account.displayName;
     const relationship = resolveAdministrationRelationship(
       account,
       memberDirectory,
@@ -460,7 +464,7 @@ export function NexusRoleManagement({
       cells: {
         action: (
           <NexusWorkspaceTableAction
-            label={`Buka akun ${account.displayName}`}
+            label={`Buka akun ${personName}`}
             onClick={openAccount}
           >
             Buka akun
@@ -484,7 +488,7 @@ export function NexusRoleManagement({
         ),
         primary: (
           <span className={styles.userIdentity}>
-            <strong>{account.displayName}</strong>
+            <strong>{personName}</strong>
             <small>{account.email}</small>
           </span>
         ),
@@ -514,7 +518,7 @@ export function NexusRoleManagement({
         <NexusWorkspaceMobileCard
           action={
             <NexusWorkspaceMobileAction
-              label={`Buka akun ${account.displayName}`}
+              label={`Buka akun ${personName}`}
               onClick={openAccount}
             >
               Buka akun
@@ -556,7 +560,7 @@ export function NexusRoleManagement({
               </div>
             </dl>
           }
-          title={account.displayName}
+          title={personName}
         />
       ),
     };

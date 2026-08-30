@@ -9,7 +9,6 @@ import type {
   RecentProject,
   ResearchActivitySeries,
 } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview-types";
-import { nexusDashboardPreviewViewer } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 
 const announcements: DashboardAnnouncement[] = [
   {
@@ -343,7 +342,7 @@ export function getNexusDashboardOverviewContent(
     dateIso: formatDashboardIsoDate(now),
     dateLabel: formatDashboardDate(now),
     featuredPrograms,
-    greeting: `Selamat datang kembali, ${nexusDashboardPreviewViewer.name}`,
+    greeting: "Selamat datang kembali",
     intro:
       "Memajukan riset dan inovasi biomedis serta teknologi kesehatan bersama.",
     metrics,

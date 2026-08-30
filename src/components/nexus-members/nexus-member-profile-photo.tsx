@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image, { type ImageProps } from "next/image";
-import { type ChangeEvent, type DragEvent, useState } from "react";
+import { type ChangeEvent, type DragEvent, useId, useState } from "react";
 import {
   DEFAULT_MEMBER_AVATAR_POSITION,
   type NexusMemberAvatarPosition,
@@ -26,14 +26,21 @@ const ACCEPTED_PROFILE_PHOTO_TYPES = [
 ] as const;
 const MAX_PROFILE_PHOTO_BYTES = 2 * 1024 * 1024;
 
+/**
+ * Satu kendali foto profil untuk seluruh formulir orang di ruang kerja.
+ * Direktori Anggota dan halaman Profil Saya memakai kendali dan editor yang
+ * sama; hanya sebutan orangnya yang menyesuaikan permukaannya.
+ */
 type NexusMemberProfilePhotoProps = {
-  memberName: string;
   onChange: (value: {
     avatarSrc?: ImageProps["src"];
     originalSrc?: ImageProps["src"];
     position: NexusMemberAvatarPosition;
   }) => void;
   originalValue?: ImageProps["src"];
+  /** Sebutan orang pada nama aksesibel, misalnya "anggota" atau "pengguna". */
+  personLabel?: string;
+  personName: string;
   position: NexusMemberAvatarPosition;
   value?: ImageProps["src"];
 };
@@ -70,15 +77,20 @@ function imageSourceValue(value: ImageProps["src"]) {
 }
 
 export function NexusMemberProfilePhoto({
-  memberName,
   onChange,
   originalValue,
+  personLabel = "pengguna",
+  personName,
   position,
   value,
 }: NexusMemberProfilePhotoProps) {
   const [editorImage, setEditorImage] = useState("");
   const [error, setError] = useState("");
   const [isFileDragging, setIsFileDragging] = useState(false);
+  const technicalId = useId();
+  const helpId = `${technicalId}-photo-help`;
+  const errorId = `${technicalId}-photo-error`;
+  const personDisplayName = personName.trim() || personLabel;
 
   function closeEditor() {
     setEditorImage("");
@@ -161,7 +173,7 @@ export function NexusMemberProfilePhoto({
         <div className={styles.preview}>
           {value ? (
             <Image
-              alt={`Foto ${memberName.trim() || "anggota"} yang dipilih`}
+              alt={`Foto ${personDisplayName} yang dipilih`}
               fill
               sizes="72px"
               src={value}
@@ -172,23 +184,20 @@ export function NexusMemberProfilePhoto({
               }
             />
           ) : (
-            <span
-              aria-label={`Inisial ${memberName.trim() || "anggota"}`}
-              role="img"
-            >
-              {personInitials(memberName.trim() || "Anggota")}
+            <span aria-label={`Inisial ${personDisplayName}`} role="img">
+              {personInitials(personDisplayName)}
             </span>
           )}
         </div>
 
         <div className={styles.copy}>
           <strong>Foto profil</strong>
-          <p id="member-photo-help">
+          <p id={helpId}>
             Tarik foto ke area ini atau pilih file JPG, PNG, atau WebP maksimal
             2 MB. Posisi foto dapat diatur sebelum diterapkan.
           </p>
           {error ? (
-            <p className={styles.error} id="member-photo-error" role="alert">
+            <p className={styles.error} id={errorId} role="alert">
               {error}
             </p>
           ) : null}
@@ -204,7 +213,7 @@ export function NexusMemberProfilePhoto({
           <label className={styles.uploadButton}>
             <input
               accept={ACCEPTED_PROFILE_PHOTO_TYPES.join(",")}
-              aria-describedby={`member-photo-help${error ? " member-photo-error" : ""}`}
+              aria-describedby={`${helpId}${error ? ` ${errorId}` : ""}`}
               className={styles.input}
               onChange={handleInputChange}
               type="file"
@@ -236,7 +245,6 @@ export function NexusMemberProfilePhoto({
         <NexusMemberPhotoEditor
           imageSrc={editorImage}
           key={editorImage}
-          memberName={memberName}
           onApply={(croppedImage) => {
             onChange({
               avatarSrc: croppedImage,
@@ -246,6 +254,7 @@ export function NexusMemberProfilePhoto({
             closeEditor();
           }}
           onCancel={closeEditor}
+          personName={personDisplayName}
         />
       ) : null}
     </>

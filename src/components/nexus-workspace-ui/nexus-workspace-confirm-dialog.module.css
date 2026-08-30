@@ -54,13 +54,21 @@
   min-height: 3rem;
 }
 
+/**
+ * Tombol keputusan memakai warna penuh, termasuk saat disorot dan ditekan.
+ * Nada tombol bersama mempunyai aturan hover-nya sendiri dengan bobot yang
+ * sama, sehingga aturan di sini harus menyebut keadaan yang sama agar latar
+ * dan warna teksnya tidak pernah berasal dari dua aturan yang berbeda.
+ */
 .actions .confirmAction[data-tone="danger"] {
   border-color: var(--color-brand-red);
   background: var(--color-brand-red);
   color: #fff;
 }
 
-.actions .confirmAction[data-tone="danger"]:hover {
+.actions .confirmAction[data-tone="danger"]:hover:not(:disabled),
+.actions .confirmAction[data-tone="danger"]:focus-visible:not(:disabled),
+.actions .confirmAction[data-tone="danger"]:active:not(:disabled) {
   border-color: #b91332;
   background: #b91332;
   color: #fff;
@@ -72,7 +80,9 @@
   color: #fff;
 }
 
-.layer[data-tone="warning"] .confirmAction:hover {
+.layer[data-tone="warning"] .confirmAction:hover:not(:disabled),
+.layer[data-tone="warning"] .confirmAction:focus-visible:not(:disabled),
+.layer[data-tone="warning"] .confirmAction:active:not(:disabled) {
   border-color: #92400e;
   background: #92400e;
   color: #fff;

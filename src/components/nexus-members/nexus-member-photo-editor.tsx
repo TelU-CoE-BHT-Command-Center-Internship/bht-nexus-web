@@ -13,9 +13,9 @@ const ZOOM_STEP = 0.1;
 
 type NexusMemberPhotoEditorProps = {
   imageSrc: string;
-  memberName: string;
   onApply: (croppedImage: string) => void;
   onCancel: () => void;
+  personName: string;
 };
 
 function CloseIcon() {
@@ -66,9 +66,9 @@ function boundedZoom(value: number) {
 
 export function NexusMemberPhotoEditor({
   imageSrc,
-  memberName,
   onApply,
   onCancel,
+  personName,
 }: NexusMemberPhotoEditorProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
@@ -141,7 +141,7 @@ export function NexusMemberPhotoEditor({
       <div className={styles.editorShell}>
         <header className={styles.editorHeader}>
           <div>
-            <p>FOTO PROFIL ANGGOTA</p>
+            <p>FOTO PROFIL</p>
             <h2 id="member-photo-editor-title">Atur foto profil</h2>
             <span id="member-photo-editor-description">
               Geser dan perbesar foto hingga wajah terlihat jelas di dalam
@@ -170,7 +170,7 @@ export function NexusMemberPhotoEditor({
             crop={crop}
             cropShape="round"
             cropperProps={{
-              "aria-label": `Atur posisi foto ${memberName.trim() || "anggota"}`,
+              "aria-label": `Atur posisi foto ${personName}`,
             }}
             disableAutomaticStylesInjection
             image={imageSrc}
@@ -253,7 +253,7 @@ export function NexusMemberPhotoEditor({
         ) : null}
 
         <footer className={styles.editorFooter}>
-          <p>Hasil foto akan digunakan pada direktori dan profil anggota.</p>
+          <p>Hasil foto akan dipakai pada setiap tampilan profil orang ini.</p>
           <div>
             <NexusWorkspaceButton
               disabled={isApplying}

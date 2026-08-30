@@ -4,7 +4,6 @@ import { type FormEvent, useMemo, useState } from "react";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import type {
   NexusAccountMemberRelationship,
-  NexusAdministrationAccount,
   NexusAdministrationMemberOption,
 } from "@/components/nexus-administration/nexus-administration-content";
 import type { NexusResolvedAdministrationRelationship } from "@/components/nexus-administration/nexus-administration-relationship";
@@ -20,18 +19,18 @@ import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui
 type RelationshipChoice = "" | "linked" | "non-member";
 
 type NexusAdministrationRelationshipDrawerProps = {
-  account: NexusAdministrationAccount;
   availableMembers: readonly NexusAdministrationMemberOption[];
   onClose: () => void;
   onSave: (relationship: NexusAccountMemberRelationship) => void;
+  personName: string;
   relationship: NexusResolvedAdministrationRelationship;
 };
 
 export function NexusAdministrationRelationshipDrawer({
-  account,
   availableMembers,
   onClose,
   onSave,
+  personName,
   relationship,
 }: NexusAdministrationRelationshipDrawerProps) {
   const initialDraft = useMemo(
@@ -99,7 +98,7 @@ export function NexusAdministrationRelationshipDrawer({
         description="Tentukan apakah akun ditautkan ke satu profil anggota atau memang digunakan sebagai akun non-anggota."
         eyebrow="Hubungan Anggota"
         onClose={requestClose}
-        title={`Kelola hubungan · ${account.displayName}`}
+        title={`Kelola hubungan · ${personName}`}
       >
         <form
           className={styles.accessForm}
@@ -118,6 +117,13 @@ export function NexusAdministrationRelationshipDrawer({
               atau profil anggota.
             </NexusWorkspaceNotice>
           )}
+
+          <NexusWorkspaceNotice>
+            Informasi pribadi milik akun tetap tersimpan tanpa disalin atau
+            dihapus. Saat akun terhubung, bidang yang beririsan mengikuti profil
+            anggota; data akun dipakai kembali bila hubungan non-anggota
+            ditetapkan.
+          </NexusWorkspaceNotice>
 
           <fieldset className={styles.relationshipChoices}>
             <legend>Hubungan akun</legend>
@@ -202,8 +208,8 @@ export function NexusAdministrationRelationshipDrawer({
           confirmLabel="Simpan hubungan"
           description={
             pendingRelationship.kind === "LINKED" && selectedMember
-              ? `${account.displayName} akan ditautkan ke ${selectedMember.name}.`
-              : `${account.displayName} akan ditetapkan sebagai akun non-anggota.`
+              ? `${personName} akan ditautkan ke ${selectedMember.name}.`
+              : `${personName} akan ditetapkan sebagai akun non-anggota.`
           }
           onCancel={() => setPendingRelationship(null)}
           onConfirm={() => {

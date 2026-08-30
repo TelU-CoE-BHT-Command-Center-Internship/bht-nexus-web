@@ -32,6 +32,8 @@ import {
   nexusCanOpenRoleManagement,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
+import { useNexusProfileDirectory } from "@/components/nexus-profile/nexus-current-profile";
+import type { NexusProfileView } from "@/components/nexus-profile/nexus-profile-model";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
@@ -149,6 +151,7 @@ function accountStatusTone(status: NexusAdministrationAccount["status"]) {
 function accountMatchesQuery(
   account: NexusAdministrationAccount,
   relationship: NexusResolvedAdministrationRelationship,
+  profile: NexusProfileView | undefined,
   query: string,
 ) {
   const member =
@@ -158,6 +161,9 @@ function accountMatchesQuery(
   return normalizeWorkspaceSearch(
     [
       account.displayName,
+      profile?.displayName,
+      profile?.fullName,
+      profile?.preferredName,
       account.email,
       account.id,
       administrationRelationshipLabel(relationship),
@@ -220,6 +226,7 @@ export function NexusAdministration({
     updateRole: setAccountRole,
   } = useNexusAccountSession();
   const { overrides, roles } = useNexusAccessPolicySession();
+  const profilesByAccountId = useNexusProfileDirectory();
   const canOpenRoleManagement = nexusCanOpenRoleManagement(capabilities);
   const assignableRoles = useMemo(() => nexusAssignableRoles(roles), [roles]);
   const { records: memberRecords } = useNexusMemberSession();
@@ -366,13 +373,19 @@ export function NexusAdministration({
           matchesStatus &&
           matchesRole &&
           matchesMember &&
-          accountMatchesQuery(account, relationship, deferredQuery)
+          accountMatchesQuery(
+            account,
+            relationship,
+            profilesByAccountId.get(account.id),
+            deferredQuery,
+          )
         );
       }),
     [
       accounts,
       deferredQuery,
       filters,
+      profilesByAccountId,
       relationshipsByAccountId,
       rolesByAccountId,
     ],
@@ -390,6 +403,9 @@ export function NexusAdministration({
   const selectedAccount = accounts.find(
     (account) => account.id === selectedAccountId,
   );
+  const selectedProfile = selectedAccount
+    ? profilesByAccountId.get(selectedAccount.id)
+    : undefined;
   const accessEditorAccount = accounts.find(
     (account) => account.id === accessEditorAccountId,
   );
@@ -488,12 +504,16 @@ export function NexusAdministration({
 
   function suspendAccount(account: NexusAdministrationAccount) {
     suspendSessionAccount(account.id);
-    setAnnouncement(`Akses ${account.displayName} ditangguhkan.`);
+    setAnnouncement(
+      `Akses ${profilesByAccountId.get(account.id)?.displayName ?? account.displayName} ditangguhkan.`,
+    );
   }
 
   function restoreAccount(account: NexusAdministrationAccount) {
     restoreSessionAccount(account.id);
-    setAnnouncement(`Akses ${account.displayName} dipulihkan.`);
+    setAnnouncement(
+      `Akses ${profilesByAccountId.get(account.id)?.displayName ?? account.displayName} dipulihkan.`,
+    );
   }
 
   function refreshInvitation(account: NexusAdministrationAccount) {
@@ -518,6 +538,8 @@ export function NexusAdministration({
   }
 
   const rows = visibleAccounts.map((account) => {
+    const profile = profilesByAccountId.get(account.id);
+    const personName = profile?.displayName ?? account.displayName;
     const role = rolesByAccountId.get(account.id) ?? {
       kind: "UNASSIGNED" as const,
     };
@@ -530,7 +552,7 @@ export function NexusAdministration({
       cells: {
         action: (
           <NexusWorkspaceTableAction
-            label={`Buka detail akun ${account.displayName}`}
+            label={`Buka detail akun ${personName}`}
             onClick={openDetail}
           >
             Detail
@@ -544,10 +566,10 @@ export function NexusAdministration({
             type="button"
           >
             <span aria-hidden="true">
-              {personInitials(account.displayName)}
+              {profile?.initials ?? personInitials(personName)}
             </span>
             <span>
-              <strong>{account.displayName}</strong>
+              <strong>{personName}</strong>
               <small>{account.email}</small>
             </span>
           </button>
@@ -571,7 +593,7 @@ export function NexusAdministration({
         <NexusWorkspaceMobileCard
           action={
             <NexusWorkspaceMobileAction
-              label={`Buka detail akun ${account.displayName}`}
+              label={`Buka detail akun ${personName}`}
               onClick={openDetail}
             >
               Lihat detail
@@ -611,7 +633,7 @@ export function NexusAdministration({
               </div>
             </dl>
           }
-          title={account.displayName}
+          title={personName}
         />
       ),
     };
@@ -781,7 +803,7 @@ export function NexusAdministration({
         </NexusWorkspaceTableSection>
       </section>
 
-      {selectedAccount ? (
+      {selectedAccount && selectedProfile ? (
         <NexusAdministrationDetail
           account={selectedAccount}
           capabilities={capabilities}
@@ -813,6 +835,7 @@ export function NexusAdministration({
               kind: "suspend",
             })
           }
+          profile={selectedProfile}
           relationship={
             relationshipsByAccountId.get(selectedAccount.id) ?? {
               kind: "CONFLICT",
@@ -848,13 +871,17 @@ export function NexusAdministration({
         <NexusAdministrationAccessDrawer
           account={accessEditorAccount}
           allRoles={roles}
+          personName={
+            profilesByAccountId.get(accessEditorAccount.id)?.displayName ??
+            accessEditorAccount.displayName
+          }
           onClose={() => setAccessEditorAccountId(null)}
           onSave={(roleId) => {
             setAccountRole(accessEditorAccount.id, roleId);
             setAccessEditorAccountId(null);
             setSelectedAccountId(accessEditorAccount.id);
             setAnnouncement(
-              `Peran ${accessEditorAccount.displayName} diperbarui.`,
+              `Peran ${profilesByAccountId.get(accessEditorAccount.id)?.displayName ?? accessEditorAccount.displayName} diperbarui.`,
             );
           }}
           roles={assignableRoles}
@@ -866,15 +893,18 @@ export function NexusAdministration({
 
       {relationshipEditorAccount && relationshipEditorResolved ? (
         <NexusAdministrationRelationshipDrawer
-          account={relationshipEditorAccount}
           availableMembers={relationshipEditorMembers}
+          personName={
+            profilesByAccountId.get(relationshipEditorAccount.id)
+              ?.displayName ?? relationshipEditorAccount.displayName
+          }
           onClose={() => setRelationshipEditorAccountId(null)}
           onSave={(relationship: NexusAccountMemberRelationship) => {
             setAccountRelationship(relationshipEditorAccount.id, relationship);
             setRelationshipEditorAccountId(null);
             setSelectedAccountId(relationshipEditorAccount.id);
             setAnnouncement(
-              `Hubungan anggota ${relationshipEditorAccount.displayName} diperbarui.`,
+              `Hubungan anggota ${profilesByAccountId.get(relationshipEditorAccount.id)?.displayName ?? relationshipEditorAccount.displayName} diperbarui.`,
             );
           }}
           relationship={relationshipEditorResolved}
@@ -891,7 +921,7 @@ export function NexusAdministration({
           }
           description={
             pendingAccountAction.kind === "suspend"
-              ? `${pendingActionAccount.displayName} tidak dapat masuk sampai akses dipulihkan.`
+              ? `${profilesByAccountId.get(pendingActionAccount.id)?.displayName ?? pendingActionAccount.displayName} tidak dapat masuk sampai akses dipulihkan.`
               : `Undangan untuk ${pendingActionAccount.email} akan dibatalkan dan akun yang belum aktif dihapus dari daftar.`
           }
           onCancel={() => setPendingAccountAction(null)}

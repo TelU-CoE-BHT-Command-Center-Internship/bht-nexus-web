@@ -1228,10 +1228,13 @@ function staticSourceActorId(record: AuditReviewRecord) {
   return nexusReviewActorIds.collectionService;
 }
 
-function staticHistoryActorId(entry: AuditReviewHistory) {
+function staticHistoryActorId(
+  entry: AuditReviewHistory,
+  sessionActorId: string,
+) {
   if (entry.actorId) return entry.actorId;
   if (entry.actor === sessionReviewerActor) {
-    return nexusReviewActorIds.workspaceAdmin;
+    return sessionActorId;
   }
   if (entry.actor === workbookSource) return nexusReviewActorIds.workbookImport;
   if (entry.actor === "Sistem pencocokan") {
@@ -1244,9 +1247,10 @@ function staticHistoryActorId(entry: AuditReviewHistory) {
  * Serializable route content. Integrasi server kelak cukup mengganti pemasok
  * data pada batas halaman; kontrak interaksi ruang tinjauan tetap sama.
  */
-export function getNexusAuditReviewContent(
-  reviewerLabel: string,
-): NexusAuditReviewContent {
+export function getNexusAuditReviewContent(reviewer: {
+  actorId: string;
+  label: string;
+}): NexusAuditReviewContent {
   return {
     lastUpdatedLabel: "Diperbarui 16 Agu 2026, 09.22 WIB",
     records: records.map((record) => {
@@ -1262,9 +1266,8 @@ export function getNexusAuditReviewContent(
         decision: record.decision
           ? {
               ...record.decision,
-              actor: replaceSessionActor(record.decision.actor, reviewerLabel),
-              actorId:
-                record.decision.actorId ?? nexusReviewActorIds.workspaceAdmin,
+              actor: replaceSessionActor(record.decision.actor, reviewer.label),
+              actorId: record.decision.actorId ?? reviewer.actorId,
             }
           : undefined,
         fixRequest: record.fixRequest
@@ -1281,8 +1284,8 @@ export function getNexusAuditReviewContent(
           : undefined,
         history: record.history.map((entry) => ({
           ...entry,
-          actor: replaceSessionActor(entry.actor, reviewerLabel),
-          actorId: staticHistoryActorId(entry),
+          actor: replaceSessionActor(entry.actor, reviewer.label),
+          actorId: staticHistoryActorId(entry, reviewer.actorId),
         })),
         correctionAssigneeActorId,
         correctionAssigneeLabel,

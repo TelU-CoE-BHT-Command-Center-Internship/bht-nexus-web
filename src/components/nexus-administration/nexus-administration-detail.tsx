@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   type NexusRoleResolution,
   nexusRoleAccessSummary,
@@ -14,12 +15,15 @@ import { NexusAdministrationIcon } from "@/components/nexus-administration/nexus
 import type { NexusResolvedAdministrationRelationship } from "@/components/nexus-administration/nexus-administration-relationship";
 import type { NexusAdministrationCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { relatedDataHref } from "@/components/nexus-members/nexus-member-identity";
+import {
+  type NexusProfileView,
+  nexusProfileRequiredFieldLabels,
+} from "@/components/nexus-profile/nexus-profile-model";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceLinkButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusAdministrationDetailProps = {
   account: NexusAdministrationAccount;
@@ -32,6 +36,7 @@ type NexusAdministrationDetailProps = {
   onRefreshInvitation: () => void;
   onRestore: () => void;
   onSuspend: () => void;
+  profile: NexusProfileView;
   relationship: NexusResolvedAdministrationRelationship;
   role: NexusRoleResolution;
   specialAccessCount: number;
@@ -41,6 +46,92 @@ function statusTone(status: NexusAdministrationAccount["status"]) {
   if (status === "ACTIVE") return "positive";
   if (status === "INVITED") return "warning";
   return "danger";
+}
+
+/**
+ * Proyeksi profil yang sama untuk setiap akun, baik anggota maupun bukan.
+ * Nilainya berasal dari penyelesai profil bersama, sehingga Administrasi tidak
+ * pernah menampilkan versi lain dari informasi pribadi yang sama.
+ */
+function AccountProfileSummary({ profile }: { profile: NexusProfileView }) {
+  const missingLabels = profile.missingRequiredFields.map(
+    (field) => nexusProfileRequiredFieldLabels[field],
+  );
+
+  if (!profile.hasPersonalData) {
+    return (
+      <div className={styles.relationCard} data-relationship="UNLINKED">
+        <div className={styles.relationCardContent}>
+          <span>Profil pengguna</span>
+          <strong>Profil pengguna belum dilengkapi</strong>
+          <small>
+            Pemilik akun belum mengisi informasi pribadinya. Administrator tidak
+            mengisi bagian ini dari halaman Administrasi.
+          </small>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {!profile.isComplete ? (
+        <div className={styles.relationCard} data-relationship="UNLINKED">
+          <div className={styles.relationCardContent}>
+            <span>Profil pengguna</span>
+            <strong>Profil pengguna terisi sebagian</strong>
+            <small>
+              {missingLabels.join(" dan ")} belum diisi. Pemilik akun dapat
+              melengkapinya dari halaman Profil Saya.
+            </small>
+          </div>
+        </div>
+      ) : null}
+      <div className={styles.profileSummary}>
+        <span aria-hidden="true" className={styles.profileSummaryAvatar}>
+          {profile.avatarSrc ? (
+            <Image
+              alt=""
+              fill
+              sizes="48px"
+              src={profile.avatarSrc}
+              style={{
+                objectPosition: `${profile.avatarPosition.x}% ${profile.avatarPosition.y}%`,
+              }}
+              unoptimized={
+                typeof profile.avatarSrc === "string" &&
+                profile.avatarSrc.startsWith("data:")
+              }
+            />
+          ) : (
+            profile.initials
+          )}
+        </span>
+        <div>
+          <strong>{profile.fullName.trim() || "Belum tercatat"}</strong>
+          <small>
+            {profile.source === "MEMBER"
+              ? "Mengikuti profil anggota CoE BHT"
+              : "Informasi pribadi milik akun ini"}
+          </small>
+        </div>
+      </div>
+      <dl className={styles.definitionGrid}>
+        <div>
+          <dt>Nama panggilan</dt>
+          <dd>{profile.preferredName.trim() || "Belum tercatat"}</dd>
+        </div>
+        <div>
+          <dt>Nomor HP</dt>
+          <dd>{profile.phone.trim() || "Belum tercatat"}</dd>
+        </div>
+        <div>
+          <dt>Email alternatif</dt>
+          <dd>{profile.alternateEmail.trim() || "Belum tercatat"}</dd>
+        </div>
+      </dl>
+    </>
+  );
 }
 
 function AccountRelationshipSummary({
@@ -166,6 +257,7 @@ export function NexusAdministrationDetail({
   onRefreshInvitation,
   onRestore,
   onSuspend,
+  profile,
   relationship,
   role,
   specialAccessCount,
@@ -191,7 +283,23 @@ export function NexusAdministrationDetail({
       <div className={styles.detailStack}>
         <header className={styles.detailHero}>
           <span aria-hidden="true" className={styles.detailAvatar}>
-            {personInitials(account.displayName)}
+            {profile.avatarSrc ? (
+              <Image
+                alt=""
+                fill
+                sizes="64px"
+                src={profile.avatarSrc}
+                style={{
+                  objectPosition: `${profile.avatarPosition.x}% ${profile.avatarPosition.y}%`,
+                }}
+                unoptimized={
+                  typeof profile.avatarSrc === "string" &&
+                  profile.avatarSrc.startsWith("data:")
+                }
+              />
+            ) : (
+              profile.initials
+            )}
           </span>
           <div className={styles.detailIdentity}>
             <span
@@ -200,7 +308,7 @@ export function NexusAdministrationDetail({
             >
               {accountStatusLabels[account.status]}
             </span>
-            <h3>{account.displayName}</h3>
+            <h3>{profile.displayName}</h3>
             <p>{account.email}</p>
             <small>{account.id}</small>
           </div>
@@ -245,6 +353,22 @@ export function NexusAdministrationDetail({
               <dd>{account.updatedAt}</dd>
             </div>
           </dl>
+        </section>
+
+        <section className={styles.detailSection}>
+          <header>
+            <span aria-hidden="true">
+              <NexusAdministrationIcon name="account" />
+            </span>
+            <div>
+              <h3>Profil Pengguna</h3>
+              <p>
+                Informasi pribadi diisi oleh pemilik akun dari halaman Profil
+                Saya.
+              </p>
+            </div>
+          </header>
+          <AccountProfileSummary profile={profile} />
         </section>
 
         <section className={styles.detailSection}>

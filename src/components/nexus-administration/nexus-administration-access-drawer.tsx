@@ -25,6 +25,7 @@ type NexusAdministrationAccessDrawerProps = {
   allRoles: readonly NexusAdministrationRole[];
   onClose: () => void;
   onSave: (roleId: string) => void;
+  personName: string;
   roles: readonly NexusAdministrationRole[];
   specialAccessCount: number;
 };
@@ -34,6 +35,7 @@ export function NexusAdministrationAccessDrawer({
   allRoles,
   onClose,
   onSave,
+  personName,
   roles,
   specialAccessCount,
 }: NexusAdministrationAccessDrawerProps) {
@@ -96,7 +98,7 @@ export function NexusAdministrationAccessDrawer({
         description="Tetapkan satu peran utama sesuai kebutuhan kerja pengguna."
         eyebrow="Peran & Hak Akses"
         onClose={requestClose}
-        title={`Ubah akses · ${account.displayName}`}
+        title={`Ubah akses · ${personName}`}
       >
         <form className={styles.accessForm} noValidate onSubmit={submitAccess}>
           {initialRole.kind === "UNASSIGNED" ? (

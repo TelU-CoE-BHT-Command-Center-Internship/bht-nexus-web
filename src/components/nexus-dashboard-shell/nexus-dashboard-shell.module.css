@@ -780,31 +780,19 @@
   height: 100%;
   border-radius: inherit;
   object-fit: cover;
-  object-position: center 24%;
-  transform: scale(2.05);
 }
 
+/* Pemicu identitas: foto, satu nama, lalu tanda buka menu. */
 .profileCopy {
-  display: grid;
-  min-width: 0;
-  gap: 0.15rem;
-}
-
-.profileCopy strong {
+  display: block;
   max-width: 12.5rem;
+  min-width: 0;
   overflow: hidden;
   font-size: 0.82rem;
-  font-weight: 720;
+  font-weight: 700;
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.profileRole {
-  color: #718096;
-  font-size: 0.74rem;
-  font-weight: 500;
-  line-height: 1.2;
 }
 
 .profileChevron {
@@ -892,40 +880,88 @@
 
 .profilePanel {
   display: grid;
-  width: 15rem;
-  padding: 0.875rem;
+  width: 16.25rem;
+  padding: 0.75rem;
+  border-radius: 1rem;
 }
 
-.profilePanel > div {
+.profilePanelIdentity {
   display: grid;
-  gap: 0.2rem;
-  padding: 0.25rem 0.25rem 0.875rem;
+  gap: 0.15rem;
+  padding: 0.25rem 0.25rem 0;
+}
+
+.profilePanelIdentity strong {
+  color: var(--color-brand-navy-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.profilePanelIdentity span {
+  color: #718096;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.profilePanelMenu {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0 0 0.75rem;
+  border-bottom: 1px solid #e3e8ef;
+  margin: 1rem 0 0;
+  list-style: none;
+}
+
+.profilePanelMenu a,
+.profilePanelSignOut {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 620;
+  line-height: 1.35;
+  transition: background-color 140ms ease;
+}
+
+.profilePanelMenu a {
+  color: var(--color-brand-navy-dark);
+}
+
+.profilePanelMenu a:hover,
+.profilePanelMenu a:focus-visible {
+  background: #eef3f8;
+}
+
+/* Tanpa daftar menu, pemisah tetap ada agar Keluar tidak menempel identitas. */
+.profilePanel:not(:has(.profilePanelMenu)) .profilePanelIdentity {
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid #e3e8ef;
 }
 
-.profilePanel strong {
-  color: var(--color-brand-navy-dark);
-  font-size: 0.82rem;
-  line-height: 1.3;
-}
-
-.profilePanelRole {
-  color: #718096;
-  font-size: 0.76rem;
-}
-
-.profilePanel a {
-  margin-top: 0.5rem;
-  padding: 0.7rem 0.65rem;
-  border-radius: 0.4rem;
+.profilePanelSignOut {
+  margin-top: 0.75rem;
   color: var(--color-brand-red);
-  font-size: 0.82rem;
-  font-weight: 700;
 }
 
-.profilePanel a:hover,
-.profilePanel a:focus-visible {
+.profilePanelSignOut:hover,
+.profilePanelSignOut:focus-visible {
   background: #fff1f4;
+}
+
+.profilePanelMenu svg,
+.profilePanelSignOut svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .main {
@@ -965,7 +1001,7 @@
     padding-inline: 1.75rem;
   }
 
-  .profileCopy strong {
+  .profileCopy {
     max-width: 9rem;
   }
 }
