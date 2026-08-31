@@ -33,6 +33,21 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Dashboard menampilkan metrik, pengumuman, aktivitas riset, program unggulan, serta proyek terkini.
 - Tabel dan kartu mempunyai perilaku responsif serta keadaan kosong dan loading yang konsisten.
 
+### Monitoring KM
+
+- `Monitoring KM` menjadi satu butir navigasi pada kelompok Utama, di samping Dashboard. Kategori dan indikator tidak dipecah menjadi butir sidebar sendiri.
+- `/nexus/monitoring` menampilkan seluruh kategori indikator KM beserta jumlah indikatornya. Kategori yang belum dipantau tidak pernah ditampilkan sebagai capaian nol; keadaannya ditulis sebagai pemantauan tersedia, sumber realisasi terhubung, sebagian terhubung, atau belum terhubung.
+- `/nexus/monitoring/riset` adalah ikhtisar kategori Riset: dua kartu metrik, grafik target dan realisasi per indikator, kartu proporsi indikator yang mencapai target, capaian per indikator, sebaran rumah data resmi, dan ringkasan sepuluh indikator yang dapat disaring menurut status.
+- `/nexus/monitoring/riset/km-9` sampai `km-18` memakai satu kerangka rincian yang sama dengan modul per rumpun data: kegiatan (KM-9, KM-10), publikasi (KM-11 sampai KM-14), kekayaan intelektual (KM-15, KM-16), serta kontrak riset (KM-17, KM-18). Alamat indikator di luar daftar tersebut menampilkan keadaan tidak ditemukan beserta jalan kembali, bukan indikator pertama.
+- Target, satuan, definisi, dan cara perhitungan berasal dari workbook KM 2026 beserta letak barisnya. Realisasi dihitung dari rekam Data Resmi yang sudah lolos Tinjauan dan memiliki kaitan indikator KM eksplisit pada periode evaluasi yang sama.
+- Nilai realisasi dan catatan triwulan pada workbook tetap ditampilkan sebagai rujukan sumber yang diberi label tersendiri. Nilai itu tidak pernah dipakai sebagai realisasi BHT Nexus dan tidak dicampur dengan hasil hitung data resmi.
+- Setiap rekam dihitung satu kali menurut pengenal resminya, dan angka realisasi pada kartu metrik selalu sama dengan jumlah baris pada Data pembentuk realisasi.
+- Status indikator bersifat objektif: tercapai, belum tercapai, belum ada realisasi, belum dapat dihitung, atau target belum tersedia. Ambang laju seperti *on track* tidak dipakai karena workbook tidak menetapkannya. Realisasi yang melampaui target disebut apa adanya walaupun busur capaian berhenti di 100%.
+- Triwulan dibaca dari tanggal bisnis rekam—tanggal kegiatan, tanggal terbit, tanggal pengajuan, atau tanggal mulai kontrak—bukan dari waktu pembaruan, waktu tinjauan, maupun waktu pengambilan sumber. Ketika tanggal itu belum tercatat, sebaran triwulan dinyatakan belum tersedia beserta alasannya.
+- Kuartil jurnal Q1–Q4 adalah pemeringkatan reputasi jurnal dan tidak pernah disamakan dengan triwulan evaluasi TW1–TW4.
+- Nama pada rincian indikator diambil dari rekam resmi. Hanya nama yang sudah tertaut anggota kanonis yang menautkan ke daftar data resmi anggota tersebut; nama lain dinyatakan sebagai catatan sumber.
+- Monitoring tidak menyalin rekam resmi menjadi koleksi kedua, tidak menyediakan penyuntingan target, dan tidak menghitung skor gabungan kategori.
+
 ### Pengumpulan
 
 - Menerima profil publik SINTA atau Google Scholar.
@@ -55,7 +70,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Tindakan keputusan menyesuaikan tujuan kandidat: data baru, pembaruan rekam, atau pelengkapan metadata. Menghubungkan ke rekam resmi, menerima data baru ketika aman, menyetujui perubahan, menyetujui pelengkapan, meminta perbaikan, dan menolak tidak ditampilkan sebagai satu daftar generik.
 - Rincian sumber menyediakan asal-usul data saat tersedia: pekerjaan, percobaan, pengolah, waktu pengambilan, kunci sumber, dan sidik respons. Nilai teknis yang belum dihasilkan layanan server ditampilkan sebagai belum tersedia, bukan dibuat-buat oleh frontend.
 - Sistem sumber, pengaju manusia, penerima koreksi, pemilik, dan pihak utama dicatat terpisah. Permintaan perbaikan hanya dapat diarahkan kepada pengguna manusia ber-ID; akun layanan tetap menjadi jejak asal dan tidak menerima tugas koreksi.
-- Identitas dan label KM-1 sampai KM-46 berada pada satu kamus yang diturunkan dari worksheet `List KM` workbook stakeholder. Rekam hanya merujuk indikator dari kamus tersebut dan dapat memiliki nol, satu, atau beberapa kaitan tanpa menggandakan data. Definisi, formula, unit, periode, target, dan realisasi baru akan dimodelkan bersama pekerjaan Monitoring/Evaluasi KM. Kandidat yang klasifikasinya belum didukung bukti ditampilkan sebagai belum dikaitkan dengan indikator evaluasi.
+- Identitas dan label KM-1 sampai KM-46 berada pada satu kamus yang diturunkan dari worksheet `List KM` workbook stakeholder. Rekam hanya merujuk indikator dari kamus tersebut dan dapat memiliki nol, satu, atau beberapa kaitan tanpa menggandakan data. Definisi, cara perhitungan, satuan, periode, target, dan realisasi dimodelkan pada Monitoring KM dan sudah tersedia untuk kategori Riset (KM-9 sampai KM-18). Kandidat yang klasifikasinya belum didukung bukti ditampilkan sebagai belum dikaitkan dengan indikator evaluasi.
 - Bukti boleh memiliki rekam dan referensi tanpa URL. Dalam keadaan itu antarmuka menyatakan bahwa tautan bukti belum tersedia dan tidak mengarahkannya ke halaman umum yang bukan sumber bukti.
 - Setiap keputusan membutuhkan alasan dan tahap konfirmasi sebelum disimpan pada state frontend. Riwayat menyimpan ID pelaku, jenis keputusan, sasaran rekam, bidang yang diminta untuk diperbaiki, alasan, versi, perubahan sebelum–sesudah, serta instant ISO yang baru diformat ke WIB ketika ditampilkan.
 - Aktor manusia pada Tinjauan berasal dari Account sesi yang sama dengan Header dan Profil Saya. ID aktor tetap ID Account yang stabil, sedangkan label pada keputusan atau riwayat baru disimpan sebagai snapshot presentasi saat tindakan dibuat. Perubahan Profil tidak menulis ulang label historis dan tidak membentuk identitas manusia kedua.
@@ -206,6 +221,9 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/anggota` dan `/en/members` | Profil ketua dan tim pengurus |
 | `/nexus/masuk` dan `/en/nexus/sign-in` | Antarmuka masuk |
 | `/nexus/dashboard` | Dashboard ruang kerja |
+| `/nexus/monitoring` | Kategori indikator KM dan keadaan pemantauannya |
+| `/nexus/monitoring/riset` | Ikhtisar capaian indikator Riset pada periode evaluasi berjalan |
+| `/nexus/monitoring/riset/[indikator]` | Rincian KM-9 sampai KM-18 beserta data resmi pembentuk realisasinya |
 | `/nexus/pengumpulan` | Pengumpulan sumber publik |
 | `/nexus/tinjauan` | Tinjauan kandidat sebelum menjadi data resmi |
 | `/nexus/ajukan/[domain]` | Form pengajuan manual penuh untuk lima rumah Data Resmi |
@@ -237,6 +255,7 @@ Hal-hal berikut belum menjadi kemampuan produksi pada repository web:
 - pekerjaan pengumpulan dan pemrosesan dokumen di server;
 - indeks pencarian dokumen;
 - promosi kandidat menjadi data resmi;
+- agregasi, snapshot, dan penjadwalan perhitungan indikator di server;
 - integrasi penuh dengan layanan server;
 - penggantian kata sandi dari dalam ruang kerja;
 - deployment produksi final.

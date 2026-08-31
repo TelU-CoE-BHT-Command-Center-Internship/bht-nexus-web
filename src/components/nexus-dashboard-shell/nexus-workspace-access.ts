@@ -10,6 +10,7 @@ export type NexusWorkspaceNavigationId =
   | "documents"
   | "intellectual-property"
   | "members"
+  | "monitoring"
   | "publications"
   | "reviews";
 
@@ -51,6 +52,7 @@ export const nexusPreviewWorkspaceAccess = {
   },
   allowedNavigationIds: [
     "dashboard",
+    "monitoring",
     "collection",
     "documents",
     "reviews",

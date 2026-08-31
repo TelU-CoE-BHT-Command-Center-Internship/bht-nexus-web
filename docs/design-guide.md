@@ -19,7 +19,7 @@ Worker pengumpulan, pemrosesan dokumen, dan ekstraksi tidak boleh menulis langsu
 
 Navigasi Indonesia dikelompokkan mengikuti perjalanan datanya:
 
-- **Utama** — Dashboard.
+- **Utama** — Dashboard dan Monitoring KM.
 - **Alur Data** — Pengumpulan, Dokumen, dan Tinjauan. Ketiganya adalah jalur kandidat sebelum menjadi data resmi.
 - **Data Resmi** — Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian sebagai rumah data resmi yang sudah tersedia.
 - **Administrasi** — Anggota untuk identitas organisasi dan Administrasi untuk Accounts & Access. Keduanya tersedia pada ruang kerja Indonesia dan tetap dipisahkan agar profil anggota tidak berubah menjadi akun login atau role.
@@ -27,6 +27,8 @@ Navigasi Indonesia dikelompokkan mengikuti perjalanan datanya:
 Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum tersedia, dan tidak dapat diklik. Pendekatan ini dipilih agar keputusan di Tinjauan selalu mempunyai tujuan yang jelas tanpa membuat halaman kosong.
 
 Dokumen mempunyai navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi. Ketiganya tidak menjadi tiga kategori teknologi terpisah di sidebar.
+
+Monitoring KM juga memakai satu butir sidebar. Kategori KM dipilih di dalam halaman, dan indikator KM-9 sampai KM-18 mempunyai route sendiri di bawah `/nexus/monitoring/riset`. Empat puluh enam indikator tidak dipindahkan ke sidebar hanya karena masing-masing punya halaman.
 
 Ruang kerja Inggris ditahan pada satu halaman status sampai alur Indonesia selesai. Route Inggris lama diarahkan ke halaman tersebut dan tidak boleh menampilkan fitur parsial sebagai kemampuan yang sudah siap.
 
@@ -63,6 +65,16 @@ Rumah data resmi memakai satu bahasa desain rincian bersama, bukan salinan per h
 - `nexus-workspace-icons.tsx` untuk ikon yang bentuknya harus sama di semua domain, termasuk ikon kartu metrik dan kerangka drawer. Ikon khas satu domain tetap tinggal di komponen ikon domain tersebut.
 
 Nilai pada berkas tersebut mengikuti Publikasi sebagai rujukan, sehingga rumah data resmi berikutnya tampil seragam tanpa menulis ulang gaya.
+
+### Kartu analitik Monitoring KM
+
+Halaman Monitoring memakai kisi 12 kolom dengan jarak 24 px pada layar lebar dan 16 px pada layar sempit. Susunannya mengadaptasi dashboard TailAdmin: dua kartu metrik dan satu grafik utama pada kolom 7, kartu capaian berbentuk busur pada kolom 5, satu grafik lebar penuh, lalu sebaran sumber pada kolom 5 dan ringkasan indikator pada kolom 7. Warna, tipografi, ikon, penanda status, fokus, dan bahasa produk tetap milik BHT Nexus.
+
+Kartu analitik memakai sudut 16 px, garis tepi `--color-nexus-border`, dan padding 20 px yang menjadi 24 px pada layar ≥40 rem. Kartu metrik menempatkan kotak ikon 48 px di atas, lalu label, angka besar, dan penanda status pada satu baris dasar. Kartu capaian memakai bingkai luar abu dengan panel putih di dalamnya dan baris ringkasan tiga nilai di bawahnya.
+
+Grafik memakai `apexcharts` dan `react-apexcharts` yang dimuat khusus di sisi peramban, sehingga halaman lain tidak ikut membawa berkasnya. Pustaka ini dipakai karena ruang kerja belum mempunyai primitif grafik dan komposisi TailAdmin yang menjadi rujukan memakai pustaka yang sama; tidak ada bagian lain dari template tersebut yang ikut dibawa. Grafik tidak pernah menjadi satu-satunya cara membaca angka penting: setiap grafik mempunyai judul, keterangan, nama aksesibel, dan tabel nilai yang dapat dibuka di bawahnya.
+
+Angka metrik berjalan menuju nilai akhirnya saat pertama kali tampil dan saat nilainya berganti, sedangkan pembaca layar menerima nilai akhirnya seketika. Grafik dan busur capaian memakai animasi bawaan pustaka grafik. Preferensi `prefers-reduced-motion: reduce` menampilkan seluruh angka dan grafik pada keadaan akhirnya tanpa animasi, dan halaman yang dimuat pada tab latar juga langsung menampilkan angka akhirnya.
 
 ### Ikon
 

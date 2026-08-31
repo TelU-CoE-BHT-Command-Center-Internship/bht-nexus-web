@@ -12,7 +12,8 @@ export type NexusWorkspaceIconName =
   | "graduation"
   | "pencil"
   | "search"
-  | "shield";
+  | "shield"
+  | "target";
 
 export function NexusWorkspaceIconPaths({
   name,
@@ -120,6 +121,14 @@ export function NexusWorkspaceIconPaths({
         <>
           <path d="M12 3.5 5 6.6v5.7c0 3.9 2.8 6.9 7 8.4 4.2-1.5 7-4.5 7-8.4V6.6Z" />
           <path d="m8.9 12.1 2.2 2.2 4-4.3" />
+        </>
+      );
+    case "target":
+      return (
+        <>
+          <circle cx="12" cy="12" r="8.5" />
+          <circle cx="12" cy="12" r="4.6" />
+          <circle cx="12" cy="12" r="1.1" />
         </>
       );
   }
