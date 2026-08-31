@@ -171,7 +171,7 @@ export function NexusMonitoringIndicator({
               badge={differenceBadge(view)}
               fallback="Belum dapat dihitung"
               icon="chart"
-              label="Selisih terhadap target"
+              label="Selisih dari target"
               value={view.difference}
             />
             <MonitoringMetricCard

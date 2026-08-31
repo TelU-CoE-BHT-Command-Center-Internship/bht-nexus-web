@@ -398,6 +398,18 @@
   min-width: 44rem;
 }
 
+/*
+ * Pada layar lebar grafik mengikuti lebar kartunya sehingga tidak ada gulir
+ * di dalam kartu; batas minimum hanya berlaku pada layar sempit agar sepuluh
+ * indikator tetap terbaca.
+ */
+@media (min-width: 75rem) {
+  .chartInner,
+  .chartInner[data-wide="true"] {
+    min-width: 100%;
+  }
+}
+
 .chartFallback {
   margin: 0;
 }
