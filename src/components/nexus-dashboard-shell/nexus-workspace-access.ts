@@ -28,6 +28,9 @@ export type NexusAdministrationCapabilities = {
   canInviteAccount: boolean;
   canManageAccess: boolean;
   canManageAccountStatus: boolean;
+  canManageRolePermissions: boolean;
+  canManageRoles: boolean;
+  canManageUserOverrides: boolean;
 };
 
 export type NexusMemberCapabilities = {
@@ -42,6 +45,9 @@ export const nexusPreviewWorkspaceAccess = {
     canInviteAccount: true,
     canManageAccess: true,
     canManageAccountStatus: true,
+    canManageRolePermissions: true,
+    canManageRoles: true,
+    canManageUserOverrides: true,
   },
   allowedNavigationIds: [
     "dashboard",
@@ -73,4 +79,15 @@ export function nexusWorkspaceCanOpen(
   navigationId: NexusWorkspaceNavigationId,
 ) {
   return access.allowedNavigationIds.includes(navigationId);
+}
+
+/**
+ * Pengelolaan siklus peran dan penyetelan izin peran merupakan kemampuan yang
+ * berdiri sendiri. Salah satunya cukup untuk membuka permukaan Peran, sementara
+ * setiap tindakan di dalam halaman tetap mengikuti kemampuannya sendiri.
+ */
+export function nexusCanOpenRoleManagement(
+  capabilities: NexusAdministrationCapabilities,
+) {
+  return capabilities.canManageRoles || capabilities.canManageRolePermissions;
 }

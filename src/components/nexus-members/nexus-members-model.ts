@@ -6,7 +6,10 @@ import type {
   NexusMemberRecord,
   NexusMemberStatus,
 } from "@/components/nexus-members/nexus-members-content";
-import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatAuditTimestamp,
+  normalizeWorkspaceSearch,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 export type MemberProfileDraft = {
   alternateEmail: string;
@@ -133,7 +136,8 @@ function normalizedIdentifier(field: MemberProfileField, value: string) {
   return normalizeWorkspaceSearch(value).replace(/[\s-]+/g, "");
 }
 
-function validEmail(value: string) {
+/** Satu aturan bentuk alamat email untuk seluruh formulir ruang kerja. */
+export function nexusValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
@@ -207,11 +211,11 @@ export function validateMemberProfile(
 
   if (
     draft.institutionalEmail.trim() &&
-    !validEmail(draft.institutionalEmail)
+    !nexusValidEmail(draft.institutionalEmail)
   ) {
     errors.institutionalEmail = "Gunakan alamat email yang valid.";
   }
-  if (draft.alternateEmail.trim() && !validEmail(draft.alternateEmail)) {
+  if (draft.alternateEmail.trim() && !nexusValidEmail(draft.alternateEmail)) {
     errors.alternateEmail = "Gunakan alamat email yang valid.";
   }
 
@@ -280,6 +284,14 @@ export function validateMemberProfile(
   return errors;
 }
 
+/** Satu pemisahan daftar bidang lain untuk setiap permukaan penyuntingan. */
+export function memberSecondaryExpertiseList(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function normalizedMemberDraft(draft: MemberProfileDraft) {
   return {
     ...draft,
@@ -288,5 +300,56 @@ export function normalizedMemberDraft(draft: MemberProfileDraft) {
     researcherId: draft.researcherId.trim().toUpperCase(),
     scopusAuthorId: draft.scopusAuthorId.trim(),
     sintaId: draft.sintaId.trim(),
+  };
+}
+
+/**
+ * Satu pemetaan dari draft ke rekam anggota. Direktori Anggota dan halaman
+ * Profil Saya menyimpan lewat fungsi yang sama supaya keduanya tidak pernah
+ * menghasilkan bentuk rekam yang berbeda untuk anggota yang sama.
+ */
+export function memberRecordFromDraft(
+  draftValue: MemberProfileDraft,
+  current?: NexusMemberRecord,
+): NexusMemberRecord {
+  const draft = normalizedMemberDraft(draftValue);
+  return {
+    academic: {
+      googleScholar: draft.googleScholar || undefined,
+      orcid: draft.orcid || undefined,
+      researcherId: draft.researcherId || undefined,
+      scopusAuthorId: draft.scopusAuthorId || undefined,
+      sintaId: draft.sintaId || undefined,
+    },
+    affiliation: {
+      institution: current?.affiliation.institution ?? "Telkom University",
+      office: draft.office.trim() || undefined,
+      primaryUnit: draft.primaryUnit.trim(),
+    },
+    avatarOriginalSrc: draft.avatarSrc ? draft.avatarOriginalSrc : undefined,
+    avatarPosition: draft.avatarSrc ? draft.avatarPosition : undefined,
+    avatarSrc: draft.avatarSrc,
+    biography: draft.biography.trim(),
+    coeAssignment: draft.coeAssignment.trim(),
+    contact: {
+      alternateEmail: draft.alternateEmail.trim() || undefined,
+      institutionalEmail: draft.institutionalEmail.trim() || undefined,
+      phone: draft.phone.trim() || undefined,
+    },
+    expertise: {
+      primary: draft.primaryExpertise.trim() || undefined,
+      secondary: memberSecondaryExpertiseList(draft.secondaryExpertise),
+    },
+    id: current?.id ?? `member-${crypto.randomUUID()}`,
+    identity: {
+      preferredName: draft.preferredName.trim() || draft.name.trim(),
+    },
+    membership: {
+      joinedAt: draft.joinedAt || undefined,
+      publicProfile: draft.publicProfile,
+      status: draft.membershipStatus,
+    },
+    name: draft.name.trim(),
+    updatedAt: formatAuditTimestamp(),
   };
 }

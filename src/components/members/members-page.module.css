@@ -27,13 +27,19 @@
   content: "";
 }
 
+/*
+ * Lengkungan menutup seluruh lebar tepi bawah hero dan menyentuh kedua
+ * sudutnya. Versi sebelumnya memakai elips yang lebih lebar dan lebih tinggi
+ * lalu dipotong `overflow`, sehingga di kiri dan kanan lengkungan tersisa tepi
+ * hero yang lurus dan terbaca sebagai garis horizontal.
+ */
 .hero::after {
   position: absolute;
   z-index: 3;
-  right: -10%;
-  bottom: -6rem;
-  left: -10%;
-  height: 8.25rem;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2.25rem;
   border-radius: 50% 50% 0 0 / 100% 100% 0 0;
   background: var(--color-paper);
   content: "";
@@ -191,7 +197,16 @@
   line-height: 1.55;
 }
 
+/*
+ * Bagian ini menempel satu piksel di atas hero. Tepi bawah hero hampir tidak
+ * pernah jatuh tepat pada piksel perangkat, sehingga tanpa tumpang tindih ini
+ * latar hero bocor sebagai garis tipis di antara alas lengkungan dan bagian
+ * putih di bawahnya. `position` diperlukan agar latar bagian ini digambar di
+ * atas hero.
+ */
 .membersSection {
+  position: relative;
+  margin-top: -1px;
   background: var(--color-paper);
   color: var(--color-brand-navy-dark);
 }

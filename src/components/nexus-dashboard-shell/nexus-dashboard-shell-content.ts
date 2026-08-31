@@ -1,11 +1,24 @@
 import type { ImageProps } from "next/image";
-import muhammadAmmarAsyrafPhoto from "@/assets/members/muhammad-ammar-asyraf.webp";
+import {
+  getNexusRoleDirectory,
+  nexusRoleHealth,
+} from "@/components/nexus-access-policy/nexus-access-policy";
+import {
+  getNexusAccountDirectory,
+  NEXUS_CURRENT_ACCOUNT_ID,
+} from "@/components/nexus-accounts/nexus-account-directory";
 import {
   type NexusWorkspaceAccess,
   type NexusWorkspaceNavigationId,
   nexusPreviewWorkspaceAccess,
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
+import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
+import {
+  type NexusProfileView,
+  resolveNexusProfile,
+} from "@/components/nexus-profile/nexus-profile-model";
 import type { NexusReviewCapabilities } from "@/components/nexus-review-session/nexus-review-session";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
 import type { Locale } from "@/i18n/locales";
@@ -46,7 +59,10 @@ export type DashboardNotification = {
   title: string;
 };
 export type DashboardViewer = {
+  avatarPosition?: NexusMemberAvatarPosition;
   avatarSrc?: ImageProps["src"];
+  email: string;
+  fullName: string;
   id: string;
   initials: string;
   name: string;
@@ -92,7 +108,10 @@ export type NexusDashboardShellContent = {
   openMenuLabel: string;
   plannedBadgeLabel: string;
   plannedFeatureLabel: string;
+  /** Tujuan Profil Saya; kosong pada ruang kerja yang belum memilikinya. */
+  profileHref?: string;
   profileLabel: string;
+  profileMenuLabel: string;
   searchEmptyLabel: string;
   searchItems: DashboardSearchItem[];
   searchLabel: string;
@@ -243,6 +262,14 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Members", id: "Anggota" },
   },
   {
+    activeHrefs: {
+      en: ["/en/nexus/administration"],
+      id: [
+        "/nexus/administrasi",
+        "/nexus/administrasi/peran",
+        "/nexus/administrasi/akses",
+      ],
+    },
     implemented: { en: false, id: true },
     group: "administration",
     href: { en: "/en/nexus/administration", id: "/nexus/administrasi" },
@@ -267,13 +294,55 @@ const groupLabels = {
   },
 } satisfies Record<Locale, Record<NavigationGroupId, string>>;
 
-export const nexusDashboardPreviewViewer = {
-  avatarSrc: muhammadAmmarAsyrafPhoto,
-  id: "USR-COE-BHT-ADMIN-001",
-  initials: "MA",
-  name: "Muhammad Ammar Asyraf",
-  roleLabel: "Admin / Pimpinan",
-} satisfies DashboardViewer;
+/**
+ * Identitas pengguna pada header berasal dari profil akun yang sedang diwakili,
+ * bukan dari nilai tersendiri. Halaman Profil Saya dan proyeksi Administrasi
+ * memakai penyelesai yang sama sehingga ketiganya tidak pernah berbeda.
+ */
+export function nexusDashboardViewerFromProfile(
+  profile: NexusProfileView,
+): DashboardViewer {
+  return {
+    avatarPosition: profile.avatarPosition,
+    avatarSrc: profile.avatarSrc,
+    email: profile.account.email,
+    fullName: profile.fullName || profile.account.displayName,
+    id: profile.account.id,
+    initials: profile.initials,
+    name: profile.displayName,
+    roleLabel: nexusRoleHealth(profile.role).label,
+  };
+}
+
+function nexusPreviewViewer(): DashboardViewer {
+  const accounts = getNexusAccountDirectory();
+  const account = accounts.find(
+    (candidate) => candidate.id === NEXUS_CURRENT_ACCOUNT_ID,
+  );
+
+  if (!account) {
+    return {
+      email: "",
+      fullName: "Pengguna BHT Nexus",
+      id: NEXUS_CURRENT_ACCOUNT_ID,
+      initials: "—",
+      name: "Pengguna BHT Nexus",
+      roleLabel: "Belum ditetapkan",
+    };
+  }
+
+  return nexusDashboardViewerFromProfile(
+    resolveNexusProfile({
+      account,
+      accounts,
+      members: getNexusMemberDirectory(),
+      roles: getNexusRoleDirectory(),
+    }),
+  );
+}
+
+export const nexusDashboardPreviewViewer: DashboardViewer =
+  nexusPreviewViewer();
 
 export function getNexusDashboardShellPreviewContent(
   locale: Locale = "id",
@@ -286,6 +355,17 @@ export function getNexusDashboardShellPreviewContent(
     implemented: item.implemented[locale],
     label: item.label[locale],
   }));
+
+  /* Profil Saya adalah tindakan personal pada menu pengguna, bukan navigasi
+     utama; entri ini hanya memberi judul halaman pada kerangka ruang kerja. */
+  if (isId) {
+    routeAccess.push({
+      activeHrefs: ["/nexus/profil"],
+      allowed: true,
+      implemented: true,
+      label: "Profil Saya",
+    });
+  }
   const firstAllowedHref = navigationDefinitions.find(
     (item) =>
       item.implemented[locale] && nexusWorkspaceCanOpen(access, item.id),
@@ -318,8 +398,6 @@ export function getNexusDashboardShellPreviewContent(
       ? "Saya ingin meminta bantuan terkait penggunaan BHT Nexus."
       : "I would like help using BHT Nexus.",
     "",
-    `${isId ? "Nama" : "Name"}: ${nexusDashboardPreviewViewer.name}`,
-    `${isId ? "Peran/posisi" : "Role"}: ${nexusDashboardPreviewViewer.roleLabel}`,
     isId ? "Halaman/fitur:" : "Page/feature:",
     isId ? "Uraian kendala:" : "Issue description:",
     isId ? "Waktu kejadian:" : "Time of occurrence:",
@@ -388,7 +466,9 @@ export function getNexusDashboardShellPreviewContent(
     plannedFeatureLabel: isId
       ? "Layanan ini akan segera tersedia"
       : "This service will be available soon",
+    ...(isId ? { profileHref: "/nexus/profil" } : {}),
     profileLabel: isId ? "Buka menu pengguna" : "Open user menu",
+    profileMenuLabel: isId ? "Profil Saya" : "My profile",
     searchEmptyLabel: isId
       ? "Tidak ada halaman yang cocok."
       : "No matching page.",

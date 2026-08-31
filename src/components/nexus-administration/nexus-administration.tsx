@@ -1,7 +1,20 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import {
+  nexusAccountOverrides,
+  nexusAssignableRoles,
+  nexusRoleHealth,
+  resolveNexusRole,
+} from "@/components/nexus-access-policy/nexus-access-policy";
+import { useNexusAccessPolicySession } from "@/components/nexus-access-policy/nexus-access-policy-session";
+import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
+import type {
+  NexusAccountInvitationInput,
+  NexusAccountMemberRelationship,
+} from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
   accountStatusLabels,
@@ -9,17 +22,28 @@ import {
   type NexusAdministrationContent,
 } from "@/components/nexus-administration/nexus-administration-content";
 import { NexusAdministrationIcon } from "@/components/nexus-administration/nexus-administration-icons";
-import type { NexusAccountInvitationInput } from "@/components/nexus-administration/nexus-administration-invite-drawer";
-import type { NexusAdministrationCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import {
+  administrationRelationshipLabel,
+  type NexusResolvedAdministrationRelationship,
+  resolveAdministrationRelationship,
+} from "@/components/nexus-administration/nexus-administration-relationship";
+import {
+  type NexusAdministrationCapabilities,
+  nexusCanOpenRoleManagement,
+} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
+import { useNexusProfileDirectory } from "@/components/nexus-profile/nexus-current-profile";
+import type { NexusProfileView } from "@/components/nexus-profile/nexus-profile-model";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
+import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceLinkButton,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
-  formatAuditTimestamp,
   normalizeWorkspaceSearch,
   personInitials,
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -40,6 +64,7 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 
 const NexusAdministrationAccessDrawer = dynamic(() =>
@@ -60,19 +85,34 @@ const NexusAdministrationInviteDrawer = dynamic(() =>
   ).then((module) => module.NexusAdministrationInviteDrawer),
 );
 
+const NexusAdministrationRelationshipDrawer = dynamic(() =>
+  import(
+    "@/components/nexus-administration/nexus-administration-relationship-drawer"
+  ).then((module) => module.NexusAdministrationRelationshipDrawer),
+);
+
 type NexusAdministrationProps = {
   capabilities: NexusAdministrationCapabilities;
   content: NexusAdministrationContent;
+  hasInitialAccountContext: boolean;
+  hasInitialInviteMemberContext: boolean;
+  initialAccountId?: string;
+  initialInviteMemberId?: string;
 };
 
 type FilterId = "member" | "role" | "status";
+
+type PendingAccountAction = {
+  accountId: string;
+  kind: "cancel-invitation" | "suspend";
+};
 
 const PAGE_SIZE = 6;
 
 const columns: readonly NexusWorkspaceRecordColumn[] = [
   { id: "primary", label: "Pengguna", primary: true },
   { id: "member", label: "Hubungan Anggota" },
-  { id: "role", label: "Role" },
+  { id: "role", label: "Peran" },
   { id: "status", label: "Status" },
   { id: "action", label: "Aksi" },
 ];
@@ -95,8 +135,10 @@ const memberConfig: NexusSelectConfig = {
   label: "Filter hubungan anggota",
   options: [
     { label: "Semua hubungan", value: "all" },
-    { label: "Terhubung ke anggota", tone: "completed", value: "linked" },
-    { label: "Tidak terhubung", tone: "neutral", value: "unlinked" },
+    { label: "Terhubung ke anggota", tone: "completed", value: "LINKED" },
+    { label: "Akun non-anggota", tone: "neutral", value: "NON_MEMBER" },
+    { label: "Belum dihubungkan", tone: "waiting", value: "UNLINKED" },
+    { label: "Perlu diperiksa", tone: "needs-fix", value: "CONFLICT" },
   ],
 };
 
@@ -106,39 +148,120 @@ function accountStatusTone(status: NexusAdministrationAccount["status"]) {
   return "danger";
 }
 
-function displayNameFromInvitation(input: NexusAccountInvitationInput) {
-  if (input.displayName) return input.displayName;
-  const emailName = input.email.split("@")[0] ?? "Akun undangan";
-  return emailName
-    .split(/[._-]+/)
-    .filter(Boolean)
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(" ");
-}
-
 function accountMatchesQuery(
   account: NexusAdministrationAccount,
+  relationship: NexusResolvedAdministrationRelationship,
+  profile: NexusProfileView | undefined,
   query: string,
 ) {
+  const member =
+    relationship.kind === "LINKED" || relationship.kind === "CONFLICT"
+      ? relationship.member
+      : undefined;
   return normalizeWorkspaceSearch(
     [
       account.displayName,
+      profile?.displayName,
+      profile?.fullName,
+      profile?.preferredName,
       account.email,
       account.id,
-      account.member?.id,
-      account.member?.name,
-      account.member?.assignment,
+      administrationRelationshipLabel(relationship),
+      member?.id,
+      member?.name,
+      member?.assignment,
     ]
       .filter(Boolean)
       .join(" "),
   ).includes(normalizeWorkspaceSearch(query));
 }
 
+function AccountRelationshipCell({
+  relationship,
+}: {
+  relationship: NexusResolvedAdministrationRelationship;
+}) {
+  if (relationship.kind === "LINKED") {
+    return (
+      <span className={styles.memberCell} data-relationship="LINKED">
+        <strong>{relationship.member.name}</strong>
+        <small>
+          {relationship.member.id} · {relationship.member.assignment}
+        </small>
+      </span>
+    );
+  }
+
+  const copy = {
+    CONFLICT: ["Perlu diperiksa", "Hubungan akun tidak konsisten"],
+    NON_MEMBER: ["Akun non-anggota", "Tidak memerlukan profil anggota"],
+    UNLINKED: ["Belum dihubungkan", "Hubungan belum ditentukan"],
+  }[relationship.kind];
+
+  return (
+    <span className={styles.memberCell} data-relationship={relationship.kind}>
+      <strong>{copy[0]}</strong>
+      <small>{copy[1]}</small>
+    </span>
+  );
+}
+
 export function NexusAdministration({
   capabilities,
   content,
+  hasInitialAccountContext,
+  hasInitialInviteMemberContext,
+  initialAccountId,
+  initialInviteMemberId,
 }: NexusAdministrationProps) {
-  const [accounts, setAccounts] = useState(content.accounts);
+  const router = useRouter();
+  const {
+    accounts,
+    cancelInvitation: cancelAccountInvitation,
+    createInvitation: createAccountInvitation,
+    refreshInvitation: refreshAccountInvitation,
+    restoreAccount: restoreSessionAccount,
+    suspendAccount: suspendSessionAccount,
+    updateRelationship: setAccountRelationship,
+    updateRole: setAccountRole,
+  } = useNexusAccountSession();
+  const { overrides, roles } = useNexusAccessPolicySession();
+  const profilesByAccountId = useNexusProfileDirectory();
+  const canOpenRoleManagement = nexusCanOpenRoleManagement(capabilities);
+  const assignableRoles = useMemo(() => nexusAssignableRoles(roles), [roles]);
+  const { records: memberRecords } = useNexusMemberSession();
+  const memberDirectory = useMemo(
+    () =>
+      memberRecords.map((member) => ({
+        assignment: member.coeAssignment,
+        id: member.id,
+        name: member.name,
+      })),
+    [memberRecords],
+  );
+  const initialAccountExists = accounts.some(
+    (account) => account.id === initialAccountId,
+  );
+  const accountClaimingInitialMember = accounts.find(
+    (account) =>
+      (account.relationship.kind === "LINKED" ||
+        account.relationship.kind === "CONFLICT") &&
+      account.relationship.memberId === initialInviteMemberId,
+  );
+  const initialInviteMemberExists = memberDirectory.some(
+    (member) => member.id === initialInviteMemberId,
+  );
+  const invalidAccountContext =
+    hasInitialAccountContext && !initialAccountExists;
+  const invalidInviteMemberContext =
+    !hasInitialAccountContext &&
+    hasInitialInviteMemberContext &&
+    !initialInviteMemberExists;
+  const invalidContextKey = invalidAccountContext
+    ? `account:${initialAccountId ?? ""}`
+    : invalidInviteMemberContext
+      ? `invite-member:${initialInviteMemberId ?? ""}`
+      : "";
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [filters, setFilters] = useState<Record<FilterId, string>>({
@@ -149,59 +272,123 @@ export function NexusAdministration({
   const [openFilterId, setOpenFilterId] = useState<FilterId | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
-    null,
+    initialAccountExists
+      ? (initialAccountId ?? null)
+      : !hasInitialAccountContext && initialInviteMemberExists
+        ? (accountClaimingInitialMember?.id ?? null)
+        : null,
   );
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(
+    !hasInitialAccountContext &&
+      initialInviteMemberExists &&
+      !accountClaimingInitialMember,
+  );
+  const [inviteMemberId, setInviteMemberId] = useState(
+    !hasInitialAccountContext &&
+      initialInviteMemberExists &&
+      !accountClaimingInitialMember
+      ? initialInviteMemberId
+      : undefined,
+  );
   const [accessEditorAccountId, setAccessEditorAccountId] = useState<
     string | null
   >(null);
+  const [relationshipEditorAccountId, setRelationshipEditorAccountId] =
+    useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const [pendingAccountAction, setPendingAccountAction] =
+    useState<PendingAccountAction | null>(null);
+  const [dismissedInvalidContextKey, setDismissedInvalidContextKey] =
+    useState("");
+
+  useEffect(() => {
+    if (!announcement) return;
+
+    const timeoutId = window.setTimeout(() => setAnnouncement(""), 4500);
+    return () => window.clearTimeout(timeoutId);
+  }, [announcement]);
 
   const roleConfig = useMemo<NexusSelectConfig>(() => {
     const options: [NexusSelectOption, ...NexusSelectOption[]] = [
-      { label: "Semua role", value: "all" },
-      ...content.roles.map((role) => ({
+      { label: "Semua peran", value: "all" },
+      ...roles.map((role) => ({
         label: role.label,
         value: role.id,
       })),
       { label: "Belum ditetapkan", tone: "neutral", value: "unassigned" },
+      {
+        label: "Peran perlu ditinjau",
+        tone: "needs-fix",
+        value: "unknown",
+      },
     ];
     return {
       defaultValue: "all",
       id: "role",
-      label: "Filter role",
+      label: "Filter peran",
       options,
     };
-  }, [content.roles]);
+  }, [roles]);
 
-  const rolesById = useMemo(
-    () => new Map(content.roles.map((role) => [role.id, role])),
-    [content.roles],
+  const rolesByAccountId = useMemo(
+    () =>
+      new Map(
+        accounts.map((account) => [
+          account.id,
+          resolveNexusRole(account.roleId, roles),
+        ]),
+      ),
+    [accounts, roles],
+  );
+
+  const relationshipsByAccountId = useMemo(
+    () =>
+      new Map(
+        accounts.map((account) => [
+          account.id,
+          resolveAdministrationRelationship(account, memberDirectory, accounts),
+        ]),
+      ),
+    [accounts, memberDirectory],
   );
 
   const filteredAccounts = useMemo(
     () =>
       accounts.filter((account) => {
+        const relationship = relationshipsByAccountId.get(account.id);
+        const role = rolesByAccountId.get(account.id);
+        if (!relationship || !role) return false;
         const matchesStatus =
           filters.status === "all" || account.status === filters.status;
         const matchesRole =
           filters.role === "all" ||
           (filters.role === "unassigned"
-            ? !account.roleId
-            : account.roleId === filters.role);
+            ? role.kind === "UNASSIGNED"
+            : filters.role === "unknown"
+              ? role.kind === "UNKNOWN"
+              : role.kind === "KNOWN" && role.role.id === filters.role);
         const matchesMember =
-          filters.member === "all" ||
-          (filters.member === "linked"
-            ? Boolean(account.member)
-            : !account.member);
+          filters.member === "all" || relationship.kind === filters.member;
         return (
           matchesStatus &&
           matchesRole &&
           matchesMember &&
-          accountMatchesQuery(account, deferredQuery)
+          accountMatchesQuery(
+            account,
+            relationship,
+            profilesByAccountId.get(account.id),
+            deferredQuery,
+          )
         );
       }),
-    [accounts, deferredQuery, filters],
+    [
+      accounts,
+      deferredQuery,
+      filters,
+      profilesByAccountId,
+      relationshipsByAccountId,
+      rolesByAccountId,
+    ],
   );
 
   const totalPages = Math.max(
@@ -216,14 +403,90 @@ export function NexusAdministration({
   const selectedAccount = accounts.find(
     (account) => account.id === selectedAccountId,
   );
+  const selectedProfile = selectedAccount
+    ? profilesByAccountId.get(selectedAccount.id)
+    : undefined;
   const accessEditorAccount = accounts.find(
     (account) => account.id === accessEditorAccountId,
   );
+  const relationshipEditorAccount = accounts.find(
+    (account) => account.id === relationshipEditorAccountId,
+  );
+  const pendingActionAccount = accounts.find(
+    (account) => account.id === pendingAccountAction?.accountId,
+  );
   const hasActiveFilters =
     Boolean(query) || Object.values(filters).some((value) => value !== "all");
-  const availableMembers = content.availableMembers.filter(
-    (member) => !accounts.some((account) => account.member?.id === member.id),
+  const availableMembers = memberDirectory.filter(
+    (member) =>
+      !accounts.some(
+        (account) =>
+          (account.relationship.kind === "LINKED" ||
+            account.relationship.kind === "CONFLICT") &&
+          account.relationship.memberId === member.id,
+      ),
   );
+  const relationshipEditorResolved = relationshipEditorAccount
+    ? relationshipsByAccountId.get(relationshipEditorAccount.id)
+    : undefined;
+  const relationshipEditorMembers = relationshipEditorAccount
+    ? memberDirectory.filter((member) => {
+        const isCurrentResolvedMember =
+          relationshipEditorResolved?.kind === "LINKED" &&
+          relationshipEditorResolved.member.id === member.id;
+        return (
+          isCurrentResolvedMember ||
+          !accounts.some(
+            (account) =>
+              account.id !== relationshipEditorAccount.id &&
+              (account.relationship.kind === "LINKED" ||
+                account.relationship.kind === "CONFLICT") &&
+              account.relationship.memberId === member.id,
+          )
+        );
+      })
+    : [];
+
+  if (
+    dismissedInvalidContextKey !== invalidContextKey &&
+    (invalidAccountContext || invalidInviteMemberContext)
+  ) {
+    const accountWasRequested = invalidAccountContext;
+    return (
+      <NexusWorkspacePage
+        description={content.description}
+        descriptionId="administration-invalid-context-description"
+        title={content.title}
+        titleId="administration-invalid-context-title"
+      >
+        <NexusWorkspaceState
+          actions={
+            <NexusWorkspaceButton
+              onClick={() => {
+                setDismissedInvalidContextKey(invalidContextKey);
+                router.replace("/nexus/administrasi", { scroll: false });
+              }}
+              type="button"
+            >
+              Kembali ke daftar akun
+            </NexusWorkspaceButton>
+          }
+          description={
+            accountWasRequested
+              ? "Akun pada tautan ini sudah tidak tersedia atau ID-nya tidak dikenali."
+              : "Profil anggota pada tautan ini sudah tidak tersedia atau ID-nya tidak dikenali."
+          }
+          eyebrow="Konteks tautan tidak tersedia"
+          title={
+            accountWasRequested
+              ? "Akun tidak ditemukan"
+              : "Anggota untuk undangan tidak ditemukan"
+          }
+          tone="danger"
+        />
+      </NexusWorkspacePage>
+    );
+  }
 
   function resetFilters() {
     setQuery("");
@@ -232,118 +495,70 @@ export function NexusAdministration({
     setOpenFilterId(null);
   }
 
-  function updateAccount(
-    accountId: string,
-    updater: (
-      account: NexusAdministrationAccount,
-    ) => NexusAdministrationAccount,
-  ) {
-    setAccounts((current) =>
-      current.map((account) =>
-        account.id === accountId ? updater(account) : account,
-      ),
-    );
-  }
-
   function createInvitation(input: NexusAccountInvitationInput) {
-    const createdAt = formatAuditTimestamp();
-    const id = `ACC-BHT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-    const account: NexusAdministrationAccount = {
-      accountKind: "individual",
-      createdAt,
-      createdBy: "Admin / Pimpinan (pratinjau)",
-      displayName: displayNameFromInvitation(input),
-      email: input.email,
-      id,
-      invitedAt: createdAt,
-      lastInvitationAt: createdAt,
-      member: input.member,
-      roleId: input.roleId,
-      status: "INVITED",
-      updatedAt: createdAt,
-    };
-    setAccounts((current) => [account, ...current]);
+    const account = createAccountInvitation(input);
     setAnnouncement(`Undangan akun untuk ${input.email} berhasil dibuat.`);
     resetFilters();
-    return id;
+    return account.id;
   }
 
   function suspendAccount(account: NexusAdministrationAccount) {
-    if (
-      !window.confirm(
-        `Tangguhkan akses ${account.displayName}? Pengguna tidak dapat masuk sampai akses dipulihkan.`,
-      )
-    ) {
-      return;
-    }
-    updateAccount(account.id, (current) => ({
-      ...current,
-      status: "SUSPENDED",
-      updatedAt: formatAuditTimestamp(),
-    }));
-    setAnnouncement(`Akses ${account.displayName} ditangguhkan.`);
-  }
-
-  function restoreAccount(account: NexusAdministrationAccount) {
-    updateAccount(account.id, (current) => ({
-      ...current,
-      status: "ACTIVE",
-      updatedAt: formatAuditTimestamp(),
-    }));
-    setAnnouncement(`Akses ${account.displayName} dipulihkan.`);
-  }
-
-  function resendInvitation(account: NexusAdministrationAccount) {
-    const updatedAt = formatAuditTimestamp();
-    updateAccount(account.id, (current) => ({
-      ...current,
-      lastInvitationAt: updatedAt,
-      updatedAt,
-    }));
+    suspendSessionAccount(account.id);
     setAnnouncement(
-      `Undangan untuk ${account.email} dijadwalkan dikirim ulang.`,
+      `Akses ${profilesByAccountId.get(account.id)?.displayName ?? account.displayName} ditangguhkan.`,
     );
   }
 
+  function restoreAccount(account: NexusAdministrationAccount) {
+    restoreSessionAccount(account.id);
+    setAnnouncement(
+      `Akses ${profilesByAccountId.get(account.id)?.displayName ?? account.displayName} dipulihkan.`,
+    );
+  }
+
+  function refreshInvitation(account: NexusAdministrationAccount) {
+    refreshAccountInvitation(account.id);
+    setAnnouncement(`Undangan untuk ${account.email} diperbarui.`);
+  }
+
   function cancelInvitation(account: NexusAdministrationAccount) {
-    if (
-      !window.confirm(
-        `Batalkan undangan untuk ${account.email}? Tautan aktivasi akan menjadi tidak berlaku.`,
-      )
-    ) {
-      return;
-    }
-    setAccounts((current) => current.filter((item) => item.id !== account.id));
+    cancelAccountInvitation(account.id);
     setSelectedAccountId(null);
+    if (hasInitialAccountContext && account.id === initialAccountId) {
+      // Undangan yang dibatalkan adalah akun yang dirujuk tautan ?account=.
+      // Tandai konteks tautan sebagai selesai lalu bersihkan parameter yang kini
+      // usang, supaya tindakan yang berhasil tidak terbaca sebagai tautan rusak
+      // pada render berikutnya.
+      setDismissedInvalidContextKey(`account:${account.id}`);
+      router.replace("/nexus/administrasi", { scroll: false });
+    }
     setAnnouncement(
       `Undangan untuk ${account.email} dibatalkan. Tidak ada akun aktif yang dihapus.`,
     );
   }
 
   const rows = visibleAccounts.map((account) => {
-    const role = account.roleId ? rolesById.get(account.roleId) : undefined;
+    const profile = profilesByAccountId.get(account.id);
+    const personName = profile?.displayName ?? account.displayName;
+    const role = rolesByAccountId.get(account.id) ?? {
+      kind: "UNASSIGNED" as const,
+    };
+    const relationship = relationshipsByAccountId.get(account.id) ?? {
+      kind: "CONFLICT" as const,
+    };
+    const roleHealth = nexusRoleHealth(role);
     const openDetail = () => setSelectedAccountId(account.id);
     return {
       cells: {
         action: (
           <NexusWorkspaceTableAction
-            label={`Buka detail akun ${account.displayName}`}
+            label={`Buka detail akun ${personName}`}
             onClick={openDetail}
           >
             Detail
           </NexusWorkspaceTableAction>
         ),
-        member: account.member ? (
-          <span className={styles.memberCell}>
-            <strong>{account.member.id}</strong>
-            <small>{account.member.assignment}</small>
-          </span>
-        ) : (
-          <span className={styles.memberCell} data-unlinked="true">
-            <strong>Tidak terhubung</strong>
-            <small>Akun non-anggota valid</small>
-          </span>
-        ),
+        member: <AccountRelationshipCell relationship={relationship} />,
         primary: (
           <button
             className={styles.accountCell}
@@ -351,18 +566,21 @@ export function NexusAdministration({
             type="button"
           >
             <span aria-hidden="true">
-              {personInitials(account.displayName)}
+              {profile?.initials ?? personInitials(personName)}
             </span>
             <span>
-              <strong>{account.displayName}</strong>
+              <strong>{personName}</strong>
               <small>{account.email}</small>
             </span>
           </button>
         ),
         role: (
-          <NexusWorkspaceTableBadge tone={role ? "info" : "neutral"}>
-            {role?.label ?? "Belum ditetapkan"}
-          </NexusWorkspaceTableBadge>
+          <span className={styles.roleCell}>
+            <NexusWorkspaceTableBadge tone={roleHealth.tone}>
+              {roleHealth.label}
+            </NexusWorkspaceTableBadge>
+            {roleHealth.note ? <small>{roleHealth.note}</small> : null}
+          </span>
         ),
         status: (
           <NexusWorkspaceTableBadge tone={accountStatusTone(account.status)}>
@@ -375,7 +593,7 @@ export function NexusAdministration({
         <NexusWorkspaceMobileCard
           action={
             <NexusWorkspaceMobileAction
-              label={`Buka detail akun ${account.displayName}`}
+              label={`Buka detail akun ${personName}`}
               onClick={openDetail}
             >
               Lihat detail
@@ -399,15 +617,23 @@ export function NexusAdministration({
               </div>
               <div>
                 <dt>Anggota</dt>
-                <dd>{account.member?.id ?? "Tidak terhubung"}</dd>
+                <dd>
+                  {relationship.kind === "LINKED"
+                    ? relationship.member.name
+                    : administrationRelationshipLabel(relationship)}
+                </dd>
               </div>
               <div>
-                <dt>Role</dt>
-                <dd>{role?.label ?? "Belum ditetapkan"}</dd>
+                <dt>Peran</dt>
+                <dd>
+                  {roleHealth.note
+                    ? `${roleHealth.label} · ${roleHealth.note}`
+                    : roleHealth.label}
+                </dd>
               </div>
             </dl>
           }
-          title={account.displayName}
+          title={personName}
         />
       ),
     };
@@ -416,21 +642,32 @@ export function NexusAdministration({
   return (
     <NexusWorkspacePage
       actions={
-        capabilities.canInviteAccount ? (
-          <NexusWorkspaceButton
-            className={styles.inviteButton}
-            onClick={() => setInviteOpen(true)}
-            tone="primary"
-            type="button"
-          >
-            <NexusAdministrationIcon name="plus" />
-            Undang akun
-          </NexusWorkspaceButton>
+        canOpenRoleManagement || capabilities.canInviteAccount ? (
+          <div className={styles.headerActions}>
+            {canOpenRoleManagement ? (
+              <NexusWorkspaceLinkButton href="/nexus/administrasi/peran">
+                Peran &amp; Hak Akses
+              </NexusWorkspaceLinkButton>
+            ) : null}
+            {capabilities.canInviteAccount ? (
+              <NexusWorkspaceButton
+                className={styles.inviteButton}
+                onClick={() => {
+                  setInviteMemberId(undefined);
+                  setInviteOpen(true);
+                }}
+                tone="primary"
+                type="button"
+              >
+                <NexusAdministrationIcon name="plus" />
+                Undang akun
+              </NexusWorkspaceButton>
+            ) : null}
+          </div>
         ) : null
       }
       description={content.description}
       descriptionId="administration-description"
-      meta={content.updatedAt}
       title={content.title}
       titleId="administration-title"
     >
@@ -449,7 +686,7 @@ export function NexusAdministration({
             id: "active-accounts",
             label: "Aktif",
             tone: "completed",
-            unit: "dapat mengakses sistem",
+            unit: "akun berstatus aktif",
             value: accounts.filter((account) => account.status === "ACTIVE")
               .length,
           },
@@ -458,7 +695,7 @@ export function NexusAdministration({
             id: "invited-accounts",
             label: "Menunggu aktivasi",
             tone: "waiting",
-            unit: "undangan belum diterima",
+            unit: "akun belum diaktifkan",
             value: accounts.filter((account) => account.status === "INVITED")
               .length,
           },
@@ -507,13 +744,13 @@ export function NexusAdministration({
         />
 
         <NexusWorkspaceTableSection
-          guidance="Pilih Detail untuk meninjau hubungan anggota, role, dan tindakan sesuai status akun."
+          guidance="Pilih Detail untuk meninjau hubungan anggota, peran, dan tindakan sesuai status akun."
           summary={`${filteredAccounts.length} dari ${accounts.length} akun sesuai pencarian dan filter.`}
           title="Akun & akses"
           titleId="administration-account-list-title"
         >
           <NexusWorkspaceRecordTable
-            caption="Daftar akun BHT Nexus beserta hubungan anggota, role, status, dan tindakan yang tersedia"
+            caption="Daftar akun BHT Nexus beserta hubungan anggota, peran, status, dan tindakan yang tersedia"
             columns={columns}
             empty={
               accounts.length === 0 ? (
@@ -527,7 +764,10 @@ export function NexusAdministration({
                   </p>
                   {capabilities.canInviteAccount ? (
                     <NexusWorkspaceButton
-                      onClick={() => setInviteOpen(true)}
+                      onClick={() => {
+                        setInviteMemberId(undefined);
+                        setInviteOpen(true);
+                      }}
                       tone="primary"
                       type="button"
                     >
@@ -563,23 +803,51 @@ export function NexusAdministration({
         </NexusWorkspaceTableSection>
       </section>
 
-      {selectedAccount ? (
+      {selectedAccount && selectedProfile ? (
         <NexusAdministrationDetail
           account={selectedAccount}
           capabilities={capabilities}
-          onCancelInvitation={() => cancelInvitation(selectedAccount)}
+          onCancelInvitation={() =>
+            setPendingAccountAction({
+              accountId: selectedAccount.id,
+              kind: "cancel-invitation",
+            })
+          }
           onClose={() => setSelectedAccountId(null)}
           onEditAccess={() => {
             setSelectedAccountId(null);
             setAccessEditorAccountId(selectedAccount.id);
           }}
-          onResendInvitation={() => resendInvitation(selectedAccount)}
+          onEditRelationship={() => {
+            setSelectedAccountId(null);
+            setRelationshipEditorAccountId(selectedAccount.id);
+          }}
+          onManageSpecialAccess={() =>
+            router.push(
+              `/nexus/administrasi/akses?account=${encodeURIComponent(selectedAccount.id)}`,
+            )
+          }
+          onRefreshInvitation={() => refreshInvitation(selectedAccount)}
           onRestore={() => restoreAccount(selectedAccount)}
-          onSuspend={() => suspendAccount(selectedAccount)}
+          onSuspend={() =>
+            setPendingAccountAction({
+              accountId: selectedAccount.id,
+              kind: "suspend",
+            })
+          }
+          profile={selectedProfile}
+          relationship={
+            relationshipsByAccountId.get(selectedAccount.id) ?? {
+              kind: "CONFLICT",
+            }
+          }
           role={
-            selectedAccount.roleId
-              ? rolesById.get(selectedAccount.roleId)
-              : undefined
+            rolesByAccountId.get(selectedAccount.id) ?? {
+              kind: "UNASSIGNED",
+            }
+          }
+          specialAccessCount={
+            nexusAccountOverrides(overrides, selectedAccount.id).length
           }
         />
       ) : null}
@@ -588,39 +856,95 @@ export function NexusAdministration({
         <NexusAdministrationInviteDrawer
           accountEmails={accounts.map((account) => account.email)}
           availableMembers={availableMembers}
+          initialMemberId={inviteMemberId}
           onClose={() => setInviteOpen(false)}
           onInvite={createInvitation}
           onViewAccount={(accountId) => {
             setInviteOpen(false);
             setSelectedAccountId(accountId);
           }}
-          roles={content.roles}
+          roles={assignableRoles}
         />
       ) : null}
 
       {accessEditorAccount ? (
         <NexusAdministrationAccessDrawer
           account={accessEditorAccount}
+          allRoles={roles}
+          personName={
+            profilesByAccountId.get(accessEditorAccount.id)?.displayName ??
+            accessEditorAccount.displayName
+          }
           onClose={() => setAccessEditorAccountId(null)}
           onSave={(roleId) => {
-            updateAccount(accessEditorAccount.id, (account) => ({
-              ...account,
-              roleId,
-              updatedAt: formatAuditTimestamp(),
-            }));
+            setAccountRole(accessEditorAccount.id, roleId);
             setAccessEditorAccountId(null);
             setSelectedAccountId(accessEditorAccount.id);
             setAnnouncement(
-              `Role ${accessEditorAccount.displayName} diperbarui.`,
+              `Peran ${profilesByAccountId.get(accessEditorAccount.id)?.displayName ?? accessEditorAccount.displayName} diperbarui.`,
             );
           }}
-          roles={content.roles}
+          roles={assignableRoles}
+          specialAccessCount={
+            nexusAccountOverrides(overrides, accessEditorAccount.id).length
+          }
         />
       ) : null}
 
-      <p aria-live="polite" className={styles.announcement}>
+      {relationshipEditorAccount && relationshipEditorResolved ? (
+        <NexusAdministrationRelationshipDrawer
+          availableMembers={relationshipEditorMembers}
+          personName={
+            profilesByAccountId.get(relationshipEditorAccount.id)
+              ?.displayName ?? relationshipEditorAccount.displayName
+          }
+          onClose={() => setRelationshipEditorAccountId(null)}
+          onSave={(relationship: NexusAccountMemberRelationship) => {
+            setAccountRelationship(relationshipEditorAccount.id, relationship);
+            setRelationshipEditorAccountId(null);
+            setSelectedAccountId(relationshipEditorAccount.id);
+            setAnnouncement(
+              `Hubungan anggota ${profilesByAccountId.get(relationshipEditorAccount.id)?.displayName ?? relationshipEditorAccount.displayName} diperbarui.`,
+            );
+          }}
+          relationship={relationshipEditorResolved}
+        />
+      ) : null}
+
+      {pendingAccountAction && pendingActionAccount ? (
+        <NexusWorkspaceConfirmDialog
+          cancelLabel="Kembali"
+          confirmLabel={
+            pendingAccountAction.kind === "suspend"
+              ? "Tangguhkan akses"
+              : "Batalkan undangan"
+          }
+          description={
+            pendingAccountAction.kind === "suspend"
+              ? `${profilesByAccountId.get(pendingActionAccount.id)?.displayName ?? pendingActionAccount.displayName} tidak dapat masuk sampai akses dipulihkan.`
+              : `Undangan untuk ${pendingActionAccount.email} akan dibatalkan dan akun yang belum aktif dihapus dari daftar.`
+          }
+          onCancel={() => setPendingAccountAction(null)}
+          onConfirm={() => {
+            if (pendingAccountAction.kind === "suspend") {
+              suspendAccount(pendingActionAccount);
+            } else {
+              cancelInvitation(pendingActionAccount);
+            }
+            setPendingAccountAction(null);
+          }}
+          title={
+            pendingAccountAction.kind === "suspend"
+              ? "Tangguhkan akses akun?"
+              : "Batalkan undangan akun?"
+          }
+          tone="danger"
+        />
+      ) : null}
+
+      <output aria-live="polite" className={styles.announcement}>
         {announcement}
-      </p>
+      </output>
     </NexusWorkspacePage>
   );
 }

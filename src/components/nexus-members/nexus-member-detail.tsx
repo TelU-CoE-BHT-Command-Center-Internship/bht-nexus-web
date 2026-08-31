@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { KeyboardEvent } from "react";
 import type { NexusMemberCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { NexusAcademicIdentifierValue } from "@/components/nexus-members/nexus-member-academic";
 import { relatedDataHref } from "@/components/nexus-members/nexus-member-identity";
 import {
   accountStatusLabels,
@@ -15,7 +16,7 @@ import {
   memberStatusTone,
 } from "@/components/nexus-members/nexus-member-ui";
 import styles from "@/components/nexus-members/nexus-members.module.css";
-import type { NexusMemberRecord } from "@/components/nexus-members/nexus-members-content";
+import type { NexusMemberViewRecord } from "@/components/nexus-members/nexus-members-content";
 import { statusLabels } from "@/components/nexus-members/nexus-members-model";
 import {
   NexusWorkspaceButton,
@@ -68,22 +69,12 @@ const relatedCatalogs = [
 type MemberDetailProps = {
   activeTab: MemberDetailTab;
   capabilities: NexusMemberCapabilities;
-  member: NexusMemberRecord;
+  member: NexusMemberViewRecord;
   onBack: () => void;
   onEdit: () => void;
-  onGrantAccess: () => void;
   onOpenAcademicEditor: () => void;
   onTabChange: (tab: MemberDetailTab) => void;
 };
-
-function AcademicLink({ href, label }: { href?: string; label: string }) {
-  if (!href) return <>{displayMemberValue()}</>;
-  return (
-    <a href={href} rel="noreferrer" target="_blank">
-      {label}
-    </a>
-  );
-}
 
 export function NexusMemberDetail({
   activeTab,
@@ -91,10 +82,20 @@ export function NexusMemberDetail({
   member,
   onBack,
   onEdit,
-  onGrantAccess,
   onOpenAcademicEditor,
   onTabChange,
 }: MemberDetailProps) {
+  const linkedAccount =
+    member.accountAccess.kind === "LINKED"
+      ? member.accountAccess.account
+      : undefined;
+  const accountRoleLabel = linkedAccount
+    ? linkedAccount.role.kind === "KNOWN"
+      ? linkedAccount.role.role.label
+      : linkedAccount.role.kind === "UNKNOWN"
+        ? "Peran perlu ditinjau"
+        : "Belum ditetapkan"
+    : undefined;
   const collectionRequests: { href: string; label: string; source: string }[] =
     [];
 
@@ -156,16 +157,16 @@ export function NexusMemberDetail({
               Ubah profil
             </NexusWorkspaceButton>
           ) : null}
-          {capabilities.canGrantAccess && !member.account ? (
-            <NexusWorkspaceButton
+          {capabilities.canGrantAccess &&
+          member.accountAccess.kind === "NONE" ? (
+            <NexusWorkspaceLinkButton
               className={styles.detailActionButton}
-              onClick={onGrantAccess}
+              href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
               tone="primary"
-              type="button"
             >
               <MemberIcon name="lock" />
               Beri akses BHT Nexus
-            </NexusWorkspaceButton>
+            </NexusWorkspaceLinkButton>
           ) : null}
         </div>
       </div>
@@ -344,30 +345,51 @@ export function NexusMemberDetail({
           <section className={styles.accessSection}>
             <MemberDetailCard
               items={[
-                { label: "SINTA ID", value: member.academic.sintaId },
+                {
+                  label: "SINTA ID",
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="sintaId"
+                      value={member.academic.sintaId}
+                    />
+                  ),
+                },
                 {
                   label: "ORCID iD",
-                  value: member.academic.orcid ? (
-                    <AcademicLink
-                      href={`https://orcid.org/${member.academic.orcid}`}
-                      label={member.academic.orcid}
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="orcid"
+                      value={member.academic.orcid}
                     />
-                  ) : undefined,
+                  ),
                 },
                 {
                   label: "Google Scholar",
-                  value: member.academic.googleScholar ? (
-                    <AcademicLink
-                      href={member.academic.googleScholar}
-                      label="Buka profil"
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="googleScholar"
+                      value={member.academic.googleScholar}
                     />
-                  ) : undefined,
+                  ),
                 },
                 {
                   label: "Scopus Author ID",
-                  value: member.academic.scopusAuthorId,
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="scopusAuthorId"
+                      value={member.academic.scopusAuthorId}
+                    />
+                  ),
                 },
-                { label: "ResearcherID", value: member.academic.researcherId },
+                {
+                  label: "ResearcherID",
+                  value: (
+                    <NexusAcademicIdentifierValue
+                      identifier="researcherId"
+                      value={member.academic.researcherId}
+                    />
+                  ),
+                },
               ]}
               title="Identitas akademik & riset"
               wide
@@ -433,15 +455,15 @@ export function NexusMemberDetail({
 
         {activeTab === "access" ? (
           <section className={styles.accessSection}>
-            {member.account ? (
+            {member.accountAccess.kind === "LINKED" && linkedAccount ? (
               <>
                 <div className={styles.cardGrid}>
                   <MemberDetailCard
                     items={[
-                      { label: "Email akun", value: member.account.email },
+                      { label: "Email akun", value: linkedAccount.email },
                       {
                         label: "Status akun",
-                        value: accountStatusLabels[member.account.status],
+                        value: accountStatusLabels[linkedAccount.status],
                       },
                       {
                         label: "Hubungan profil",
@@ -453,25 +475,60 @@ export function NexusMemberDetail({
                   <MemberDetailCard
                     items={[
                       {
-                        label: "Role akun",
-                        value:
-                          member.account.roleLabels.join(", ") ||
-                          "Belum ditetapkan",
+                        label: "Peran akun",
+                        value: accountRoleLabel,
                       },
                       {
-                        label: "Hak akses",
-                        value: "Mengikuti role dan izin akun",
+                        label: "Ringkasan akses",
+                        value: "Rincian izin mengikuti kebijakan akses akun",
                       },
                     ]}
                     title="Ringkasan akses"
                   />
                 </div>
                 <MemberGuidanceCard
+                  action={
+                    capabilities.canGrantAccess ? (
+                      <NexusWorkspaceLinkButton
+                        href={`/nexus/administrasi?account=${encodeURIComponent(linkedAccount.id)}`}
+                        tone="primary"
+                      >
+                        Kelola akun
+                        <MemberIcon name="chevron" />
+                      </NexusWorkspaceLinkButton>
+                    ) : undefined
+                  }
                   description="Menangguhkan akun tidak menghapus profil atau riwayat keanggotaan orang ini."
                   icon="link"
                   title="Akun terhubung ke profil anggota"
                 />
               </>
+            ) : member.accountAccess.kind === "CONFLICT" ? (
+              <div className={styles.accessEmpty} data-state="conflict">
+                <span aria-hidden="true">
+                  <MemberIcon name="link" />
+                </span>
+                <h3>Hubungan akun perlu diperiksa</h3>
+                <p>
+                  Terdapat catatan akun yang bertentangan untuk profil anggota
+                  ini.
+                </p>
+                {capabilities.canGrantAccess ? (
+                  <NexusWorkspaceLinkButton
+                    href={
+                      member.accountAccess.accountIds[0]
+                        ? `/nexus/administrasi?account=${encodeURIComponent(member.accountAccess.accountIds[0])}`
+                        : "/nexus/administrasi"
+                    }
+                    tone="primary"
+                  >
+                    Tinjau di Administrasi
+                  </NexusWorkspaceLinkButton>
+                ) : null}
+                <small>
+                  Periksa hubungan yang benar sebelum mengubah akses anggota.
+                </small>
+              </div>
             ) : (
               <div className={styles.accessEmpty}>
                 <span aria-hidden="true">
@@ -483,17 +540,15 @@ export function NexusMemberDetail({
                   jika orang ini memang perlu masuk ke sistem.
                 </p>
                 {capabilities.canGrantAccess ? (
-                  <NexusWorkspaceButton
-                    onClick={onGrantAccess}
+                  <NexusWorkspaceLinkButton
+                    href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
                     tone="primary"
-                    type="button"
                   >
                     Beri akses BHT Nexus
-                  </NexusWorkspaceButton>
+                  </NexusWorkspaceLinkButton>
                 ) : null}
                 <small>
-                  Sistem akan memeriksa apakah email belum punya akun, sudah
-                  punya akun, atau sudah terhubung ke anggota lain.
+                  Alur undangan akan dibuka dengan anggota ini sudah terpilih.
                 </small>
               </div>
             )}

@@ -2,14 +2,19 @@
 
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { type FormEvent, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
 import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
 import { resetDismissedAnnouncementsForSession } from "@/components/nexus-dashboard-announcement/nexus-dashboard-announcement-session";
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
-import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import {
+  type NexusDashboardShellContent,
+  nexusDashboardViewerFromProfile,
+} from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
+import { useNexusCurrentProfile } from "@/components/nexus-profile/nexus-current-profile";
+import { useNexusWorkspaceNavigation } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import type { Locale } from "@/i18n/locales";
 
 export type DashboardHeaderPanel = "notifications" | "profile";
@@ -17,6 +22,7 @@ export type DashboardHeaderPanel = "notifications" | "profile";
 type NexusDashboardHeaderProps = {
   content: NexusDashboardShellContent;
   isMobileMenuOpen: boolean;
+  onClosePanel: () => void;
   onOpenMobileMenu: () => void;
   onTogglePanel: (panel: DashboardHeaderPanel) => void;
   openPanel: DashboardHeaderPanel | null;
@@ -46,13 +52,25 @@ function getWorkspaceLanguageHref(
 export function NexusDashboardHeader({
   content,
   isMobileMenuOpen,
+  onClosePanel,
   onOpenMobileMenu,
   onTogglePanel,
   openPanel,
   pageTitle,
 }: NexusDashboardHeaderProps) {
-  const router = useRouter();
+  const navigate = useNexusWorkspaceNavigation();
   const pathname = usePathname();
+  /* Identitas mengikuti profil akun yang sedang diwakili, sehingga perubahan
+     nama atau foto pada Profil Saya langsung terlihat di header. */
+  const { profile } = useNexusCurrentProfile();
+  const viewer = profile
+    ? nexusDashboardViewerFromProfile(profile)
+    : content.viewer;
+  const profileHref = content.profileHref;
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
+  const notificationTriggerRef = useRef<HTMLButtonElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const profileTriggerRef = useRef<HTMLButtonElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const matches = useMemo(() => {
@@ -63,13 +81,45 @@ export function NexusDashboardHeader({
     );
   }, [content.searchItems, searchQuery]);
 
+  useEffect(() => {
+    if (!openPanel) return;
+    const activeMenuRef =
+      openPanel === "profile" ? profileMenuRef : notificationMenuRef;
+    const activeTriggerRef =
+      openPanel === "profile" ? profileTriggerRef : notificationTriggerRef;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !activeMenuRef.current?.contains(event.target)
+      ) {
+        onClosePanel();
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClosePanel();
+      activeTriggerRef.current?.focus({ preventScroll: true });
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClosePanel, openPanel]);
+
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const firstMatch = matches[0];
     if (!firstMatch) return;
-    setIsSearchOpen(false);
-    setSearchQuery("");
-    router.push(firstMatch.href);
+    navigate(firstMatch.href, () => {
+      setIsSearchOpen(false);
+      setSearchQuery("");
+    });
   }
 
   return (
@@ -134,9 +184,12 @@ export function NexusDashboardHeader({
                 <Link
                   href={item.href}
                   key={item.id}
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    setSearchQuery("");
+                  onNavigate={(event) => {
+                    event.preventDefault();
+                    navigate(item.href, () => {
+                      setIsSearchOpen(false);
+                      setSearchQuery("");
+                    });
                   }}
                   prefetch={false}
                   role="option"
@@ -160,17 +213,24 @@ export function NexusDashboardHeader({
           {workspaceLanguageOptions.map((option) => {
             const isActive = content.locale === option.locale;
 
+            const href = getWorkspaceLanguageHref(
+              content.locale,
+              pathname,
+              option.locale,
+            );
+
             return (
               <Link
                 aria-current={isActive ? "page" : undefined}
                 aria-label={option.label}
                 data-active={isActive || undefined}
-                href={getWorkspaceLanguageHref(
-                  content.locale,
-                  pathname,
-                  option.locale,
-                )}
+                href={href}
                 key={option.locale}
+                onNavigate={(event) => {
+                  if (href === pathname) return;
+                  event.preventDefault();
+                  navigate(href);
+                }}
                 prefetch={false}
                 title={option.label}
               >
@@ -183,13 +243,14 @@ export function NexusDashboardHeader({
           })}
         </nav>
 
-        <div className={styles.actionMenu}>
+        <div className={styles.actionMenu} ref={notificationMenuRef}>
           <button
             aria-controls="nexus-notifications-panel"
             aria-expanded={openPanel === "notifications"}
             aria-label={content.notificationLabel}
             className={styles.iconButton}
             onClick={() => onTogglePanel("notifications")}
+            ref={notificationTriggerRef}
             type="button"
           >
             <DashboardShellIcon name="bell" />
@@ -213,7 +274,12 @@ export function NexusDashboardHeader({
                     className={styles.notificationItem}
                     href={notification.href}
                     key={notification.id}
-                    onClick={() => onTogglePanel("notifications")}
+                    onNavigate={(event) => {
+                      event.preventDefault();
+                      navigate(notification.href, () =>
+                        onTogglePanel("notifications"),
+                      );
+                    }}
                     prefetch={false}
                   >
                     <span className={styles.notificationMarker} />
@@ -242,35 +308,42 @@ export function NexusDashboardHeader({
 
         <span aria-hidden="true" className={styles.actionDivider} />
 
-        <div className={styles.actionMenu}>
+        <div className={styles.actionMenu} ref={profileMenuRef}>
           <button
             aria-controls="nexus-profile-panel"
             aria-expanded={openPanel === "profile"}
             aria-label={content.profileLabel}
             className={styles.profileButton}
             onClick={() => onTogglePanel("profile")}
+            ref={profileTriggerRef}
             type="button"
           >
             <span className={styles.avatar}>
-              {content.viewer.avatarSrc ? (
+              {viewer.avatarSrc ? (
                 <Image
                   alt=""
                   aria-hidden="true"
                   className={styles.avatarImage}
                   fill
-                  sizes="3rem"
-                  src={content.viewer.avatarSrc}
+                  sizes="2.75rem"
+                  src={viewer.avatarSrc}
+                  style={
+                    viewer.avatarPosition
+                      ? {
+                          objectPosition: `${viewer.avatarPosition.x}% ${viewer.avatarPosition.y}%`,
+                        }
+                      : undefined
+                  }
+                  unoptimized={
+                    typeof viewer.avatarSrc === "string" &&
+                    viewer.avatarSrc.startsWith("data:")
+                  }
                 />
               ) : (
-                content.viewer.initials
+                viewer.initials
               )}
             </span>
-            <span className={styles.profileCopy}>
-              <strong>{content.viewer.name}</strong>
-              <span className={styles.profileRole}>
-                {content.viewer.roleLabel}
-              </span>
-            </span>
+            <span className={styles.profileCopy}>{viewer.name}</span>
             <span className={styles.profileChevron}>
               <DashboardShellIcon name="chevron-down" />
             </span>
@@ -278,17 +351,40 @@ export function NexusDashboardHeader({
 
           {openPanel === "profile" ? (
             <div className={styles.profilePanel} id="nexus-profile-panel">
-              <div>
-                <strong>{content.viewer.name}</strong>
-                <span className={styles.profilePanelRole}>
-                  {content.viewer.roleLabel}
-                </span>
+              <div className={styles.profilePanelIdentity}>
+                <strong>{viewer.fullName}</strong>
+                <span>{viewer.email}</span>
               </div>
+              {profileHref ? (
+                <ul className={styles.profilePanelMenu}>
+                  <li>
+                    <Link
+                      href={profileHref}
+                      onNavigate={(event) => {
+                        event.preventDefault();
+                        navigate(profileHref, () => onTogglePanel("profile"));
+                      }}
+                      prefetch={false}
+                    >
+                      <DashboardShellIcon name="user" />
+                      {content.profileMenuLabel}
+                    </Link>
+                  </li>
+                </ul>
+              ) : null}
               <Link
+                className={styles.profilePanelSignOut}
                 href={content.signOutHref}
-                onClick={resetDismissedAnnouncementsForSession}
+                onNavigate={(event) => {
+                  event.preventDefault();
+                  navigate(
+                    content.signOutHref,
+                    resetDismissedAnnouncementsForSession,
+                  );
+                }}
                 prefetch={false}
               >
+                <DashboardShellIcon name="sign-out" />
                 {content.signOutLabel}
               </Link>
             </div>

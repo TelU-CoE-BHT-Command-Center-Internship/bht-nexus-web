@@ -1,8 +1,17 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useNexusAccessPolicySession } from "@/components/nexus-access-policy/nexus-access-policy-session";
+import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
 import type { NexusMemberCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
-import { NexusMemberAccessDrawer } from "@/components/nexus-members/nexus-member-access-drawer";
+import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
 import {
   type MemberDetailTab,
   NexusMemberDetail,
@@ -11,26 +20,24 @@ import { NexusMemberDirectory } from "@/components/nexus-members/nexus-member-di
 import { NexusMemberProfileDrawer } from "@/components/nexus-members/nexus-member-profile-drawer";
 import { MemberIcon } from "@/components/nexus-members/nexus-member-ui";
 import styles from "@/components/nexus-members/nexus-members.module.css";
-import type {
-  NexusMemberAccount,
-  NexusMemberRecord,
-  NexusMembersContent,
+import {
+  type NexusMemberRecord,
+  type NexusMembersContent,
+  projectNexusMemberAccounts,
 } from "@/components/nexus-members/nexus-members-content";
 import {
   createEditDraft,
   createNewMemberDraft,
   type MemberProfileErrors,
-  normalizedMemberDraft,
+  memberRecordFromDraft,
   type ProfileEditorState,
   profileDraftIsDirty,
   type statusDefinitions,
   validateMemberProfile,
 } from "@/components/nexus-members/nexus-members-model";
+import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import {
-  formatAuditTimestamp,
-  normalizeWorkspaceSearch,
-} from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 const PAGE_SIZE = 6;
 
@@ -39,6 +46,7 @@ type StatusFilter = (typeof statusDefinitions)[number]["id"];
 type NexusMembersProps = {
   capabilities: NexusMemberCapabilities;
   content: NexusMembersContent;
+  initialMemberId?: string;
 };
 
 function memberMatchesQuery(member: NexusMemberRecord, query: string) {
@@ -60,64 +68,31 @@ function memberMatchesQuery(member: NexusMemberRecord, query: string) {
   return searchable.includes(normalizeWorkspaceSearch(query));
 }
 
-function recordFromDraft(
-  draftValue: ProfileEditorState["value"],
-  current?: NexusMemberRecord,
-): NexusMemberRecord {
-  const draft = normalizedMemberDraft(draftValue);
-  return {
-    academic: {
-      googleScholar: draft.googleScholar || undefined,
-      orcid: draft.orcid || undefined,
-      researcherId: draft.researcherId || undefined,
-      scopusAuthorId: draft.scopusAuthorId || undefined,
-      sintaId: draft.sintaId || undefined,
-    },
-    affiliation: {
-      institution: current?.affiliation.institution ?? "Telkom University",
-      office: draft.office.trim() || undefined,
-      primaryUnit: draft.primaryUnit.trim(),
-    },
-    avatarOriginalSrc: draft.avatarSrc ? draft.avatarOriginalSrc : undefined,
-    avatarPosition: draft.avatarSrc ? draft.avatarPosition : undefined,
-    avatarSrc: draft.avatarSrc,
-    biography: draft.biography.trim(),
-    coeAssignment: draft.coeAssignment.trim(),
-    contact: {
-      alternateEmail: draft.alternateEmail.trim() || undefined,
-      institutionalEmail: draft.institutionalEmail.trim() || undefined,
-      phone: draft.phone.trim() || undefined,
-    },
-    expertise: {
-      primary: draft.primaryExpertise.trim() || undefined,
-      secondary: draft.secondaryExpertise
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    },
-    id: current?.id ?? `member-${crypto.randomUUID()}`,
-    identity: {
-      preferredName: draft.preferredName.trim() || draft.name.trim(),
-    },
-    membership: {
-      joinedAt: draft.joinedAt || undefined,
-      publicProfile: draft.publicProfile,
-      status: draft.membershipStatus,
-    },
-    name: draft.name.trim(),
-    updatedAt: formatAuditTimestamp(),
-    ...(current?.account ? { account: current.account } : {}),
-  };
-}
-
-export function NexusMembers({ capabilities, content }: NexusMembersProps) {
-  const [records, setRecords] = useState(content.records);
-  const [unlinkedAccounts, setUnlinkedAccounts] = useState(
-    content.unlinkedAccounts,
+export function NexusMembers({
+  capabilities,
+  content,
+  initialMemberId,
+}: NexusMembersProps) {
+  const router = useRouter();
+  const { accounts } = useNexusAccountSession();
+  const { roles } = useNexusAccessPolicySession();
+  const { records: memberRecords, saveMember } = useNexusMemberSession();
+  const records = useMemo(
+    () => projectNexusMemberAccounts(memberRecords, accounts, roles),
+    [accounts, memberRecords, roles],
   );
+  const initialMemberIsKnown =
+    !initialMemberId ||
+    memberRecords.some((member) => member.id === initialMemberId);
   const [selectedMemberId, setSelectedMemberId] = useState(
-    content.records[0]?.id ?? "",
+    initialMemberId
+      ? initialMemberIsKnown
+        ? initialMemberId
+        : ""
+      : (memberRecords[0]?.id ?? ""),
   );
+  const [invalidMemberContextDismissed, setInvalidMemberContextDismissed] =
+    useState(false);
   const [activeStatus, setActiveStatus] = useState<StatusFilter>("all");
   const [activeDetailTab, setActiveDetailTab] =
     useState<MemberDetailTab>("profile");
@@ -130,8 +105,22 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
     null,
   );
   const [profileErrors, setProfileErrors] = useState<MemberProfileErrors>({});
-  const [accessDrawerOpen, setAccessDrawerOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  const [profileDiscardConfirmationOpen, setProfileDiscardConfirmationOpen] =
+    useState(false);
+
+  useEffect(() => {
+    if (!announcement) return;
+
+    const timeoutId = window.setTimeout(() => setAnnouncement(""), 4500);
+    return () => window.clearTimeout(timeoutId);
+  }, [announcement]);
+
+  useEffect(() => {
+    setInvalidMemberContextDismissed(false);
+    if (!initialMemberId) return;
+    setSelectedMemberId(initialMemberIsKnown ? initialMemberId : "");
+  }, [initialMemberId, initialMemberIsKnown]);
 
   const fieldOptions = useMemo(
     () =>
@@ -164,8 +153,10 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
     safePage * PAGE_SIZE,
   );
   const selectedMember =
-    filteredMembers.find((member) => member.id === selectedMemberId) ??
-    filteredMembers[0];
+    initialMemberId && !initialMemberIsKnown && !invalidMemberContextDismissed
+      ? undefined
+      : (filteredMembers.find((member) => member.id === selectedMemberId) ??
+        filteredMembers[0]);
 
   function selectFirstResult() {
     setSelectedMemberId("");
@@ -188,17 +179,6 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
     setFilterOpen(false);
   }
 
-  function updateSelectedMember(
-    updater: (member: NexusMemberRecord) => NexusMemberRecord,
-  ) {
-    if (!selectedMember) return;
-    setRecords((currentRecords) =>
-      currentRecords.map((member) =>
-        member.id === selectedMember.id ? updater(member) : member,
-      ),
-    );
-  }
-
   function openNewMemberEditor() {
     const value = createNewMemberDraft();
     setProfileErrors({});
@@ -213,15 +193,15 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
   }
 
   function requestCloseProfileEditor() {
-    if (
-      profileEditor &&
-      profileDraftIsDirty(profileEditor) &&
-      !window.confirm(
-        "Perubahan belum disimpan. Batalkan perubahan dan tutup formulir?",
-      )
-    ) {
+    if (profileEditor && profileDraftIsDirty(profileEditor)) {
+      setProfileDiscardConfirmationOpen(true);
       return;
     }
+    closeProfileEditor();
+  }
+
+  function closeProfileEditor() {
+    setProfileDiscardConfirmationOpen(false);
     setProfileErrors({});
     setProfileEditor(null);
   }
@@ -245,7 +225,9 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
     event.preventDefault();
     if (!profileEditor) return;
     const currentMember =
-      profileEditor.mode === "edit" ? selectedMember : undefined;
+      profileEditor.mode === "edit"
+        ? memberRecords.find((member) => member.id === selectedMember?.id)
+        : undefined;
     const errors = validateMemberProfile(
       profileEditor.value,
       records,
@@ -260,16 +242,14 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
       return;
     }
 
-    const savedMember = recordFromDraft(profileEditor.value, currentMember);
+    const savedMember = memberRecordFromDraft(
+      profileEditor.value,
+      currentMember,
+    );
+    saveMember(savedMember);
     if (profileEditor.mode === "create") {
-      setRecords((currentRecords) => [savedMember, ...currentRecords]);
       setAnnouncement("Anggota baru berhasil ditambahkan.");
     } else {
-      setRecords((currentRecords) =>
-        currentRecords.map((member) =>
-          member.id === savedMember.id ? savedMember : member,
-        ),
-      );
       setAnnouncement("Perubahan profil anggota berhasil disimpan.");
     }
 
@@ -281,24 +261,6 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
     setMobileView("detail");
     setProfileErrors({});
     setProfileEditor(null);
-  }
-
-  function connectAccount(account: NexusMemberAccount, message: string) {
-    updateSelectedMember((member) => ({
-      ...member,
-      account,
-      updatedAt: formatAuditTimestamp(),
-    }));
-    setUnlinkedAccounts((current) =>
-      current.filter(
-        (candidate) =>
-          candidate.email.toLocaleLowerCase("id-ID") !==
-          account.email.toLocaleLowerCase("id-ID"),
-      ),
-    );
-    setAccessDrawerOpen(false);
-    setActiveDetailTab("access");
-    setAnnouncement(message);
   }
 
   return (
@@ -348,7 +310,6 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
           member={selectedMember}
           onBack={() => setMobileView("list")}
           onEdit={openMemberEditor}
-          onGrantAccess={() => setAccessDrawerOpen(true)}
           onOpenAcademicEditor={openMemberEditor}
           onTabChange={setActiveDetailTab}
         />
@@ -359,16 +320,37 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
               <MemberIcon name="plus" />
             </span>
             <h2>
-              {records.length === 0
-                ? "Direktori anggota belum dimulai"
-                : "Tidak ada anggota pada hasil ini"}
+              {initialMemberId &&
+              !initialMemberIsKnown &&
+              !invalidMemberContextDismissed
+                ? "Profil anggota tidak ditemukan"
+                : records.length === 0
+                  ? "Direktori anggota belum dimulai"
+                  : "Tidak ada anggota pada hasil ini"}
             </h2>
             <p>
-              {records.length === 0
-                ? "Catat identitas anggota terlebih dahulu. Akses akun dapat diberikan kemudian."
-                : "Ubah pencarian atau filter di daftar anggota untuk memilih profil lain."}
+              {initialMemberId &&
+              !initialMemberIsKnown &&
+              !invalidMemberContextDismissed
+                ? "ID anggota pada tautan ini tidak tersedia. Kembali ke direktori untuk memilih profil yang benar."
+                : records.length === 0
+                  ? "Catat identitas anggota terlebih dahulu. Akses akun dapat diberikan kemudian."
+                  : "Ubah pencarian atau filter di daftar anggota untuk memilih profil lain."}
             </p>
-            {records.length === 0 && capabilities.canCreateMember ? (
+            {initialMemberId &&
+            !initialMemberIsKnown &&
+            !invalidMemberContextDismissed ? (
+              <NexusWorkspaceButton
+                onClick={() => {
+                  setInvalidMemberContextDismissed(true);
+                  setSelectedMemberId(records[0]?.id ?? "");
+                  router.replace("/nexus/anggota");
+                }}
+                type="button"
+              >
+                Kembali ke direktori
+              </NexusWorkspaceButton>
+            ) : records.length === 0 && capabilities.canCreateMember ? (
               <NexusWorkspaceButton
                 onClick={openNewMemberEditor}
                 tone="primary"
@@ -402,19 +384,20 @@ export function NexusMembers({ capabilities, content }: NexusMembersProps) {
         />
       ) : null}
 
-      {accessDrawerOpen && selectedMember ? (
-        <NexusMemberAccessDrawer
-          member={selectedMember}
-          onClose={() => setAccessDrawerOpen(false)}
-          onConnect={connectAccount}
-          records={records}
-          unlinkedAccounts={unlinkedAccounts}
+      {profileDiscardConfirmationOpen ? (
+        <NexusWorkspaceConfirmDialog
+          cancelLabel="Lanjutkan mengisi"
+          confirmLabel="Buang perubahan"
+          description="Perubahan pada profil belum disimpan dan akan hilang jika formulir ditutup."
+          onCancel={() => setProfileDiscardConfirmationOpen(false)}
+          onConfirm={closeProfileEditor}
+          title="Buang perubahan profil?"
         />
       ) : null}
 
-      <p aria-live="polite" className={styles.announcement}>
+      <output aria-live="polite" className={styles.announcement}>
         {announcement}
-      </p>
+      </output>
     </section>
   );
 }

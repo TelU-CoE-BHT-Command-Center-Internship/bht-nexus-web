@@ -46,6 +46,8 @@ export function NexusDashboardShell({
   useLayoutEffect(() => {
     if (pathname) {
       document.scrollingElement?.scrollTo({ left: 0, top: 0 });
+      setIsMobileMenuOpen(false);
+      setOpenPanel(null);
     }
   }, [pathname]);
 
@@ -106,6 +108,7 @@ export function NexusDashboardShell({
       <NexusDashboardHeader
         content={content}
         isMobileMenuOpen={isMobileMenuOpen}
+        onClosePanel={() => setOpenPanel(null)}
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         onTogglePanel={togglePanel}
         openPanel={openPanel}

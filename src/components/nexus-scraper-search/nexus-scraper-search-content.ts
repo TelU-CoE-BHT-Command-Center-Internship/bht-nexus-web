@@ -228,8 +228,8 @@ const seeds = [
     source: "sinta",
     status: "succeeded",
     submittedAt: "2026-08-12T08:54",
-    submittedBy: "Muhammad Ammar Asyraf · Admin / Pimpinan",
-    submittedByActorId: nexusReviewActorIds.workspaceAdmin,
+    submittedBy: "Pengelola Data",
+    submittedByActorId: nexusReviewActorIds.dataSteward,
   },
   {
     candidates: hestyCandidates,
@@ -246,8 +246,8 @@ const seeds = [
     source: "scholar",
     status: "succeeded",
     submittedAt: "2026-08-12T08:48",
-    submittedBy: "Muhammad Ammar Asyraf · Admin / Pimpinan",
-    submittedByActorId: nexusReviewActorIds.workspaceAdmin,
+    submittedBy: "Pengelola Data",
+    submittedByActorId: nexusReviewActorIds.dataSteward,
   },
   {
     candidates: [],
@@ -264,8 +264,8 @@ const seeds = [
     source: "sinta",
     status: "running",
     submittedAt: "2026-08-12T08:41",
-    submittedBy: "Muhammad Ammar Asyraf · Admin / Pimpinan",
-    submittedByActorId: nexusReviewActorIds.workspaceAdmin,
+    submittedBy: "Pengelola Data",
+    submittedByActorId: nexusReviewActorIds.dataSteward,
   },
   {
     attempt: 3,

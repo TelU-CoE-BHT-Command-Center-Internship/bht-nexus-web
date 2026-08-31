@@ -30,6 +30,7 @@ type NexusWorkspaceFieldProps = InputHTMLAttributes<HTMLInputElement> & {
 
 type NexusWorkspaceLinkButtonProps = {
   children: ReactNode;
+  className?: string;
   href: string;
   tone?: "primary" | "secondary";
 };
@@ -128,12 +129,13 @@ export function NexusWorkspaceField({
 
 export function NexusWorkspaceLinkButton({
   children,
+  className,
   href,
   tone = "secondary",
 }: NexusWorkspaceLinkButtonProps) {
   return (
     <Link
-      className={styles.button}
+      className={`${styles.button} ${className ?? ""}`}
       data-tone={tone}
       href={href}
       prefetch={false}

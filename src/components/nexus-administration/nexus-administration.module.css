@@ -1,3 +1,11 @@
+.headerActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .inviteButton svg {
   width: 1rem;
   height: 1rem;
@@ -112,8 +120,30 @@
   outline-offset: 0.15rem;
 }
 
-.memberCell[data-unlinked="true"] strong {
+.memberCell[data-relationship="NON_MEMBER"] strong,
+.memberCell[data-relationship="UNLINKED"] strong {
   color: #7b8291;
+}
+
+.roleCell {
+  display: grid;
+  justify-items: start;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.roleCell small {
+  overflow: hidden;
+  color: var(--color-nexus-danger);
+  font-size: 0.66rem;
+  font-weight: 620;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberCell[data-relationship="CONFLICT"] strong {
+  color: var(--color-nexus-danger);
 }
 
 .mobileAccountId {
@@ -186,17 +216,23 @@
 }
 
 .detailAvatar {
+  position: relative;
   display: grid;
   width: 3.4rem;
   height: 3.4rem;
   flex: 0 0 auto;
   place-items: center;
+  overflow: hidden;
   border: 1px solid #c8d8eb;
   border-radius: 50%;
   background: linear-gradient(145deg, #eef4fc, #d9e7f7);
   color: var(--color-brand-navy);
   font-size: 0.88rem;
   font-weight: 760;
+}
+
+.detailAvatar img {
+  object-fit: cover;
 }
 
 .detailIdentity {
@@ -334,6 +370,59 @@
   line-height: 1.45;
 }
 
+/* Ringkasan profil pengguna: bentuknya sama untuk akun anggota dan non-anggota. */
+.profileSummary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 1rem 1rem 0;
+  padding: 0.85rem;
+  border: 1px solid #e0e5ec;
+  border-radius: 0.65rem;
+  background: #fbfcfe;
+}
+
+.profileSummaryAvatar {
+  position: relative;
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid #c8d8eb;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #eef4fc, #d9e7f7);
+  color: var(--color-brand-navy);
+  font-size: 0.8rem;
+  font-weight: 760;
+}
+
+.profileSummaryAvatar img {
+  object-fit: cover;
+}
+
+.profileSummary > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.profileSummary strong {
+  overflow-wrap: anywhere;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.profileSummary small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
 .relationCard {
   display: flex;
   min-width: 0;
@@ -347,15 +436,54 @@
   background: #fbfcfe;
 }
 
-.relationCard[data-linked="true"] {
+.relationCard[data-relationship="LINKED"] {
   border-color: #cfe0f1;
   background: #f4f8fd;
 }
 
-.relationCard > div {
+.relationCard[data-relationship="NON_MEMBER"] {
+  border-color: #dfe3e8;
+  background: #f8f9fb;
+}
+
+.relationCard[data-relationship="UNLINKED"] {
+  border-color: #ead39a;
+  background: #fffaf0;
+}
+
+.relationCard[data-relationship="CONFLICT"] {
+  border-color: #f0c5cc;
+  background: #fff6f7;
+}
+
+.relationCardContent {
   display: grid;
   min-width: 0;
   gap: 0.18rem;
+}
+
+.relationCardActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.relationCardActions .relationManageButton {
+  min-height: 2.35rem;
+  padding: 0.48rem 0.72rem;
+  background: #ffffff;
+}
+
+.relationManageButton svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .relationCard span,
@@ -391,6 +519,19 @@
   margin-top: 0.28rem;
   color: var(--color-nexus-text-strong);
   font-size: 0.9rem;
+}
+
+.roleSummary .roleStateFlag {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #fff0e8;
+  color: #b1461b;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .roleSummary p,
@@ -770,6 +911,15 @@
     width: 100%;
   }
 
+  .relationCardActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .relationCardActions > * {
+    width: 100%;
+  }
+
   .detailActions,
   .drawerFooter {
     align-items: stretch;
@@ -792,5 +942,55 @@
 @media (prefers-reduced-motion: reduce) {
   .accountCell {
     scroll-behavior: auto;
+  }
+}
+
+.specialAccessCard {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.7rem;
+  margin-top: 0.75rem;
+  background: var(--color-nexus-surface-subtle);
+}
+
+.specialAccessCard > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.specialAccessCard span {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.68rem;
+  font-weight: 620;
+}
+
+.specialAccessCard strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.82rem;
+  font-weight: 680;
+}
+
+.specialAccessCard small {
+  max-width: 34rem;
+  color: var(--color-nexus-text-soft);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 56rem) {
+  .headerActions {
+    justify-content: stretch;
+  }
+
+  .headerActions > * {
+    flex: 1 1 auto;
+    justify-content: center;
   }
 }

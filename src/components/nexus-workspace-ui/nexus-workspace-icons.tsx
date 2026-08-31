@@ -10,6 +10,7 @@ export type NexusWorkspaceIconName =
   | "database"
   | "document"
   | "graduation"
+  | "pencil"
   | "search"
   | "shield";
 
@@ -98,6 +99,13 @@ export function NexusWorkspaceIconPaths({
           <path d="M12 4.2 3.5 8.3 12 12.4l8.5-4.1Z" />
           <path d="M7 11v5.3c0 1.9 2.2 3.2 5 3.2s5-1.3 5-3.2V11" />
           <path d="M20.5 8.3v6.6" />
+        </>
+      );
+    case "pencil":
+      return (
+        <>
+          <path d="M16.9 3.5a2.5 2.5 0 0 1 3.5 3.5L8.1 19.4l-4.6 1.1 1.1-4.6Z" />
+          <path d="m14.3 6.1 3.5 3.5" />
         </>
       );
     case "search":
