@@ -49,6 +49,13 @@ import {
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
+import { ApiRequestError } from "@/lib/api-client";
+import {
+  createJob,
+  getJob,
+  type JobRecord,
+  syncReviewCasesFromJob,
+} from "@/lib/api-jobs";
 
 const pageSizeConfig: NexusSelectConfig = {
   defaultValue: "10",
@@ -278,6 +285,62 @@ export function NexusScraperSearch({
     },
   ];
 
+  function applyJobUpdate(id: string, record: JobRecord, extra?: string) {
+    setJobs((current) =>
+      current.map((job) =>
+        job.id === id
+          ? {
+              ...job,
+              status: record.status,
+              statusLabel:
+                extra !== undefined
+                  ? `${getAutomationStatusLabel(content.locale, record.status)} · ${extra}`
+                  : getAutomationStatusLabel(content.locale, record.status),
+              failureReason:
+                record.status === "failed" ||
+                record.status === "failed_permanently"
+                  ? record.progressMessage
+                  : undefined,
+            }
+          : job,
+      ),
+    );
+  }
+
+  async function pollJob(publicId: string) {
+    const terminal = new Set(["succeeded", "failed", "failed_permanently"]);
+    for (;;) {
+      let record: JobRecord;
+      try {
+        record = await getJob(publicId);
+      } catch {
+        return;
+      }
+      if (!terminal.has(record.status)) {
+        applyJobUpdate(publicId, record);
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        continue;
+      }
+      if (record.status === "succeeded") {
+        try {
+          const { createdCount } = await syncReviewCasesFromJob(publicId);
+          applyJobUpdate(
+            publicId,
+            record,
+            createdCount > 0
+              ? `${createdCount} ${content.candidatesLabel}`
+              : content.noResultsLabel,
+          );
+        } catch {
+          applyJobUpdate(publicId, record);
+        }
+      } else {
+        applyJobUpdate(publicId, record);
+      }
+      return;
+    }
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const cleanName = name.trim();
@@ -315,6 +378,40 @@ export function NexusScraperSearch({
     setName("");
     setProfileUrl("");
     setCurrentPage(1);
+
+    createJob({
+      inputKind: source === "sinta" ? "sinta_url" : "scholar_url",
+      inputValue: cleanUrl,
+    })
+      .then((created) => {
+        setJobs((current) =>
+          current.map((job) =>
+            job.id === id
+              ? { ...job, id: created.publicId, status: created.status }
+              : job,
+          ),
+        );
+        void pollJob(created.publicId);
+      })
+      .catch((error: unknown) => {
+        const message =
+          error instanceof ApiRequestError ? error.message : content.errorLabel;
+        setJobs((current) =>
+          current.map((job) =>
+            job.id === id
+              ? {
+                  ...job,
+                  status: "failed_permanently",
+                  statusLabel: getAutomationStatusLabel(
+                    content.locale,
+                    "failed_permanently",
+                  ),
+                  failureReason: message,
+                }
+              : job,
+          ),
+        );
+      });
   }
 
   function submitNewCollection(job: CollectionJob) {
