@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import {
   getNexusRoleDirectory,
   getNexusUserPermissionOverrides,
@@ -11,13 +12,21 @@ import { NexusMemberSessionProvider } from "@/components/nexus-member-session/ne
 import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
 import { NexusCurrentUserReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusWorkspaceUnsavedChangesProvider } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
+import { getServerSession } from "@/lib/api-server";
+import { deriveDashboardViewer } from "@/lib/session-viewer";
 
-export default function NexusWorkspaceLayout({
+export default async function NexusWorkspaceLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession();
+  if (session === null) {
+    redirect("/nexus/masuk");
+  }
+
   const content = getNexusDashboardShellPreviewContent();
+  content.viewer = deriveDashboardViewer(session.user, content.viewer);
   const accounts = getNexusAccountDirectory();
   const memberDirectory = getNexusMemberDirectory();
 

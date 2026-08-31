@@ -49,6 +49,12 @@ export function NexusDashboardOverview({
           </div>
         </div>
 
+        {content.metrics.length === 0 ? (
+          <p className={styles.emptyState}>
+            Ringkasan metrik belum tersambung ke data resmi.
+          </p>
+        ) : null}
+
         <div className={styles.metricsGrid}>
           {content.metrics.map((metric) => (
             <article

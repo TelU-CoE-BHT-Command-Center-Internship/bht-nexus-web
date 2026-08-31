@@ -1,27 +1,8 @@
-/*
- * Baris filter mengikuti lebar ruang kerja, bukan lebar layar. Lebar yang
- * tersedia berubah ketika sidebar dibuka atau diciutkan, sehingga ambang
- * berbasis layar membuat enam kolom tetap dipasang walaupun ruangnya sudah
- * tidak cukup dan barisnya meluber keluar kolom.
- */
-.catalog {
-  min-width: 0;
-  margin-top: clamp(1.7rem, 2.2vw, 2.15rem);
-  container-type: inline-size;
-}
-
 .toolbar {
   display: grid;
   min-width: 0;
-  /*
-   * Lantai kolom filter diukur dari kontrol terpanjang: label 141px ditambah
-   * padding dan ikon 51px, sehingga satu kontrol butuh sekitar 12,25rem.
-   * Lantai yang terlalu rendah membuat label terpotong pada layar laptop.
-   */
-  grid-template-columns:
-    minmax(14rem, 1.7fr) minmax(11rem, 1.25fr) minmax(12.25rem, 1fr)
-    minmax(12.25rem, 1fr) minmax(12.25rem, 1fr) minmax(12.25rem, 1fr);
-  gap: 0.7rem;
+  grid-template-columns: minmax(15rem, 2fr) repeat(4, minmax(9rem, 1fr));
+  gap: 0.75rem;
   padding-top: 1rem;
 }
 
@@ -29,105 +10,44 @@
   min-width: 0;
 }
 
-.catalog table {
-  min-width: 65rem;
-}
-
-.catalog th[data-column="signal"] {
-  width: 7.25rem;
-}
-
-.catalog th[data-column="quartile"] {
-  width: 8.5rem;
-}
-
-.catalog th[data-column="year"] {
-  width: 4rem;
-}
-
-.catalog th[data-column="citations"] {
-  width: 6rem;
-}
-
-.catalog th[data-column="source"] {
-  width: 9.25rem;
-}
-
-.catalog th[data-column="status"] {
-  width: 7.75rem;
-}
-
-.catalog th[data-column="action"] {
-  width: 7.5rem;
-}
-
-/*
- * Mengembalikan skala tipografi Publikasi sebelum pindah ke tabel bersama:
- * baris penulis - jurnal tetap 0.75rem seperti sel tabel lainnya.
- */
-.catalog th[data-column="primary"] span {
-  font-size: 0.75rem;
-}
-
-.kmCell {
+.form {
   display: grid;
-  gap: 0.15rem;
+  gap: 1rem;
 }
 
-.kmCell strong {
-  color: var(--color-nexus-text-soft);
-  font-size: 0.675rem;
-  font-weight: 650;
-  line-height: 1.25;
-  white-space: nowrap;
+.checkboxField {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 620;
 }
 
-.kmCell small {
-  color: #8a91a1;
-  font-size: 0.58rem;
-  line-height: 1.3;
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
 
-.plainCell {
-  color: var(--color-nexus-text-soft);
-  font-size: 0.72rem;
-}
-
-.mobileSubtitle {
-  margin: -0.25rem 0 0;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.72rem;
-  line-height: 1.5;
-}
-
-/*
- * Filter sebaris penuh hanya muat ketika setiap kontrol mendapat sekitar
- * 11,5rem; di bawah itu labelnya terpotong. Ambangnya diukur di peramban,
- * lalu turun ke tiga kolom yang masih lega sebelum menjadi satu kolom.
- */
-/* Enam kolom membutuhkan ruang 78rem; di bawah itu turun ke tiga kolom. */
-@container (max-width: 78rem) {
+@media (max-width: 68rem) {
   .toolbar {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .toolbar > :first-child {
     grid-column: 1 / -1;
   }
 }
 
-@container (max-width: 40rem) {
+@media (max-width: 42rem) {
   .toolbar {
     grid-template-columns: minmax(0, 1fr);
   }
-
   .toolbar > :first-child {
     grid-column: auto;
   }
-}
-
-@media (max-width: 42rem) {
-  .catalog {
-    margin-top: 1.5rem;
+  .formActions {
+    flex-direction: column-reverse;
   }
 }

@@ -1,10 +1,5 @@
 import type { Metadata } from "next";
-import {
-  memberIdFromSearchParams,
-  type NexusMemberFilteredPageProps,
-} from "@/components/nexus-members/nexus-member-route";
 import { NexusPublications } from "@/components/nexus-publications/nexus-publications";
-import { getNexusPublicationsContent } from "@/components/nexus-publications/nexus-publications-content";
 
 export const metadata: Metadata = {
   title: "Publikasi",
@@ -15,13 +10,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function NexusPublicationsPage({
-  searchParams,
-}: NexusMemberFilteredPageProps) {
-  const content = getNexusPublicationsContent();
-  const initialMemberId = await memberIdFromSearchParams(searchParams);
-
-  return (
-    <NexusPublications content={content} initialMemberId={initialMemberId} />
-  );
+export default function NexusPublicationsPage() {
+  return <NexusPublications />;
 }

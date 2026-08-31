@@ -14,6 +14,7 @@ export type NexusLoginContent = {
   formTitle: string;
   helpHref: string;
   helpLabel: string;
+  invalidCredentialsError: string;
   invitationNote: string;
   languageLabel: string;
   passwordHideLabel: string;
@@ -25,6 +26,7 @@ export type NexusLoginContent = {
   signingInLabel: string;
   storyTagline: string;
   switchLocaleHref: string;
+  unexpectedError: string;
 };
 
 const createWhatsAppHref = (message: string) =>
@@ -47,6 +49,7 @@ const nexusLoginContent = {
       "Halo CoE BHT, saya memerlukan bantuan untuk masuk ke BHT Nexus.",
     ),
     helpLabel: "Butuh bantuan masuk?",
+    invalidCredentialsError: "Email atau kata sandi salah.",
     invitationNote:
       "Akun BHT Nexus dibuat melalui undangan. Tidak ada pendaftaran publik.",
     languageLabel: "Pilih bahasa",
@@ -59,6 +62,7 @@ const nexusLoginContent = {
     signingInLabel: "Membuka ruang kerja…",
     storyTagline: "One Data. One Platform. One Ecosystem.",
     switchLocaleHref: "/en/nexus/sign-in",
+    unexpectedError: "Proses masuk gagal. Coba lagi.",
   },
   en: {
     backHref: "/en",
@@ -76,6 +80,7 @@ const nexusLoginContent = {
       "Hello CoE BHT, I need help signing in to BHT Nexus.",
     ),
     helpLabel: "Need help signing in?",
+    invalidCredentialsError: "Incorrect email or password.",
     invitationNote:
       "BHT Nexus accounts are created by invitation. Public registration is not available.",
     languageLabel: "Choose language",
@@ -88,6 +93,7 @@ const nexusLoginContent = {
     signingInLabel: "Opening workspace…",
     storyTagline: "One Data. One Platform. One Ecosystem.",
     switchLocaleHref: "/nexus/masuk",
+    unexpectedError: "Sign-in failed. Please try again.",
   },
 } satisfies Record<Locale, NexusLoginContent>;
 

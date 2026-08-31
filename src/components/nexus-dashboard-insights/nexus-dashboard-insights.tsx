@@ -82,34 +82,43 @@ export function NexusDashboardInsights({
           ) : null}
         </div>
 
-        <ul className={styles.activityList} id="dashboard-recent-activity-list">
-          {visibleActivities.map((activity) => (
-            <li className={styles.activityItem} key={activity.id}>
-              <span
-                aria-hidden="true"
-                className={styles.activityIcon}
-                data-tone={activity.tone}
-              >
-                <NexusDashboardInsightsIcon name={activity.icon} />
-              </span>
-              <div className={styles.activityCopy}>
-                <p className={styles.activityHeadline}>
-                  <strong title={activity.subjectFull}>
-                    {activity.subject}
-                  </strong>{" "}
-                  {activity.action}
-                </p>
-                <p
-                  className={styles.activityDetail}
-                  title={activity.detailFull}
+        {activities.length === 0 ? (
+          <p className={styles.emptyState}>
+            Belum ada aktivitas untuk ditampilkan.
+          </p>
+        ) : (
+          <ul
+            className={styles.activityList}
+            id="dashboard-recent-activity-list"
+          >
+            {visibleActivities.map((activity) => (
+              <li className={styles.activityItem} key={activity.id}>
+                <span
+                  aria-hidden="true"
+                  className={styles.activityIcon}
+                  data-tone={activity.tone}
                 >
-                  {activity.detail}
-                </p>
-              </div>
-              <time dateTime={activity.occurredAt}>{activity.timeLabel}</time>
-            </li>
-          ))}
-        </ul>
+                  <NexusDashboardInsightsIcon name={activity.icon} />
+                </span>
+                <div className={styles.activityCopy}>
+                  <p className={styles.activityHeadline}>
+                    <strong title={activity.subjectFull}>
+                      {activity.subject}
+                    </strong>{" "}
+                    {activity.action}
+                  </p>
+                  <p
+                    className={styles.activityDetail}
+                    title={activity.detailFull}
+                  >
+                    {activity.detail}
+                  </p>
+                </div>
+                <time dateTime={activity.occurredAt}>{activity.timeLabel}</time>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section

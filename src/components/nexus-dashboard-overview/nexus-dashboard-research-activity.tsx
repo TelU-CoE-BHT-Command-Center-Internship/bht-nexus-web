@@ -203,6 +203,8 @@ function ResearchActivityChart({ content }: ResearchActivityProps) {
 export function NexusDashboardResearchActivity({
   content,
 }: ResearchActivityProps) {
+  const hasData = content.activitySeries.length > 0;
+
   return (
     <section aria-labelledby="research-activity-title" className={styles.panel}>
       <div className={styles.panelHeader}>
@@ -210,14 +212,24 @@ export function NexusDashboardResearchActivity({
           <h2 id="research-activity-title">{content.activityTitle}</h2>
           <p>{content.activitySubtitle}</p>
         </div>
-        <span className={styles.periodControl}>
-          {content.activityPeriodLabel}
-          <NexusDashboardOverviewIcon name="chevron-down" />
-        </span>
+        {hasData ? (
+          <span className={styles.periodControl}>
+            {content.activityPeriodLabel}
+            <NexusDashboardOverviewIcon name="chevron-down" />
+          </span>
+        ) : null}
       </div>
 
-      <ActivityLegend series={content.activitySeries} />
-      <ResearchActivityChart content={content} />
+      {hasData ? (
+        <>
+          <ActivityLegend series={content.activitySeries} />
+          <ResearchActivityChart content={content} />
+        </>
+      ) : (
+        <p className={styles.panelEmptyState}>
+          Belum ada data aktivitas riset untuk ditampilkan.
+        </p>
+      )}
     </section>
   );
 }
