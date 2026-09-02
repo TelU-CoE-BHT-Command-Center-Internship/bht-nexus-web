@@ -25,16 +25,26 @@ export const quartileOptions = (
 
 export const nexusPublicationsLiveContent = {
   columns: {
+    action: "Aksi",
     citationCount: "Sitasi",
     doi: "DOI",
+    indicator: "Indikator KM",
     quartile: "Kuartil",
     status: "Status",
-    title: "Judul",
+    title: "Publikasi",
     venue: "Venue",
     workType: "Jenis",
     year: "Tahun",
   },
   createLabel: "Tambah Publikasi",
+  indicatorUnavailable: "Belum tersedia",
+  manualSubmissionLabel: "Ajukan publikasi",
+  metricOfficialLabel: "Publikasi Resmi",
+  metricTopQuartileLabel: "Setara Q1/Q2",
+  metricUnofficialLabel: "Belum Resmi",
+  metricUnit: "data",
+  officialNote:
+    "Publikasi resmi CoE BHT beserta metadata karya dan kuartil jurnalnya.",
   deleteConfirmLabel: "Ya, hapus",
   deleteConfirmPrompt:
     "Hapus publikasi ini? Tindakan ini tidak bisa dibatalkan.",
@@ -74,7 +84,8 @@ export const nexusPublicationsLiveContent = {
   searchLabel: "Cari publikasi",
   searchPlaceholder: "Cari judul publikasi",
   sortByLabel: "Urutkan",
-  tableCaption: "Daftar publikasi resmi",
+  tableCaption:
+    "Publikasi resmi CoE BHT beserta metadata karya, kuartil, dan status kelengkapannya",
   title: "Publikasi",
   unofficial: "Belum resmi",
 } as const;

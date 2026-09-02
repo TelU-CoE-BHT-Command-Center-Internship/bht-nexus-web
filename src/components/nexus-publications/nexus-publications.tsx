@@ -1,7 +1,9 @@
 "use client";
 
 import { useDeferredValue, useEffect, useState } from "react";
+import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
+import { NexusPublicationsIcon } from "@/components/nexus-publications/nexus-publications-icons";
 import {
   nexusPublicationsLiveContent as content,
   quartileLabels,
@@ -10,6 +12,7 @@ import {
   workTypeLabels,
   workTypeOptions,
 } from "@/components/nexus-publications/nexus-publications-live-content";
+
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
@@ -17,10 +20,16 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
   NexusWorkspaceNotice,
+  NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
-import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceMetrics,
+  NexusWorkspacePage,
+} from "@/components/nexus-workspace-ui/nexus-workspace-page";
+import {
+  NexusWorkspaceMobileAction,
+  NexusWorkspaceMobileCard,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
@@ -31,6 +40,7 @@ import {
   type NexusSelectConfig,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 import { ApiRequestError } from "@/lib/api-client";
 import {
   createPublication,
@@ -74,6 +84,8 @@ const emptyForm: FormValues = {
   workType: "",
   year: "",
 };
+
+const emptyMetrics = { official: 0, topQuartile: 0, unofficial: 0 };
 
 const workTypeFilterConfig: NexusSelectConfig = {
   defaultValue: "all",
@@ -126,13 +138,12 @@ const pageSizeConfig: NexusSelectConfig = {
 
 const columns: readonly NexusWorkspaceRecordColumn[] = [
   { id: "title", label: content.columns.title, primary: true },
-  { id: "workType", label: content.columns.workType },
-  { id: "year", label: content.columns.year },
-  { id: "venue", label: content.columns.venue },
+  { id: "indicator", label: content.columns.indicator },
   { id: "quartile", label: content.columns.quartile },
+  { id: "year", label: content.columns.year },
   { id: "citationCount", label: content.columns.citationCount },
   { id: "status", label: content.columns.status },
-  { id: "actions", label: "" },
+  { id: "actions", label: content.columns.action },
 ];
 
 function formFromRecord(record: PublicationRecord): FormValues {
@@ -150,6 +161,26 @@ function formFromRecord(record: PublicationRecord): FormValues {
   };
 }
 
+function StatusBadge({ record }: { record: PublicationRecord }) {
+  return (
+    <NexusWorkspaceTableBadge tone={record.isOfficial ? "success" : "neutral"}>
+      {record.isOfficial ? content.official : content.unofficial}
+    </NexusWorkspaceTableBadge>
+  );
+}
+
+function QuartileCell({ record }: { record: PublicationRecord }) {
+  if (record.quartile === null) {
+    return <span className={styles.plainCell}>{content.noQuartile}</span>;
+  }
+  const isTop = record.quartile === "Q1" || record.quartile === "Q2";
+  return (
+    <NexusWorkspaceTableBadge tone={isTop ? "success" : "info"}>
+      {quartileLabels[record.quartile]}
+    </NexusWorkspaceTableBadge>
+  );
+}
+
 function errorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
     return error.message;
@@ -160,6 +191,7 @@ function errorMessage(error: unknown): string {
 export function NexusPublications() {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
+  const isSearchUpdating = search !== deferredSearch;
   const [workType, setWorkType] = useState("all");
   const [isOfficialFilter, setIsOfficialFilter] = useState("all");
   const [quartileFilter, setQuartileFilter] = useState("all");
@@ -176,6 +208,7 @@ export function NexusPublications() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [metrics, setMetrics] = useState(emptyMetrics);
 
   const [drawer, setDrawer] = useState<DrawerState>(null);
   const [form, setForm] = useState<FormValues>(emptyForm);
@@ -234,6 +267,35 @@ export function NexusPublications() {
     pageSizeValue,
     reloadToken,
   ]);
+
+  // Kartu ringkasan menghitung total sesungguhnya, terpisah dari halaman
+  // tabel yang sedang difilter, jadi memakai limit=1 dan hanya membaca meta.total.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadToken is a manual refetch trigger, not read in the body
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all([
+      listPublications({ isOfficial: true, limit: 1 }),
+      listPublications({ isOfficial: true, limit: 1, quartile: "Q1" }),
+      listPublications({ isOfficial: true, limit: 1, quartile: "Q2" }),
+      listPublications({ isOfficial: false, limit: 1 }),
+    ])
+      .then(([official, q1, q2, unofficial]) => {
+        if (cancelled) return;
+        setMetrics({
+          official: official.meta.total,
+          topQuartile: q1.meta.total + q2.meta.total,
+          unofficial: unofficial.meta.total,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setMetrics(emptyMetrics);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   function reload() {
     setReloadToken((token) => token + 1);
@@ -339,59 +401,117 @@ export function NexusPublications() {
     }
   }
 
-  const rows = records.map((record) => ({
-    cells: {
-      actions: (
-        <NexusWorkspaceTableAction
-          label={`Ubah ${record.title}`}
-          onClick={() => openEdit(record.publicId)}
-        >
-          Ubah
-        </NexusWorkspaceTableAction>
-      ),
-      citationCount: record.citationCount,
-      quartile:
-        record.quartile === null ? (
-          content.noQuartile
-        ) : (
-          <NexusWorkspaceTableBadge tone="neutral">
-            {quartileLabels[record.quartile]}
-          </NexusWorkspaceTableBadge>
+  const activeFilterCount = [
+    search.length > 0,
+    workType !== "all",
+    isOfficialFilter !== "all",
+    quartileFilter !== "all",
+  ].filter(Boolean).length;
+  const hasActiveFilters = activeFilterCount > 0;
+  const resultSummary = `${meta?.total ?? 0} ${content.resultUnit} sesuai filter · ${
+    activeFilterCount > 0
+      ? `${activeFilterCount} filter aktif`
+      : "tanpa filter tambahan"
+  }`;
+
+  function resetFilters() {
+    setSearch("");
+    setWorkType("all");
+    setIsOfficialFilter("all");
+    setQuartileFilter("all");
+    setPage(1);
+  }
+
+  const rows = records.map((record) => {
+    return {
+      cells: {
+        actions: (
+          <NexusWorkspaceTableAction
+            label={`Ubah ${record.title}`}
+            onClick={() => openEdit(record.publicId)}
+          >
+            Ubah
+          </NexusWorkspaceTableAction>
         ),
-      status: (
-        <NexusWorkspaceTableBadge
-          tone={record.isOfficial ? "success" : "neutral"}
-        >
-          {record.isOfficial ? content.official : content.unofficial}
-        </NexusWorkspaceTableBadge>
-      ),
-      title: (
-        <NexusWorkspaceTablePrimary
-          onClick={() => openEdit(record.publicId)}
+        citationCount: record.citationCount,
+        indicator: (
+          <span className={styles.plainCell}>
+            {content.indicatorUnavailable}
+          </span>
+        ),
+        quartile: <QuartileCell record={record} />,
+        status: <StatusBadge record={record} />,
+        title: (
+          <NexusWorkspaceTablePrimary
+            onClick={() => openEdit(record.publicId)}
+            subtitle={`${workTypeLabels[record.workType]} · ${record.venue ?? "—"}`}
+            title={record.title}
+          />
+        ),
+        year: record.year,
+      },
+      id: record.publicId,
+      mobile: (
+        <NexusWorkspaceMobileCard
+          action={
+            <NexusWorkspaceMobileAction
+              label={`Ubah ${record.title}`}
+              onClick={() => openEdit(record.publicId)}
+            >
+              Ubah
+            </NexusWorkspaceMobileAction>
+          }
+          eyebrow={<StatusBadge record={record} />}
+          meta={
+            <dl>
+              <div>
+                <dt>{content.columns.indicator}</dt>
+                <dd>{content.indicatorUnavailable}</dd>
+              </div>
+              <div>
+                <dt>{content.columns.quartile}</dt>
+                <dd>
+                  {record.quartile === null
+                    ? content.noQuartile
+                    : quartileLabels[record.quartile]}
+                </dd>
+              </div>
+              <div>
+                <dt>{content.columns.year}</dt>
+                <dd>{record.year}</dd>
+              </div>
+              <div>
+                <dt>{content.columns.citationCount}</dt>
+                <dd>{record.citationCount}</dd>
+              </div>
+            </dl>
+          }
           title={record.title}
-        />
+        >
+          <p className={styles.mobileSubtitle}>
+            {workTypeLabels[record.workType]} · {record.venue ?? "—"}
+          </p>
+        </NexusWorkspaceMobileCard>
       ),
-      venue: record.venue ?? "—",
-      workType: workTypeLabels[record.workType],
-      year: record.year,
-    },
-    id: record.publicId,
-    mobile: (
-      <NexusWorkspaceTableAction
-        label={`Ubah ${record.title}`}
-        onClick={() => openEdit(record.publicId)}
-      >
-        {record.title}
-      </NexusWorkspaceTableAction>
-    ),
-  }));
+    };
+  });
 
   return (
     <NexusWorkspacePage
       actions={
-        <NexusWorkspaceButton onClick={openCreate} tone="primary" type="button">
-          {content.createLabel}
-        </NexusWorkspaceButton>
+        <>
+          <NexusManualSubmissionLink
+            domain="publication"
+            label={content.manualSubmissionLabel}
+          />
+          <NexusWorkspaceButton
+            onClick={openCreate}
+            tone="primary"
+            type="button"
+          >
+            {content.createLabel}
+          </NexusWorkspaceButton>
+        </>
       }
       description={content.description}
       descriptionId="publications-description"
@@ -401,6 +521,35 @@ export function NexusPublications() {
       {loadError !== null ? (
         <NexusWorkspaceNotice tone="danger">{loadError}</NexusWorkspaceNotice>
       ) : null}
+
+      <NexusWorkspaceMetrics
+        metrics={[
+          {
+            icon: <NexusPublicationsIcon name="book" />,
+            id: "official",
+            label: content.metricOfficialLabel,
+            tone: "completed",
+            unit: content.metricUnit,
+            value: metrics.official,
+          },
+          {
+            icon: <NexusPublicationsIcon name="quartile" />,
+            id: "top-quartile",
+            label: content.metricTopQuartileLabel,
+            tone: "waiting",
+            unit: content.metricUnit,
+            value: metrics.topQuartile,
+          },
+          {
+            icon: <NexusPublicationsIcon name="alert" />,
+            id: "unofficial",
+            label: content.metricUnofficialLabel,
+            tone: "needs-fix",
+            unit: content.metricUnit,
+            value: metrics.unofficial,
+          },
+        ]}
+      />
 
       <div className={styles.toolbar}>
         <NexusWorkspaceSearch
@@ -446,34 +595,49 @@ export function NexusPublications() {
         />
       </div>
 
-      <NexusWorkspaceRecordTable
-        caption={content.tableCaption}
-        columns={columns}
-        empty={
-          <NexusWorkspaceEmptyState
-            description={content.emptyDescription}
-            title={content.emptyTitle}
-          />
-        }
-        isLoading={isLoading}
-        pagination={
-          <NexusTablePagination
-            currentPage={page}
-            itemCount={meta?.total ?? 0}
-            navigationLabel={content.navigationLabel}
-            nextPageLabel={content.nextPageLabel}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSizeValue}
-            pageLabel={content.pageLabel}
-            pageSizeConfig={pageSizeConfig}
-            pageSizeValue={pageSizeValue}
-            previousPageLabel={content.previousPageLabel}
-            rangePrefix={content.rangePrefix}
-            totalUnit={content.resultUnit}
-          />
-        }
-        rows={rows}
+      <NexusWorkspaceResultMeta
+        isUpdating={isSearchUpdating}
+        onResetFilters={hasActiveFilters ? resetFilters : undefined}
+        resultLabel={`${meta?.total ?? 0} ${content.resultUnit} ditemukan`}
+        updatingLabel="Memperbarui hasil pencarian"
       />
+
+      <NexusWorkspaceTableSection
+        guidance={content.officialNote}
+        summary={resultSummary}
+        title={content.title}
+        titleId="official-publications-title"
+      >
+        <NexusWorkspaceRecordTable
+          caption={content.tableCaption}
+          columns={columns}
+          empty={
+            <NexusWorkspaceEmptyState
+              description={content.emptyDescription}
+              onResetFilters={hasActiveFilters ? resetFilters : undefined}
+              title={content.emptyTitle}
+            />
+          }
+          isLoading={isLoading}
+          pagination={
+            <NexusTablePagination
+              currentPage={page}
+              itemCount={meta?.total ?? 0}
+              navigationLabel={content.navigationLabel}
+              nextPageLabel={content.nextPageLabel}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSizeValue}
+              pageLabel={content.pageLabel}
+              pageSizeConfig={pageSizeConfig}
+              pageSizeValue={pageSizeValue}
+              previousPageLabel={content.previousPageLabel}
+              rangePrefix={content.rangePrefix}
+              totalUnit={content.resultUnit}
+            />
+          }
+          rows={rows}
+        />
+      </NexusWorkspaceTableSection>
 
       {drawer !== null ? (
         <NexusWorkspaceDrawer
