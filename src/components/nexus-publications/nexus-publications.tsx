@@ -613,9 +613,15 @@ export function NexusPublications() {
           columns={columns}
           empty={
             <NexusWorkspaceEmptyState
-              description={content.emptyDescription}
+              description={
+                hasActiveFilters
+                  ? content.emptyDescription
+                  : content.emptyTrueDescription
+              }
               onResetFilters={hasActiveFilters ? resetFilters : undefined}
-              title={content.emptyTitle}
+              title={
+                hasActiveFilters ? content.emptyTitle : content.emptyTrueTitle
+              }
             />
           }
           isLoading={isLoading}

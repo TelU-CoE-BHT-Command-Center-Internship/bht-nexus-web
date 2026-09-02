@@ -53,6 +53,9 @@ export const nexusPublicationsLiveContent = {
   editEyebrow: "Ubah Publikasi",
   emptyDescription: "Belum ada publikasi yang cocok dengan filter ini.",
   emptyTitle: "Tidak ada hasil",
+  emptyTrueDescription:
+    "Publikasi akan muncul di sini setelah data resmi pertama dicatat.",
+  emptyTrueTitle: "Belum ada publikasi resmi",
   fieldCitationCount: "Jumlah sitasi",
   fieldDoi: "DOI",
   fieldIsOfficial: "Tandai sebagai publikasi resmi",
