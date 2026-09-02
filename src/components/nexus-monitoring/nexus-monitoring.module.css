@@ -135,11 +135,29 @@
 }
 
 .metricCard {
+  --metric-accent: #315ca8;
+  --metric-soft: #edf3fc;
+
   min-width: 0;
   padding: 1.25rem;
   border: 1px solid var(--color-nexus-border);
   border-radius: 1rem;
   background: var(--color-nexus-surface);
+}
+
+.metricCard[data-tone="green"] {
+  --metric-accent: #087443;
+  --metric-soft: #e7f5ed;
+}
+
+.metricCard[data-tone="gold"] {
+  --metric-accent: #b06b00;
+  --metric-soft: #fff4dd;
+}
+
+.metricCard[data-tone="violet"] {
+  --metric-accent: #6941c6;
+  --metric-soft: #f0ebfb;
 }
 
 @media (min-width: 48rem) {
@@ -156,6 +174,11 @@
   border-radius: 0.75rem;
   background: #f2f4f7;
   color: var(--color-nexus-text-strong);
+}
+
+.metricCard[data-variant="summary"] .metricIcon {
+  background: var(--metric-soft);
+  color: var(--metric-accent);
 }
 
 .metricIcon svg {
@@ -203,6 +226,69 @@
   color: var(--color-nexus-text-muted);
   font-size: 0.8125rem;
   font-weight: 500;
+}
+
+.metricDetail {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/*
+ * Varian ringkas dipakai pada Ringkasan lintas domain. Anatominya mengikuti
+ * dashboard rujukan: ikon lembut di kiri, label dan nilai di kanan, lalu satu
+ * baris konteks yang menjelaskan arti angka tanpa tren buatan.
+ */
+.metricCard[data-variant="summary"] {
+  display: flex;
+  min-height: 8.5rem;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1.1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.18rem 0.65rem rgb(8 40 92 / 4%);
+}
+
+.metricCard[data-variant="summary"] .metricIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  border-radius: 0.7rem;
+}
+
+.metricCard[data-variant="summary"] .metricIcon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.metricCard[data-variant="summary"] .metricFoot {
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  margin-top: 0;
+}
+
+.metricCard[data-variant="summary"] .metricCopy > span:first-child {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.8125rem;
+  font-weight: 620;
+  line-height: 1.35;
+}
+
+.metricCard[data-variant="summary"] .metricValue {
+  margin-top: 0.55rem;
+  font-size: clamp(1.75rem, 2vw, 2.15rem);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.metricCard[data-variant="summary"] .metricValue small {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
 
 /* Penanda status; selalu memakai teks, tidak pernah warna saja. */
@@ -390,12 +476,20 @@
   overflow-x: auto;
 }
 
+.chartScroll[data-fluid="true"] {
+  overflow-x: hidden;
+}
+
 .chartInner {
   min-width: 34rem;
 }
 
 .chartInner[data-wide="true"] {
   min-width: 44rem;
+}
+
+.chartInner[data-fluid="true"] {
+  min-width: 100%;
 }
 
 /*
@@ -569,80 +663,7 @@
   font-weight: 500;
 }
 
-/* Daftar kategori pada halaman Monitoring KM. */
-.categoryGrid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-}
-
-@media (min-width: 48rem) {
-  .categoryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-  }
-}
-
-@media (min-width: 75rem) {
-  .categoryGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.categoryCard {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.25rem;
-  border: 1px solid var(--color-nexus-border);
-  border-radius: 1rem;
-  background: var(--color-nexus-surface);
-}
-
-.categoryCard[data-monitored="true"] {
-  border-color: #cfd6ea;
-  box-shadow: 0 0.35rem 1.1rem rgb(8 40 92 / 5%);
-}
-
-.categoryTop {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.categoryTop h3 {
-  margin: 0;
-  color: var(--color-nexus-text-strong);
-  font-size: 1rem;
-  font-weight: 650;
-  line-height: 1.45;
-}
-
-.categoryCount {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.45;
-}
-
-.categoryDetail {
-  margin: 0;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-}
-
-.categoryFoot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-top: auto;
-  padding-top: 0.25rem;
-}
-
+/* Tautan sebaris berpanah; dipakai kartu domain, tabel, dan halaman rincian. */
 .inlineLink {
   display: inline-flex;
   align-items: center;
@@ -659,11 +680,829 @@
 .inlineLink svg {
   width: 1rem;
   height: 1rem;
+  flex: 0 0 auto;
   fill: none;
   stroke: currentcolor;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
+}
+
+/*
+ * Pemilih periode dan pemilih domain pada Ringkasan Monitoring KM.
+ * Anatomi chip domain — ikon berwarna, nama tebal, keterangan kecil, dan
+ * keadaan terpilih bertepi biru — dicangkok dari dashboard rujukan; warna,
+ * tipografi, dan fokus tetap memakai token BHT Nexus.
+ */
+.summaryPeriod {
+  width: min(17rem, 100%);
+}
+
+/*
+ * Wadah pemilih domain. Barisnya digeser mendatar tanpa batang gulir supaya
+ * tepinya tetap bersih; bayangan tipis di kiri dan kanan menandakan masih ada
+ * domain lain di arah tersebut.
+ */
+.domainBar {
+  position: relative;
+  min-width: 0;
+  padding: 0.5rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.75rem;
+  background: var(--color-nexus-surface);
+  margin-top: clamp(1.25rem, 1.8vw, 1.5rem);
+}
+
+.domainBar::before,
+.domainBar::after {
+  position: absolute;
+  z-index: 1;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2.5rem;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+.domainBar::before {
+  left: 0.5rem;
+  border-radius: 0.5rem 0 0 0.5rem;
+  background: linear-gradient(
+    90deg,
+    var(--color-nexus-surface) 25%,
+    rgb(255 255 255 / 0%)
+  );
+}
+
+.domainBar::after {
+  right: 0.5rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: linear-gradient(
+    270deg,
+    var(--color-nexus-surface) 25%,
+    rgb(255 255 255 / 0%)
+  );
+}
+
+.domainBar[data-at-start="false"]::before,
+.domainBar[data-at-end="false"]::after {
+  opacity: 1;
+}
+
+/*
+ * Chip tidak pernah turun ke baris kedua supaya tinggi barisnya tetap sama.
+ */
+.domainRow {
+  display: flex;
+  min-width: 0;
+  gap: 0.5rem;
+  cursor: grab;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.domainRow::-webkit-scrollbar {
+  display: none;
+}
+
+.domainRow[data-dragging="true"] {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.domainChip {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.625rem;
+  background: var(--color-nexus-surface);
+  box-shadow: 0 1px 2px rgb(16 24 40 / 5%);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.domainChip:hover {
+  border-color: #c3cfe1;
+  box-shadow: 0 2px 6px rgb(16 24 40 / 8%);
+}
+
+.domainChip[data-active="true"] {
+  border-color: #b6c6e2;
+  background: #eef3fb;
+  box-shadow: none;
+}
+
+.domainIcon {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--domain-accent, var(--color-nexus-text-muted));
+}
+
+.domainIcon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.domainCopy {
+  min-width: 0;
+}
+
+.domainCopy strong {
+  display: block;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.8125rem;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.domainChip[data-active="true"] .domainCopy strong {
+  color: var(--color-brand-navy);
+}
+
+.domainCopy > span {
+  display: block;
+  margin-top: 0.05rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+/* Panel yang berganti saat pengguna memilih domain. */
+.domainPanel {
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+.summaryMetricGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+/*
+ * Dua panel analitik mengikuti komposisi rujukan: perbandingan domain menjadi
+ * bukti utama di kiri, sedangkan gauge ringkasan menjadi konteks di kanan.
+ */
+.summaryAnalyticsGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 75rem) {
+  .summaryAnalyticsGrid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(19rem, 0.85fr);
+  }
+}
+
+.summaryChartUnit {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.625rem;
+  background: var(--color-nexus-surface);
+  color: var(--color-nexus-text);
+  font-size: 0.75rem;
+  font-weight: 550;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.summaryTargetCard .targetPanel {
+  justify-content: space-between;
+  padding-bottom: 1.25rem;
+}
+
+.summaryTargetCard .targetChartWrap {
+  margin-top: 1rem;
+  padding-top: 0;
+}
+
+.summaryTargetCard .targetChart {
+  height: 9.75rem;
+}
+
+.summaryTargetCard .targetPill {
+  margin-top: 0.5rem;
+}
+
+.summaryTargetCard .targetFooter {
+  background: #f8f9fb;
+}
+
+.summaryUpdates {
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+.summaryUpdatesTable {
+  margin: -0.25rem -0.25rem -1.25rem;
+  overflow: visible;
+  border: 1px solid var(--color-nexus-border-soft);
+  border-radius: 0.75rem;
+}
+
+.summaryUpdatesTable table {
+  min-width: 56rem;
+}
+
+.summaryUpdatesTable th[data-column="updated"] {
+  width: 9.5rem;
+}
+
+.summaryUpdatesTable th[data-column="domain"] {
+  width: 10.5rem;
+}
+
+.summaryUpdatesTable th[data-column="indicator"] {
+  width: 11rem;
+}
+
+.summaryUpdatesTable th[data-column="source"] {
+  width: 11rem;
+}
+
+.summaryUpdateTime,
+.summaryUpdatePlain,
+.summaryUpdateIndicators {
+  color: var(--color-nexus-text-soft);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.summaryUpdateTime,
+.summaryUpdateIndicators {
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryUpdateIndicators {
+  color: var(--color-nexus-text-strong);
+  font-weight: 600;
+}
+
+.summaryUpdateDomains {
+  display: inline-flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+}
+
+.summaryUpdateDomain {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.summaryUpdateDomain > span {
+  display: grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 1.05rem;
+  place-items: center;
+  color: var(--domain-accent, var(--color-nexus-text-muted));
+}
+
+.summaryUpdateDomain svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.65;
+}
+
+.summaryUpdateId {
+  margin: -0.15rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.categoryProgress {
+  --progress-reached: #48b88a;
+  --progress-reported: #4776e6;
+  --progress-remaining: #f0bb3f;
+  --progress-unavailable: #d8dde5;
+
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+.categoryProgress > .card {
+  min-height: 31rem;
+}
+
+.categoryProgress > .card .cardBody {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.categoryProgressSelect {
+  width: min(21rem, 100%);
+}
+
+.categoryProgressViewport {
+  display: grid;
+  height: 22rem;
+  min-width: 0;
+  align-items: center;
+  overflow: hidden;
+}
+
+.categoryProgressRows {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-auto-rows: minmax(0, 1fr);
+  align-content: stretch;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.categoryProgressViewport[data-density="dense"] .categoryProgressRows {
+  gap: 0;
+}
+
+.categoryProgressViewport[data-density="sparse"] .categoryProgressRows {
+  height: auto;
+  grid-auto-rows: auto;
+  align-self: center;
+  gap: 2.5rem;
+}
+
+.categoryProgressRow {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 5rem;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.categoryProgressLabel,
+.categoryProgressValue {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.75rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.categoryProgressValue {
+  color: var(--color-nexus-text-soft);
+  text-align: right;
+}
+
+.categoryProgressValue[data-status="unavailable"] {
+  color: var(--color-nexus-text-subtle);
+}
+
+.categoryProgressTrack {
+  display: flex;
+  width: 100%;
+  height: 1.05rem;
+  overflow: hidden;
+  border-radius: 0.28rem;
+  background: #eef1f5;
+  box-shadow: inset 0 0 0 1px rgb(207 212 220 / 55%);
+}
+
+.categoryProgressViewport[data-density="dense"] .categoryProgressTrack {
+  height: 0.95rem;
+}
+
+.categoryProgressViewport[data-density="sparse"] .categoryProgressTrack {
+  height: 1.2rem;
+}
+
+.categoryProgressTrack > span {
+  height: 100%;
+  animation: category-progress-reveal 520ms ease-out both;
+  animation-delay: calc(var(--row-index, 0) * 28ms);
+  transform-origin: left center;
+}
+
+.categoryProgressReached {
+  background: var(--progress-reached);
+}
+
+.categoryProgressReported {
+  background: var(--progress-reported);
+}
+
+.categoryProgressRemaining {
+  background: var(--progress-remaining);
+}
+
+.categoryProgressUnavailable {
+  background: var(--progress-unavailable);
+}
+
+.categoryProgressLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem 2rem;
+  padding: 0.9rem 0 0;
+  border: 0;
+  margin: auto 0 0;
+}
+
+.categoryProgressLegend button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.4rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--color-nexus-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+.categoryProgressLegend button::before {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  background: var(--progress-unavailable);
+  content: "";
+}
+
+.categoryProgressLegend button:hover {
+  background: #f1f5fa;
+  color: var(--color-nexus-text-strong);
+}
+
+.categoryProgressLegend button:focus-visible {
+  outline: 0.1875rem solid var(--color-brand-gold);
+  outline-offset: 0.15rem;
+}
+
+.categoryProgressLegend button[aria-pressed="false"] {
+  opacity: 0.45;
+}
+
+.categoryProgressLegend button[data-tone="reached"]::before {
+  background: var(--progress-reached);
+}
+
+.categoryProgressLegend button[data-tone="reported"]::before {
+  background: var(--progress-reported);
+}
+
+.categoryProgressLegend button[data-tone="remaining"]::before {
+  background: var(--progress-remaining);
+}
+
+@keyframes category-progress-reveal {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 40rem) {
+  .categoryProgress > .card {
+    min-height: 29rem;
+  }
+
+  .categoryProgressSelect {
+    width: 100%;
+  }
+
+  .categoryProgressViewport {
+    height: 20.5rem;
+  }
+
+  .categoryProgressRow {
+    grid-template-columns: 3.4rem minmax(0, 1fr) 3.5rem;
+    gap: 0.45rem;
+  }
+
+  .categoryProgressLegend {
+    gap: 0.55rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .categoryProgressTrack > span {
+    animation: none;
+  }
+
+  .categoryProgressLegend button {
+    transition: none;
+  }
+}
+
+@media (max-width: 68rem) {
+  .summaryUpdatesTable {
+    margin: -0.25rem -0.25rem -1.25rem;
+  }
+}
+
+@media (min-width: 75rem) {
+  .summaryAnalyticsGrid > :first-child {
+    height: 100%;
+  }
+
+  .summaryAnalyticsGrid > :first-child .cardBody {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 74.99rem) {
+  .summaryMetricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 39.99rem) {
+  .summaryMetricGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Keterangan domain individual; menjadi tempat modul capaian berikutnya. */
+.domainState {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 1rem;
+  background: var(--color-nexus-surface);
+}
+
+@media (min-width: 40rem) {
+  .domainState {
+    padding: 1.5rem;
+  }
+}
+
+.domainState:focus-visible {
+  outline: 0.1875rem solid var(--color-brand-gold);
+  outline-offset: 0.2rem;
+}
+
+.domainStateCopy h3 {
+  margin: 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 1.0625rem;
+  font-weight: 620;
+  line-height: 1.45;
+}
+
+.domainStateCopy p {
+  margin: 0.35rem 0 0;
+  max-width: 58rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.domainStateMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--color-nexus-border-subtle);
+}
+
+.domainStateMeta > span {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+}
+
+.constructionState {
+  position: relative;
+  display: grid;
+  min-height: 39rem;
+  place-items: center;
+  align-content: center;
+  gap: 1rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  overflow: hidden;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 50% 35%, rgb(237 244 255 / 82%), transparent 42%),
+    var(--color-nexus-surface);
+  text-align: center;
+}
+
+.constructionState::before,
+.constructionState::after {
+  position: absolute;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 999px;
+  background: rgb(49 92 168 / 4%);
+  content: "";
+  pointer-events: none;
+}
+
+.constructionState::before {
+  top: 12%;
+  left: 7%;
+}
+
+.constructionState::after {
+  right: 9%;
+  bottom: 14%;
+}
+
+.constructionVisual {
+  position: relative;
+  z-index: 1;
+  width: min(42rem, 100%);
+  height: clamp(14rem, 28vw, 21rem);
+}
+
+.constructionVisual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.constructionCopy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  max-width: 47rem;
+  justify-items: center;
+  gap: 0.6rem;
+}
+
+.constructionEyebrow {
+  display: inline-flex;
+  min-height: 1.8rem;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #315ca8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.constructionCopy h3 {
+  margin: 0;
+  color: var(--color-nexus-text-strong);
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.constructionCopy p {
+  margin: 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.constructionActions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.constructionActions > * {
+  min-width: 10.5rem;
+}
+
+.constructionNote {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(42rem, 100%);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-nexus-border-soft);
+  border-radius: 0.75rem;
+  background: rgb(248 250 253 / 88%);
+  text-align: left;
+}
+
+.constructionNote > span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  place-items: center;
+  border-radius: 0.55rem;
+  background: #eef4ff;
+  color: #315ca8;
+}
+
+.constructionNote svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.constructionNote p {
+  margin: 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.constructionNote strong {
+  color: var(--color-nexus-text-strong);
+  font-weight: 700;
+}
+
+@media (max-width: 40rem) {
+  .constructionState {
+    min-height: 36rem;
+    padding: 1.25rem;
+  }
+
+  .constructionVisual {
+    height: 13.5rem;
+  }
+
+  .constructionActions {
+    width: 100%;
+  }
+
+  .constructionActions > * {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .domainChip {
+    transition: none;
+  }
 }
 
 /* Navigasi antar-indikator pada halaman rincian. */

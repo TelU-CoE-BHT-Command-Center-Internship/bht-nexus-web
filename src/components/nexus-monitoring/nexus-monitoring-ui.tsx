@@ -69,23 +69,33 @@ export function MonitoringCard({
 
 type MonitoringMetricCardProps = {
   badge?: { label: string; tone?: MonitoringTone };
+  detail?: string;
   fallback?: string;
   icon: NexusWorkspaceIconName;
   label: string;
+  tone?: "blue" | "gold" | "green" | "violet";
   unit?: string;
   value: number | null;
+  variant?: "default" | "summary";
 };
 
 export function MonitoringMetricCard({
   badge,
+  detail,
   fallback,
   icon,
   label,
+  tone = "blue",
   unit,
   value,
+  variant = "default",
 }: MonitoringMetricCardProps) {
   return (
-    <article className={styles.metricCard}>
+    <article
+      className={styles.metricCard}
+      data-tone={tone}
+      data-variant={variant}
+    >
       <span className={styles.metricIcon}>
         <MonitoringIcon name={icon} />
       </span>
@@ -96,6 +106,9 @@ export function MonitoringMetricCard({
             <MonitoringNumber fallback={fallback} value={value} />
             {unit && value !== null ? <small>{unit}</small> : null}
           </strong>
+          {detail ? (
+            <span className={styles.metricDetail}>{detail}</span>
+          ) : null}
         </div>
         {badge ? (
           <MonitoringBadge tone={badge.tone}>{badge.label}</MonitoringBadge>
@@ -226,18 +239,21 @@ export function MonitoringValueTable({
  */
 export function MonitoringChartFrame({
   children,
+  fluid = false,
   label,
   wide = false,
 }: {
   children: ReactNode;
+  fluid?: boolean;
   label: string;
   wide?: boolean;
 }) {
   return (
-    <div className={styles.chartScroll}>
+    <div className={styles.chartScroll} data-fluid={fluid}>
       <div
         aria-label={label}
         className={styles.chartInner}
+        data-fluid={fluid}
         data-wide={wide}
         role="img"
       >

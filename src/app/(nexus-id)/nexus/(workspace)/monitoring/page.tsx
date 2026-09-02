@@ -4,7 +4,12 @@ import {
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { getNexusMonitoringCategories } from "@/components/nexus-monitoring/nexus-monitoring-categories";
+import { NEXUS_EVALUATION_PERIOD } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
+import { nexusMonitoringIndicatorProgress } from "@/components/nexus-monitoring/nexus-monitoring-indicator-progress";
 import { NexusMonitoringLanding } from "@/components/nexus-monitoring/nexus-monitoring-landing";
+import { summarizeRiset } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
+import { getNexusMonitoringRecords } from "@/components/nexus-monitoring/nexus-monitoring-sources";
+import { nexusMonitoringUpdates } from "@/components/nexus-monitoring/nexus-monitoring-updates";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -39,5 +44,22 @@ export default function NexusMonitoringPage() {
     );
   }
 
-  return <NexusMonitoringLanding categories={getNexusMonitoringCategories()} />;
+  const records = getNexusMonitoringRecords();
+  const targetSummary = summarizeRiset(NEXUS_EVALUATION_PERIOD, records);
+  const indicatorProgress = nexusMonitoringIndicatorProgress(records);
+  const updates = nexusMonitoringUpdates(records);
+
+  return (
+    <NexusMonitoringLanding
+      categories={getNexusMonitoringCategories(records)}
+      indicatorProgress={indicatorProgress}
+      targetSummary={{
+        notComputable: targetSummary.notComputable,
+        notReached: targetSummary.notReached,
+        period: targetSummary.period,
+        reached: targetSummary.reached,
+      }}
+      updates={updates}
+    />
+  );
 }

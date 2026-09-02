@@ -17,6 +17,9 @@ const ApexChart = dynamic(() => import("react-apexcharts"), {
 
 export const MONITORING_SERIES_COLOR = "#5c4fd0";
 export const MONITORING_REFERENCE_COLOR = "#9aa4b5";
+const MONITORING_REACHED_COLOR = "#4776e6";
+const MONITORING_NOT_REACHED_COLOR = "#e5a83c";
+const MONITORING_UNAVAILABLE_COLOR = "#cfd4dc";
 const TRACK_COLOR = "#e4e7ec";
 
 export type MonitoringChartPoint = {
@@ -146,6 +149,149 @@ export function MonitoringColumnChart({
   );
 }
 
+export type MonitoringDomainTargetPoint = {
+  id: string;
+  label: string;
+  notReached: number;
+  reached: number;
+  unavailable: number;
+};
+
+/**
+ * Satu batang bertumpuk per domain. Segmen abu-abu menyatakan indikator yang
+ * belum dapat dihitung—bukan capaian nol—agar seluruh domain tetap mempunyai
+ * slot yang siap menerima kalkulasi ketika evaluatornya tersedia.
+ */
+export function MonitoringDomainTargetChart({
+  height = 260,
+  points,
+}: {
+  height?: number;
+  points: readonly MonitoringDomainTargetPoint[];
+}) {
+  const reducedMotion = useReducedMotion();
+  const options: ApexOptions = {
+    ...baseOptions(reducedMotion),
+    chart: {
+      ...baseOptions(reducedMotion).chart,
+      stacked: true,
+    },
+    colors: [
+      MONITORING_REACHED_COLOR,
+      MONITORING_NOT_REACHED_COLOR,
+      MONITORING_UNAVAILABLE_COLOR,
+    ],
+    dataLabels: {
+      enabled: true,
+      formatter: (value: number) => (value > 0 ? wholeNumberLabel(value) : ""),
+      style: {
+        colors: ["#ffffff", "#5f3b00", "#344054"],
+        fontSize: "11px",
+        fontWeight: 600,
+      },
+    },
+    fill: { opacity: 1 },
+    legend: {
+      ...baseOptions(reducedMotion).legend,
+      horizontalAlign: "center",
+      itemMargin: { horizontal: 10, vertical: 4 },
+      position: "bottom",
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 5,
+        borderRadiusApplication: "end",
+        columnWidth: "58%",
+        horizontal: false,
+      },
+    },
+    responsive: [
+      {
+        breakpoint: 640,
+        options: {
+          dataLabels: { style: { fontSize: "10px" } },
+          legend: {
+            fontSize: "10px",
+            itemMargin: { horizontal: 5, vertical: 3 },
+          },
+          plotOptions: { bar: { columnWidth: "66%" } },
+          xaxis: {
+            labels: {
+              hideOverlappingLabels: false,
+              maxHeight: 64,
+              rotate: -52,
+              rotateAlways: true,
+              style: { fontSize: "9px" },
+              trim: false,
+            },
+          },
+        },
+      },
+    ],
+    stroke: { show: false, width: 0 },
+    tooltip: {
+      ...baseOptions(reducedMotion).tooltip,
+      intersect: false,
+      shared: true,
+      y: {
+        formatter: (value: number) => `${wholeNumberLabel(value)} indikator`,
+      },
+    },
+    xaxis: {
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      categories: points.map((point) => point.label),
+      labels: {
+        hideOverlappingLabels: false,
+        offsetX: 0,
+        rotate: 0,
+        rotateAlways: false,
+        style: { colors: "#667085", fontSize: "11px" },
+        trim: false,
+      },
+      offsetX: 0,
+      tickPlacement: "on",
+    },
+    yaxis: {
+      forceNiceScale: false,
+      labels: {
+        formatter: wholeNumberLabel,
+        style: { colors: "#667085", fontSize: "11px" },
+      },
+      max: Math.max(
+        1,
+        ...points.map(
+          (point) => point.reached + point.notReached + point.unavailable,
+        ),
+      ),
+      min: 0,
+      tickAmount: 5,
+    },
+  };
+
+  return (
+    <ApexChart
+      height={height}
+      options={options}
+      series={[
+        {
+          data: points.map((point) => point.reached),
+          name: "Memenuhi target",
+        },
+        {
+          data: points.map((point) => point.notReached),
+          name: "Belum memenuhi",
+        },
+        {
+          data: points.map((point) => point.unavailable),
+          name: "Belum dihitung",
+        },
+      ]}
+      type="bar"
+    />
+  );
+}
+
 type BarChartProps = {
   height?: number;
   name: string;
@@ -219,15 +365,23 @@ export function MonitoringBarChart({
 }
 
 type RadialChartProps = {
+  centerLabel?: string;
   height?: number;
+  nameOffsetY?: number;
   /** 0–1. Nilai di atas 1 tetap digambar penuh; teks capaian menyebut angka sebenarnya. */
   share: number;
+  valueLabel?: string;
+  valueOffsetY?: number;
 };
 
 /** Busur setengah lingkaran untuk proporsi indikator yang mencapai target. */
 export function MonitoringRadialChart({
+  centerLabel,
   height = 330,
+  nameOffsetY = -14,
   share,
+  valueLabel,
+  valueOffsetY = -40,
 }: RadialChartProps) {
   const reducedMotion = useReducedMotion();
   const value = Math.min(Math.max(share, 0), 1) * 100;
@@ -246,17 +400,23 @@ export function MonitoringRadialChart({
     },
     colors: [MONITORING_SERIES_COLOR],
     fill: { colors: [MONITORING_SERIES_COLOR], type: "solid" },
-    labels: ["Capaian"],
+    labels: [centerLabel ?? "Capaian"],
     plotOptions: {
       radialBar: {
         dataLabels: {
-          name: { show: false },
+          name: {
+            color: "#667085",
+            fontSize: "12px",
+            fontWeight: 500,
+            offsetY: nameOffsetY,
+            show: Boolean(centerLabel),
+          },
           value: {
             color: "#1d2939",
             fontSize: "36px",
             fontWeight: "600",
-            formatter: (val: number) => `${Math.round(val)}%`,
-            offsetY: -40,
+            formatter: (val: number) => valueLabel ?? `${Math.round(val)}%`,
+            offsetY: valueOffsetY,
           },
         },
         endAngle: 85,

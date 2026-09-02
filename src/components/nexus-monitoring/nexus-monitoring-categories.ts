@@ -29,6 +29,8 @@ export type NexusMonitoringCategory = {
   detail: string;
   href?: string;
   indicators: number;
+  /** Nomor indikator terkecil pada kategori; dipakai menjaga urutan workbook. */
+  order: number;
   /** Rekam resmi berbeda yang berkait dengan indikator kategori ini. */
   records: number;
   state: NexusCategoryMonitoringState;
@@ -66,16 +68,24 @@ export function getNexusMonitoringCategories(
 ): readonly NexusMonitoringCategory[] {
   const categories = new Map<
     NexusKmIndicatorCategory,
-    { connected: Set<string>; indicators: number; records: Set<string> }
+    {
+      connected: Set<string>;
+      indicators: number;
+      order: number;
+      records: Set<string>;
+    }
   >();
 
   for (const indicator of nexusKmIndicators) {
     const bucket = categories.get(indicator.category) ?? {
       connected: new Set<string>(),
       indicators: 0,
+      order: indicator.number,
       records: new Set<string>(),
     };
     bucket.indicators += 1;
+    // Urutan kategori mengikuti workbook: nomor indikator terkecil lebih dulu.
+    bucket.order = Math.min(bucket.order, indicator.number);
     categories.set(indicator.category, bucket);
   }
 
@@ -111,14 +121,11 @@ export function getNexusMonitoringCategories(
             ? NEXUS_MONITORING_RISET_HREF
             : undefined,
         indicators: bucket.indicators,
+        order: bucket.order,
         records: bucket.records.size,
         state,
         stateLabel: stateLabels[state],
       };
     })
-    .sort((first, second) => {
-      if (first.state === "monitored") return -1;
-      if (second.state === "monitored") return 1;
-      return first.category.localeCompare(second.category, "id-ID");
-    });
+    .sort((first, second) => first.order - second.order);
 }

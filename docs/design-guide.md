@@ -28,7 +28,11 @@ Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum
 
 Dokumen mempunyai navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi. Ketiganya tidak menjadi tiga kategori teknologi terpisah di sidebar.
 
-Monitoring KM juga memakai satu butir sidebar. Kategori KM dipilih di dalam halaman, dan indikator KM-9 sampai KM-18 mempunyai route sendiri di bawah `/nexus/monitoring/riset`. Empat puluh enam indikator tidak dipindahkan ke sidebar hanya karena masing-masing punya halaman.
+Monitoring KM juga memakai satu butir sidebar. Domain dipilih di dalam halaman, dan indikator KM-9 sampai KM-18 mempunyai route sendiri di bawah `/nexus/monitoring/riset`. Empat puluh enam indikator tidak dipindahkan ke sidebar hanya karena masing-masing punya halaman.
+
+Pemilih domain pada Ringkasan berbentuk satu baris chip: ikon berwarna, nama domain, lalu jumlah indikatornya. Barisnya tidak memakai batang gulir karena batang abu-abu memotong tampilan kartu; penggeserannya disediakan langsung pada kartunya—diseret dengan tetikus, roda tetikus mendatar, sentuh, atau panah papan ketik—dan bayangan tipis di tepi menandakan masih ada domain di arah tersebut. Kunci pointer baru dipasang setelah kursor benar-benar bergeser; menguncinya sejak tombol ditekan membuat event klik pindah dari chip ke barisnya sehingga domain tidak pernah terpilih.
+
+Berpindah domain tidak berpindah halaman. Domain yang belum punya halaman pemantauan menampilkan keadaan sedang disiapkan pada panel yang sama, lengkap dengan jumlah indikator, jumlah rekam resmi terkait, jalan kembali ke Ringkasan, dan pintasan ke rumah Data Resmi bila memang ada. Keadaan itu bukan halaman kosong dan bukan capaian nol.
 
 Ruang kerja Inggris ditahan pada satu halaman status sampai alur Indonesia selesai. Route Inggris lama diarahkan ke halaman tersebut dan tidak boleh menampilkan fitur parsial sebagai kemampuan yang sudah siap.
 

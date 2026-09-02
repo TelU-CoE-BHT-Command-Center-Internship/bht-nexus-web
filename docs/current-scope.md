@@ -36,7 +36,10 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 ### Monitoring KM
 
 - `Monitoring KM` menjadi satu butir navigasi pada kelompok Utama, di samping Dashboard. Kategori dan indikator tidak dipecah menjadi butir sidebar sendiri.
-- `/nexus/monitoring` menampilkan seluruh kategori indikator KM beserta jumlah indikatornya. Kategori yang belum dipantau tidak pernah ditampilkan sebagai capaian nol; keadaannya ditulis sebagai pemantauan tersedia, sumber realisasi terhubung, sebagian terhubung, atau belum terhubung.
+- `/nexus/monitoring` adalah Ringkasan: satu pemilih periode evaluasi di kanan atas dan satu baris pemilih domain berisi Semua Domain beserta sembilan kategori KM. Barisnya digeser mendatar—diseret, roda tetikus, sentuh, atau panah papan ketik—tanpa batang gulir, dengan bayangan tepi sebagai penanda masih ada domain di arah tersebut.
+- Berpindah domain tidak berpindah halaman. Semua Domain menampilkan empat kartu ringkasan, capaian target per domain, kemajuan indikator per kategori, dan pembaruan data resmi terbaru. Riset menampilkan ringkasnya beserta jalan ke halaman pemantauannya.
+- Domain yang halaman pemantauannya belum dibangun menampilkan keadaan sedang disiapkan beserta jumlah indikator, jumlah rekam resmi yang sudah terkait, jalan kembali ke Ringkasan, dan pintasan ke rumah Data Resmi terkait bila ada. Keadaan itu tidak pernah ditampilkan sebagai capaian nol.
+- Periode evaluasi dapat dipilih tahunan atau per triwulan. Hanya tahun yang benar-benar dimodelkan workbook yang ditawarkan, sehingga kendali ini tidak menjanjikan periode yang datanya belum ada.
 - `/nexus/monitoring/riset` adalah ikhtisar kategori Riset: dua kartu metrik, grafik target dan realisasi per indikator, kartu proporsi indikator yang mencapai target, capaian per indikator, sebaran rumah data resmi, dan ringkasan sepuluh indikator yang dapat disaring menurut status.
 - `/nexus/monitoring/riset/km-9` sampai `km-18` memakai satu kerangka rincian yang sama dengan modul per rumpun data: kegiatan (KM-9, KM-10), publikasi (KM-11 sampai KM-14), kekayaan intelektual (KM-15, KM-16), serta kontrak riset (KM-17, KM-18). Alamat indikator di luar daftar tersebut menampilkan keadaan tidak ditemukan beserta jalan kembali, bukan indikator pertama.
 - Target, satuan, definisi, dan cara perhitungan berasal dari workbook KM 2026 beserta letak barisnya. Realisasi dihitung dari rekam Data Resmi yang sudah lolos Tinjauan dan memiliki kaitan indikator KM eksplisit pada periode evaluasi yang sama.
@@ -47,6 +50,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Kuartil jurnal Q1–Q4 adalah pemeringkatan reputasi jurnal dan tidak pernah disamakan dengan triwulan evaluasi TW1–TW4.
 - Nama pada rincian indikator diambil dari rekam resmi. Hanya nama yang sudah tertaut anggota kanonis yang menautkan ke daftar data resmi anggota tersebut; nama lain dinyatakan sebagai catatan sumber.
 - Monitoring tidak menyalin rekam resmi menjadi koleksi kedua, tidak menyediakan penyuntingan target, dan tidak menghitung skor gabungan kategori.
+- Kategori Riset masih berkembang. Susunan halaman rincian indikatornya belum final dan dapat berubah setelah pola Ringkasan per domain selesai dirapikan.
 
 ### Pengumpulan
 
