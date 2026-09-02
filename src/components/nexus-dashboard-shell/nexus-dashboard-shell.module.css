@@ -1016,7 +1016,12 @@
   }
 }
 
-@media (max-width: 56rem) {
+/*
+ * Sejajar dengan ambang kartu di nexus-workspace-records.module.css (68rem):
+ * navigasi harus sudah menjadi overlay sebelum tabel berubah menjadi kartu,
+ * agar kartu dua kolom tidak berdesakan dengan sidebar yang masih terbuka.
+ */
+@media (max-width: 68rem) {
   .shell,
   .shell[data-sidebar-collapsed="true"] {
     --header-height: 4.75rem;
