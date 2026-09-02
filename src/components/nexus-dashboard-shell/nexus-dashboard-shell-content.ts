@@ -15,6 +15,7 @@ import {
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
 import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
+import { nexusMonitoringRoutes } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import {
   type NexusProfileView,
   resolveNexusProfile,
@@ -32,6 +33,7 @@ export type DashboardShellIconName =
   | "documents"
   | "intellectualProperty"
   | "members"
+  | "monitoring"
   | "publications"
   | "reviews"
   | "search";
@@ -154,6 +156,18 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "dashboard",
     id: "dashboard",
     label: { en: "Dashboard", id: "Dashboard" },
+  },
+  {
+    activeHrefs: {
+      en: ["/en/nexus/monitoring"],
+      id: [...nexusMonitoringRoutes],
+    },
+    implemented: { en: false, id: true },
+    group: "main",
+    href: { en: "/en/nexus/monitoring", id: "/nexus/monitoring" },
+    icon: "monitoring",
+    id: "monitoring",
+    label: { en: "KM Monitoring", id: "Monitoring KM" },
   },
   {
     implemented: { en: true, id: true },

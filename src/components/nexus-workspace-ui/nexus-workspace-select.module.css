@@ -45,6 +45,41 @@
   outline-offset: 0.2rem;
 }
 
+/*
+ * Pembungkus isi tombol supaya ikon opsional dan nilainya tetap satu kelompok
+ * di kiri, sedangkan chevron tetap menempel di kanan.
+ */
+.selectTriggerCopy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.selectLeading {
+  display: grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #6a7c93;
+}
+
+.selectLeading svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.selectTrigger:hover .selectLeading,
+.selectField[data-open="true"] .selectLeading {
+  color: var(--color-brand-navy);
+}
+
 .selectValue {
   min-width: 0;
   overflow: hidden;
@@ -122,6 +157,10 @@
  * penuh tanpa mengubah lebar menu pada ruang kerja lain.
  */
 .selectField[data-filter="indicator"] .selectMenu {
+  width: max(100%, 21rem);
+}
+
+.selectField[data-filter="monitoring-progress-category"] .selectMenu {
   width: max(100%, 21rem);
 }
 
