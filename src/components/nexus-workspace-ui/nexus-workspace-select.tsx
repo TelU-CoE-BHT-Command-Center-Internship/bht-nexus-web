@@ -1,6 +1,13 @@
 "use client";
 
-import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import styles from "@/components/nexus-workspace-ui/nexus-workspace-select.module.css";
 
 export type NexusSelectOption = {
@@ -19,6 +26,8 @@ export type NexusSelectConfig = {
 type NexusWorkspaceSelectProps = {
   config: NexusSelectConfig;
   isOpen: boolean;
+  /** Ikon opsional di depan nilai, untuk kendali yang perlu penanda jenisnya. */
+  leadingIcon?: ReactNode;
   name: string;
   onOpenChange: (isOpen: boolean) => void;
   onValueChange: (value: string) => void;
@@ -67,6 +76,7 @@ function findTypeaheadOption(
 export function NexusWorkspaceSelect({
   config,
   isOpen,
+  leadingIcon,
   name,
   onOpenChange,
   onValueChange,
@@ -223,8 +233,15 @@ export function NexusWorkspaceSelect({
         ref={triggerRef}
         type="button"
       >
-        <span className={styles.selectValue} id={valueId}>
-          {selectedOption.label}
+        <span className={styles.selectTriggerCopy}>
+          {leadingIcon ? (
+            <span aria-hidden="true" className={styles.selectLeading}>
+              {leadingIcon}
+            </span>
+          ) : null}
+          <span className={styles.selectValue} id={valueId}>
+            {selectedOption.label}
+          </span>
         </span>
         <span aria-hidden="true" className={styles.selectChevron}>
           <ChevronIcon />

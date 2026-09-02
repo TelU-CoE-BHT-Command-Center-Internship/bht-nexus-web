@@ -28,6 +28,14 @@ function IconPaths({ name }: DashboardShellIconProps) {
           <rect x="14" y="14" width="7" height="7" rx="1" />
         </>
       );
+    case "monitoring":
+      return (
+        <>
+          <path d="M3.5 15.5a8.5 8.5 0 1 1 17 0" />
+          <path d="m12 15.5 4-5.8" />
+          <circle cx="12" cy="15.5" r="1.4" />
+        </>
+      );
     case "members":
       return (
         <>
