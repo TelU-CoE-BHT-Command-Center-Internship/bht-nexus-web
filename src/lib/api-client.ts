@@ -89,9 +89,13 @@ async function requestEnvelope<T>(
     credentials: "include",
   });
 
-  const body = (await response
-    .json()
-    .catch(() => null)) as ApiEnvelope<T> | null;
+  const parsed: unknown = await response.json().catch(() => null);
+  const body =
+    typeof parsed === "object" &&
+    parsed !== null &&
+    typeof (parsed as { success?: unknown }).success === "boolean"
+      ? (parsed as ApiEnvelope<T>)
+      : null;
 
   if (body === null) {
     throw new ApiRequestError(
