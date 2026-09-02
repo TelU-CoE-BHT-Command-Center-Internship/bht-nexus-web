@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { NexusRagQa } from "@/components/nexus-rag-qa/nexus-rag-qa";
+import { getNexusRagQaContent } from "@/components/nexus-rag-qa/nexus-rag-qa-content";
 
 export const metadata: Metadata = {
   title: "Document Q&A",
@@ -7,6 +8,20 @@ export const metadata: Metadata = {
   robots: { follow: false, index: false },
 };
 
-export default function DocumentQuestionsPage() {
-  redirect("/en/nexus/coming-soon");
+export default async function DocumentQuestionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ document?: string | string[] }>;
+}) {
+  const requestedDocument = (await searchParams).document;
+  return (
+    <NexusRagQa
+      content={getNexusRagQaContent("en")}
+      initialDocumentId={
+        Array.isArray(requestedDocument)
+          ? requestedDocument[0]
+          : requestedDocument
+      }
+    />
+  );
 }

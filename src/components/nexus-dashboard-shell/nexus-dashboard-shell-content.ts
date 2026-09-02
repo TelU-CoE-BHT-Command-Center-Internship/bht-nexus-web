@@ -156,7 +156,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Dashboard", id: "Dashboard" },
   },
   {
-    implemented: { en: false, id: true },
+    implemented: { en: true, id: true },
     group: "pipeline",
     href: { en: "/en/nexus/collection", id: "/nexus/pengumpulan" },
     icon: "search",
@@ -172,7 +172,7 @@ const navigationDefinitions: NavigationDefinition[] = [
       ],
       id: ["/nexus/dokumen", "/nexus/tanya-dokumen", "/nexus/ekstraksi"],
     },
-    implemented: { en: false, id: true },
+    implemented: { en: true, id: true },
     group: "pipeline",
     href: { en: "/en/nexus/documents", id: "/nexus/dokumen" },
     icon: "documents",

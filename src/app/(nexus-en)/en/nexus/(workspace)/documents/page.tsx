@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { NexusRagLibrary } from "@/components/nexus-rag-library/nexus-rag-library";
+import { getNexusRagLibraryContent } from "@/components/nexus-rag-library/nexus-rag-library-content";
 
 export const metadata: Metadata = {
   title: "Documents",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function DocumentsPage() {
-  redirect("/en/nexus/coming-soon");
+  return <NexusRagLibrary content={getNexusRagLibraryContent("en")} />;
 }
