@@ -132,7 +132,6 @@ export function NexusMonitoringRisetOverview({
       ? `${firstIndicator.id} sampai ${lastIndicator.id}`
       : "Indikator Riset";
   const computableShare = view.total === 0 ? 0 : view.computable / view.total;
-  const largestGap = view.gaps[0]?.gap ?? 0;
   const visibleGaps = view.gaps.slice(0, GAP_LIMIT);
   const hiddenGaps = view.gaps.length - visibleGaps.length;
   /* Rumah data yang benar-benar menyumbang rekam, bukan sekadar yang dirujuk. */
@@ -227,7 +226,7 @@ export function NexusMonitoringRisetOverview({
         </MonitoringCard>
 
         <MonitoringCard
-          description="Indikator yang realisasinya masih di bawah target, diurutkan dari selisih terbesar."
+          description="Indikator yang realisasinya masih di bawah target, diurutkan dari selisih terbesar. Batangnya menunjukkan capaian terhadap target, angkanya menunjukkan kekurangannya."
           headingId="monitoring-riset-gaps"
           title="Gap Target Terbesar"
         >
@@ -240,11 +239,11 @@ export function NexusMonitoringRisetOverview({
             <>
               <MonitoringDistributionList
                 items={visibleGaps.map((gap) => ({
-                  detail: `Realisasi ${gap.realization} dari target ${gap.target}`,
+                  detail: `Realisasi ${gap.realization} dari target ${gap.target} · ${gap.progressPercent ?? 0}% tercapai`,
                   href: gap.detailHref,
                   id: gap.id,
                   label: `${gap.id} · ${gap.label}`,
-                  share: largestGap === 0 ? 0 : gap.gap / largestGap,
+                  share: (gap.progressPercent ?? 0) / 100,
                   value: gap.gap,
                 }))}
                 valueLabel={(item) => `kurang ${item.value}`}
@@ -360,26 +359,36 @@ export function NexusMonitoringRisetOverview({
                       </NexusWorkspaceTableBadge>
                     }
                     meta={
-                      <>
-                        <span>
-                          {`Target ${indicator.target === null ? "belum tersedia" : indicator.target}`}
-                        </span>
-                        <span>
-                          {`Realisasi ${
-                            indicator.realization === null
-                              ? "belum dapat dihitung"
-                              : indicator.realization
-                          }`}
-                        </span>
-                        <span>
-                          {`Capaian ${
-                            indicator.progressPercent === null
-                              ? "belum dapat dihitung"
-                              : `${indicator.progressPercent}%`
-                          }`}
-                        </span>
-                        <span>{indicator.houseLabel}</span>
-                      </>
+                      <dl>
+                        <div>
+                          <dt>Target</dt>
+                          <dd>
+                            {indicator.target === null
+                              ? "Belum tersedia"
+                              : indicator.target}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Realisasi</dt>
+                          <dd>
+                            {indicator.realization === null
+                              ? "Belum dapat dihitung"
+                              : indicator.realization}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Capaian</dt>
+                          <dd>
+                            {indicator.progressPercent === null
+                              ? "Belum dapat dihitung"
+                              : `${indicator.progressPercent}%`}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Rumah data</dt>
+                          <dd>{indicator.houseLabel}</dd>
+                        </div>
+                      </dl>
                     }
                     title={`${indicator.id} · ${indicator.label}`}
                   />

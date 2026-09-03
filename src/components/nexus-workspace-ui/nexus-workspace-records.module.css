@@ -285,12 +285,23 @@
   display: none;
 }
 
+/*
+ * Kartu ringkas menjadi kolom lentur supaya kartu sebaris punya tinggi yang
+ * sama dan tombolnya selalu rata di dasar kartu, walau judul dan metadatanya
+ * berbeda panjang.
+ */
 .mobileCard {
-  display: grid;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   gap: 0.7rem;
   padding: 0.85rem;
   border: 1px solid var(--color-nexus-border-soft);
   border-radius: 0.75rem;
+}
+
+.mobileCard > :last-child {
+  margin-top: auto;
 }
 
 .mobileCardTop {

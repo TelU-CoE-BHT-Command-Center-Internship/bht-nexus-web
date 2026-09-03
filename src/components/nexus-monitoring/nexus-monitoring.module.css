@@ -481,6 +481,10 @@
 .distributionCopy a {
   color: #315ca8;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.distributionCopy a:hover {
   text-decoration: underline;
 }
 
@@ -1171,6 +1175,19 @@
   }
 }
 
+/*
+ * Jejak halaman pada alamat satu indikator diberi jarak sendiri supaya judul,
+ * keterangan, dan jejaknya tidak menempel menjadi satu blok.
+ */
+.indicatorTrail {
+  margin-top: clamp(1.15rem, 1.8vw, 1.6rem);
+  margin-bottom: clamp(0.9rem, 1.5vw, 1.25rem);
+}
+
+.indicatorTrail nav {
+  margin-bottom: 0;
+}
+
 .constructionState {
   position: relative;
   display: grid;
@@ -1341,131 +1358,25 @@
   }
 }
 
+/*
+ * Alamat satu indikator memakai keadaan yang sama dengan domain, hanya lebih
+ * ringkas: pesannya pendek sehingga tinggi minimum penuh hanya menyisakan
+ * ruang kosong.
+ */
+.constructionState[data-compact="true"] {
+  min-height: 0;
+  gap: 0.85rem;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.constructionState[data-compact="true"] .constructionVisual {
+  height: clamp(10.5rem, 19vw, 14.5rem);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .domainChip {
     transition: none;
   }
-}
-
-/* Navigasi antar-indikator pada halaman rincian. */
-.indicatorNav {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/*
- * Pemindah indikator memakai kendali pilihan ruang kerja yang sama dengan
- * filter Data Resmi dan pemilih periode, bukan `select` bawaan peramban, supaya
- * bentuk, fokus, dan perilaku menunya konsisten di seluruh Monitoring.
- */
-.indicatorSelect {
-  min-width: 0;
-  flex: 1 1 22rem;
-}
-
-.navButtons {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 0.5rem;
-}
-
-.navButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-nexus-border);
-  border-radius: 0.5rem;
-  background: var(--color-nexus-surface);
-  color: var(--color-nexus-text-soft);
-  cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 500;
-}
-
-.navButton:hover {
-  background: var(--color-nexus-surface-subtle);
-  color: var(--color-nexus-text-strong);
-}
-
-.navButton[aria-disabled="true"] {
-  color: var(--color-nexus-text-subtle);
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.navButton svg {
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: currentcolor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
-}
-
-/* Kartu keterangan indikator. */
-.definitionGrid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
-}
-
-@media (min-width: 60rem) {
-  .definitionGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.definitionItem dt {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.definitionItem dd {
-  margin: 0.4rem 0 0;
-  color: var(--color-nexus-text);
-  font-size: 0.875rem;
-  line-height: 1.55;
-}
-
-.definitionNote {
-  margin: 1.25rem 0 0;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-nexus-border-subtle);
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.55;
-}
-
-.workbookList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  gap: 0.75rem 1.25rem;
-  margin: 0.75rem 0 0;
-}
-
-.workbookList div {
-  min-width: 0;
-}
-
-.workbookList dt {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-}
-
-.workbookList dd {
-  margin: 0.2rem 0 0;
-  color: var(--color-nexus-text-strong);
-  font-size: 0.9375rem;
-  font-weight: 600;
 }
 
 /*
@@ -1475,18 +1386,6 @@
  */
 .tableSurface th[data-column="house"] {
   width: 9.5rem;
-}
-
-.tableSurface th[data-column="date"] {
-  width: 9rem;
-}
-
-.tableSurface th[data-column="evidence"] {
-  width: 10.5rem;
-}
-
-.tableSurface th[data-column="quality"] {
-  width: 8.5rem;
 }
 
 .tableSurface th[data-column="target"] {
@@ -1534,46 +1433,6 @@
   color: var(--color-nexus-text-muted);
   font-size: 0.8125rem;
   line-height: 1.55;
-}
-
-.insightList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.insightList li {
-  position: relative;
-  padding-left: 1rem;
-  color: var(--color-nexus-text);
-  font-size: 0.875rem;
-  line-height: 1.55;
-}
-
-.insightList li::before {
-  position: absolute;
-  top: 0.55rem;
-  left: 0;
-  width: 0.35rem;
-  height: 0.35rem;
-  border-radius: 50%;
-  background: var(--color-nexus-accent);
-  content: "";
-}
-
-.recordNotes {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin: 0.4rem 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-  line-height: 1.45;
 }
 
 .visuallyHidden {

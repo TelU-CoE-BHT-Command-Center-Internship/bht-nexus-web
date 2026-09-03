@@ -73,8 +73,6 @@ type MonitoringMetricCardProps = {
   fallback?: string;
   icon: NexusWorkspaceIconName;
   label: string;
-  /** Satuan yang menempel pada angka, mis. `%`, tanpa jarak. */
-  suffix?: string;
   tone?: "blue" | "gold" | "green" | "violet";
   unit?: string;
   value: number | null;
@@ -87,7 +85,6 @@ export function MonitoringMetricCard({
   fallback,
   icon,
   label,
-  suffix,
   tone = "blue",
   unit,
   value,
@@ -106,11 +103,7 @@ export function MonitoringMetricCard({
         <div className={styles.metricCopy}>
           <span>{label}</span>
           <strong className={styles.metricValue}>
-            <MonitoringNumber
-              fallback={fallback}
-              suffix={suffix}
-              value={value}
-            />
+            <MonitoringNumber fallback={fallback} value={value} />
             {unit && value !== null ? <small>{unit}</small> : null}
           </strong>
           {detail ? (

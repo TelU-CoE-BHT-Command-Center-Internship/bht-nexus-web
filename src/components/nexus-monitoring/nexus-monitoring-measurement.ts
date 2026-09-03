@@ -7,10 +7,7 @@ import {
   nexusMonitoringSourceHouses,
   nexusRisetEvaluations,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import {
-  type NexusEvaluationQuarter,
-  nexusQuarters,
-} from "@/components/nexus-monitoring/nexus-monitoring-quarter";
+import type { NexusEvaluationQuarter } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import {
   getNexusMonitoringRecords,
   type NexusMonitoringRecord,
@@ -302,10 +299,4 @@ export function summarizeRiset(
     sourceBreakdown,
     total: measurements.length,
   };
-}
-
-/** Jumlah rekam per triwulan yang siap dipakai grafik dan ringkasan teks. */
-export function quarterSeries(breakdown: NexusQuarterBreakdown) {
-  if (!breakdown.available) return null;
-  return nexusQuarters.map((quarter) => breakdown.counts[quarter]);
 }

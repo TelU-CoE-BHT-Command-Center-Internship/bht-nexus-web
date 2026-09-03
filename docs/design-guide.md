@@ -76,9 +76,11 @@ Monitoring KM mempunyai tiga tingkat: Semua Domain, ikhtisar satu domain, lalu r
 
 Ringkasan dan ikhtisar domain membuka dengan empat kartu metrik pada satu baris. Semua Domain melanjutkannya dengan grafik capaian per domain dan kartu busur capaian tahunan; ikhtisar domain tidak mengulang busur itu karena proporsi indikator yang mencapai target sudah menjadi salah satu dari empat kartu metriknya, sehingga grafik pemenuhan target per indikator memakai lebar penuh. Sesudahnya menyusul kartu wawasan berdampingan, daftar indikator, lalu pembaruan Data Resmi terbaru.
 
-Rincian satu indikator memakai kerangka yang sama: pemindah indikator, empat kartu metrik—target, realisasi, capaian terhadap target beserta status, dan jumlah rekam pembentuk—lalu kartu definisi selebar halaman, kartu wawasan berdampingan, dan daftar rekam pembentuk realisasi. Kartu wawasan menampilkan angkanya langsung sebagai daftar sebaran, sehingga komposisi seperti kuartil jurnal Q1–Q4 terbaca tanpa membuka kendali lain lebih dahulu. Warna, tipografi, ikon, penanda status, fokus, dan bahasa produk tetap milik BHT Nexus.
+Alamat satu indikator saat ini menampilkan keadaan sedang disiapkan: jejak halaman, judul yang membawa identitas indikator, dan satu kartu pesan dengan jalan kembali ke Riset. Bentuk keadaan itu sama dengan domain yang halamannya belum ada, hanya lebih rapat karena pesannya pendek. Penyajian rinciannya dibongkar lebih dahulu, bukan ditata ulang sedikit demi sedikit, supaya rancangan berikutnya tidak mewarisi susunan lama; kerangkanya dirancang pada paket kerja tersendiri.
 
-Setiap halaman Monitoring memakai kendali pilihan ruang kerja yang sama—periode evaluasi, kategori indikator, pemindah indikator, dan jumlah baris per halaman—bukan `select` bawaan peramban, supaya bentuk, fokus, dan perilaku menunya seragam.
+Meteran pada daftar sebaran selalu searah dengan angkanya. Pada kartu gap target, batangnya menunjukkan capaian terhadap target dan angkanya menunjukkan kekurangan, sehingga batang panjang tidak pernah terbaca sebagai kekurangan besar. Kartu ringkas pada daftar memakai kolom lentur agar kartu sebaris punya tinggi yang sama dan tombolnya rata di dasar kartu.
+
+Setiap halaman Monitoring memakai kendali pilihan ruang kerja yang sama—periode evaluasi, kategori indikator, dan jumlah baris per halaman—bukan `select` bawaan peramban, supaya bentuk, fokus, dan perilaku menunya seragam.
 
 Kartu analitik memakai sudut 16 px, garis tepi `--color-nexus-border`, dan padding 20 px yang menjadi 24 px pada layar ≥40 rem. Kartu metrik menempatkan kotak ikon 48 px di atas, lalu label, angka besar, dan penanda status pada satu baris dasar. Kartu capaian memakai bingkai luar abu dengan panel putih di dalamnya dan baris ringkasan tiga nilai di bawahnya.
 

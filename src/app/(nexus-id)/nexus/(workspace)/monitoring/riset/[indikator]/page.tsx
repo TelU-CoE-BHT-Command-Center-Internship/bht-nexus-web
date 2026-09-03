@@ -4,14 +4,17 @@ import {
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import {
+  NEXUS_EVALUATION_PERIOD,
+  NEXUS_MONITORING_HREF,
   NEXUS_MONITORING_RISET_HREF,
   nexusIndicatorEvaluation,
   nexusIndicatorIdFromSlug,
   nexusIndicatorSlug,
   nexusRisetEvaluations,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import { NexusMonitoringIndicator } from "@/components/nexus-monitoring/nexus-monitoring-indicator";
-import { buildIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
+import { monitoringStyles } from "@/components/nexus-monitoring/nexus-monitoring-ui";
+import { MonitoringConstructionState } from "@/components/nexus-monitoring/nexus-monitoring-under-construction";
+import { NexusWorkspaceBreadcrumb } from "@/components/nexus-workspace-ui/nexus-workspace-breadcrumb";
 import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
@@ -43,7 +46,7 @@ export async function generateMetadata({
       ? `${evaluation.indicator.id} · Monitoring KM`
       : "Indikator tidak ditemukan · Monitoring KM",
     description: evaluation
-      ? evaluation.definition
+      ? `Rincian indikator ${evaluation.indicator.id} pada pemantauan Riset sedang disiapkan.`
       : "Indikator KM yang diminta tidak tersedia pada pemantauan Riset.",
     robots: {
       follow: false,
@@ -52,6 +55,11 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Alamat satu indikator Riset. Identitas indikator tetap kanonis dan setiap
+ * alamat KM-9 sampai KM-18 tetap sah, sedangkan penyajian rinciannya disiapkan
+ * pada paket kerja tersendiri.
+ */
 export default async function NexusMonitoringIndicatorPage({
   params,
 }: NexusMonitoringIndicatorPageProps) {
@@ -77,9 +85,11 @@ export default async function NexusMonitoringIndicatorPage({
   }
 
   const indicatorId = nexusIndicatorIdFromSlug(indikator);
-  const view = indicatorId ? buildIndicatorView(indicatorId) : undefined;
+  const evaluation = indicatorId
+    ? nexusIndicatorEvaluation(indicatorId)
+    : undefined;
 
-  if (!view) {
+  if (!evaluation) {
     return (
       <NexusWorkspacePage
         description="Rincian indikator KM kategori Riset."
@@ -101,5 +111,40 @@ export default async function NexusMonitoringIndicatorPage({
     );
   }
 
-  return <NexusMonitoringIndicator view={view} />;
+  const { id, label } = evaluation.indicator;
+
+  return (
+    <NexusWorkspacePage
+      description={evaluation.definition}
+      descriptionId="monitoring-indicator-description"
+      meta={`Periode evaluasi ${NEXUS_EVALUATION_PERIOD}`}
+      title={`${id} · ${label}`}
+      titleId="monitoring-indicator-title"
+    >
+      <div className={monitoringStyles.indicatorTrail}>
+        <NexusWorkspaceBreadcrumb
+          current={id}
+          trail={[
+            { href: NEXUS_MONITORING_HREF, label: "Monitoring KM" },
+            { href: NEXUS_MONITORING_RISET_HREF, label: "Riset" },
+          ]}
+        />
+      </div>
+
+      <MonitoringConstructionState
+        actions={
+          <NexusWorkspaceLinkButton
+            href={NEXUS_MONITORING_RISET_HREF}
+            tone="primary"
+          >
+            Kembali ke Riset
+          </NexusWorkspaceLinkButton>
+        }
+        compact
+        description={`Kami sedang menyiapkan halaman rincian ${id}. Target, realisasi, dan statusnya sudah dapat dibaca pada pemantauan Riset.`}
+        title={`Rincian ${id} sedang disiapkan`}
+        titleId="monitoring-indicator-construction-title"
+      />
+    </NexusWorkspacePage>
+  );
 }
