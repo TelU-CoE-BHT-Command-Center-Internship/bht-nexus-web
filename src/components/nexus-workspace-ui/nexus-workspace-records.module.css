@@ -286,13 +286,19 @@
 }
 
 /*
- * Kartu ringkas menjadi kolom lentur supaya kartu sebaris punya tinggi yang
- * sama dan tombolnya selalu rata di dasar kartu, walau judul dan metadatanya
- * berbeda panjang.
+ * Kartu ringkas mengisi penuh sel kisinya lalu menjadi kolom lentur, sehingga
+ * kartu yang bersebelahan selalu setinggi kartu dengan judul terpanjang dan
+ * tombolnya rata di dasar kartu.
  */
+.mobileList > * {
+  display: flex;
+  min-width: 0;
+}
+
 .mobileCard {
   display: flex;
   min-width: 0;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 0.7rem;
   padding: 0.85rem;
