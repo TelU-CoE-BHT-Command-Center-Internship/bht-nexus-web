@@ -19,9 +19,10 @@ import {
   nexusQuarterRangeLabels,
   nexusQuarters,
 } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
-import type {
-  NexusMonitoringEvidenceState,
-  NexusMonitoringRecord,
+import {
+  getNexusMonitoringRecords,
+  type NexusMonitoringEvidenceState,
+  type NexusMonitoringRecord,
 } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import type { MonitoringTone } from "@/components/nexus-monitoring/nexus-monitoring-ui";
 import { publicationQuartileLabel } from "@/components/nexus-publications/nexus-publications-content";
@@ -52,8 +53,26 @@ export type MonitoringSourceShareView = {
   share: number;
 };
 
+/**
+ * Jarak realisasi sebuah indikator terhadap targetnya sendiri. Nilainya adalah
+ * selisih apa adanya; tidak ada ambang "berisiko" atau "kritis" karena workbook
+ * KM 2026 tidak menetapkan aturan seperti itu.
+ */
+export type MonitoringGapView = {
+  detailHref: string;
+  gap: number;
+  id: NexusKmIndicatorId;
+  label: string;
+  progressPercent: number | null;
+  realization: number;
+  target: number;
+};
+
 export type MonitoringRisetView = {
+  /** Indikator Riset yang realisasinya sudah dapat dihitung dari data resmi. */
+  computable: number;
   contributingRecords: number;
+  gaps: readonly MonitoringGapView[];
   indicators: readonly MonitoringIndicatorSummary[];
   notComputable: number;
   notReached: number;
@@ -84,7 +103,6 @@ export type MonitoringEvidenceRow = {
 export type MonitoringBreakdownView = {
   description: string;
   id: string;
-  label: string;
   points: readonly { id: string; label: string; value: number }[];
   title: string;
 };
@@ -121,6 +139,8 @@ export type MonitoringIndicatorView = {
   definition: string;
   difference: number | null;
   evidence: readonly MonitoringEvidenceRow[];
+  /** Syarat eviden menurut workbook KM 2026; `null` bila belum tercatat. */
+  evidenceRequirement: string | null;
   houseHref: string;
   houseLabel: string;
   id: NexusKmIndicatorId;
@@ -174,14 +194,51 @@ function indicatorSummary(
   };
 }
 
+/**
+ * Indikator yang realisasinya masih di bawah target, diurutkan dari selisih
+ * terbesar. Daftar ini menjawab "mana yang paling jauh dari targetnya sendiri",
+ * bukan menilai laju pencapaian.
+ */
+function targetGaps(
+  indicators: readonly MonitoringIndicatorSummary[],
+): readonly MonitoringGapView[] {
+  return indicators
+    .flatMap((indicator) => {
+      const { realization, target } = indicator;
+      if (realization === null || target === null) return [];
+      if (realization >= target) return [];
+
+      return [
+        {
+          detailHref: indicator.detailHref,
+          gap: target - realization,
+          id: indicator.id,
+          label: indicator.label,
+          progressPercent: indicator.progressPercent,
+          realization,
+          target,
+        },
+      ];
+    })
+    .sort(
+      (first, second) =>
+        second.gap - first.gap ||
+        first.id.localeCompare(second.id, "id-ID", { numeric: true }),
+    );
+}
+
 export function buildRisetView(
   period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
+  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
 ): MonitoringRisetView {
-  const summary = summarizeRiset(period);
+  const summary = summarizeRiset(period, records);
+  const indicators = summary.measurements.map(indicatorSummary);
 
   return {
+    computable: summary.computable,
     contributingRecords: summary.contributingRecords,
-    indicators: summary.measurements.map(indicatorSummary),
+    gaps: targetGaps(indicators),
+    indicators,
     notComputable: summary.notComputable,
     notReached: summary.notReached,
     period: summary.period,
@@ -238,9 +295,8 @@ function evidenceBreakdown(
     description:
       "Keadaan dokumen atau tautan bukti yang tercatat pada rekam resmi pembentuk realisasi.",
     id: "bukti",
-    label: "Kelengkapan bukti",
     points: countBy(records, (record) => record.evidenceLabel),
-    title: "Kelengkapan bukti",
+    title: "Kelengkapan Bukti",
   };
 }
 
@@ -255,12 +311,11 @@ function publicationBreakdowns(
       description:
         "Jumlah rekam resmi pada tiap jurnal atau prosiding yang tercatat sumber.",
       id: "wadah",
-      label: "Wadah terbit",
       points: limitPoints(
         countBy(publications, (record) => record.subtitle || "Belum tercatat"),
         6,
       ),
-      title: "Wadah terbit",
+      title: "Wadah Terbit",
     },
   ];
 
@@ -274,9 +329,8 @@ function publicationBreakdowns(
       description:
         "Kuartil adalah pemeringkatan reputasi jurnal (Q1–Q4), bukan triwulan evaluasi.",
       id: "kuartil",
-      label: "Kuartil jurnal",
       points: quartilePoints,
-      title: "Kuartil jurnal",
+      title: "Kuartil Jurnal",
     });
   }
 
@@ -288,9 +342,8 @@ function publicationBreakdowns(
       description:
         "Bentuk karya menurut metadata bibliografis rekam resmi pembentuk realisasi.",
       id: "bentuk",
-      label: "Bentuk karya",
       points: typePoints,
-      title: "Bentuk karya",
+      title: "Bentuk Karya",
     });
   }
 
@@ -306,22 +359,20 @@ function intellectualPropertyBreakdowns(
       description:
         "Bentuk perlindungan yang tercatat pada rekam resmi, bukan dugaan dari judulnya.",
       id: "perlindungan",
-      label: "Bentuk perlindungan",
       points: countBy(records, (record) => record.subtitle || "Belum tercatat"),
-      title: "Bentuk perlindungan",
+      title: "Bentuk Perlindungan",
     },
     {
       description:
         "Ketersediaan nomor registrasi pada rekam resmi pembentuk realisasi.",
       id: "registrasi",
-      label: "Nomor registrasi",
       points: countBy(records, (record) =>
         record.family === "intellectual-property" &&
         record.intellectualProperty.registrationNumber
           ? "Sudah tercatat"
           : "Belum tercatat",
       ),
-      title: "Nomor registrasi",
+      title: "Nomor Registrasi",
     },
     evidenceBreakdown(records),
   ];
@@ -335,22 +386,20 @@ function contractBreakdowns(
       description:
         "Skema pendanaan atau program yang tercatat pada rekam resmi kontrak.",
       id: "skema",
-      label: "Skema",
       points: countBy(records, (record) =>
         record.family === "contracts"
           ? (record.contract.scheme ?? "Belum tercatat")
           : "Belum tercatat",
       ),
-      title: "Skema kontrak",
+      title: "Skema Kontrak",
     },
     {
       description: "Status rekam kontrak menurut catatan rumah data resmi.",
       id: "status",
-      label: "Status rekam",
       points: countBy(records, (record) =>
         record.family === "contracts" ? record.contract.recordStatus : "—",
       ),
-      title: "Status rekam",
+      title: "Status Rekam",
     },
     evidenceBreakdown(records),
   ];
@@ -364,9 +413,8 @@ function activityBreakdowns(
       description:
         "Jenis kegiatan yang tercatat pada rekam resmi pembentuk realisasi.",
       id: "jenis",
-      label: "Jenis kegiatan",
       points: countBy(records, (record) => record.subtitle || "Belum tercatat"),
-      title: "Jenis kegiatan",
+      title: "Jenis Kegiatan",
     },
     evidenceBreakdown(records),
   ];
@@ -568,6 +616,7 @@ export function buildIndicatorView(
     definition: evaluation.definition,
     difference: measurement.difference,
     evidence: evidenceRows(measurement),
+    evidenceRequirement: evaluation.evidence.value,
     houseHref: house.href,
     houseLabel: house.label,
     id: evaluation.indicator.id,

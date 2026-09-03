@@ -73,6 +73,8 @@ type MonitoringMetricCardProps = {
   fallback?: string;
   icon: NexusWorkspaceIconName;
   label: string;
+  /** Satuan yang menempel pada angka, mis. `%`, tanpa jarak. */
+  suffix?: string;
   tone?: "blue" | "gold" | "green" | "violet";
   unit?: string;
   value: number | null;
@@ -85,6 +87,7 @@ export function MonitoringMetricCard({
   fallback,
   icon,
   label,
+  suffix,
   tone = "blue",
   unit,
   value,
@@ -103,7 +106,11 @@ export function MonitoringMetricCard({
         <div className={styles.metricCopy}>
           <span>{label}</span>
           <strong className={styles.metricValue}>
-            <MonitoringNumber fallback={fallback} value={value} />
+            <MonitoringNumber
+              fallback={fallback}
+              suffix={suffix}
+              value={value}
+            />
             {unit && value !== null ? <small>{unit}</small> : null}
           </strong>
           {detail ? (
@@ -177,76 +184,19 @@ export function MonitoringUnavailable({
   );
 }
 
-export type MonitoringValueRow = {
-  id: string;
-  label: string;
-  values: readonly string[];
-};
-
-/**
- * Padanan tekstual sebuah grafik. Grafik tidak pernah menjadi satu-satunya
- * cara membaca angka penting, sehingga nilainya selalu dapat dibuka di sini.
- */
-export function MonitoringValueTable({
-  caption,
-  columns,
-  rowHeader,
-  rows,
-  summaryLabel = "Lihat nilainya dalam tabel",
-}: {
-  caption: string;
-  columns: readonly string[];
-  rowHeader: string;
-  rows: readonly MonitoringValueRow[];
-  summaryLabel?: string;
-}) {
-  return (
-    <details className={styles.valueDisclosure}>
-      <summary>{summaryLabel}</summary>
-      <div>
-        <table className={styles.valueTable}>
-          <caption>{caption}</caption>
-          <thead>
-            <tr>
-              <th scope="col">{rowHeader}</th>
-              {columns.map((column) => (
-                <th key={column} scope="col">
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id}>
-                <th scope="row">{row.label}</th>
-                {row.values.map((value, index) => (
-                  <td key={`${row.id}-${columns[index] ?? index}`}>{value}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
-  );
-}
-
 /**
  * Bingkai grafik. Grafiknya diumumkan sebagai satu gambar bernama supaya
  * pembaca layar tidak menyusuri label sumbu satu per satu; nilai persisnya
- * tetap tersedia pada tabel di bawah grafik.
+ * tetap terbaca sebagai teks pada kartu atau tabel di halaman yang sama.
  */
 export function MonitoringChartFrame({
   children,
   fluid = false,
   label,
-  wide = false,
 }: {
   children: ReactNode;
   fluid?: boolean;
   label: string;
-  wide?: boolean;
 }) {
   return (
     <div className={styles.chartScroll} data-fluid={fluid}>
@@ -254,7 +204,6 @@ export function MonitoringChartFrame({
         aria-label={label}
         className={styles.chartInner}
         data-fluid={fluid}
-        data-wide={wide}
         role="img"
       >
         {children}

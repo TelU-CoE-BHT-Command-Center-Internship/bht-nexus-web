@@ -4,54 +4,6 @@
  * ikon, fokus, dan bahasa status tetap milik BHT Nexus.
  */
 
-.grid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: clamp(1.5rem, 2.2vw, 2rem);
-}
-
-.spanFull {
-  grid-column: span 12;
-  min-width: 0;
-}
-
-.spanMain {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  grid-column: span 12;
-  gap: 1.5rem;
-}
-
-.spanSide {
-  grid-column: span 12;
-  min-width: 0;
-}
-
-.spanWide {
-  grid-column: span 12;
-  min-width: 0;
-}
-
-@media (min-width: 48rem) {
-  .grid {
-    gap: 1.5rem;
-  }
-}
-
-@media (min-width: 75rem) {
-  .spanMain,
-  .spanWide {
-    grid-column: span 7;
-  }
-
-  .spanSide {
-    grid-column: span 5;
-  }
-}
-
 /* Kartu analitik dasar. */
 .card {
   display: flex;
@@ -120,20 +72,6 @@
 }
 
 /* Kartu metrik: kotak ikon, label, angka besar, dan penanda status. */
-.metricGrid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-}
-
-@media (min-width: 40rem) {
-  .metricGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-  }
-}
-
 .metricCard {
   --metric-accent: #315ca8;
   --metric-soft: #edf3fc;
@@ -369,16 +307,6 @@
   margin-top: 0.75rem;
 }
 
-.targetCaption {
-  max-width: 23.75rem;
-  margin: 1.5rem auto auto;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  text-align: center;
-  text-wrap: pretty;
-}
-
 .targetFooter {
   display: flex;
   align-items: center;
@@ -484,10 +412,6 @@
   min-width: 34rem;
 }
 
-.chartInner[data-wide="true"] {
-  min-width: 44rem;
-}
-
 .chartInner[data-fluid="true"] {
   min-width: 100%;
 }
@@ -498,14 +422,9 @@
  * indikator tetap terbaca.
  */
 @media (min-width: 75rem) {
-  .chartInner,
-  .chartInner[data-wide="true"] {
+  .chartInner {
     min-width: 100%;
   }
-}
-
-.chartFallback {
-  margin: 0;
 }
 
 /* Ruang grafik sebelum berkas grafiknya selesai dimuat. */
@@ -518,68 +437,6 @@
     #f2f4f7 50%,
     var(--color-nexus-surface-subtle) 100%
   );
-}
-
-.valueTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8125rem;
-}
-
-.valueTable caption {
-  margin-bottom: 0.5rem;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-  text-align: left;
-}
-
-.valueTable th,
-.valueTable td {
-  padding: 0.5rem 0.75rem 0.5rem 0;
-  border-bottom: 1px solid var(--color-nexus-border-subtle);
-  color: var(--color-nexus-text);
-  text-align: left;
-  vertical-align: top;
-}
-
-.valueTable th {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.valueTable tbody th {
-  color: var(--color-nexus-text-strong);
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-.valueDisclosure summary {
-  color: #315ca8;
-  cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  list-style: none;
-}
-
-.valueDisclosure summary::-webkit-details-marker {
-  display: none;
-}
-
-.valueDisclosure summary::before {
-  content: "▸";
-  display: inline-block;
-  margin-right: 0.35rem;
-  transition: transform 150ms ease;
-}
-
-.valueDisclosure[open] summary::before {
-  transform: rotate(90deg);
-}
-
-.valueDisclosure > div {
-  margin-top: 0.75rem;
-  overflow-x: auto;
 }
 
 /* Daftar sebaran: label, jumlah, meteran, dan porsi. */
@@ -918,6 +775,37 @@
   background: #f8f9fb;
 }
 
+/*
+ * Blok selebar halaman pada ikhtisar domain dan rincian indikator: grafik
+ * capaian, kartu keterangan, daftar indikator, dan daftar rekam pembentuk.
+ * Proporsi indikator yang mencapai target sudah menjadi kartu metrik, sehingga
+ * tidak ada gauge kedua yang mengulang angka yang sama.
+ */
+.monitoringSection {
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+/* Kartu wawasan berdampingan pada layar lebar, menumpuk pada layar sempit. */
+.insightGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 62rem) {
+  .insightGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.insightGrid > .card {
+  height: 100%;
+}
+
 .summaryUpdates {
   min-width: 0;
   margin-top: 1rem;
@@ -1014,13 +902,21 @@
 }
 
 .categoryProgress {
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+/*
+ * Warna segmen capaian dipasang pada grafik dan legendanya sendiri, bukan pada
+ * kartu pembungkusnya, supaya grafik yang sama tetap berwarna benar di mana pun
+ * ia dipakai: Ringkasan lintas domain maupun ikhtisar satu domain.
+ */
+.categoryProgressViewport,
+.categoryProgressLegend {
   --progress-reached: #48b88a;
   --progress-reported: #4776e6;
   --progress-remaining: #f0bb3f;
   --progress-unavailable: #d8dde5;
-
-  min-width: 0;
-  margin-top: 1rem;
 }
 
 .categoryProgress > .card {
@@ -1275,60 +1171,6 @@
   }
 }
 
-/* Keterangan domain individual; menjadi tempat modul capaian berikutnya. */
-.domainState {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem;
-  border: 1px solid var(--color-nexus-border);
-  border-radius: 1rem;
-  background: var(--color-nexus-surface);
-}
-
-@media (min-width: 40rem) {
-  .domainState {
-    padding: 1.5rem;
-  }
-}
-
-.domainState:focus-visible {
-  outline: 0.1875rem solid var(--color-brand-gold);
-  outline-offset: 0.2rem;
-}
-
-.domainStateCopy h3 {
-  margin: 0;
-  color: var(--color-nexus-text-strong);
-  font-size: 1.0625rem;
-  font-weight: 620;
-  line-height: 1.45;
-}
-
-.domainStateCopy p {
-  margin: 0.35rem 0 0;
-  max-width: 58rem;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.875rem;
-  line-height: 1.55;
-}
-
-.domainStateMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--color-nexus-border-subtle);
-}
-
-.domainStateMeta > span {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-}
-
 .constructionState {
   position: relative;
   display: grid;
@@ -1514,30 +1356,14 @@
   gap: 0.5rem;
 }
 
-.indicatorNav label {
-  display: flex;
+/*
+ * Pemindah indikator memakai kendali pilihan ruang kerja yang sama dengan
+ * filter Data Resmi dan pemilih periode, bukan `select` bawaan peramban, supaya
+ * bentuk, fokus, dan perilaku menunya konsisten di seluruh Monitoring.
+ */
+.indicatorSelect {
   min-width: 0;
-  flex: 1 1 14rem;
-  flex-direction: column;
-  gap: 0.25rem;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-}
-
-.indicatorNav select {
-  width: 100%;
-  min-width: 0;
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
-  border: 1px solid var(--color-nexus-border);
-  border-radius: 0.5rem;
-  appearance: none;
-  background:
-    url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23667085' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 8 5 5 5-5'/%3E%3C/svg%3E")
-    no-repeat right 0.65rem center / 1rem 1rem var(--color-nexus-surface);
-  color: var(--color-nexus-text-strong);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.875rem;
+  flex: 1 1 22rem;
 }
 
 .navButtons {
@@ -1671,6 +1497,10 @@
   width: 8rem;
 }
 
+.tableSurface th[data-column="progress"] {
+  width: 7rem;
+}
+
 /* Keadaan tidak tersedia di dalam kartu analitik. */
 .unavailable {
   display: flex;
@@ -1732,13 +1562,6 @@
   border-radius: 50%;
   background: var(--color-nexus-accent);
   content: "";
-}
-
-.evidenceNote {
-  margin: 0 0 1rem;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.55;
 }
 
 .recordNotes {

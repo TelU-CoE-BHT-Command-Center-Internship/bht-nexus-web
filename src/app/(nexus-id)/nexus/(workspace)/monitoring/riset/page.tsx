@@ -3,8 +3,9 @@ import {
   nexusPreviewWorkspaceAccess,
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
-import { NexusMonitoringRiset } from "@/components/nexus-monitoring/nexus-monitoring-riset";
-import { buildRisetView } from "@/components/nexus-monitoring/nexus-monitoring-view";
+import { NEXUS_MONITORED_CATEGORY } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
+import { NexusMonitoringLanding } from "@/components/nexus-monitoring/nexus-monitoring-landing";
+import { getNexusMonitoringLandingData } from "@/components/nexus-monitoring/nexus-monitoring-landing-data";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -18,6 +19,11 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Alamat tetap untuk domain Riset. Halaman ini memakai kerangka Monitoring KM
+ * yang sama dengan Ringkasan dan hanya menyalakan domain Riset sejak awal,
+ * sehingga tautan lama tetap sah tanpa membuat susunan Riset yang kedua.
+ */
 export default function NexusMonitoringRisetPage() {
   const access = nexusPreviewWorkspaceAccess;
 
@@ -39,5 +45,10 @@ export default function NexusMonitoringRisetPage() {
     );
   }
 
-  return <NexusMonitoringRiset view={buildRisetView()} />;
+  return (
+    <NexusMonitoringLanding
+      {...getNexusMonitoringLandingData()}
+      initialDomain={NEXUS_MONITORED_CATEGORY}
+    />
+  );
 }

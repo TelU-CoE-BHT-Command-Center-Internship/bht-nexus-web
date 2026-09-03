@@ -37,11 +37,14 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 
 - `Monitoring KM` menjadi satu butir navigasi pada kelompok Utama, di samping Dashboard. Kategori dan indikator tidak dipecah menjadi butir sidebar sendiri.
 - `/nexus/monitoring` adalah Ringkasan: satu pemilih periode evaluasi di kanan atas dan satu baris pemilih domain berisi Semua Domain beserta sembilan kategori KM. Barisnya digeser mendatar—diseret, roda tetikus, sentuh, atau panah papan ketik—tanpa batang gulir, dengan bayangan tepi sebagai penanda masih ada domain di arah tersebut.
-- Berpindah domain tidak berpindah halaman. Semua Domain menampilkan empat kartu ringkasan, capaian target per domain, kemajuan indikator per kategori, dan pembaruan data resmi terbaru. Riset menampilkan ringkasnya beserta jalan ke halaman pemantauannya.
+- Berpindah domain tidak berpindah halaman dan tidak menuntut klik kedua. Semua Domain menampilkan empat kartu ringkasan, capaian target per domain, kemajuan indikator per kategori, dan pembaruan data resmi terbaru. Riset langsung menampilkan ikhtisar domainnya di kerangka yang sama.
 - Domain yang halaman pemantauannya belum dibangun menampilkan keadaan sedang disiapkan beserta jumlah indikator, jumlah rekam resmi yang sudah terkait, jalan kembali ke Ringkasan, dan pintasan ke rumah Data Resmi terkait bila ada. Keadaan itu tidak pernah ditampilkan sebagai capaian nol.
-- Periode evaluasi dapat dipilih tahunan atau per triwulan. Hanya tahun yang benar-benar dimodelkan workbook yang ditawarkan, sehingga kendali ini tidak menjanjikan periode yang datanya belum ada.
-- `/nexus/monitoring/riset` adalah ikhtisar kategori Riset: dua kartu metrik, grafik target dan realisasi per indikator, kartu proporsi indikator yang mencapai target, capaian per indikator, sebaran rumah data resmi, dan ringkasan sepuluh indikator yang dapat disaring menurut status.
+- Pemilih periode evaluasi hanya menawarkan periode yang benar-benar dihitung. Workbook KM 2026 menetapkan satu target per indikator untuk satu tahun evaluasi, sedangkan kolom TW berisi catatan realisasi triwulan dan bukan target triwulan, sehingga tidak ada aturan resmi untuk menilai status indikator pada satu triwulan. Dimensi triwulan tetap dapat dibaca pada rincian indikator melalui sebaran triwulan yang dihitung dari tanggal bisnis rekam resmi.
+- Ikhtisar Riset memakai satu susunan: empat kartu metrik, grafik pemenuhan target per indikator selebar kartu, sebaran rekam pembentuk, gap target terbesar, daftar sepuluh indikator yang dapat disaring menurut status, dan pembaruan Data Resmi Riset terbaru. `/nexus/monitoring/riset` adalah alamat tetap untuk domain itu dan merender kerangka Monitoring yang sama dengan Riset aktif sejak awal, bukan susunan kedua.
+- Grafik pemenuhan target membandingkan setiap indikator dengan targetnya sendiri, bukan membandingkan besar target antar-indikator. Target seluruh indikator tidak pernah dijumlahkan menjadi satu angka Riset dan tidak ada skor gabungan kategori.
 - `/nexus/monitoring/riset/km-9` sampai `km-18` memakai satu kerangka rincian yang sama dengan modul per rumpun data: kegiatan (KM-9, KM-10), publikasi (KM-11 sampai KM-14), kekayaan intelektual (KM-15, KM-16), serta kontrak riset (KM-17, KM-18). Alamat indikator di luar daftar tersebut menampilkan keadaan tidak ditemukan beserta jalan kembali, bukan indikator pertama.
+- Rincian indikator membuka dengan empat kartu metrik—target, realisasi, capaian terhadap target beserta statusnya, dan jumlah rekam pembentuk—lalu definisi beserta eviden dan rujukan workbook, kartu wawasan, dan daftar rekam pembentuk realisasi. Sebaran seperti kuartil jurnal, wadah terbit, bentuk perlindungan, atau skema kontrak ditampilkan sebagai daftar bernilai langsung, hanya ketika rekam resminya memang memuat bidang tersebut.
+- Kolom `Eviden` pada worksheet `List KM` belum diisi untuk indikator Riset. Rincian indikator menyatakan ketiadaan itu apa adanya dan menunjuk daftar rekam pembentuk sebagai tempat bukti tiap rekam diperiksa; syarat bukti tidak pernah dikarang sendiri.
 - Target, satuan, definisi, dan cara perhitungan berasal dari workbook KM 2026 beserta letak barisnya. Realisasi dihitung dari rekam Data Resmi yang sudah lolos Tinjauan dan memiliki kaitan indikator KM eksplisit pada periode evaluasi yang sama.
 - Nilai realisasi dan catatan triwulan pada workbook tetap ditampilkan sebagai rujukan sumber yang diberi label tersendiri. Nilai itu tidak pernah dipakai sebagai realisasi BHT Nexus dan tidak dicampur dengan hasil hitung data resmi.
 - Setiap rekam dihitung satu kali menurut pengenal resminya, dan angka realisasi pada kartu metrik selalu sama dengan jumlah baris pada Data pembentuk realisasi.
@@ -50,7 +53,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Kuartil jurnal Q1–Q4 adalah pemeringkatan reputasi jurnal dan tidak pernah disamakan dengan triwulan evaluasi TW1–TW4.
 - Nama pada rincian indikator diambil dari rekam resmi. Hanya nama yang sudah tertaut anggota kanonis yang menautkan ke daftar data resmi anggota tersebut; nama lain dinyatakan sebagai catatan sumber.
 - Monitoring tidak menyalin rekam resmi menjadi koleksi kedua, tidak menyediakan penyuntingan target, dan tidak menghitung skor gabungan kategori.
-- Kategori Riset masih berkembang. Susunan halaman rincian indikatornya belum final dan dapat berubah setelah pola Ringkasan per domain selesai dirapikan.
+- Riset adalah domain rujukan pertama untuk pola Monitoring bertingkat: Semua Domain, ikhtisar domain, lalu rincian indikator. Domain berikutnya mengikuti pola yang sama.
 
 ### Pengumpulan
 
@@ -226,7 +229,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/masuk` dan `/en/nexus/sign-in` | Antarmuka masuk |
 | `/nexus/dashboard` | Dashboard ruang kerja |
 | `/nexus/monitoring` | Kategori indikator KM dan keadaan pemantauannya |
-| `/nexus/monitoring/riset` | Ikhtisar capaian indikator Riset pada periode evaluasi berjalan |
+| `/nexus/monitoring/riset` | Monitoring KM dengan domain Riset aktif sejak awal |
 | `/nexus/monitoring/riset/[indikator]` | Rincian KM-9 sampai KM-18 beserta data resmi pembentuk realisasinya |
 | `/nexus/pengumpulan` | Pengumpulan sumber publik |
 | `/nexus/tinjauan` | Tinjauan kandidat sebelum menjadi data resmi |

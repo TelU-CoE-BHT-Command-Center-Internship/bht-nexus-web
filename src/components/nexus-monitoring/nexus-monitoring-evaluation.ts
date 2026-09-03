@@ -82,8 +82,20 @@ export type NexusIndicatorWorkbookNote = {
 };
 
 /**
+ * Eviden yang diminta workbook KM 2026 untuk membuktikan realisasi sebuah
+ * indikator. Kolom `Eviden` pada worksheet `List KM` tersedia sebagai kepala
+ * kolom, tetapi belum diisi untuk indikator Riset. Ketiadaan itu disampaikan
+ * apa adanya; syarat bukti tidak pernah dikarang sendiri.
+ */
+export type NexusIndicatorEvidence = {
+  reference: string;
+  value: string | null;
+};
+
+/**
  * Metadata evaluasi satu indikator: satuan, definisi, cara perhitungan, target
- * periode, rumah data resmi, dan tanggal bisnis yang menentukan triwulan.
+ * periode, eviden, rumah data resmi, dan tanggal bisnis yang menentukan
+ * triwulan.
  *
  * Definisi dan perhitungan ditulis ulang dalam ejaan baku yang setia pada
  * makna kolom `Definisi`, `Tujuan`, dan `Perhitungan Indikator` pada workbook
@@ -93,6 +105,7 @@ export type NexusIndicatorEvaluation = {
   businessDateLabel: string;
   calculation: string;
   definition: string;
+  evidence: NexusIndicatorEvidence;
   indicator: NexusKmIndicator;
   purpose: string;
   sourceFamily: NexusMonitoringSourceFamily;
@@ -105,6 +118,8 @@ type EvaluationSeed = {
   businessDateLabel: string;
   calculation: string;
   definition: string;
+  /** Diisi hanya bila kolom `Eviden` pada `List KM` memang bernilai. */
+  evidenceValue?: string;
   id: NexusKmIndicatorId;
   previousPeriodValue: number | null;
   purpose: string;
@@ -262,6 +277,10 @@ const evaluationById = new Map<NexusKmIndicatorId, NexusIndicatorEvaluation>(
       businessDateLabel: seed.businessDateLabel,
       calculation: seed.calculation,
       definition: seed.definition,
+      evidence: {
+        reference: "Workbook KM 2026 · List KM kolom Eviden",
+        value: seed.evidenceValue ?? null,
+      },
       indicator: kmIndicator(seed.id),
       purpose: seed.purpose,
       sourceFamily: seed.sourceFamily,

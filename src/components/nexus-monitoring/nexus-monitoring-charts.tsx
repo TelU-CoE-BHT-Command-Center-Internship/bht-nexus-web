@@ -15,19 +15,11 @@ const ApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export const MONITORING_SERIES_COLOR = "#5c4fd0";
-export const MONITORING_REFERENCE_COLOR = "#9aa4b5";
+const MONITORING_SERIES_COLOR = "#5c4fd0";
 const MONITORING_REACHED_COLOR = "#4776e6";
 const MONITORING_NOT_REACHED_COLOR = "#e5a83c";
 const MONITORING_UNAVAILABLE_COLOR = "#cfd4dc";
 const TRACK_COLOR = "#e4e7ec";
-
-export type MonitoringChartPoint = {
-  id: string;
-  label: string;
-  /** `null` berarti nilainya belum dapat dihitung, bukan nol. */
-  value: number | null;
-};
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -78,75 +70,6 @@ function baseOptions(reducedMotion: boolean): ApexOptions {
     states: { active: { filter: { type: "none" } } },
     tooltip: { style: { fontFamily: "inherit", fontSize: "12px" } },
   };
-}
-
-type ColumnChartProps = {
-  categories: readonly string[];
-  height?: number;
-  series: readonly {
-    color?: string;
-    data: readonly (number | null)[];
-    name: string;
-  }[];
-  unitSuffix?: string;
-};
-
-/** Batang vertikal berkelompok, dipakai membandingkan target dan realisasi. */
-export function MonitoringColumnChart({
-  categories,
-  height = 220,
-  series,
-  unitSuffix = "",
-}: ColumnChartProps) {
-  const reducedMotion = useReducedMotion();
-  const options: ApexOptions = {
-    ...baseOptions(reducedMotion),
-    colors: series.map(
-      (item, index) =>
-        item.color ??
-        (index === 0 ? MONITORING_REFERENCE_COLOR : MONITORING_SERIES_COLOR),
-    ),
-    fill: { opacity: 1 },
-    plotOptions: {
-      bar: {
-        borderRadius: 5,
-        borderRadiusApplication: "end",
-        columnWidth: "70%",
-        horizontal: false,
-      },
-    },
-    stroke: { colors: ["transparent"], show: true, width: 3 },
-    tooltip: {
-      ...baseOptions(reducedMotion).tooltip,
-      y: {
-        formatter: (value: number) =>
-          value === null ? "Belum dapat dihitung" : `${value}${unitSuffix}`,
-      },
-    },
-    xaxis: {
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      categories: [...categories],
-      labels: { style: { colors: "#667085", fontSize: "12px" } },
-    },
-    yaxis: {
-      forceNiceScale: true,
-      labels: {
-        formatter: wholeNumberLabel,
-        style: { colors: "#667085", fontSize: "12px" },
-      },
-      min: 0,
-    },
-  };
-
-  return (
-    <ApexChart
-      height={height}
-      options={options}
-      series={series.map((item) => ({ data: [...item.data], name: item.name }))}
-      type="bar"
-    />
-  );
 }
 
 export type MonitoringDomainTargetPoint = {
@@ -294,78 +217,6 @@ export function MonitoringDomainTargetChart({
           name: "Belum dihitung",
         },
       ]}
-      type="bar"
-    />
-  );
-}
-
-type BarChartProps = {
-  height?: number;
-  name: string;
-  points: readonly MonitoringChartPoint[];
-  unitSuffix?: string;
-};
-
-/** Batang mendatar, dipakai untuk sebaran dan capaian per indikator. */
-export function MonitoringBarChart({
-  height = 260,
-  name,
-  points,
-  unitSuffix = "",
-}: BarChartProps) {
-  const reducedMotion = useReducedMotion();
-  const options: ApexOptions = {
-    ...baseOptions(reducedMotion),
-    colors: [MONITORING_SERIES_COLOR],
-    fill: { opacity: 1 },
-    grid: {
-      borderColor: TRACK_COLOR,
-      xaxis: { lines: { show: true } },
-      yaxis: { lines: { show: false } },
-    },
-    legend: { show: false },
-    plotOptions: {
-      bar: {
-        barHeight: "62%",
-        borderRadius: 5,
-        borderRadiusApplication: "end",
-        horizontal: true,
-      },
-    },
-    tooltip: {
-      ...baseOptions(reducedMotion).tooltip,
-      y: {
-        formatter: (value: number) =>
-          value === null ? "Belum dapat dihitung" : `${value}${unitSuffix}`,
-      },
-    },
-    xaxis: {
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      categories: points.map((point) => point.label),
-      labels: {
-        formatter: wholeNumberLabel,
-        style: { colors: "#667085", fontSize: "12px" },
-      },
-      min: 0,
-      tickAmount: Math.min(
-        5,
-        Math.max(
-          1,
-          points.reduce((max, point) => Math.max(max, point.value ?? 0), 0),
-        ),
-      ),
-    },
-    yaxis: {
-      labels: { maxWidth: 240, style: { colors: "#667085", fontSize: "12px" } },
-    },
-  };
-
-  return (
-    <ApexChart
-      height={height}
-      options={options}
-      series={[{ data: points.map((point) => point.value), name }]}
       type="bar"
     />
   );

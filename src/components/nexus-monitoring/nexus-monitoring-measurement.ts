@@ -212,6 +212,8 @@ export function measureRisetIndicators(
 }
 
 export type NexusRisetSummary = {
+  /** Indikator yang realisasinya sudah dapat dihitung dari data resmi. */
+  computable: number;
   /** Rekam resmi berbeda yang membentuk realisasi seluruh indikator Riset. */
   contributingRecords: number;
   measurements: readonly NexusIndicatorMeasurement[];
@@ -219,7 +221,11 @@ export type NexusRisetSummary = {
   notReached: number;
   period: NexusEvaluationPeriodId;
   reached: number;
-  /** Bagian indikator yang sudah mencapai target, 0–1. */
+  /**
+   * Bagian indikator terhitung yang sudah mencapai target, 0–1. Penyebutnya
+   * adalah indikator yang dapat dihitung, sama seperti gauge Ringkasan, supaya
+   * kedua halaman tidak pernah menyebut proporsi yang berbeda.
+   */
   reachedShare: number;
   sourceBreakdown: readonly NexusRisetSourceShare[];
   total: number;
@@ -282,15 +288,17 @@ export function summarizeRiset(
     }))
     .sort((first, second) => second.records - first.records);
 
+  const computable = measurements.length - notComputable.length;
+
   return {
+    computable,
     contributingRecords: contributing.size,
     measurements,
     notComputable: notComputable.length,
-    notReached: measurements.length - reached.length - notComputable.length,
+    notReached: computable - reached.length,
     period,
     reached: reached.length,
-    reachedShare:
-      measurements.length === 0 ? 0 : reached.length / measurements.length,
+    reachedShare: computable === 0 ? 0 : reached.length / computable,
     sourceBreakdown,
     total: measurements.length,
   };
