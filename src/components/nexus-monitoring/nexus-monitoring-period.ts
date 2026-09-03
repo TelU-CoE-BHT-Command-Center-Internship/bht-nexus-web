@@ -69,13 +69,6 @@ export function nexusMonitoringPeriod(id: string): NexusMonitoringPeriod {
   );
 }
 
-/** Label lengkap untuk daftar pilihan: "Triwulan 2 2026 · April–Juni". */
-export function nexusMonitoringPeriodOptionLabel(
-  period: NexusMonitoringPeriod,
-) {
-  return `${period.label} · ${period.rangeLabel}`;
-}
-
 /** Penyebutan periode di dalam kalimat, mis. "TW2 2026" atau "tahun 2026". */
 export function nexusMonitoringPeriodShortLabel(period: NexusMonitoringPeriod) {
   if (period.scope === "year") return `tahun ${period.year}`;

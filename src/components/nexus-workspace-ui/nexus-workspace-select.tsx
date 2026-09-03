@@ -5,12 +5,14 @@ import {
   type ReactNode,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 import styles from "@/components/nexus-workspace-ui/nexus-workspace-select.module.css";
 
 export type NexusSelectOption = {
+  description?: string;
   label: string;
   tone?: "completed" | "needs-fix" | "neutral" | "waiting";
   value: string;
@@ -127,6 +129,40 @@ export function NexusWorkspaceSelect({
       ?.scrollIntoView({ block: "nearest" });
   }, [highlightedIndex, idPrefix, isOpen]);
 
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    const root = rootRef.current;
+    const menu = listboxRef.current;
+    if (!root || !menu) return;
+
+    const viewportGutter = 16;
+    const prefersRightEdge = menu.offsetLeft < 0;
+    const keepMenuInsideViewport = () => {
+      const rootRect = root.getBoundingClientRect();
+      const menuWidth = menu.offsetWidth;
+      const preferredLeft = prefersRightEdge ? rootRect.width - menuWidth : 0;
+      const viewportLeft = rootRect.left + preferredLeft;
+      const maximumLeft = Math.max(
+        viewportGutter,
+        window.innerWidth - viewportGutter - menuWidth,
+      );
+      const clampedViewportLeft = Math.min(
+        Math.max(viewportLeft, viewportGutter),
+        maximumLeft,
+      );
+
+      menu.style.left = `${clampedViewportLeft - rootRect.left}px`;
+      menu.style.right = "auto";
+    };
+
+    keepMenuInsideViewport();
+    window.addEventListener("resize", keepMenuInsideViewport);
+    return () => {
+      window.removeEventListener("resize", keepMenuInsideViewport);
+    };
+  }, [isOpen]);
+
   const openMenu = () => {
     setHighlightedIndex(selectedIndex);
     onOpenChange(true);
@@ -239,8 +275,13 @@ export function NexusWorkspaceSelect({
               {leadingIcon}
             </span>
           ) : null}
-          <span className={styles.selectValue} id={valueId}>
-            {selectedOption.label}
+          <span className={styles.selectText} id={valueId}>
+            <span className={styles.selectValue}>{selectedOption.label}</span>
+            {selectedOption.description ? (
+              <span className={styles.selectDescription}>
+                {selectedOption.description}
+              </span>
+            ) : null}
           </span>
         </span>
         <span aria-hidden="true" className={styles.selectChevron}>
@@ -284,7 +325,14 @@ export function NexusWorkspaceSelect({
                       data-tone={option.tone}
                     />
                   ) : null}
-                  <span>{option.label}</span>
+                  <span className={styles.optionText}>
+                    <span className={styles.optionLabel}>{option.label}</span>
+                    {option.description ? (
+                      <span className={styles.optionDescription}>
+                        {option.description}
+                      </span>
+                    ) : null}
+                  </span>
                 </span>
                 <span aria-hidden="true" className={styles.optionCheck}>
                   {isSelected ? <CheckIcon /> : null}

@@ -174,7 +174,14 @@ export function MonitoringDomainTargetChart({
     ...baseOptions(reducedMotion),
     chart: {
       ...baseOptions(reducedMotion).chart,
+      selection: { enabled: false },
       stacked: true,
+      toolbar: { show: false },
+      zoom: {
+        allowMouseWheelZoom: false,
+        enabled: false,
+        pinch: false,
+      },
     },
     colors: [
       MONITORING_REACHED_COLOR,

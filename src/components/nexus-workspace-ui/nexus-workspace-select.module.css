@@ -80,6 +80,12 @@
   color: var(--color-brand-navy);
 }
 
+.selectText {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
 .selectValue {
   min-width: 0;
   overflow: hidden;
@@ -89,6 +95,21 @@
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.selectDescription {
+  min-width: 0;
+  overflow: hidden;
+  color: #667085;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectField[data-filter="period"] .selectTrigger {
+  min-height: 3.65rem;
 }
 
 .selectChevron {
@@ -161,7 +182,11 @@
 }
 
 .selectField[data-filter="monitoring-progress-category"] .selectMenu {
-  width: max(100%, 21rem);
+  width: max(100%, 18rem);
+}
+
+.selectField[data-filter="period"] .selectMenu {
+  width: max(100%, 20rem);
 }
 
 .selectField[data-filter="year"] .selectMenu {
@@ -223,11 +248,60 @@
   gap: 0.6rem;
 }
 
-.optionCopy > span:last-child {
+.optionText {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.optionLabel {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.optionDescription {
+  min-width: 0;
+  overflow: hidden;
+  color: #667085;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectField[data-filter="period"] .selectOption {
+  min-height: 3.35rem;
+}
+
+/*
+ * Nama kategori dan rentang evaluasi adalah informasi utama, bukan metadata
+ * sekunder. Keduanya boleh membungkus agar tidak terpotong pada viewport yang
+ * lebih sempit daripada lebar menu idealnya.
+ */
+.selectField[data-filter="monitoring-progress-category"] .optionLabel,
+.selectField[data-filter="period"] .optionLabel,
+.selectField[data-filter="period"] .optionDescription {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.selectField[data-filter="period"] .selectValue {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.selectField[data-filter="period"] .selectDescription {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .optionTone {
@@ -296,18 +370,25 @@
 
 @media (max-width: 36rem) {
   .selectMenu {
-    max-height: min(10.5rem, calc(100svh - 2rem));
+    max-height: min(15rem, calc(100svh - 6rem));
   }
 
   .selectField[data-placement="top-on-narrow"] .selectMenu {
     top: auto;
     bottom: calc(100% + 0.5rem);
   }
+
+  .selectField[data-filter="monitoring-progress-category"] .selectValue {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+  }
 }
 
 @media (max-width: 22rem) {
   .selectMenu {
-    max-height: min(7.5rem, calc(100svh - 2rem));
+    max-height: min(12rem, calc(100svh - 6rem));
   }
 }
 

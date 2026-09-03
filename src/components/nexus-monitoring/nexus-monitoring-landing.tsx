@@ -25,7 +25,6 @@ import {
   NEXUS_DEFAULT_MONITORING_PERIOD_ID,
   type NexusMonitoringPeriod,
   nexusMonitoringPeriod,
-  nexusMonitoringPeriodOptionLabel,
   nexusMonitoringPeriods,
 } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusMonitoringRecentUpdates } from "@/components/nexus-monitoring/nexus-monitoring-recent-updates";
@@ -66,7 +65,8 @@ const [firstPeriod, ...otherPeriods] = nexusMonitoringPeriods;
 
 function periodOption(period: NexusMonitoringPeriod) {
   return {
-    label: nexusMonitoringPeriodOptionLabel(period),
+    description: period.rangeLabel,
+    label: period.label,
     value: period.id,
   };
 }

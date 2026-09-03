@@ -78,6 +78,10 @@ Kartu analitik memakai sudut 16 px, garis tepi `--color-nexus-border`, dan paddi
 
 Grafik memakai `apexcharts` dan `react-apexcharts` yang dimuat khusus di sisi peramban, sehingga halaman lain tidak ikut membawa berkasnya. Pustaka ini dipakai karena ruang kerja belum mempunyai primitif grafik dan komposisi TailAdmin yang menjadi rujukan memakai pustaka yang sama; tidak ada bagian lain dari template tersebut yang ikut dibawa. Grafik tidak pernah menjadi satu-satunya cara membaca angka penting: setiap grafik mempunyai judul, keterangan, nama aksesibel, dan tabel nilai yang dapat dibuka di bawahnya.
 
+Kendali pilihan pada kartu analitik memakai `NexusWorkspaceSelect` yang sama dengan filter rumah data resmi. Menunya mengukur posisinya terhadap viewport ketika dibuka dan saat ukuran jendela berubah, lalu bergeser secukupnya agar tetap berjarak minimal 16 px dari tepi layar; tidak ada bagian menu yang terpotong dan tidak ada gulir horizontal yang muncul karenanya. Pilihan yang mempunyai keterangan tambahan—misalnya periode evaluasi dengan rentang bulannya—ditulis dua baris, nama di atas dan keterangan di bawah, sehingga tinggi tombol tetap sama untuk pilihan tahunan maupun triwulan.
+
+Grafik pada Monitoring bersifat baca saja. Pemilihan area dengan seretan, zoom roda tetikus, pinch, dan toolbar zoom dimatikan supaya grafik tidak pernah terjebak pada keadaan zoom yang menuntut tombol reset. Sorotan, tooltip, legenda, dan animasi batang tetap berjalan seperti biasa.
+
 Angka metrik berjalan menuju nilai akhirnya saat pertama kali tampil dan saat nilainya berganti, sedangkan pembaca layar menerima nilai akhirnya seketika. Grafik dan busur capaian memakai animasi bawaan pustaka grafik. Preferensi `prefers-reduced-motion: reduce` menampilkan seluruh angka dan grafik pada keadaan akhirnya tanpa animasi, dan halaman yang dimuat pada tab latar juga langsung menampilkan angka akhirnya.
 
 ### Ikon
