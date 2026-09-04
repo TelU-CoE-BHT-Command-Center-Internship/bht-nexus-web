@@ -1418,6 +1418,120 @@
 }
 
 /* Keadaan tidak tersedia di dalam kartu analitik. */
+/* Komposisi: cincin proporsi beserta legendanya yang memuat angka aslinya. */
+.composition {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+}
+
+.compositionChart {
+  min-width: 0;
+  flex: 1 1 10.5rem;
+  max-width: 13rem;
+}
+
+.compositionChart[data-clickable="true"] {
+  cursor: pointer;
+}
+
+.compositionLegend {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 15rem;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compositionRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.25rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.16s ease;
+}
+
+.compositionRow:hover {
+  background: var(--color-nexus-surface-subtle);
+}
+
+.compositionDot {
+  display: block;
+  width: 0.625rem;
+  height: 0.625rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.compositionDot[data-empty="true"] {
+  border: 1.5px solid var(--color-nexus-text-subtle);
+  background: none;
+}
+
+.compositionCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.compositionCopy strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.compositionCopy strong a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.compositionCopy strong a:hover,
+.compositionCopy strong a:focus-visible {
+  color: var(--color-nexus-accent);
+  text-decoration: underline;
+}
+
+.compositionCopy > span {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.compositionValue {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.compositionValue strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.compositionValue > span {
+  min-width: 2.1rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .unavailable {
   display: flex;
   min-height: 8rem;
@@ -1462,4 +1576,25 @@
   margin: -1px;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Kartu yang berdampingan pada satu kisi: isinya memenuhi tinggi yang tersedia
+ * supaya kartu berisi lebih pendek tidak menyisakan ruang kosong di bawahnya. */
+.card[data-fill="true"] .cardBody {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.card[data-fill="true"] .unavailable {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.card[data-fill="true"] .chartSummary {
+  margin-top: auto;
+  padding-top: 1rem;
 }

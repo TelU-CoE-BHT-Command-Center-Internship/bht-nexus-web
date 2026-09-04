@@ -21,6 +21,20 @@ const MONITORING_NOT_REACHED_COLOR = "#e5a83c";
 const MONITORING_UNAVAILABLE_COLOR = "#cfd4dc";
 const TRACK_COLOR = "#e4e7ec";
 
+/**
+ * Warna irisan komposisi. Urutannya sengaja berselang rona supaya dua irisan
+ * yang bersebelahan tidak pernah berdekatan warnanya; jumlah rumah data yang
+ * mungkin muncul pada satu domain tidak melebihi panjang daftar ini.
+ */
+export const MONITORING_COMPOSITION_COLORS = [
+  "#5c4fd0",
+  "#e5a83c",
+  "#3e7bfa",
+  "#12a150",
+  "#0ea5b7",
+  "#9061c2",
+] as const;
+
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
 
@@ -292,6 +306,117 @@ export function MonitoringRadialChart({
       options={options}
       series={[Number(value.toFixed(2))]}
       type="radialBar"
+    />
+  );
+}
+
+export type MonitoringCompositionSlice = {
+  id: string;
+  label: string;
+  value: number;
+};
+
+/**
+ * Cincin komposisi untuk nilai yang benar-benar bagian dari satu keseluruhan.
+ * Angka persisnya tetap dibaca dari legenda di sebelahnya, jadi cincin ini
+ * hanya menyatakan proporsi dan tidak pernah menjadi satu-satunya tempat
+ * sebuah angka muncul.
+ */
+export function MonitoringCompositionChart({
+  centerLabel,
+  height = 232,
+  onSelect,
+  slices,
+  unitLabel,
+}: {
+  centerLabel: string;
+  height?: number;
+  /** Dipanggil saat sebuah irisan ditekan; tanpa ini cincin tidak dapat ditekan. */
+  onSelect?: (id: string) => void;
+  slices: readonly MonitoringCompositionSlice[];
+  unitLabel: string;
+}) {
+  const reducedMotion = useReducedMotion();
+  const total = slices.reduce((sum, slice) => sum + slice.value, 0);
+
+  const options: ApexOptions = {
+    chart: {
+      animations: {
+        animateGradually: { delay: 120, enabled: !reducedMotion },
+        dynamicAnimation: { enabled: !reducedMotion, speed: 350 },
+        enabled: !reducedMotion,
+        easing: "easeinout",
+        speed: 700,
+      },
+      events: onSelect
+        ? {
+            dataPointSelection: (_event, _context, config) => {
+              const index = config?.dataPointIndex;
+              const slice =
+                typeof index === "number" ? slices[index] : undefined;
+              if (slice) onSelect(slice.id);
+            },
+          }
+        : undefined,
+      fontFamily: "inherit",
+      toolbar: { show: false },
+    },
+    colors: [...MONITORING_COMPOSITION_COLORS],
+    dataLabels: { enabled: false },
+    labels: slices.map((slice) => slice.label),
+    legend: { show: false },
+    plotOptions: {
+      pie: {
+        donut: {
+          labels: {
+            name: {
+              color: "#667085",
+              fontSize: "12px",
+              fontWeight: 500,
+              offsetY: 18,
+            },
+            show: true,
+            total: {
+              color: "#667085",
+              fontSize: "12px",
+              fontWeight: 500,
+              formatter: () => wholeNumberLabel(total),
+              label: centerLabel,
+              show: true,
+              showAlways: true,
+            },
+            value: {
+              color: "#1d2939",
+              fontSize: "28px",
+              fontWeight: 600,
+              formatter: wholeNumberLabel,
+              offsetY: -18,
+            },
+          },
+          size: "68%",
+        },
+        expandOnClick: false,
+      },
+    },
+    states: {
+      active: { filter: { type: "none" } },
+      hover: { filter: { type: "lighten", value: 0.12 } },
+    },
+    stroke: { colors: ["#ffffff"], width: 2 },
+    tooltip: {
+      ...baseOptions(reducedMotion).tooltip,
+      y: {
+        formatter: (value: number) => `${wholeNumberLabel(value)} ${unitLabel}`,
+      },
+    },
+  };
+
+  return (
+    <ApexChart
+      height={height}
+      options={options}
+      series={slices.map((slice) => slice.value)}
+      type="donut"
     />
   );
 }

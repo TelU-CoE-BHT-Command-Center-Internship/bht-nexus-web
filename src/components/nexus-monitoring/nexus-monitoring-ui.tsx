@@ -40,6 +40,12 @@ type MonitoringCardProps = {
   actions?: ReactNode;
   children: ReactNode;
   description?: string;
+  /**
+   * Isi kartu memenuhi tinggi yang tersedia. Dipakai ketika beberapa kartu
+   * berdampingan pada satu kisi dan isinya berbeda panjang, supaya kartu yang
+   * lebih pendek tidak menyisakan ruang kosong di bawahnya.
+   */
+  fill?: boolean;
   headingId?: string;
   inlineHeader?: boolean;
   title: string;
@@ -49,12 +55,17 @@ export function MonitoringCard({
   actions,
   children,
   description,
+  fill = false,
   headingId,
   inlineHeader = true,
   title,
 }: MonitoringCardProps) {
   return (
-    <section aria-labelledby={headingId} className={styles.card}>
+    <section
+      aria-labelledby={headingId}
+      className={styles.card}
+      data-fill={fill}
+    >
       <header className={styles.cardHeader} data-inline={inlineHeader}>
         <div className={styles.cardHeading}>
           <h3 id={headingId}>{title}</h3>

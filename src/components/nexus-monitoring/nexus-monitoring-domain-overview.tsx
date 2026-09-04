@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
+import { MonitoringComposition } from "@/components/nexus-monitoring/nexus-monitoring-composition";
 import {
   MonitoringProgressChart,
   type MonitoringProgressPoint,
@@ -202,6 +203,7 @@ export function NexusMonitoringDomainOverview({
       <div className={styles.insightGrid}>
         <MonitoringCard
           description={`Rekam resmi berbeda yang membentuk realisasi indikator ${view.label} pada ${periodLabel}, menurut rumah data resminya.`}
+          fill
           headingId="monitoring-domain-sources"
           title="Sebaran Rekam Pembentuk"
         >
@@ -211,22 +213,25 @@ export function NexusMonitoringDomainOverview({
               title="Belum ada sumber realisasi"
             />
           ) : (
-            <MonitoringDistributionList
+            <MonitoringComposition
+              centerLabel="rekam"
+              chartLabel={`Komposisi ${view.contributingRecords} rekam resmi pembentuk realisasi ${view.label} menurut rumah datanya`}
               items={view.sources.map((source) => ({
-                detail: `${source.records} rekam · ${source.indicators} indikator`,
+                detail: `${source.indicators} indikator`,
                 href: source.href,
                 id: source.id,
                 label: source.label,
                 share: source.share,
                 value: source.records,
               }))}
-              valueLabel={(item) => percentLabel(item.share)}
+              unitLabel="rekam"
             />
           )}
         </MonitoringCard>
 
         <MonitoringCard
           description="Indikator yang realisasinya masih di bawah target, diurutkan dari selisih terbesar. Batangnya menunjukkan capaian terhadap target, angkanya menunjukkan kekurangannya."
+          fill
           headingId="monitoring-domain-gaps"
           title="Gap Target Terbesar"
         >
