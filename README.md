@@ -44,10 +44,10 @@ Sebelum mengusulkan perubahan, jalankan pemeriksaan lengkapnya:
 
 ```powershell
 npm run check
-npm audit --audit-level=high
+npm run audit:deps
 ```
 
-`npm run check` memeriksa konfigurasi repository, kontras token warna, pola kode, TypeScript, dan proses build. `npm audit` memeriksa paket dengan peringatan keamanan tingkat tinggi. Keduanya cukup untuk pemeriksaan rutin dan tidak memerlukan browser pengujian tambahan.
+`npm run check` memeriksa konfigurasi repository, kontras token warna, pola kode, TypeScript, dan proses build. `npm run audit:deps` memeriksa kerentanan dependency tingkat tinggi ke atas; kerentanan yang ditemukan menggagalkan pemeriksaan, sedangkan layanan penasihat keamanan npm yang sedang tidak dapat dihubungi dilaporkan sebagai peringatan setelah tiga percobaan. Keduanya cukup untuk pemeriksaan rutin dan tidak memerlukan browser pengujian tambahan.
 
 ## Perintah yang tersedia
 
@@ -59,6 +59,7 @@ npm audit --audit-level=high
 | `npm run check` | Menjalankan seluruh pemeriksaan di bawah ini sekaligus, lalu build |
 | `npm run validate:config` | Memeriksa YAML dan struktur issue form |
 | `npm run validate:contrast` | Memeriksa pasangan token warna terhadap ambang WCAG 2.2 AA |
+| `npm run audit:deps` | Memeriksa kerentanan dependency tingkat `high` ke atas |
 | `npm run lint` | Memeriksa format dan pola kode |
 | `npm run typecheck` | Memeriksa kesesuaian TypeScript |
 | `npm run format` | Merapikan format berkas yang didukung Biome |
@@ -83,7 +84,7 @@ npm audit --audit-level=high
 .
 ├── .github/            # template kontribusi dan pemeriksaan otomatis
 ├── docs/               # cakupan produk, panduan desain, dan batas data frontend
-├── scripts/            # pemeriksaan konfigurasi dan kontras
+├── scripts/            # pemeriksaan konfigurasi, kontras, dan kerentanan dependency
 ├── src/
 │   ├── app/             # route, layout, metadata, font, dan gaya global
 │   ├── assets/          # logo serta gambar landing page dan ruang kerja

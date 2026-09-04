@@ -99,7 +99,7 @@ Hindari pesan seperti `update`, `done`, `revisi`, `coba`, atau `fix lagi` karena
 ```powershell
 npm ci
 npm run check
-npm audit --audit-level=high
+npm run audit:deps
 git status
 git diff --check
 ```

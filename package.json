@@ -13,6 +13,7 @@
     "start": "next start",
     "validate:config": "node scripts/validate-github-config.mjs",
     "validate:contrast": "node scripts/validate-contrast.mjs",
+    "audit:deps": "node scripts/audit-dependencies.mjs",
     "lint": "biome check",
     "format": "biome format --write",
     "typecheck": "next typegen && tsc --noEmit",

@@ -23,7 +23,7 @@ Tambahkan tangkapan layar untuk perubahan antarmuka. Hapus bagian ini jika perub
 - [ ] Perubahan hanya mencakup satu tujuan utama.
 - [ ] Saya sudah membaca seluruh diff.
 - [ ] `npm run check` berhasil.
-- [ ] `npm audit --audit-level=high` tidak menemukan kerentanan tingkat tinggi.
+- [ ] `npm run audit:deps` tidak menemukan kerentanan tingkat tinggi.
 - [ ] Dokumentasi diperbarui jika cara penggunaan atau perilaku berubah.
 - [ ] Tidak ada kata sandi, token, data pribadi, atau berkas lokal yang ikut masuk.
 - [ ] Issue terkait sudah dicantumkan.
