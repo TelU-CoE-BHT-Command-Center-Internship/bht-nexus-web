@@ -20,17 +20,54 @@ import { appendFile } from "node:fs/promises";
 const LEVELS = ["info", "low", "moderate", "high", "critical"];
 const THRESHOLD = "high";
 const ATTEMPTS = 3;
-const BACKOFF_MS = [0, 15_000, 45_000];
+const BACKOFF_MS = [0, 10_000, 20_000];
+
+/**
+ * Batas satu percobaan. npm menunggu jauh lebih lama daripada ini sebelum
+ * menyerah sendiri, sehingga tanpa batas eksplisit tiga percobaan dapat
+ * melampaui jatah waktu seluruh job. Nilai `--fetch-timeout` membuat npm
+ * berhenti lebih dulu, dan penghentian proses di bawah menjadi pengaman
+ * ketika npm tetap menggantung.
+ */
+const ATTEMPT_TIMEOUT_MS = 45_000;
+const FETCH_TIMEOUT_MS = 20_000;
 
 function runAudit() {
   return new Promise((resolve) => {
-    const child = spawn("npm", ["audit", "--json"], {
-      shell: process.platform === "win32",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const child = spawn(
+      "npm",
+      [
+        "audit",
+        "--json",
+        `--fetch-timeout=${FETCH_TIMEOUT_MS}`,
+        "--fetch-retries=1",
+      ],
+      {
+        shell: process.platform === "win32",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
 
     let stdout = "";
     let stderr = "";
+    let settled = false;
+
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(result);
+    };
+
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      finish({
+        code: null,
+        stderr: `tidak selesai dalam ${ATTEMPT_TIMEOUT_MS / 1000} detik`,
+        stdout: "",
+      });
+    }, ATTEMPT_TIMEOUT_MS);
+
     child.stdout.on("data", (chunk) => {
       stdout += chunk;
     });
@@ -38,9 +75,9 @@ function runAudit() {
       stderr += chunk;
     });
     child.on("error", (error) => {
-      resolve({ code: null, stderr: error.message, stdout: "" });
+      finish({ code: null, stderr: error.message, stdout: "" });
     });
-    child.on("close", (code) => resolve({ code, stderr, stdout }));
+    child.on("close", (code) => finish({ code, stderr, stdout }));
   });
 }
 
