@@ -249,6 +249,8 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/tanya-dokumen` | Tanya jawab bersitasi |
 | `/nexus/ekstraksi` | Ekstraksi kandidat dari dokumen |
 | `/en/nexus/coming-soon` | Status pembangunan seluruh ruang kerja Inggris |
+| `/nexus` dan `/en/nexus` | Pengarah menuju halaman masuk BHT Nexus |
+| `/nexus/pencarian` dan `/nexus/kandidat` | Alamat lama; diarahkan ke Pengumpulan atau Tinjauan yang sesuai |
 
 Route workspace Inggris yang pernah tersedia tetap dipertahankan sebagai pengarah ke halaman status tersebut agar tautan lama tidak buntu dan tidak menampilkan alur terjemahan yang baru selesai sebagian.
 

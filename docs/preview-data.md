@@ -61,6 +61,8 @@ Hasil pelengkapan metadata memakai empat state bersama: `available`, `not-availa
 
 ## Kemampuan server yang dibutuhkan
 
+Arah hubungannya satu jalur: halaman yang dibuka pengguna berada di `bht-nexus-web`, sedangkan login, aturan bisnis, pemrosesan, dan pengelolaan data berada di `bht-nexus-server` beserta basis data dan layanan pendukungnya. Pada tahap ini hubungan tersebut masih menjadi arah pengembangan—web belum mengirim satu pun permintaan ke server.
+
 Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan kemampuan berikut:
 
 1. sesi terautentikasi dan izin per peran;
