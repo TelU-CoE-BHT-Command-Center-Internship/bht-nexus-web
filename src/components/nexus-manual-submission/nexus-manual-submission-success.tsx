@@ -292,6 +292,11 @@ export function NexusManualSubmissionSuccess({
         <SuccessGlyph name="info" />
         Cari kandidat di Tinjauan menggunakan judul atau kode pengajuan.
       </p>
+      <p className={styles.successHint}>
+        <SuccessGlyph name="info" />
+        Keputusan tinjauan untuk pengajuan ini belum tersambung ke daftar{" "}
+        {officialLabel}.
+      </p>
     </section>
   );
 }
