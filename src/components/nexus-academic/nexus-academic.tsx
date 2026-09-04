@@ -22,7 +22,10 @@ import { projectOfficialMetadataRecords } from "@/components/nexus-review-sessio
 import { createAcademicCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
@@ -33,14 +36,17 @@ import {
   NexusWorkspacePage,
 } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   NexusWorkspaceMobileAction,
   NexusWorkspaceMobileCard,
+  NexusWorkspaceMobileSubtitle,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
   NexusWorkspaceTableBadge,
   NexusWorkspaceTablePrimary,
   NexusWorkspaceTableSignal,
+  NexusWorkspaceTableText,
 } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import {
   type NexusSelectConfig,
@@ -385,12 +391,14 @@ export function NexusAcademic({
           </NexusWorkspaceTableAction>
         ),
         evidence: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {academicEvidenceLabel(record)}
-          </span>
+          </NexusWorkspaceTableText>
         ),
         participant: (
-          <span className={styles.plainCell}>{record.participantCode}</span>
+          <NexusWorkspaceTableText>
+            {record.participantCode}
+          </NexusWorkspaceTableText>
         ),
         primary: (
           <NexusWorkspaceTablePrimary
@@ -400,9 +408,9 @@ export function NexusAcademic({
           />
         ),
         programStudy: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {record.programStudy ?? "Belum tercatat"}
-          </span>
+          </NexusWorkspaceTableText>
         ),
         signal: (
           <NexusWorkspaceTableSignal
@@ -452,7 +460,9 @@ export function NexusAcademic({
           }
           title={displayTitle}
         >
-          <p className={styles.mobileSubtitle}>{academicMentorNames(record)}</p>
+          <NexusWorkspaceMobileSubtitle>
+            {academicMentorNames(record)}
+          </NexusWorkspaceMobileSubtitle>
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -505,11 +515,11 @@ export function NexusAcademic({
         ]}
       />
 
-      <section
-        aria-labelledby="official-academic-title"
+      <NexusWorkspaceCatalog
         className={styles.catalog}
+        labelledBy="official-academic-title"
       >
-        <div className={styles.toolbar}>
+        <NexusWorkspaceToolbar>
           <NexusWorkspaceSearch
             label="Cari kegiatan akademik resmi"
             name="academic-search"
@@ -545,7 +555,7 @@ export function NexusAcademic({
               value={filterValues[config.id as FilterId] ?? config.defaultValue}
             />
           ))}
-        </div>
+        </NexusWorkspaceToolbar>
 
         <NexusWorkspaceResultMeta
           isUpdating={isSearchUpdating}
@@ -601,7 +611,7 @@ export function NexusAcademic({
             rows={rows}
           />
         </NexusWorkspaceTableSection>
-      </section>
+      </NexusWorkspaceCatalog>
 
       {selected ? (
         <NexusAcademicDetail

@@ -1,53 +1,58 @@
-.toolbar {
+.catalog table {
+  min-width: 65rem;
+}
+
+.catalog th[data-column="signal"] {
+  width: 7.25rem;
+}
+
+.catalog th[data-column="quartile"] {
+  width: 8.5rem;
+}
+
+.catalog th[data-column="year"] {
+  width: 4rem;
+}
+
+.catalog th[data-column="citations"] {
+  width: 6rem;
+}
+
+.catalog th[data-column="source"] {
+  width: 9.25rem;
+}
+
+.catalog th[data-column="status"] {
+  width: 7.75rem;
+}
+
+.catalog th[data-column="action"] {
+  width: 7.5rem;
+}
+
+/*
+ * Mengembalikan skala tipografi Publikasi sebelum pindah ke tabel bersama:
+ * baris penulis - jurnal tetap 0.75rem seperti sel tabel lainnya.
+ */
+.catalog th[data-column="primary"] span {
+  font-size: 0.75rem;
+}
+
+.kmCell {
   display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(15rem, 2fr) repeat(4, minmax(9rem, 1fr));
-  gap: 0.75rem;
-  padding-top: 1rem;
+  gap: 0.15rem;
 }
 
-.toolbar > * {
-  min-width: 0;
+.kmCell strong {
+  color: var(--color-nexus-text-soft);
+  font-size: 0.675rem;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
-.form {
-  display: grid;
-  gap: 1rem;
-}
-
-.checkboxField {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-  font-weight: 620;
-}
-
-.formActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-@media (max-width: 68rem) {
-  .toolbar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .toolbar > :first-child {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 42rem) {
-  .toolbar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .toolbar > :first-child {
-    grid-column: auto;
-  }
-  .formActions {
-    flex-direction: column-reverse;
-  }
+.kmCell small {
+  color: #8a91a1;
+  font-size: 0.58rem;
+  line-height: 1.3;
 }

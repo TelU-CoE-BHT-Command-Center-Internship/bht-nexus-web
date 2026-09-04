@@ -1,6 +1,6 @@
 import {
-  NEXUS_MONITORED_CATEGORY,
-  NEXUS_MONITORING_RISET_HREF,
+  nexusCategoryIsMonitored,
+  nexusDomainHref,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import {
   getNexusMonitoringRecords,
@@ -50,12 +50,12 @@ function categoryDetail(
   indicators: number,
 ) {
   if (state === "monitored") {
-    return `Seluruh ${indicators} indikator dapat ditelusuri sampai data resmi pembentuknya.`;
+    return `Capaian ${indicators} indikator dihitung dari data resmi pembentuknya.`;
   }
   if (state === "sources-none") {
     return "Belum ada rekam resmi yang dikaitkan dengan indikator kategori ini, sehingga capaiannya belum dapat dihitung.";
   }
-  return `${connected} dari ${indicators} indikator sudah memiliki rekam resmi berkait. Halaman pemantauannya disiapkan setelah Riset.`;
+  return `${connected} dari ${indicators} indikator sudah memiliki rekam resmi berkait. Target dan capaiannya disiapkan menyusul.`;
 }
 
 /**
@@ -103,23 +103,21 @@ export function getNexusMonitoringCategories(
   return [...categories.entries()]
     .map(([category, bucket]) => {
       const connectedIndicators = bucket.connected.size;
-      const state: NexusCategoryMonitoringState =
-        category === NEXUS_MONITORED_CATEGORY
-          ? "monitored"
-          : connectedIndicators === 0
-            ? "sources-none"
-            : connectedIndicators === bucket.indicators
-              ? "sources-connected"
-              : "sources-partial";
+      const state: NexusCategoryMonitoringState = nexusCategoryIsMonitored(
+        category,
+      )
+        ? "monitored"
+        : connectedIndicators === 0
+          ? "sources-none"
+          : connectedIndicators === bucket.indicators
+            ? "sources-connected"
+            : "sources-partial";
 
       return {
         category,
         connectedIndicators,
         detail: categoryDetail(state, connectedIndicators, bucket.indicators),
-        href:
-          category === NEXUS_MONITORED_CATEGORY
-            ? NEXUS_MONITORING_RISET_HREF
-            : undefined,
+        href: state === "monitored" ? nexusDomainHref(category) : undefined,
         indicators: bucket.indicators,
         order: bucket.order,
         records: bucket.records.size,

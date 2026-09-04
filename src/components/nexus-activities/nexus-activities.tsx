@@ -22,7 +22,10 @@ import { projectOfficialMetadataRecords } from "@/components/nexus-review-sessio
 import { createActivityCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
@@ -33,14 +36,17 @@ import {
   NexusWorkspacePage,
 } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   NexusWorkspaceMobileAction,
   NexusWorkspaceMobileCard,
+  NexusWorkspaceMobileSubtitle,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
   NexusWorkspaceTableBadge,
   NexusWorkspaceTablePrimary,
   NexusWorkspaceTableSignal,
+  NexusWorkspaceTableText,
 } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import {
   type NexusSelectConfig,
@@ -351,11 +357,11 @@ export function NexusActivities({
             Rincian
           </NexusWorkspaceTableAction>
         ),
-        context: <span className={styles.plainCell}>{context}</span>,
+        context: <NexusWorkspaceTableText>{context}</NexusWorkspaceTableText>,
         evidence: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {activityEvidenceLabel(record)}
-          </span>
+          </NexusWorkspaceTableText>
         ),
         kind: (
           <span className={styles.stackedCell}>
@@ -363,7 +369,11 @@ export function NexusActivities({
             <small>{record.recordStatus}</small>
           </span>
         ),
-        party: <span className={styles.plainCell}>{record.primaryParty}</span>,
+        party: (
+          <NexusWorkspaceTableText>
+            {record.primaryParty}
+          </NexusWorkspaceTableText>
+        ),
         primary: (
           <NexusWorkspaceTablePrimary
             onClick={open}
@@ -419,7 +429,7 @@ export function NexusActivities({
           }
           title={displayTitle}
         >
-          <p className={styles.mobileSubtitle}>{context}</p>
+          <NexusWorkspaceMobileSubtitle>{context}</NexusWorkspaceMobileSubtitle>
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -472,11 +482,11 @@ export function NexusActivities({
         ]}
       />
 
-      <section
-        aria-labelledby="official-activities-title"
+      <NexusWorkspaceCatalog
         className={styles.catalog}
+        labelledBy="official-activities-title"
       >
-        <div className={styles.toolbar}>
+        <NexusWorkspaceToolbar>
           <NexusWorkspaceSearch
             label="Cari kegiatan dan pengabdian resmi"
             name="activities-search"
@@ -511,7 +521,7 @@ export function NexusActivities({
               />
             ),
           )}
-        </div>
+        </NexusWorkspaceToolbar>
 
         <NexusWorkspaceResultMeta
           isUpdating={isSearchUpdating}
@@ -567,7 +577,7 @@ export function NexusActivities({
             rows={rows}
           />
         </NexusWorkspaceTableSection>
-      </section>
+      </NexusWorkspaceCatalog>
 
       {selected ? (
         <NexusActivityDetail

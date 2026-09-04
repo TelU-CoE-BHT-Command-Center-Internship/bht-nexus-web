@@ -71,8 +71,16 @@ function DomainCell({
 }
 
 export function NexusMonitoringRecentUpdates({
+  description = "Data Resmi terakhir yang terkait indikator KM.",
+  emptyDescription = "Pembaruan akan muncul setelah Data Resmi dikaitkan dengan indikator KM.",
+  headingId = "monitoring-summary-recent-updates",
+  title = "Pembaruan Data Terbaru",
   updates,
 }: {
+  description?: string;
+  emptyDescription?: string;
+  headingId?: string;
+  title?: string;
   updates: readonly NexusMonitoringUpdate[];
 }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,9 +98,9 @@ export function NexusMonitoringRecentUpdates({
   return (
     <div className={styles.summaryUpdates}>
       <MonitoringCard
-        description="Data Resmi terakhir yang terkait indikator KM."
-        headingId="monitoring-summary-recent-updates"
-        title="Pembaruan Data Terbaru"
+        description={description}
+        headingId={headingId}
+        title={title}
       >
         <div className={styles.summaryUpdatesTable}>
           <NexusWorkspaceRecordTable
@@ -106,7 +114,7 @@ export function NexusMonitoringRecentUpdates({
             ]}
             empty={
               <NexusWorkspaceEmptyState
-                description="Pembaruan akan muncul setelah Data Resmi dikaitkan dengan indikator KM."
+                description={emptyDescription}
                 title="Belum ada pembaruan terkait indikator"
               />
             }

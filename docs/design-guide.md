@@ -28,7 +28,7 @@ Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum
 
 Dokumen mempunyai navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi. Ketiganya tidak menjadi tiga kategori teknologi terpisah di sidebar.
 
-Monitoring KM juga memakai satu butir sidebar. Domain dipilih di dalam halaman, dan indikator KM-9 sampai KM-18 mempunyai route sendiri di bawah `/nexus/monitoring/riset`. Empat puluh enam indikator tidak dipindahkan ke sidebar hanya karena masing-masing punya halaman.
+Monitoring KM juga memakai satu butir sidebar. Domain dipilih di dalam halaman, sedangkan setiap domain dan indikator terpantau mempunyai alamatnya sendiri di bawah `/nexus/monitoring/[domain]`. Sembilan domain dan empat puluh enam indikator tidak dipindahkan ke sidebar hanya karena masing-masing punya alamat.
 
 Pemilih domain pada Ringkasan berbentuk satu baris chip: ikon berwarna, nama domain, lalu jumlah indikatornya. Barisnya tidak memakai batang gulir karena batang abu-abu memotong tampilan kartu; penggeserannya disediakan langsung pada kartunya—diseret dengan tetikus, roda tetikus mendatar, sentuh, atau panah papan ketik—dan bayangan tipis di tepi menandakan masih ada domain di arah tersebut. Kunci pointer baru dipasang setelah kursor benar-benar bergeser; menguncinya sejak tombol ditekan membuat event klik pindah dari chip ke barisnya sehingga domain tidak pernah terpilih.
 
@@ -72,11 +72,39 @@ Nilai pada berkas tersebut mengikuti Publikasi sebagai rujukan, sehingga rumah d
 
 ### Kartu analitik Monitoring KM
 
-Halaman Monitoring memakai kisi 12 kolom dengan jarak 24 px pada layar lebar dan 16 px pada layar sempit. Susunannya mengadaptasi dashboard TailAdmin: dua kartu metrik dan satu grafik utama pada kolom 7, kartu capaian berbentuk busur pada kolom 5, satu grafik lebar penuh, lalu sebaran sumber pada kolom 5 dan ringkasan indikator pada kolom 7. Warna, tipografi, ikon, penanda status, fokus, dan bahasa produk tetap milik BHT Nexus.
+Monitoring KM mempunyai tiga tingkat: Semua Domain, ikhtisar satu domain, lalu rincian satu indikator. Ketiganya memakai kerangka halaman yang sama—judul, pemilih periode, pemilih domain—sehingga berpindah domain terasa seperti mengganti isi, bukan berpindah aplikasi.
+
+Ringkasan dan ikhtisar domain membuka dengan empat kartu metrik pada satu baris. Semua Domain melanjutkannya dengan grafik capaian per domain dan kartu busur capaian tahunan; ikhtisar domain tidak mengulang busur itu karena proporsi indikator yang mencapai target sudah menjadi salah satu dari empat kartu metriknya, sehingga grafik pemenuhan target per indikator memakai lebar penuh. Sesudahnya menyusul kartu wawasan berdampingan, daftar indikator, lalu pembaruan Data Resmi terbaru.
+
+Alamat satu indikator saat ini menampilkan keadaan sedang disiapkan: jejak halaman, judul yang membawa identitas indikator, dan satu kartu pesan dengan jalan kembali ke domainnya. Bentuk keadaan itu sama dengan domain yang halamannya belum ada, hanya lebih rapat karena pesannya pendek. Penyajian rinciannya dibongkar lebih dahulu, bukan ditata ulang sedikit demi sedikit, supaya rancangan berikutnya tidak mewarisi susunan lama; kerangkanya dirancang pada paket kerja tersendiri.
+
+Meteran pada daftar sebaran selalu searah dengan angkanya. Pada kartu gap target, batangnya menunjukkan capaian terhadap target dan angkanya menunjukkan kekurangan, sehingga batang panjang tidak pernah terbaca sebagai kekurangan besar. Kartu ringkas pada daftar memakai kolom lentur agar kartu sebaris punya tinggi yang sama dan tombolnya rata di dasar kartu.
+
+Setiap halaman Monitoring memakai kendali pilihan ruang kerja yang sama—periode evaluasi, kategori indikator, dan jumlah baris per halaman—bukan `select` bawaan peramban, supaya bentuk, fokus, dan perilaku menunya seragam.
 
 Kartu analitik memakai sudut 16 px, garis tepi `--color-nexus-border`, dan padding 20 px yang menjadi 24 px pada layar ≥40 rem. Kartu metrik menempatkan kotak ikon 48 px di atas, lalu label, angka besar, dan penanda status pada satu baris dasar. Kartu capaian memakai bingkai luar abu dengan panel putih di dalamnya dan baris ringkasan tiga nilai di bawahnya.
 
-Grafik memakai `apexcharts` dan `react-apexcharts` yang dimuat khusus di sisi peramban, sehingga halaman lain tidak ikut membawa berkasnya. Pustaka ini dipakai karena ruang kerja belum mempunyai primitif grafik dan komposisi TailAdmin yang menjadi rujukan memakai pustaka yang sama; tidak ada bagian lain dari template tersebut yang ikut dibawa. Grafik tidak pernah menjadi satu-satunya cara membaca angka penting: setiap grafik mempunyai judul, keterangan, nama aksesibel, dan tabel nilai yang dapat dibuka di bawahnya.
+Grafik memakai `apexcharts` dan `react-apexcharts` yang dimuat khusus di sisi peramban, sehingga halaman lain tidak ikut membawa berkasnya. Pustaka ini dipakai karena ruang kerja belum mempunyai primitif grafik dan komposisi TailAdmin yang menjadi rujukan memakai pustaka yang sama; tidak ada bagian lain dari template tersebut yang ikut dibawa. Grafik tidak pernah menjadi satu-satunya cara membaca angka penting: setiap grafik mempunyai judul, keterangan, nama aksesibel, dan nilainya tetap terbaca sebagai teks—melalui tabel nilai yang dapat dibuka di bawahnya, atau melalui tabel indikator pada halaman yang sama ketika tabel itu sudah memuat angka yang persis sama.
+
+Batang capaian per indikator memakai satu komponen bersama untuk Ringkasan maupun ikhtisar domain. Geometrinya berhenti di 100% supaya seluruh indikator tetap sebanding, sedangkan angka di kanan menyebut capaian sebenarnya termasuk ketika target terlampaui. Warna segmennya dipasang pada grafik dan legendanya sendiri, bukan pada kartu pembungkusnya, sehingga grafik yang sama tetap berwarna benar di mana pun dipakai.
+
+Nilai yang benar-benar merupakan bagian dari satu keseluruhan digambar sebagai cincin komposisi, bukan sebagai deretan batang. Sebaran rekam pembentuk memakai bentuk ini karena seluruh rumah data menjumlah menjadi satu angka rekam yang tertera di tengah cincin; angka aslinya tetap dibaca dari legenda di sebelahnya, sehingga kartunya tetap lengkap tanpa warna. Baris legenda yang mempunyai alamat menjadi jalan masuk ke rumah datanya, sama seperti irisan cincin yang ditekan, dan bagian yang belum menyumbang rekam ditandai titik berongga karena tidak ada irisan yang bisa dicari pembacanya pada cincin.
+
+Perbandingan yang tidak menjumlah menjadi satu keseluruhan tetap memakai batang. Gap target terbesar membandingkan setiap indikator dengan targetnya sendiri, jadi menjumlahkan kelimanya tidak berarti apa-apa dan cincin akan menyesatkan.
+
+Kartu yang berdampingan pada satu kisi memakai `fill` supaya isinya memenuhi tinggi yang tersedia. Tanpa itu kartu berisi lebih pendek—misalnya domain yang hanya punya satu rumah data, atau yang seluruh indikatornya sudah mencapai target—menyisakan ruang kosong di bawahnya sementara kartu sebelahnya penuh. Keadaan kosong pada kartu semacam itu diletakkan di tengah ruang yang tersedia, bukan menempel di atas.
+
+Baris pencarian dan filter memakai satu bingkai bersama `NexusWorkspaceToolbar`. Jumlah kolomnya ditentukan lebar yang tersedia, bukan disetel tiap halaman, sehingga halaman dengan tiga filter dan halaman dengan enam filter mempunyai tinggi kontrol, jarak, dan cara menyempit yang sama. Lantai kolomnya 12,25rem—diukur dari label terpanjang beserta padding dan ikonnya—karena kolom yang lebih sempit membuat label terbungkus dua baris, dan seluruh sel pada baris kisi itu ikut meninggi sehingga satu kontrol sempit membuat halamannya terlihat berbeda dari halaman lain.
+
+Wadah daftar rekam resmi memakai `NexusWorkspaceCatalog`; jarak atas dan perilaku menyempitnya milik bersama, sedangkan lebar kolom tabel tetap ditulis tiap halaman karena kolomnya memang berbeda. Keterangan pada kartu ringkas memakai `NexusWorkspaceMobileSubtitle` dan nilai sel biasa memakai `NexusWorkspaceTableText`.
+
+Gaya tidak boleh bergantung pada nama sebuah filter. Tinggi kontrol pilihan mengikuti bentuk isinya: pilihan yang mempunyai keterangan ditulis dua baris dan ditandai dari daftar pilihannya sendiri, bukan dari `id` filternya. Aturan yang memilih berdasarkan nama pernah membuat filter periode pada satu halaman ikut meninggi padahal pilihannya hanya satu baris.
+
+Teks khusus pembaca layar memakai satu definisi yang sama di seluruh modul: `position: absolute`, ukuran 1 px, `margin: -1px`, `clip-path: inset(50%)`, dan `white-space: nowrap`. Salin apa adanya; salinan yang kehilangan `margin: -1px` menyisakan satu piksel pada tata letak.
+
+Kendali pilihan pada kartu analitik memakai `NexusWorkspaceSelect` yang sama dengan filter rumah data resmi. Menunya mengukur posisinya terhadap viewport ketika dibuka dan saat ukuran jendela berubah, lalu bergeser secukupnya agar tetap berjarak minimal 16 px dari tepi layar; tidak ada bagian menu yang terpotong dan tidak ada gulir horizontal yang muncul karenanya. Pilihan yang mempunyai keterangan tambahan—misalnya periode evaluasi dengan rentang bulannya—ditulis dua baris, nama di atas dan keterangan di bawah.
+
+Grafik pada Monitoring bersifat baca saja. Pemilihan area dengan seretan, zoom roda tetikus, pinch, dan toolbar zoom dimatikan supaya grafik tidak pernah terjebak pada keadaan zoom yang menuntut tombol reset. Sorotan, tooltip, legenda, dan animasi batang tetap berjalan seperti biasa.
 
 Angka metrik berjalan menuju nilai akhirnya saat pertama kali tampil dan saat nilainya berganti, sedangkan pembaca layar menerima nilai akhirnya seketika. Grafik dan busur capaian memakai animasi bawaan pustaka grafik. Preferensi `prefers-reduced-motion: reduce` menampilkan seluruh angka dan grafik pada keadaan akhirnya tanpa animasi, dan halaman yang dimuat pada tab latar juga langsung menampilkan angka akhirnya.
 

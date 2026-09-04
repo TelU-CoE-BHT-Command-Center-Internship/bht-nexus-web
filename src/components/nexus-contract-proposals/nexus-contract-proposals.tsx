@@ -22,7 +22,10 @@ import { projectOfficialMetadataRecords } from "@/components/nexus-review-sessio
 import { createContractProposalCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
@@ -33,14 +36,17 @@ import {
   NexusWorkspacePage,
 } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   NexusWorkspaceMobileAction,
   NexusWorkspaceMobileCard,
+  NexusWorkspaceMobileSubtitle,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
   NexusWorkspaceTableBadge,
   NexusWorkspaceTablePrimary,
   NexusWorkspaceTableSignal,
+  NexusWorkspaceTableText,
 } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import {
   type NexusSelectConfig,
@@ -361,9 +367,9 @@ export function NexusContractProposals({
           </NexusWorkspaceTableAction>
         ),
         evidence: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {contractProposalEvidenceLabel(record)}
-          </span>
+          </NexusWorkspaceTableText>
         ),
         kind: (
           <span className={styles.stackedCell}>
@@ -372,9 +378,9 @@ export function NexusContractProposals({
           </span>
         ),
         party: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {contractProposalPrimaryParty(record)}
-          </span>
+          </NexusWorkspaceTableText>
         ),
         primary: (
           <NexusWorkspaceTablePrimary
@@ -388,11 +394,11 @@ export function NexusContractProposals({
           />
         ),
         scheme: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {record.kind === "Kontrak Bisnis Komersialisasi"
               ? "Tidak berlaku"
               : (record.scheme ?? "Belum tercatat")}
-          </span>
+          </NexusWorkspaceTableText>
         ),
         signal: (
           <NexusWorkspaceTableSignal
@@ -442,11 +448,11 @@ export function NexusContractProposals({
           }
           title={displayTitle}
         >
-          <p className={styles.mobileSubtitle}>
+          <NexusWorkspaceMobileSubtitle>
             {record.kind === "Kontrak Bisnis Komersialisasi"
               ? "Masa kontrak diperiksa pada rincian"
               : (record.scheme ?? "Skema belum tercatat")}
-          </p>
+          </NexusWorkspaceMobileSubtitle>
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -499,11 +505,11 @@ export function NexusContractProposals({
         ]}
       />
 
-      <section
-        aria-labelledby="official-contract-proposals-title"
+      <NexusWorkspaceCatalog
         className={styles.catalog}
+        labelledBy="official-contract-proposals-title"
       >
-        <div className={styles.toolbar}>
+        <NexusWorkspaceToolbar>
           <NexusWorkspaceSearch
             label="Cari kontrak dan proposal resmi"
             name="contract-proposals-search"
@@ -538,7 +544,7 @@ export function NexusContractProposals({
               />
             ),
           )}
-        </div>
+        </NexusWorkspaceToolbar>
 
         <NexusWorkspaceResultMeta
           isUpdating={isSearchUpdating}
@@ -594,7 +600,7 @@ export function NexusContractProposals({
             rows={rows}
           />
         </NexusWorkspaceTableSection>
-      </section>
+      </NexusWorkspaceCatalog>
 
       {selected ? (
         <NexusContractProposalDetail

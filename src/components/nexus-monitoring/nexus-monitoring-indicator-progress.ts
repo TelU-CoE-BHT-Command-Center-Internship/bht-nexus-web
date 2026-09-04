@@ -1,5 +1,5 @@
 import { NEXUS_EVALUATION_PERIOD } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import { measureRisetIndicators } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
+import { measureMonitoredIndicators } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
 import type { NexusMonitoringRecord } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import {
   type NexusKmIndicatorCategory,
@@ -23,20 +23,21 @@ export type NexusMonitoringIndicatorProgress = {
 };
 
 /**
- * Satu daftar indikator kanonis untuk grafik kategori. Evaluator yang sudah
- * tersedia mengisi capaian; indikator lain tetap hadir sebagai belum dihitung.
+ * Satu daftar indikator kanonis untuk grafik kategori. Indikator yang metadata
+ * evaluasinya sudah tersedia mengisi capaian; indikator lain tetap hadir
+ * sebagai belum dihitung, bukan sebagai capaian nol.
  */
 export function nexusMonitoringIndicatorProgress(
   records: readonly NexusMonitoringRecord[],
 ): readonly NexusMonitoringIndicatorProgress[] {
-  const risetMeasurements = new Map(
-    measureRisetIndicators(NEXUS_EVALUATION_PERIOD, records).map(
+  const measurements = new Map(
+    measureMonitoredIndicators(NEXUS_EVALUATION_PERIOD, records).map(
       (measurement) => [measurement.evaluation.indicator.id, measurement],
     ),
   );
 
   return nexusKmIndicators.map((indicator) => {
-    const measurement = risetMeasurements.get(indicator.id);
+    const measurement = measurements.get(indicator.id);
     if (!measurement || measurement.progress === null) {
       return {
         category: indicator.category,

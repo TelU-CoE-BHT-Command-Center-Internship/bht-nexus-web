@@ -63,6 +63,44 @@ function DetailIcon() {
   );
 }
 
+/**
+ * Wadah satu daftar rekam resmi. Halaman tetap boleh menambahkan `className`
+ * sendiri untuk mengatur lebar kolom tabelnya, sedangkan jarak dan perilaku
+ * menyempitnya berasal dari satu tempat.
+ */
+export function NexusWorkspaceCatalog({
+  children,
+  className,
+  labelledBy,
+}: {
+  children: ReactNode;
+  className?: string;
+  labelledBy?: string;
+}) {
+  return (
+    <section
+      aria-labelledby={labelledBy}
+      className={[styles.catalog, className].filter(Boolean).join(" ")}
+    >
+      {children}
+    </section>
+  );
+}
+
+/** Keterangan pendek di bawah judul kartu ringkas. */
+export function NexusWorkspaceMobileSubtitle({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return <p className={styles.mobileSubtitle}>{children}</p>;
+}
+
+/** Nilai sel tabel yang tidak memerlukan penekanan tersendiri. */
+export function NexusWorkspaceTableText({ children }: { children: ReactNode }) {
+  return <span className={styles.plainCell}>{children}</span>;
+}
+
 export function NexusWorkspaceMobileCard({
   action,
   children,

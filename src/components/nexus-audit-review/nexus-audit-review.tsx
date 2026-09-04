@@ -41,6 +41,7 @@ import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-tabl
 import {
   NexusWorkspaceSearch,
   NexusWorkspaceTabs,
+  NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
@@ -55,6 +56,7 @@ import {
 import {
   NexusWorkspaceMobileAction,
   NexusWorkspaceMobileCard,
+  NexusWorkspaceMobileSubtitle,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
@@ -838,9 +840,9 @@ export function NexusAuditReview({
           }
           title={effectiveTitle}
         >
-          <p className={styles.mobileSubtitle}>
+          <NexusWorkspaceMobileSubtitle>
             {auditEffectiveSubtitle(record, effectiveState)}
-          </p>
+          </NexusWorkspaceMobileSubtitle>
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -962,7 +964,7 @@ export function NexusAuditReview({
           tabs={sourceTabs}
         />
 
-        <div className={styles.toolbar} id="audit-source-panel" role="tabpanel">
+        <NexusWorkspaceToolbar id="audit-source-panel" role="tabpanel">
           <NexusWorkspaceSearch
             label="Cari data tinjauan"
             name="audit-review-search"
@@ -1000,7 +1002,7 @@ export function NexusAuditReview({
               value={value}
             />
           ))}
-        </div>
+        </NexusWorkspaceToolbar>
 
         <div aria-live="polite" className={styles.resultMeta}>
           <p className={styles.resultMetaCopy}>

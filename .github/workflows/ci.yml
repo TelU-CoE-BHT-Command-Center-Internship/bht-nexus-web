@@ -34,9 +34,6 @@ jobs:
       - name: Memasang dependency
         run: npm ci
 
-      - name: Memeriksa keamanan dependency
-        run: npm audit --audit-level=high
-
       - name: Memeriksa konfigurasi repository
         run: npm run validate:config
 
@@ -51,3 +48,10 @@ jobs:
 
       - name: Membuat build produksi
         run: npm run build
+
+      # Pemeriksaan terakhir karena hasilnya bergantung pada layanan penasihat
+      # keamanan npm di luar repository ini. Menempatkannya setelah pemeriksaan
+      # milik sendiri membuat lint, TypeScript, dan build selalu melaporkan
+      # hasilnya walaupun layanan tersebut sedang bermasalah.
+      - name: Memeriksa keamanan dependency
+        run: npm run audit:deps

@@ -4,54 +4,6 @@
  * ikon, fokus, dan bahasa status tetap milik BHT Nexus.
  */
 
-.grid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: clamp(1.5rem, 2.2vw, 2rem);
-}
-
-.spanFull {
-  grid-column: span 12;
-  min-width: 0;
-}
-
-.spanMain {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  grid-column: span 12;
-  gap: 1.5rem;
-}
-
-.spanSide {
-  grid-column: span 12;
-  min-width: 0;
-}
-
-.spanWide {
-  grid-column: span 12;
-  min-width: 0;
-}
-
-@media (min-width: 48rem) {
-  .grid {
-    gap: 1.5rem;
-  }
-}
-
-@media (min-width: 75rem) {
-  .spanMain,
-  .spanWide {
-    grid-column: span 7;
-  }
-
-  .spanSide {
-    grid-column: span 5;
-  }
-}
-
 /* Kartu analitik dasar. */
 .card {
   display: flex;
@@ -120,20 +72,6 @@
 }
 
 /* Kartu metrik: kotak ikon, label, angka besar, dan penanda status. */
-.metricGrid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-}
-
-@media (min-width: 40rem) {
-  .metricGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-  }
-}
-
 .metricCard {
   --metric-accent: #315ca8;
   --metric-soft: #edf3fc;
@@ -369,16 +307,6 @@
   margin-top: 0.75rem;
 }
 
-.targetCaption {
-  max-width: 23.75rem;
-  margin: 1.5rem auto auto;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  text-align: center;
-  text-wrap: pretty;
-}
-
 .targetFooter {
   display: flex;
   align-items: center;
@@ -484,10 +412,6 @@
   min-width: 34rem;
 }
 
-.chartInner[data-wide="true"] {
-  min-width: 44rem;
-}
-
 .chartInner[data-fluid="true"] {
   min-width: 100%;
 }
@@ -498,14 +422,9 @@
  * indikator tetap terbaca.
  */
 @media (min-width: 75rem) {
-  .chartInner,
-  .chartInner[data-wide="true"] {
+  .chartInner {
     min-width: 100%;
   }
-}
-
-.chartFallback {
-  margin: 0;
 }
 
 /* Ruang grafik sebelum berkas grafiknya selesai dimuat. */
@@ -518,68 +437,6 @@
     #f2f4f7 50%,
     var(--color-nexus-surface-subtle) 100%
   );
-}
-
-.valueTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8125rem;
-}
-
-.valueTable caption {
-  margin-bottom: 0.5rem;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-  text-align: left;
-}
-
-.valueTable th,
-.valueTable td {
-  padding: 0.5rem 0.75rem 0.5rem 0;
-  border-bottom: 1px solid var(--color-nexus-border-subtle);
-  color: var(--color-nexus-text);
-  text-align: left;
-  vertical-align: top;
-}
-
-.valueTable th {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.valueTable tbody th {
-  color: var(--color-nexus-text-strong);
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-.valueDisclosure summary {
-  color: #315ca8;
-  cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  list-style: none;
-}
-
-.valueDisclosure summary::-webkit-details-marker {
-  display: none;
-}
-
-.valueDisclosure summary::before {
-  content: "▸";
-  display: inline-block;
-  margin-right: 0.35rem;
-  transition: transform 150ms ease;
-}
-
-.valueDisclosure[open] summary::before {
-  transform: rotate(90deg);
-}
-
-.valueDisclosure > div {
-  margin-top: 0.75rem;
-  overflow-x: auto;
 }
 
 /* Daftar sebaran: label, jumlah, meteran, dan porsi. */
@@ -624,6 +481,10 @@
 .distributionCopy a {
   color: #315ca8;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.distributionCopy a:hover {
   text-decoration: underline;
 }
 
@@ -918,6 +779,37 @@
   background: #f8f9fb;
 }
 
+/*
+ * Blok selebar halaman pada ikhtisar domain dan rincian indikator: grafik
+ * capaian, kartu keterangan, daftar indikator, dan daftar rekam pembentuk.
+ * Proporsi indikator yang mencapai target sudah menjadi kartu metrik, sehingga
+ * tidak ada gauge kedua yang mengulang angka yang sama.
+ */
+.monitoringSection {
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+/* Kartu wawasan berdampingan pada layar lebar, menumpuk pada layar sempit. */
+.insightGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 62rem) {
+  .insightGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.insightGrid > .card {
+  height: 100%;
+}
+
 .summaryUpdates {
   min-width: 0;
   margin-top: 1rem;
@@ -1014,13 +906,21 @@
 }
 
 .categoryProgress {
+  min-width: 0;
+  margin-top: 1rem;
+}
+
+/*
+ * Warna segmen capaian dipasang pada grafik dan legendanya sendiri, bukan pada
+ * kartu pembungkusnya, supaya grafik yang sama tetap berwarna benar di mana pun
+ * ia dipakai: Ringkasan lintas domain maupun ikhtisar satu domain.
+ */
+.categoryProgressViewport,
+.categoryProgressLegend {
   --progress-reached: #48b88a;
   --progress-reported: #4776e6;
   --progress-remaining: #f0bb3f;
   --progress-unavailable: #d8dde5;
-
-  min-width: 0;
-  margin-top: 1rem;
 }
 
 .categoryProgress > .card {
@@ -1275,58 +1175,17 @@
   }
 }
 
-/* Keterangan domain individual; menjadi tempat modul capaian berikutnya. */
-.domainState {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem;
-  border: 1px solid var(--color-nexus-border);
-  border-radius: 1rem;
-  background: var(--color-nexus-surface);
+/*
+ * Jejak halaman pada alamat satu indikator diberi jarak sendiri supaya judul,
+ * keterangan, dan jejaknya tidak menempel menjadi satu blok.
+ */
+.indicatorTrail {
+  margin-top: clamp(1.15rem, 1.8vw, 1.6rem);
+  margin-bottom: clamp(0.9rem, 1.5vw, 1.25rem);
 }
 
-@media (min-width: 40rem) {
-  .domainState {
-    padding: 1.5rem;
-  }
-}
-
-.domainState:focus-visible {
-  outline: 0.1875rem solid var(--color-brand-gold);
-  outline-offset: 0.2rem;
-}
-
-.domainStateCopy h3 {
-  margin: 0;
-  color: var(--color-nexus-text-strong);
-  font-size: 1.0625rem;
-  font-weight: 620;
-  line-height: 1.45;
-}
-
-.domainStateCopy p {
-  margin: 0.35rem 0 0;
-  max-width: 58rem;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.875rem;
-  line-height: 1.55;
-}
-
-.domainStateMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--color-nexus-border-subtle);
-}
-
-.domainStateMeta > span {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
+.indicatorTrail nav {
+  margin-bottom: 0;
 }
 
 .constructionState {
@@ -1499,147 +1358,25 @@
   }
 }
 
+/*
+ * Alamat satu indikator memakai keadaan yang sama dengan domain, hanya lebih
+ * ringkas: pesannya pendek sehingga tinggi minimum penuh hanya menyisakan
+ * ruang kosong.
+ */
+.constructionState[data-compact="true"] {
+  min-height: 0;
+  gap: 0.85rem;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.constructionState[data-compact="true"] .constructionVisual {
+  height: clamp(10.5rem, 19vw, 14.5rem);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .domainChip {
     transition: none;
   }
-}
-
-/* Navigasi antar-indikator pada halaman rincian. */
-.indicatorNav {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.indicatorNav label {
-  display: flex;
-  min-width: 0;
-  flex: 1 1 14rem;
-  flex-direction: column;
-  gap: 0.25rem;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-}
-
-.indicatorNav select {
-  width: 100%;
-  min-width: 0;
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
-  border: 1px solid var(--color-nexus-border);
-  border-radius: 0.5rem;
-  appearance: none;
-  background:
-    url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23667085' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 8 5 5 5-5'/%3E%3C/svg%3E")
-    no-repeat right 0.65rem center / 1rem 1rem var(--color-nexus-surface);
-  color: var(--color-nexus-text-strong);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.875rem;
-}
-
-.navButtons {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 0.5rem;
-}
-
-.navButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-nexus-border);
-  border-radius: 0.5rem;
-  background: var(--color-nexus-surface);
-  color: var(--color-nexus-text-soft);
-  cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 500;
-}
-
-.navButton:hover {
-  background: var(--color-nexus-surface-subtle);
-  color: var(--color-nexus-text-strong);
-}
-
-.navButton[aria-disabled="true"] {
-  color: var(--color-nexus-text-subtle);
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.navButton svg {
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: currentcolor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
-}
-
-/* Kartu keterangan indikator. */
-.definitionGrid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
-}
-
-@media (min-width: 60rem) {
-  .definitionGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.definitionItem dt {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.definitionItem dd {
-  margin: 0.4rem 0 0;
-  color: var(--color-nexus-text);
-  font-size: 0.875rem;
-  line-height: 1.55;
-}
-
-.definitionNote {
-  margin: 1.25rem 0 0;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-nexus-border-subtle);
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.55;
-}
-
-.workbookList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  gap: 0.75rem 1.25rem;
-  margin: 0.75rem 0 0;
-}
-
-.workbookList div {
-  min-width: 0;
-}
-
-.workbookList dt {
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-}
-
-.workbookList dd {
-  margin: 0.2rem 0 0;
-  color: var(--color-nexus-text-strong);
-  font-size: 0.9375rem;
-  font-weight: 600;
 }
 
 /*
@@ -1651,18 +1388,6 @@
   width: 9.5rem;
 }
 
-.tableSurface th[data-column="date"] {
-  width: 9rem;
-}
-
-.tableSurface th[data-column="evidence"] {
-  width: 10.5rem;
-}
-
-.tableSurface th[data-column="quality"] {
-  width: 8.5rem;
-}
-
 .tableSurface th[data-column="target"] {
   width: 6.5rem;
 }
@@ -1671,7 +1396,142 @@
   width: 8rem;
 }
 
+.tableSurface th[data-column="progress"] {
+  width: 7rem;
+}
+
+/*
+ * Catatan mengapa sebagian indikator belum dapat dihitung. Ditempatkan di bawah
+ * tabel indikator supaya status pada baris tidak berhenti tanpa penjelasan.
+ */
+.computabilityNotes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.9rem 0 0;
+  margin: 0.75rem 0 0;
+  border-top: 1px solid var(--color-nexus-border-subtle);
+  color: var(--color-nexus-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  list-style: none;
+}
+
 /* Keadaan tidak tersedia di dalam kartu analitik. */
+/* Komposisi: cincin proporsi beserta legendanya yang memuat angka aslinya. */
+.composition {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+}
+
+.compositionChart {
+  min-width: 0;
+  flex: 1 1 10.5rem;
+  max-width: 13rem;
+}
+
+.compositionChart[data-clickable="true"] {
+  cursor: pointer;
+}
+
+.compositionLegend {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 15rem;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compositionRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.25rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.16s ease;
+}
+
+.compositionRow:hover {
+  background: var(--color-nexus-surface-subtle);
+}
+
+.compositionDot {
+  display: block;
+  width: 0.625rem;
+  height: 0.625rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.compositionDot[data-empty="true"] {
+  border: 1.5px solid var(--color-nexus-text-subtle);
+  background: none;
+}
+
+.compositionCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.compositionCopy strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.compositionCopy strong a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.compositionCopy strong a:hover,
+.compositionCopy strong a:focus-visible {
+  color: var(--color-nexus-accent);
+  text-decoration: underline;
+}
+
+.compositionCopy > span {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.compositionValue {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.compositionValue strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.compositionValue > span {
+  min-width: 2.1rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .unavailable {
   display: flex;
   min-height: 8rem;
@@ -1706,61 +1566,35 @@
   line-height: 1.55;
 }
 
-.insightList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.insightList li {
-  position: relative;
-  padding-left: 1rem;
-  color: var(--color-nexus-text);
-  font-size: 0.875rem;
-  line-height: 1.55;
-}
-
-.insightList li::before {
-  position: absolute;
-  top: 0.55rem;
-  left: 0;
-  width: 0.35rem;
-  height: 0.35rem;
-  border-radius: 50%;
-  background: var(--color-nexus-accent);
-  content: "";
-}
-
-.evidenceNote {
-  margin: 0 0 1rem;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.55;
-}
-
-.recordNotes {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin: 0.4rem 0 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-  line-height: 1.45;
-}
-
 .visuallyHidden {
   position: absolute;
-  overflow: hidden;
   width: 1px;
   height: 1px;
   padding: 0;
+  overflow: hidden;
   border: 0;
   margin: -1px;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Kartu yang berdampingan pada satu kisi: isinya memenuhi tinggi yang tersedia
+ * supaya kartu berisi lebih pendek tidak menyisakan ruang kosong di bawahnya. */
+.card[data-fill="true"] .cardBody {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.card[data-fill="true"] .unavailable {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.card[data-fill="true"] .chartSummary {
+  margin-top: auto;
+  padding-top: 1rem;
 }

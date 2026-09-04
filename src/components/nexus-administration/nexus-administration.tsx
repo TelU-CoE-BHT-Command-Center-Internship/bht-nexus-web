@@ -36,7 +36,10 @@ import { useNexusProfileDirectory } from "@/components/nexus-profile/nexus-curre
 import type { NexusProfileView } from "@/components/nexus-profile/nexus-profile-model";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
@@ -52,6 +55,7 @@ import {
   NexusWorkspacePage,
 } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   NexusWorkspaceMobileAction,
   NexusWorkspaceMobileCard,
   type NexusWorkspaceRecordColumn,
@@ -702,8 +706,8 @@ export function NexusAdministration({
         ]}
       />
 
-      <section className={styles.catalog}>
-        <div className={styles.toolbar}>
+      <NexusWorkspaceCatalog className={styles.catalog}>
+        <NexusWorkspaceToolbar>
           <NexusWorkspaceSearch
             label="Cari akun berdasarkan nama atau email"
             name="administration-search"
@@ -734,7 +738,7 @@ export function NexusAdministration({
               value={filters[config.id as FilterId]}
             />
           ))}
-        </div>
+        </NexusWorkspaceToolbar>
 
         <NexusWorkspaceResultMeta
           isUpdating={deferredQuery !== query}
@@ -801,7 +805,7 @@ export function NexusAdministration({
             rows={rows}
           />
         </NexusWorkspaceTableSection>
-      </section>
+      </NexusWorkspaceCatalog>
 
       {selectedAccount && selectedProfile ? (
         <NexusAdministrationDetail

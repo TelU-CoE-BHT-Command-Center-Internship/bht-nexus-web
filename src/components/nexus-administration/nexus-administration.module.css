@@ -15,24 +15,6 @@
   stroke-width: 1.8;
 }
 
-.catalog {
-  min-width: 0;
-  margin-top: clamp(1.7rem, 2.2vw, 2.15rem);
-}
-
-.toolbar {
-  display: grid;
-  min-width: 0;
-  grid-template-columns:
-    minmax(15rem, 1.75fr) minmax(11.5rem, 1fr) minmax(11rem, 1fr)
-    minmax(13rem, 1.15fr);
-  gap: 0.7rem;
-}
-
-.toolbar > * {
-  min-width: 0;
-}
-
 .catalog table {
   min-width: 58rem;
 }
@@ -846,24 +828,12 @@
 }
 
 @media (max-width: 84rem) {
-  .toolbar {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .toolbar > :first-child {
     grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 48rem) {
-  .catalog {
-    margin-top: 1.5rem;
-  }
-
-  .toolbar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .toolbar > :first-child {
     grid-column: auto;
   }

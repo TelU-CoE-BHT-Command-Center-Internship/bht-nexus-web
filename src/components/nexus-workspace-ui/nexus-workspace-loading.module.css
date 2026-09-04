@@ -90,11 +90,21 @@
   height: 1.5rem;
 }
 
+/* Geometrinya mengikuti baris filter yang sebenarnya, sehingga kerangka
+ * pemuatan tidak bergeser ketika isinya selesai dimuat. */
 .controls {
   display: grid;
-  grid-template-columns: minmax(15rem, 1.9fr) repeat(3, minmax(9rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns:
+    minmax(14rem, 1.7fr)
+    repeat(auto-fit, minmax(12.25rem, 1fr));
+  gap: 0.7rem;
   padding-top: 1rem;
+}
+
+@media (max-width: 42rem) {
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .controls span {
@@ -154,9 +164,9 @@
   height: 1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   border: 0;
   margin: -1px;
+  clip-path: inset(50%);
   white-space: nowrap;
 }
 

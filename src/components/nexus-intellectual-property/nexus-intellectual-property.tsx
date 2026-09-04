@@ -23,7 +23,10 @@ import { projectOfficialMetadataRecords } from "@/components/nexus-review-sessio
 import { createIntellectualPropertyCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
@@ -34,14 +37,17 @@ import {
   NexusWorkspacePage,
 } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   NexusWorkspaceMobileAction,
   NexusWorkspaceMobileCard,
+  NexusWorkspaceMobileSubtitle,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
   NexusWorkspaceTableBadge,
   NexusWorkspaceTablePrimary,
   NexusWorkspaceTableSignal,
+  NexusWorkspaceTableText,
 } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import {
   type NexusSelectConfig,
@@ -376,7 +382,9 @@ export function NexusIntellectualProperty({
           </NexusWorkspaceTableAction>
         ),
         document: (
-          <span className={styles.plainCell}>{documentLabel(record)}</span>
+          <NexusWorkspaceTableText>
+            {documentLabel(record)}
+          </NexusWorkspaceTableText>
         ),
         primary: (
           <NexusWorkspaceTablePrimary
@@ -386,9 +394,9 @@ export function NexusIntellectualProperty({
           />
         ),
         registration: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {record.registrationNumber ?? "Belum tercatat"}
-          </span>
+          </NexusWorkspaceTableText>
         ),
         signal: (
           <NexusWorkspaceTableSignal
@@ -399,9 +407,9 @@ export function NexusIntellectualProperty({
         ),
         status: qualityBadge,
         year: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {record.year ?? "Belum tercatat"}
-          </span>
+          </NexusWorkspaceTableText>
         ),
       },
       id: record.id,
@@ -443,9 +451,9 @@ export function NexusIntellectualProperty({
           }
           title={record.title}
         >
-          <p className={styles.mobileSubtitle}>
+          <NexusWorkspaceMobileSubtitle>
             {intellectualPropertyCreatorNames(record)}
-          </p>
+          </NexusWorkspaceMobileSubtitle>
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -498,11 +506,11 @@ export function NexusIntellectualProperty({
         ]}
       />
 
-      <section
-        aria-labelledby="official-intellectual-property-title"
+      <NexusWorkspaceCatalog
         className={styles.catalog}
+        labelledBy="official-intellectual-property-title"
       >
-        <div className={styles.toolbar}>
+        <NexusWorkspaceToolbar>
           <NexusWorkspaceSearch
             label="Cari kekayaan intelektual resmi"
             name="intellectual-property-search"
@@ -538,7 +546,7 @@ export function NexusIntellectualProperty({
               value={filterValues[config.id as FilterId] ?? config.defaultValue}
             />
           ))}
-        </div>
+        </NexusWorkspaceToolbar>
 
         <NexusWorkspaceResultMeta
           isUpdating={isSearchUpdating}
@@ -594,7 +602,7 @@ export function NexusIntellectualProperty({
             rows={rows}
           />
         </NexusWorkspaceTableSection>
-      </section>
+      </NexusWorkspaceCatalog>
 
       {selected ? (
         <NexusIntellectualPropertyDetail

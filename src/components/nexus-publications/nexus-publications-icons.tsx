@@ -1,6 +1,10 @@
 import { NexusWorkspaceIconPaths } from "@/components/nexus-workspace-ui/nexus-workspace-icons";
-
-export type PublicationsIconName = "alert" | "book" | "quartile";
+export type PublicationsIconName =
+  | "alert"
+  | "book"
+  | "check"
+  | "database"
+  | "quartile";
 
 type NexusPublicationsIconProps = {
   name: PublicationsIconName;
@@ -9,6 +13,8 @@ type NexusPublicationsIconProps = {
 const sharedIcons = {
   alert: "alert",
   book: "book",
+  check: "check",
+  database: "database",
   quartile: "chart",
 } as const;
 

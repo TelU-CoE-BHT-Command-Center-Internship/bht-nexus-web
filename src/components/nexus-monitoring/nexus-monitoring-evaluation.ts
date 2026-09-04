@@ -64,6 +64,12 @@ export const nexusMonitoringSourceHouses: Record<
  * periode, bukan milik indikator: KM-14 tidak selamanya bertarget 6.
  */
 export type NexusIndicatorTarget = {
+  /**
+   * Tulisan target apa adanya ketika workbook tidak memuat satu angka tunggal,
+   * misalnya `9/1M` untuk target yang menggabungkan jumlah dan nilai rupiah.
+   * Nilai gabungan tidak pernah dipecah sendiri menjadi angka pembanding.
+   */
+  literal: string | null;
   /** Lokasi nilai pada workbook KM 2026 sehingga angkanya dapat diperiksa. */
   reference: string;
   value: number | null;
@@ -82,8 +88,30 @@ export type NexusIndicatorWorkbookNote = {
 };
 
 /**
+ * Eviden yang diminta workbook KM 2026 untuk membuktikan realisasi sebuah
+ * indikator. Kolom `Eviden` pada worksheet `List KM` tersedia sebagai kepala
+ * kolom, tetapi belum diisi untuk indikator Riset. Ketiadaan itu disampaikan
+ * apa adanya; syarat bukti tidak pernah dikarang sendiri.
+ */
+export type NexusIndicatorEvidence = {
+  reference: string;
+  value: string | null;
+};
+
+/**
+ * Cara realisasi sebuah indikator dibentuk dari data resmi. Sebagian besar
+ * indikator dihitung sebagai jumlah rekam resmi berkait, tetapi ada indikator
+ * yang nilainya bukan jumlah rekam—misalnya KM-30 yang bernilai kapasitas
+ * magang, bukan jumlah peserta. Perbedaan itu dinyatakan, bukan dipaksakan.
+ */
+export type NexusIndicatorRealizationRule =
+  | { kind: "record-count" }
+  | { kind: "unavailable"; reason: string };
+
+/**
  * Metadata evaluasi satu indikator: satuan, definisi, cara perhitungan, target
- * periode, rumah data resmi, dan tanggal bisnis yang menentukan triwulan.
+ * periode, eviden, rumah data resmi, aturan realisasi, dan tanggal bisnis yang
+ * menentukan triwulan.
  *
  * Definisi dan perhitungan ditulis ulang dalam ejaan baku yang setia pada
  * makna kolom `Definisi`, `Tujuan`, dan `Perhitungan Indikator` pada workbook
@@ -93,11 +121,14 @@ export type NexusIndicatorEvaluation = {
   businessDateLabel: string;
   calculation: string;
   definition: string;
+  evidence: NexusIndicatorEvidence;
   indicator: NexusKmIndicator;
   purpose: string;
+  realization: NexusIndicatorRealizationRule;
   sourceFamily: NexusMonitoringSourceFamily;
   target: NexusIndicatorTarget;
-  unit: string;
+  /** Satuan menurut workbook; `null` ketika kolomnya memang belum diisi. */
+  unit: string | null;
   workbookNote: NexusIndicatorWorkbookNote;
 };
 
@@ -105,13 +136,21 @@ type EvaluationSeed = {
   businessDateLabel: string;
   calculation: string;
   definition: string;
+  /** Diisi hanya bila kolom `Eviden` pada `List KM` memang bernilai. */
+  evidenceValue?: string;
   id: NexusKmIndicatorId;
   previousPeriodValue: number | null;
   purpose: string;
   quarterly: readonly (number | null)[];
+  /** Diisi ketika realisasi indikator tidak boleh dihitung dari jumlah rekam. */
+  realizationUnavailableReason?: string;
   row: number;
   sourceFamily: NexusMonitoringSourceFamily;
+  /** Tulisan target apa adanya ketika workbook tidak memuat satu angka. */
+  targetLiteral?: string;
   targetValue: number | null;
+  /** Satuan workbook; dihilangkan berarti mengikuti satuan bawaan `Jumlah`. */
+  unitValue?: string | null;
 };
 
 const ACADEMIC_EXCELLENCE = "Mengukur academic excellence pusat unggulan.";
@@ -253,6 +292,266 @@ const evaluationSeeds: readonly EvaluationSeed[] = [
     sourceFamily: "contracts",
     targetValue: 3,
   },
+  {
+    businessDateLabel: "Tanggal mulai kontrak",
+    calculation:
+      "Jumlah realisasi pengajuan kontrak bisnis untuk komersialisasi produk bersama industri.",
+    definition: "Pengajuan kontrak bisnis untuk komersialisasi produk.",
+    id: "KM-19",
+    previousPeriodValue: 0,
+    purpose:
+      "Mengukur kemampuan lembaga menghasilkan kontrak bisnis untuk komersialisasi produk bersama industri.",
+    quarterly: [null, null, null, null],
+    row: 26,
+    sourceFamily: "contracts",
+    targetValue: 1,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah keterlibatan dalam unit bisnis yang melayani jasa sesuai kompetensi CoE.",
+    definition:
+      "Keterlibatan dalam unit bisnis seperti LSP atau start-up yang melayani jasa sesuai kompetensi CoE.",
+    id: "KM-20",
+    previousPeriodValue: 0,
+    purpose:
+      "Mengukur kemampuan lembaga mengembangkan unit bisnis yang melayani jasa sesuai kompetensi CoE.",
+    quarterly: [null, null, null, null],
+    row: 27,
+    sourceFamily: "activities",
+    targetValue: 1,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation: "Jumlah UMKM atau komunitas binaan sesuai kompetensi CoE.",
+    definition: "UMKM atau komunitas yang dibina CoE.",
+    id: "KM-21",
+    previousPeriodValue: 0,
+    purpose:
+      "Mengukur kemampuan lembaga membina UMKM atau komunitas sesuai bidang kompetensi CoE.",
+    quarterly: [null, null, null, null],
+    row: 28,
+    sourceFamily: "activities",
+    targetValue: 1,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah seminar atau konferensi internasional yang meningkat kualitasnya atas peran CoE.",
+    definition:
+      "Seminar atau konferensi internasional yang meningkat kualitas dan internasionalisasinya.",
+    id: "KM-22",
+    previousPeriodValue: 0,
+    purpose:
+      "Mengukur kemampuan lembaga meningkatkan dan menginternasionalisasi seminar atau konferensi internasional.",
+    quarterly: [null, null, null, null],
+    row: 30,
+    sourceFamily: "activities",
+    targetValue: 1,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah kontrak non-riset yang diperoleh CoE pada tahun berjalan.",
+    definition:
+      "Kontrak non-riset berupa pelatihan, jasa konsultansi, industri, komunitas, pemerintah, dan sejenisnya.",
+    id: "KM-23",
+    previousPeriodValue: 29,
+    purpose: "Mengukur kemampuan lembaga menghasilkan kontrak non-riset.",
+    quarterly: [null, null, null, null],
+    row: 31,
+    sourceFamily: "activities",
+    targetLiteral: "9/1M",
+    targetValue: null,
+    unitValue: "Jumlah/Milyar Rupiah",
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation: "Jumlah pengabdian masyarakat yang terlaksana di CoE.",
+    definition:
+      "Pengabdian masyarakat berbentuk kolaborasi, CSR, dan sejenisnya yang terlaksana di CoE.",
+    id: "KM-24",
+    previousPeriodValue: null,
+    purpose: "Mengukur kemampuan lembaga melaksanakan pengabdian masyarakat.",
+    quarterly: [null, null, null, null],
+    row: 32,
+    sourceFamily: "activities",
+    targetValue: null,
+    unitValue: null,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah proposal pengabdian masyarakat DRTPM yang diajukan CoE pada tahun berjalan.",
+    definition: "Proposal pengabdian masyarakat DRTPM yang diajukan CoE.",
+    id: "KM-25",
+    previousPeriodValue: null,
+    purpose:
+      "Mengukur kemampuan lembaga mengajukan proposal pengabdian masyarakat DRTPM.",
+    quarterly: [null, null, null, null],
+    row: 33,
+    sourceFamily: "activities",
+    targetValue: null,
+    unitValue: null,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah proposal pengabdian masyarakat yang berkaitan dengan SDGs.",
+    definition:
+      "Proposal pengabdian masyarakat yang berkaitan dengan Sustainable Development Goals.",
+    id: "KM-26",
+    previousPeriodValue: null,
+    purpose:
+      "Mengukur kemampuan lembaga mengajukan proposal pengabdian masyarakat yang berkaitan dengan SDGs.",
+    quarterly: [null, null, null, null],
+    row: 34,
+    sourceFamily: "activities",
+    targetValue: null,
+    unitValue: null,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah jurnal ilmiah yang dikelola dan meningkat akreditasi atau internasionalisasinya.",
+    definition:
+      "Jurnal ilmiah yang dikelola CoE dan meningkat akreditasi atau internasionalisasinya.",
+    id: "KM-27",
+    previousPeriodValue: 1,
+    purpose:
+      "Mengukur kemampuan lembaga mengelola dan meningkatkan akreditasi jurnal ilmiah.",
+    quarterly: [null, null, null, null],
+    row: 35,
+    sourceFamily: "activities",
+    targetValue: 1,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah bimbingan doktor berbasis riset di CoE setelah tiga tahun.",
+    definition: "Bimbingan doktor dengan topik yang berasal dari riset CoE.",
+    id: "KM-28",
+    previousPeriodValue: 15,
+    purpose:
+      "Mengukur academic excellence pusat unggulan dalam membimbing mahasiswa doktor dengan topik riset CoE.",
+    quarterly: [null, null, null, null],
+    row: 37,
+    sourceFamily: "academic",
+    targetValue: 1,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah bimbingan magister berbasis riset di CoE setelah tiga tahun.",
+    definition: "Bimbingan magister dengan topik yang berasal dari riset CoE.",
+    id: "KM-29",
+    previousPeriodValue: 44,
+    purpose:
+      "Mengukur academic excellence pusat unggulan dalam membimbing mahasiswa magister dengan topik riset CoE.",
+    quarterly: [null, null, null, null],
+    row: 38,
+    sourceFamily: "academic",
+    targetValue: 2,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation: "Jumlah kapasitas magang mahasiswa yang tersedia di CoE.",
+    definition: "Kapasitas atau daya tampung magang mahasiswa di CoE.",
+    id: "KM-30",
+    previousPeriodValue: 5,
+    purpose:
+      "Mengukur kemampuan CoE menyediakan kapasitas magang bagi mahasiswa.",
+    quarterly: [null, null, null, null],
+    realizationUnavailableReason:
+      "Indikator ini bernilai kapasitas magang, bukan jumlah peserta. Rekam peserta magang menjadi bukti operasional dan tidak dijumlahkan menjadi kapasitas.",
+    row: 39,
+    sourceFamily: "academic",
+    targetValue: 18,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation:
+      "Jumlah mahasiswa D3, S1, atau S2 yang melaksanakan riset tugas akhir dengan pembimbing anggota CoE.",
+    definition: "Kegiatan riset tugas akhir jenjang D3, S1, atau S2.",
+    id: "KM-31",
+    previousPeriodValue: null,
+    purpose:
+      "Mengukur kemampuan CoE membimbing riset tugas akhir jenjang D3, S1, dan S2.",
+    quarterly: [null, null, null, null],
+    row: 40,
+    sourceFamily: "academic",
+    targetValue: 84,
+  },
+  {
+    businessDateLabel: "Tanggal kegiatan",
+    calculation: "Jumlah ide atau inovasi untuk kompetisi mahasiswa.",
+    definition:
+      "Ide dan inovasi yang disiapkan untuk mendukung kompetisi mahasiswa.",
+    id: "KM-32",
+    previousPeriodValue: 5,
+    purpose: "Mengukur kemampuan lembaga mendukung kompetisi mahasiswa.",
+    quarterly: [null, null, null, null],
+    row: 41,
+    sourceFamily: "academic",
+    targetValue: 2,
+  },
+  {
+    businessDateLabel: "Tanggal terbit",
+    calculation: "Jumlah buku yang dihasilkan pada tahun berjalan.",
+    definition:
+      "Buku ajar, monograf, referensi, dan sejenisnya yang dihasilkan CoE.",
+    id: "KM-33",
+    previousPeriodValue: 0,
+    purpose: "Mengukur kemampuan lembaga menghasilkan buku.",
+    quarterly: [null, null, null, null],
+    row: 42,
+    sourceFamily: "publications",
+    targetValue: 1,
+  },
+  {
+    businessDateLabel: "Tanggal mulai kontrak",
+    calculation:
+      "Jumlah submit proposal riset pada tingkat nasional oleh dosen anggota CoE.",
+    definition:
+      "Proposal riset yang diajukan pada hibah riset tingkat nasional.",
+    id: "KM-37",
+    previousPeriodValue: null,
+    purpose:
+      "Mengukur upaya lembaga menginisiasi kontrak riset pada tingkat nasional.",
+    quarterly: [null, null, null, null],
+    row: 49,
+    sourceFamily: "contracts",
+    targetValue: 8,
+  },
+  {
+    businessDateLabel: "Tanggal mulai kontrak",
+    calculation:
+      "Jumlah submit proposal riset pada tingkat internasional oleh dosen anggota CoE.",
+    definition:
+      "Proposal riset yang diajukan pada hibah riset tingkat internasional.",
+    id: "KM-38",
+    previousPeriodValue: null,
+    purpose:
+      "Mengukur upaya lembaga menginisiasi kontrak riset pada tingkat internasional.",
+    quarterly: [null, null, null, null],
+    row: 50,
+    sourceFamily: "contracts",
+    targetValue: 11,
+  },
+  {
+    businessDateLabel: "Tanggal mulai kontrak",
+    calculation:
+      "Jumlah submit proposal non-riset oleh dosen anggota CoE, termasuk pelatihan, transfer teknologi, jasa konsultasi, dan pengabdian masyarakat.",
+    definition:
+      "Proposal non-riset berupa pelatihan, transfer teknologi, jasa konsultasi, bentuk hilirisasi keahlian lain, serta pengabdian masyarakat CSR dan DRPM.",
+    id: "KM-39",
+    previousPeriodValue: null,
+    purpose: "Mengukur upaya lembaga menginisiasi kontrak non-riset.",
+    quarterly: [null, null, null, null],
+    row: 51,
+    sourceFamily: "contracts",
+    targetValue: 36,
+  },
 ];
 
 const evaluationById = new Map<NexusKmIndicatorId, NexusIndicatorEvaluation>(
@@ -262,14 +561,22 @@ const evaluationById = new Map<NexusKmIndicatorId, NexusIndicatorEvaluation>(
       businessDateLabel: seed.businessDateLabel,
       calculation: seed.calculation,
       definition: seed.definition,
+      evidence: {
+        reference: "Workbook KM 2026 · List KM kolom Eviden",
+        value: seed.evidenceValue ?? null,
+      },
       indicator: kmIndicator(seed.id),
       purpose: seed.purpose,
+      realization: seed.realizationUnavailableReason
+        ? { kind: "unavailable", reason: seed.realizationUnavailableReason }
+        : { kind: "record-count" },
       sourceFamily: seed.sourceFamily,
       target: {
+        literal: seed.targetLiteral ?? null,
         reference: `Workbook KM 2026 · Evaluasi 2026 baris ${seed.row}`,
         value: seed.targetValue,
       },
-      unit: "Jumlah",
+      unit: seed.unitValue === undefined ? "Jumlah" : seed.unitValue,
       workbookNote: {
         previousPeriodLabel: "2025",
         previousPeriodValue: seed.previousPeriodValue,
@@ -280,25 +587,41 @@ const evaluationById = new Map<NexusKmIndicatorId, NexusIndicatorEvaluation>(
   ]),
 );
 
-/** Kategori KM yang sudah punya halaman pemantauan sendiri. */
-export const NEXUS_MONITORED_CATEGORY: NexusKmIndicatorCategory = "Riset";
-
-export const nexusRisetIndicators: readonly NexusKmIndicator[] =
-  nexusKmIndicators.filter(
-    (indicator) => indicator.category === NEXUS_MONITORED_CATEGORY,
-  );
-
 /**
- * Indikator Riset yang metadata evaluasinya sudah tersedia. Daftar diturunkan
- * dari registry KM kanonis, bukan ditulis ulang, sehingga penambahan indikator
- * pada registry tidak pernah menghasilkan dua kebenaran.
+ * Seluruh indikator yang metadata evaluasinya sudah tersedia, mengikuti urutan
+ * registry KM kanonis. Daftar diturunkan dari registry, bukan ditulis ulang,
+ * sehingga penambahan indikator tidak pernah menghasilkan dua kebenaran.
  */
-export const nexusRisetEvaluations: readonly NexusIndicatorEvaluation[] =
-  nexusRisetIndicators
+export const nexusEvaluations: readonly NexusIndicatorEvaluation[] =
+  nexusKmIndicators
     .map((indicator) => evaluationById.get(indicator.id))
     .filter((evaluation): evaluation is NexusIndicatorEvaluation =>
       Boolean(evaluation),
     );
+
+/** Indikator satu kategori yang metadata evaluasinya sudah tersedia. */
+export function nexusCategoryEvaluations(
+  category: NexusKmIndicatorCategory,
+): readonly NexusIndicatorEvaluation[] {
+  return nexusEvaluations.filter(
+    (evaluation) => evaluation.indicator.category === category,
+  );
+}
+
+/**
+ * Kategori KM yang sudah dapat dipantau, yaitu kategori yang seluruh atau
+ * sebagian indikatornya sudah mempunyai metadata evaluasi. Urutannya mengikuti
+ * registry KM sehingga sama dengan urutan pemilih domain.
+ */
+export const nexusMonitoredCategories: readonly NexusKmIndicatorCategory[] = [
+  ...new Set(
+    nexusEvaluations.map((evaluation) => evaluation.indicator.category),
+  ),
+];
+
+export function nexusCategoryIsMonitored(category: NexusKmIndicatorCategory) {
+  return nexusMonitoredCategories.includes(category);
+}
 
 export function nexusIndicatorEvaluation(
   id: NexusKmIndicatorId,
@@ -321,18 +644,58 @@ export function nexusIndicatorSlug(id: NexusKmIndicatorId) {
   return id.toLocaleLowerCase("id-ID");
 }
 
-export function nexusIndicatorHref(id: NexusKmIndicatorId) {
-  return `/nexus/monitoring/riset/${nexusIndicatorSlug(id)}`;
+/**
+ * Segmen alamat untuk tiap domain KM. Slug ditulis sekali di sini supaya route,
+ * tautan, dan pemilih domain memakai pengenal yang sama dan tidak diturunkan
+ * dari nama tampilan yang bisa berubah.
+ */
+const domainSlugs: Record<NexusKmIndicatorCategory, string> = {
+  Akademik: "akademik",
+  Bisnis: "bisnis",
+  Finansial: "finansial",
+  Inovasi: "inovasi",
+  "Organisasi CoE": "organisasi-coe",
+  "Pengabdian Masyarakat": "pengabdian-masyarakat",
+  "Pengembangan dan Performansi Sumber Daya": "sumber-daya",
+  Proposal: "proposal",
+  Riset: "riset",
+};
+
+const categoryBySlug = new Map<string, NexusKmIndicatorCategory>(
+  Object.entries(domainSlugs).map(([category, slug]) => [
+    slug,
+    category as NexusKmIndicatorCategory,
+  ]),
+);
+
+export function nexusDomainSlug(category: NexusKmIndicatorCategory) {
+  return domainSlugs[category];
+}
+
+/** Mengubah segmen route `pengabdian-masyarakat` menjadi kategori kanonis. */
+export function nexusCategoryFromDomainSlug(
+  slug: string,
+): NexusKmIndicatorCategory | undefined {
+  return categoryBySlug.get(slug.trim().toLocaleLowerCase("id-ID"));
 }
 
 export const NEXUS_MONITORING_HREF = "/nexus/monitoring";
-export const NEXUS_MONITORING_RISET_HREF = "/nexus/monitoring/riset";
+
+export function nexusDomainHref(category: NexusKmIndicatorCategory) {
+  return `${NEXUS_MONITORING_HREF}/${nexusDomainSlug(category)}`;
+}
+
+export function nexusIndicatorHref(id: NexusKmIndicatorId) {
+  const evaluation = evaluationById.get(id);
+  const category = evaluation?.indicator.category ?? kmIndicator(id).category;
+  return `${nexusDomainHref(category)}/${nexusIndicatorSlug(id)}`;
+}
 
 /** Seluruh route Monitoring, dipakai kerangka ruang kerja untuk judul halaman. */
 export const nexusMonitoringRoutes: readonly string[] = [
   NEXUS_MONITORING_HREF,
-  NEXUS_MONITORING_RISET_HREF,
-  ...nexusRisetEvaluations.map((evaluation) =>
+  ...nexusMonitoredCategories.map(nexusDomainHref),
+  ...nexusEvaluations.map((evaluation) =>
     nexusIndicatorHref(evaluation.indicator.id),
   ),
 ];

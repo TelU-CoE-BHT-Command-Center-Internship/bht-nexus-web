@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -15,17 +14,18 @@ import {
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import type { NexusMonitoringCategory } from "@/components/nexus-monitoring/nexus-monitoring-categories";
 import { NexusMonitoringCategoryProgress } from "@/components/nexus-monitoring/nexus-monitoring-category-progress";
+import { NexusMonitoringDomainOverview } from "@/components/nexus-monitoring/nexus-monitoring-domain-overview";
 import {
   NEXUS_ALL_DOMAINS,
   type NexusMonitoringDomainId,
   nexusMonitoringDomains,
 } from "@/components/nexus-monitoring/nexus-monitoring-domains";
+import { nexusCategoryIsMonitored } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import type { NexusMonitoringIndicatorProgress } from "@/components/nexus-monitoring/nexus-monitoring-indicator-progress";
 import {
   NEXUS_DEFAULT_MONITORING_PERIOD_ID,
   type NexusMonitoringPeriod,
   nexusMonitoringPeriod,
-  nexusMonitoringPeriodOptionLabel,
   nexusMonitoringPeriods,
 } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusMonitoringRecentUpdates } from "@/components/nexus-monitoring/nexus-monitoring-recent-updates";
@@ -39,11 +39,13 @@ import {
 } from "@/components/nexus-monitoring/nexus-monitoring-ui";
 import { NexusMonitoringUnderConstruction } from "@/components/nexus-monitoring/nexus-monitoring-under-construction";
 import type { NexusMonitoringUpdate } from "@/components/nexus-monitoring/nexus-monitoring-updates";
+import type { MonitoringDomainView } from "@/components/nexus-monitoring/nexus-monitoring-view";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
   type NexusSelectConfig,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import type { NexusKmIndicatorCategory } from "@/content/nexus-km-indicators";
 
 function CalendarIcon() {
   return (
@@ -54,19 +56,12 @@ function CalendarIcon() {
   );
 }
 
-function ArrowRightIcon() {
-  return (
-    <svg aria-hidden="true" fill="none" viewBox="0 0 20 20">
-      <path d="M4 10h12M10.5 4.5 16 10l-5.5 5.5" />
-    </svg>
-  );
-}
-
 const [firstPeriod, ...otherPeriods] = nexusMonitoringPeriods;
 
 function periodOption(period: NexusMonitoringPeriod) {
   return {
-    label: nexusMonitoringPeriodOptionLabel(period),
+    description: period.rangeLabel,
+    label: period.label,
     value: period.id,
   };
 }
@@ -241,19 +236,27 @@ function useDomainScroller() {
 
 export function NexusMonitoringLanding({
   categories,
+  domainViews,
   indicatorProgress,
+  initialDomain = NEXUS_ALL_DOMAINS,
   targetSummary,
   updates,
 }: {
   categories: readonly NexusMonitoringCategory[];
+  domainViews: Record<
+    NexusKmIndicatorCategory,
+    MonitoringDomainView | undefined
+  >;
   indicatorProgress: readonly NexusMonitoringIndicatorProgress[];
+  /** Domain yang aktif saat halaman dibuka; alamat domain masuk lewat sini. */
+  initialDomain?: NexusMonitoringDomainId;
   targetSummary: NexusMonitoringTargetSummary;
   updates: readonly NexusMonitoringUpdate[];
 }) {
   const [periodId, setPeriodId] = useState(NEXUS_DEFAULT_MONITORING_PERIOD_ID);
   const [isPeriodOpen, setIsPeriodOpen] = useState(false);
   const [domainId, setDomainId] =
-    useState<NexusMonitoringDomainId>(NEXUS_ALL_DOMAINS);
+    useState<NexusMonitoringDomainId>(initialDomain);
   const { edges, isDragging, rowHandlers, rowRef } = useDomainScroller();
 
   const domains = useMemo(
@@ -263,12 +266,9 @@ export function NexusMonitoringLanding({
   const period = nexusMonitoringPeriod(periodId);
   const activeDomain =
     domains.find((domain) => domain.id === domainId) ?? domains[0];
-  const activeCategory = categories.find(
-    (category) => category.category === activeDomain.category,
-  );
-  const monitoredCategory = categories.find(
-    (category) => category.state === "monitored",
-  );
+  const activeDomainView = activeDomain.category
+    ? domainViews[activeDomain.category]
+    : undefined;
   const summary = useMemo(
     () =>
       categories.reduce(
@@ -314,7 +314,11 @@ export function NexusMonitoringLanding({
           />
         </div>
       }
-      description="Gambaran umum capaian KM di seluruh domain."
+      description={
+        activeDomain.id === NEXUS_ALL_DOMAINS
+          ? "Gambaran umum capaian KM di seluruh domain."
+          : `Gambaran umum capaian KM kategori ${activeDomain.label}.`
+      }
       descriptionId="monitoring-summary-description"
       title="Ringkasan"
       titleId="monitoring-summary-title"
@@ -433,39 +437,14 @@ export function NexusMonitoringLanding({
             />
             <NexusMonitoringRecentUpdates updates={updates} />
           </>
-        ) : activeDomain.category === "Riset" ? (
-          <article className={styles.domainState}>
-            <div className={styles.domainStateCopy}>
-              <h3>{`${activeDomain.label} · ${period.label}`}</h3>
-              <p>{activeCategory?.detail}</p>
-            </div>
-            <div className={styles.domainStateMeta}>
-              <span>
-                {activeDomain.records > 0
-                  ? `${activeDomain.records} rekam resmi terkait`
-                  : "Belum ada rekam resmi terkait"}
-              </span>
-              {activeCategory?.href ? (
-                <Link
-                  className={styles.inlineLink}
-                  href={activeCategory.href}
-                  prefetch={false}
-                >
-                  {`Buka pemantauan ${activeCategory.category}`}
-                  <ArrowRightIcon />
-                </Link>
-              ) : monitoredCategory?.href ? (
-                <Link
-                  className={styles.inlineLink}
-                  href={monitoredCategory.href}
-                  prefetch={false}
-                >
-                  {`Buka pemantauan ${monitoredCategory.category}`}
-                  <ArrowRightIcon />
-                </Link>
-              ) : null}
-            </div>
-          </article>
+        ) : activeDomain.category &&
+          nexusCategoryIsMonitored(activeDomain.category) &&
+          activeDomainView ? (
+          <NexusMonitoringDomainOverview
+            periodLabel={period.label}
+            updates={updates}
+            view={activeDomainView}
+          />
         ) : (
           <NexusMonitoringUnderConstruction
             domain={activeDomain}

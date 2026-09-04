@@ -1,496 +1,656 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useDeferredValue, useMemo, useState } from "react";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
+import { projectOfficialPublications } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
+import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
+import {
+  type NexusPublicationsContent,
+  normalizeProjectedPublication,
+  type OfficialPublication,
+  type PublicationCompletionResolutions,
+  type PublicationIndicatorId,
+  type PublicationMetadataProposal,
+  publicationAuthorNames,
+  publicationDisplayTitle,
+  publicationIndicatorShortLabels,
+  publicationQuartileLabel,
+  publicationQuartileState,
+} from "@/components/nexus-publications/nexus-publications-content";
 import { NexusPublicationsIcon } from "@/components/nexus-publications/nexus-publications-icons";
 import {
-  nexusPublicationsLiveContent as content,
-  quartileLabels,
-  quartileOptions,
-  sortOptions,
-  workTypeLabels,
-  workTypeOptions,
-} from "@/components/nexus-publications/nexus-publications-live-content";
-
+  getPublicationSourceId,
+  getPublicationSourceTabs,
+  type PublicationSourceId,
+  publicationHasSource,
+} from "@/components/nexus-publications/nexus-publications-utils";
+import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
+import { createMetadataCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
+import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
-import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 import {
-  NexusWorkspaceButton,
+  NexusWorkspaceSearch,
+  NexusWorkspaceTabs,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
   NexusWorkspaceEmptyState,
-  NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
+import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
 } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   NexusWorkspaceMobileAction,
   NexusWorkspaceMobileCard,
+  NexusWorkspaceMobileSubtitle,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
   NexusWorkspaceTableBadge,
   NexusWorkspaceTablePrimary,
+  NexusWorkspaceTableSignal,
+  NexusWorkspaceTableText,
 } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import {
   type NexusSelectConfig,
+  type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
-import { ApiRequestError } from "@/lib/api-client";
-import {
-  createPublication,
-  deletePublication,
-  getPublication,
-  listPublications,
-  type PublicationListMeta,
-  type PublicationRecord,
-  type Quartile,
-  updatePublication,
-  type WorkType,
-} from "@/lib/api-publications";
 
-type DrawerState =
-  | { mode: "create" }
-  | { mode: "edit"; record: PublicationRecord }
-  | null;
+const NexusPublicationDetail = dynamic(() =>
+  import("@/components/nexus-publications/nexus-publication-detail").then(
+    (module) => module.NexusPublicationDetail,
+  ),
+);
 
-type FormValues = {
-  citationCount: string;
-  doi: string;
-  isOfficial: boolean;
-  issnL: string;
-  quartile: Quartile | "";
-  sjr: string;
-  title: string;
-  venue: string;
-  workType: WorkType | "";
-  year: string;
+type NexusPublicationsProps = {
+  content: NexusPublicationsContent;
+  initialMemberId?: string;
 };
 
-const emptyForm: FormValues = {
-  citationCount: "0",
-  doi: "",
-  isOfficial: false,
-  issnL: "",
-  quartile: "",
-  sjr: "",
-  title: "",
-  venue: "",
-  workType: "",
-  year: "",
+type PublicationFilterId =
+  | "completeness"
+  | "indicator"
+  | "quartile"
+  | "sort"
+  | "year";
+type PublicationFilterValues = Record<PublicationFilterId, string>;
+
+const columns: readonly NexusWorkspaceRecordColumn[] = [
+  { id: "primary", label: "Publikasi", primary: true },
+  { id: "signal", label: "Indikator KM" },
+  { id: "quartile", label: "Kuartil" },
+  { id: "year", label: "Tahun" },
+  { id: "source", label: "Sumber" },
+  { id: "citations", label: "Sitasi" },
+  { id: "status", label: "Kelengkapan" },
+  { id: "action", label: "Aksi" },
+];
+
+const defaultFilterValues: PublicationFilterValues = {
+  completeness: "all",
+  indicator: "all",
+  quartile: "all",
+  sort: "newest",
+  year: "all",
 };
 
-const emptyMetrics = { official: 0, topQuartile: 0, unofficial: 0 };
+const unknownYearValue = "unknown";
+const unlinkedIndicatorValue = "unlinked";
 
-const workTypeFilterConfig: NexusSelectConfig = {
-  defaultValue: "all",
-  id: "work-type",
-  label: content.fieldWorkType,
-  options: [
-    { label: content.filterAllTypes, value: "all" },
-    ...workTypeOptions,
-  ],
-};
-
-const statusFilterConfig: NexusSelectConfig = {
-  defaultValue: "all",
-  id: "status",
-  label: content.columns.status,
-  options: [
-    { label: content.filterAllStatus, value: "all" },
-    { label: content.filterOfficial, value: "true" },
-    { label: content.filterUnofficial, value: "false" },
-  ],
-};
-
-const quartileFilterConfig: NexusSelectConfig = {
+const quartileConfig: NexusSelectConfig = {
   defaultValue: "all",
   id: "quartile",
-  label: content.columns.quartile,
+  label: "Filter kuartil jurnal",
   options: [
-    { label: content.filterAllQuartiles, value: "all" },
-    ...quartileOptions,
+    { label: "Semua kuartil", value: "all" },
+    { label: "Setara Q1/Q2", tone: "completed", value: "q1-q2" },
+    { label: "Q1", value: "Q1" },
+    { label: "Q2", value: "Q2" },
+    { label: "Q3", value: "Q3" },
+    { label: "Q4", value: "Q4" },
+    { label: "Tidak tersedia", value: "not-available" },
+    { label: "Belum diverifikasi", tone: "needs-fix", value: "unverified" },
+    { label: "Tidak berlaku / belum dapat dinilai", value: "not-applicable" },
+  ],
+};
+
+const completenessConfig: NexusSelectConfig = {
+  defaultValue: "all",
+  id: "completeness",
+  label: "Filter kelengkapan metadata",
+  options: [
+    { label: "Semua kelengkapan", value: "all" },
+    { label: "Lengkap", tone: "completed", value: "Lengkap" },
+    { label: "Perlu dilengkapi", tone: "needs-fix", value: "Perlu dilengkapi" },
   ],
 };
 
 const sortConfig: NexusSelectConfig = {
-  defaultValue: sortOptions[0].value,
+  defaultValue: "newest",
   id: "sort",
-  label: content.sortByLabel,
-  options: sortOptions,
+  label: "Urutkan publikasi",
+  options: [
+    { label: "Urutan: Tahun terbaru", value: "newest" },
+    { label: "Urutan: Tahun terlama", value: "oldest" },
+    { label: "Urutan: Kuartil tertinggi", value: "quartile" },
+    { label: "Urutan: Judul A–Z", value: "title" },
+  ],
 };
 
 const pageSizeConfig: NexusSelectConfig = {
   defaultValue: "10",
-  id: "page-size",
-  label: content.pageSizeLabel,
+  id: "publication-page-size",
+  label: "Jumlah data per halaman",
   options: [
-    { label: "10", value: "10" },
-    { label: "25", value: "25" },
-    { label: "50", value: "50" },
+    { label: "10 per halaman", value: "10" },
+    { label: "20 per halaman", value: "20" },
+    { label: "50 per halaman", value: "50" },
   ],
 };
 
-const columns: readonly NexusWorkspaceRecordColumn[] = [
-  { id: "title", label: content.columns.title, primary: true },
-  { id: "indicator", label: content.columns.indicator },
-  { id: "quartile", label: content.columns.quartile },
-  { id: "year", label: content.columns.year },
-  { id: "citationCount", label: content.columns.citationCount },
-  { id: "status", label: content.columns.status },
-  { id: "actions", label: content.columns.action },
-];
+const quartileRank: Record<string, number> = { Q1: 1, Q2: 2, Q3: 3, Q4: 4 };
 
-function formFromRecord(record: PublicationRecord): FormValues {
+function sourceTone(source: string) {
+  if (source === "SINTA") return "success" as const;
+  if (source === "Google Scholar") return "info" as const;
+  if (source === "Workbook KM 2026") return "waiting" as const;
+  return "neutral" as const;
+}
+
+function isTopQuartile(publication: OfficialPublication) {
+  return publication.quartile === "Q1" || publication.quartile === "Q2";
+}
+
+function matchesIndicatorFilter(
+  publication: OfficialPublication,
+  value: string,
+) {
+  if (value === "all") return true;
+  if (value === unlinkedIndicatorValue) return publication.kmLinks.length === 0;
+  return publication.kmLinks.some((link) => link.indicator.id === value);
+}
+
+function matchesQuartileFilter(
+  publication: OfficialPublication,
+  value: string,
+) {
+  const state = publicationQuartileState(publication);
+  if (value === "all") return true;
+  if (value === "not-applicable")
+    return state === "not_applicable" || state === "pending_type";
+  if (value === "not-available") return state === "not_available";
+  if (value === "unverified") return state === "unresolved";
+  if (value === "q1-q2") return isTopQuartile(publication);
+  return publication.quartile === value;
+}
+
+function matchesYearFilter(publication: OfficialPublication, value: string) {
+  if (value === "all") return true;
+  if (value === unknownYearValue) return publication.year === undefined;
+  return publication.year === Number(value);
+}
+
+function searchableText(publication: OfficialPublication) {
+  return normalizeWorkspaceSearch(
+    [
+      publicationDisplayTitle(publication),
+      publication.publicId,
+      publicationAuthorNames(publication),
+      publication.venue,
+      publication.type,
+      publication.doi ?? "",
+      publication.quartile ?? "",
+      publication.kmLinks.flatMap((link) => [
+        link.indicator.id,
+        link.indicator.label,
+      ]),
+      publication.provenance.map((source) => source.source).join(" "),
+    ]
+      .flat()
+      .join(" "),
+  );
+}
+
+function createIndicatorConfig(
+  publications: readonly OfficialPublication[],
+): NexusSelectConfig {
+  const indicators = publications
+    .flatMap((publication) => publication.kmLinks)
+    .map((link) => link.indicator)
+    .filter(
+      (indicator, index, list) =>
+        list.findIndex((item) => item.id === indicator.id) === index,
+    )
+    .toSorted((first, second) => first.number - second.number);
+  const hasUnlinked = publications.some(
+    (publication) => publication.kmLinks.length === 0,
+  );
+  const options: [NexusSelectOption, ...NexusSelectOption[]] = [
+    { label: "Semua indikator KM", value: "all" },
+    ...indicators.map((indicator) => ({
+      label: `${indicator.id} · ${
+        publicationIndicatorShortLabels[
+          indicator.id as PublicationIndicatorId
+        ] ?? indicator.label
+      }`,
+      value: indicator.id,
+    })),
+    ...(hasUnlinked
+      ? [{ label: "Belum dikaitkan", value: unlinkedIndicatorValue }]
+      : []),
+  ];
+
   return {
-    citationCount: String(record.citationCount),
-    doi: record.doi ?? "",
-    isOfficial: record.isOfficial,
-    issnL: record.issnL ?? "",
-    quartile: record.quartile ?? "",
-    sjr: record.sjr === null ? "" : String(record.sjr),
-    title: record.title,
-    venue: record.venue ?? "",
-    workType: record.workType,
-    year: String(record.year),
+    defaultValue: "all",
+    id: "indicator",
+    label: "Filter indikator KM",
+    options,
   };
 }
 
-function StatusBadge({ record }: { record: PublicationRecord }) {
+function createYearConfig(
+  publications: readonly OfficialPublication[],
+): NexusSelectConfig {
+  const years = Array.from(
+    new Set(
+      publications.flatMap((publication) =>
+        publication.year === undefined ? [] : [publication.year],
+      ),
+    ),
+  ).toSorted((first, second) => second - first);
+  const hasUnknownYear = publications.some(
+    (publication) => publication.year === undefined,
+  );
+  const options: [NexusSelectOption, ...NexusSelectOption[]] = [
+    { label: "Semua tahun terbit", value: "all" },
+    ...years.map((year) => ({ label: String(year), value: String(year) })),
+    ...(hasUnknownYear
+      ? [
+          {
+            label: "Tahun belum tercatat",
+            tone: "needs-fix" as const,
+            value: unknownYearValue,
+          },
+        ]
+      : []),
+  ];
+
+  return {
+    defaultValue: "all",
+    id: "year",
+    label: "Filter tahun terbit",
+    options,
+  };
+}
+
+/**
+ * Sengaja memakai teks tenang, bukan `NexusWorkspaceTableSignal`. Indikator KM
+ * hanyalah klasifikasi pelaporan sehingga tidak boleh tampil lebih berat
+ * daripada identitas karyanya sendiri.
+ */
+function KmLinkCell({ publication }: { publication: OfficialPublication }) {
+  const [firstLink, ...otherLinks] = publication.kmLinks;
+
   return (
-    <NexusWorkspaceTableBadge tone={record.isOfficial ? "success" : "neutral"}>
-      {record.isOfficial ? content.official : content.unofficial}
+    <span className={styles.kmCell}>
+      <strong>
+        {firstLink
+          ? otherLinks.length > 0
+            ? `${firstLink.indicator.id} +${otherLinks.length}`
+            : firstLink.indicator.id
+          : officialKpiEmptyCopy(publication.kpiResolutionStatus).label}
+      </strong>
+      <small>{publication.type}</small>
+    </span>
+  );
+}
+
+function QuartileCell({ publication }: { publication: OfficialPublication }) {
+  const state = publicationQuartileState(publication);
+  if (state !== "available" && state !== "unresolved") {
+    return (
+      <NexusWorkspaceTableText>
+        {publicationQuartileLabel(publication)}
+      </NexusWorkspaceTableText>
+    );
+  }
+  if (state === "unresolved") {
+    return (
+      <NexusWorkspaceTableBadge tone="danger">
+        Belum diverifikasi
+      </NexusWorkspaceTableBadge>
+    );
+  }
+
+  return (
+    <NexusWorkspaceTableBadge
+      tone={isTopQuartile(publication) ? "success" : "info"}
+    >
+      {publication.quartile}
     </NexusWorkspaceTableBadge>
   );
 }
 
-function QuartileCell({ record }: { record: PublicationRecord }) {
-  if (record.quartile === null) {
-    return <span className={styles.plainCell}>{content.noQuartile}</span>;
-  }
-  const isTop = record.quartile === "Q1" || record.quartile === "Q2";
-  return (
-    <NexusWorkspaceTableBadge tone={isTop ? "success" : "info"}>
-      {quartileLabels[record.quartile]}
-    </NexusWorkspaceTableBadge>
+export function NexusPublications({
+  content,
+  initialMemberId,
+}: NexusPublicationsProps) {
+  const reviewSession = useNexusReviewSession();
+  const records = useMemo(
+    () =>
+      projectOfficialPublications(
+        projectOfficialMetadataRecords(
+          content.records,
+          reviewSession.officialMetadataByRecordId,
+          normalizeProjectedPublication,
+        ),
+        reviewSession.officialRecordDecisions,
+      ),
+    [
+      content.records,
+      reviewSession.officialMetadataByRecordId,
+      reviewSession.officialRecordDecisions,
+    ],
   );
-}
-
-function errorMessage(error: unknown): string {
-  if (error instanceof ApiRequestError) {
-    return error.message;
-  }
-  return "Terjadi kesalahan. Coba lagi.";
-}
-
-export function NexusPublications() {
-  const [search, setSearch] = useState("");
-  const deferredSearch = useDeferredValue(search);
-  const isSearchUpdating = search !== deferredSearch;
-  const [workType, setWorkType] = useState("all");
-  const [isOfficialFilter, setIsOfficialFilter] = useState("all");
-  const [quartileFilter, setQuartileFilter] = useState("all");
-  const [sortBy, setSortBy] = useState<(typeof sortOptions)[number]["value"]>(
-    sortOptions[0].value,
-  );
-  const [page, setPage] = useState(1);
+  const [activeSourceId, setActiveSourceId] =
+    useState<PublicationSourceId>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const completionProposals = reviewSession.completionProposals;
+  const [filterValues, setFilterValues] =
+    useState<PublicationFilterValues>(defaultFilterValues);
+  const [openFilterId, setOpenFilterId] = useState<string | null>(null);
   const [pageSizeValue, setPageSizeValue] = useState("10");
-
-  const [openSelectId, setOpenSelectId] = useState<string | null>(null);
-
-  const [records, setRecords] = useState<PublicationRecord[]>([]);
-  const [meta, setMeta] = useState<PublicationListMeta | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [reloadToken, setReloadToken] = useState(0);
-  const [metrics, setMetrics] = useState(emptyMetrics);
-
-  const [drawer, setDrawer] = useState<DrawerState>(null);
-  const [form, setForm] = useState<FormValues>(emptyForm);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
-    null,
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPublicationId, setSelectedPublicationId] = useState<
+    string | null
+  >(null);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const isSearchUpdating = searchQuery !== deferredSearchQuery;
+  const contextRecords = useMemo(
+    () =>
+      initialMemberId
+        ? records.filter((publication) =>
+            publication.authors.some(
+              (author) => author.memberId === initialMemberId,
+            ),
+          )
+        : records,
+    [initialMemberId, records],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: resets page to 1 whenever a filter changes, deps aren't read in the body
-  useEffect(() => {
-    setPage(1);
-  }, [deferredSearch, workType, isOfficialFilter, quartileFilter, sortBy]);
+  const sourceTabs = useMemo(
+    () => getPublicationSourceTabs(contextRecords),
+    [contextRecords],
+  );
+  const indicatorConfig = useMemo(
+    () => createIndicatorConfig(contextRecords),
+    [contextRecords],
+  );
+  const yearConfig = useMemo(
+    () => createYearConfig(contextRecords),
+    [contextRecords],
+  );
+  const activeSource =
+    sourceTabs.find((source) => source.id === activeSourceId) ?? sourceTabs[0];
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadToken is a manual refetch trigger, not read in the body
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setLoadError(null);
+  const filteredPublications = useMemo(() => {
+    const needle = normalizeWorkspaceSearch(deferredSearchQuery);
+    const matching = contextRecords.filter(
+      (publication) =>
+        publicationHasSource(
+          publication,
+          activeSource.id as PublicationSourceId,
+        ) &&
+        matchesIndicatorFilter(publication, filterValues.indicator) &&
+        matchesQuartileFilter(publication, filterValues.quartile) &&
+        matchesYearFilter(publication, filterValues.year) &&
+        (filterValues.completeness === "all" ||
+          publication.quality === filterValues.completeness) &&
+        (needle.length === 0 || searchableText(publication).includes(needle)),
+    );
 
-    listPublications({
-      isOfficial:
-        isOfficialFilter === "all" ? undefined : isOfficialFilter === "true",
-      limit: Number(pageSizeValue),
-      page,
-      quartile:
-        quartileFilter === "all" ? undefined : (quartileFilter as Quartile),
-      search: deferredSearch.trim() === "" ? undefined : deferredSearch.trim(),
-      sortBy,
-      sortOrder: "desc",
-      workType: workType === "all" ? undefined : (workType as WorkType),
-    })
-      .then((result) => {
-        if (cancelled) return;
-        setRecords(result.data);
-        setMeta(result.meta);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        setLoadError(errorMessage(error));
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    deferredSearch,
-    workType,
-    isOfficialFilter,
-    quartileFilter,
-    sortBy,
-    page,
-    pageSizeValue,
-    reloadToken,
-  ]);
-
-  // Kartu ringkasan menghitung total sesungguhnya, terpisah dari halaman
-  // tabel yang sedang difilter, jadi memakai limit=1 dan hanya membaca meta.total.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadToken is a manual refetch trigger, not read in the body
-  useEffect(() => {
-    let cancelled = false;
-
-    Promise.all([
-      listPublications({ isOfficial: true, limit: 1 }),
-      listPublications({ isOfficial: true, limit: 1, quartile: "Q1" }),
-      listPublications({ isOfficial: true, limit: 1, quartile: "Q2" }),
-      listPublications({ isOfficial: false, limit: 1 }),
-    ])
-      .then(([official, q1, q2, unofficial]) => {
-        if (cancelled) return;
-        setMetrics({
-          official: official.meta.total,
-          topQuartile: q1.meta.total + q2.meta.total,
-          unofficial: unofficial.meta.total,
-        });
-      })
-      .catch(() => {
-        if (!cancelled) setMetrics(emptyMetrics);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [reloadToken]);
-
-  function reload() {
-    setReloadToken((token) => token + 1);
-  }
-
-  function openCreate() {
-    setForm(emptyForm);
-    setFormError(null);
-    setDrawer({ mode: "create" });
-  }
-
-  async function openEdit(recordId: string) {
-    setFormError(null);
-    try {
-      const record = await getPublication(recordId);
-      setForm(formFromRecord(record));
-      setDrawer({ mode: "edit", record });
-    } catch (error) {
-      setLoadError(errorMessage(error));
-    }
-  }
-
-  function closeDrawer() {
-    setDrawer(null);
-    setConfirmingDeleteId(null);
-  }
-
-  function validateForm(): string | null {
-    if (form.title.trim() === "") return "Judul wajib diisi.";
-    if (form.workType === "") return "Jenis karya wajib dipilih.";
-    const yearValue = Number(form.year);
-    if (!Number.isInteger(yearValue) || yearValue < 1900 || yearValue > 2100) {
-      return "Tahun terbit tidak valid.";
-    }
-    const citationValue = Number(form.citationCount);
-    if (!Number.isInteger(citationValue) || citationValue < 0) {
-      return "Jumlah sitasi tidak valid.";
-    }
-    if (form.sjr.trim() !== "") {
-      const sjrValue = Number(form.sjr);
-      if (!Number.isFinite(sjrValue) || sjrValue < 0) {
-        return "SJR tidak valid.";
+    return matching.toSorted((first, second) => {
+      if (filterValues.sort === "title") {
+        return publicationDisplayTitle(first).localeCompare(
+          publicationDisplayTitle(second),
+          "id-ID",
+        );
       }
-    }
-    return null;
-  }
-
-  async function handleSubmit() {
-    const validationError = validateForm();
-    if (validationError !== null) {
-      setFormError(validationError);
-      return;
-    }
-    if (form.workType === "") return;
-
-    setIsSubmitting(true);
-    setFormError(null);
-
-    const payload = {
-      citationCount: Number(form.citationCount),
-      doi: form.doi.trim() === "" ? null : form.doi.trim(),
-      isOfficial: form.isOfficial,
-      issnL: form.issnL.trim() === "" ? null : form.issnL.trim(),
-      quartile: form.quartile === "" ? null : form.quartile,
-      sjr: form.sjr.trim() === "" ? null : Number(form.sjr),
-      title: form.title.trim(),
-      venue: form.venue.trim() === "" ? null : form.venue.trim(),
-      workType: form.workType,
-      year: Number(form.year),
-    };
-
-    try {
-      if (drawer?.mode === "edit") {
-        await updatePublication(drawer.record.publicId, payload);
-      } else {
-        await createPublication(payload);
+      if (filterValues.sort === "quartile") {
+        return (
+          (quartileRank[first.quartile ?? ""] ?? 9) -
+          (quartileRank[second.quartile ?? ""] ?? 9)
+        );
       }
-      closeDrawer();
-      reload();
-    } catch (error) {
-      setFormError(errorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+      // Rekam tanpa tahun terbit selalu ditempatkan paling akhir.
+      if (first.year === undefined || second.year === undefined) {
+        return (
+          (first.year === undefined ? 1 : 0) -
+          (second.year === undefined ? 1 : 0)
+        );
+      }
+      return filterValues.sort === "oldest"
+        ? first.year - second.year
+        : second.year - first.year;
+    });
+  }, [activeSource.id, contextRecords, deferredSearchQuery, filterValues]);
 
-  async function handleDelete() {
-    if (drawer?.mode !== "edit") return;
-    if (confirmingDeleteId !== drawer.record.publicId) {
-      setConfirmingDeleteId(drawer.record.publicId);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setFormError(null);
-    try {
-      await deletePublication(drawer.record.publicId);
-      closeDrawer();
-      reload();
-    } catch (error) {
-      setFormError(errorMessage(error));
-      setIsSubmitting(false);
-    }
-  }
-
-  const activeFilterCount = [
-    search.length > 0,
-    workType !== "all",
-    isOfficialFilter !== "all",
-    quartileFilter !== "all",
-  ].filter(Boolean).length;
-  const hasActiveFilters = activeFilterCount > 0;
-  const resultSummary = `${meta?.total ?? 0} ${content.resultUnit} sesuai filter · ${
+  const evaluationPeriods = Array.from(
+    new Set(
+      (contextRecords.length > 0 ? contextRecords : records).map(
+        (publication) => publication.evaluationPeriod,
+      ),
+    ),
+  )
+    .toSorted()
+    .join(", ");
+  const topQuartileCount = contextRecords.filter(isTopQuartile).length;
+  const needsCompletionCount = contextRecords.filter(
+    (publication) => publication.quality === "Perlu dilengkapi",
+  ).length;
+  const pageSize = Number(pageSizeValue);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredPublications.length / pageSize),
+  );
+  const safePage = Math.min(Math.max(currentPage, 1), totalPages);
+  const visiblePublications = filteredPublications.slice(
+    (safePage - 1) * pageSize,
+    safePage * pageSize,
+  );
+  const selectedPublication = contextRecords.find(
+    (publication) => publication.id === selectedPublicationId,
+  );
+  const activeFilterCount = Object.entries(defaultFilterValues).filter(
+    ([filterId, defaultValue]) =>
+      filterValues[filterId as PublicationFilterId] !== defaultValue,
+  ).length;
+  // REQ-FUNC-026: filter aktif, periode, satuan, sumber, dan waktu pembaruan
+  // harus terbaca pada hasil, bukan hanya pada kontrolnya.
+  const resultSummary = [
+    `Sumber ${activeSource.label}`,
+    `periode evaluasi ${evaluationPeriods}`,
+    `${filteredPublications.length} dari ${activeSource.count} publikasi sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
-      : "tanpa filter tambahan"
-  }`;
+      : "tanpa filter tambahan",
+  ].join(" · ");
 
-  function resetFilters() {
-    setSearch("");
-    setWorkType("all");
-    setIsOfficialFilter("all");
-    setQuartileFilter("all");
-    setPage(1);
-  }
+  const hasActiveFilters =
+    activeSource.id !== "all" ||
+    searchQuery.length > 0 ||
+    Object.entries(defaultFilterValues).some(
+      ([filterId, defaultValue]) =>
+        filterValues[filterId as PublicationFilterId] !== defaultValue,
+    );
 
-  const rows = records.map((record) => {
+  const resetFilters = () => {
+    setActiveSourceId("all");
+    setFilterValues(defaultFilterValues);
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
+
+  const changeFilterValue = (filterId: string, value: string) => {
+    setFilterValues((currentValues) => ({
+      ...currentValues,
+      [filterId as PublicationFilterId]: value,
+    }));
+    setCurrentPage(1);
+  };
+
+  const submitCompletionProposal = (
+    publicationId: string,
+    resolutions: PublicationCompletionResolutions,
+    note: string,
+  ) => {
+    const publication = records.find((record) => record.id === publicationId);
+    if (!publication) return;
+
+    const proposal: PublicationMetadataProposal =
+      reviewSession.createCompletionProposal(
+        "PLG-2026",
+        publicationId,
+        resolutions,
+        note,
+      );
+    reviewSession.submitRecord(
+      createMetadataCompletionReviewRecord(publication, proposal),
+    );
+  };
+
+  const rows = visiblePublications.map((publication) => {
+    const title = publicationDisplayTitle(publication);
+    const primarySource =
+      publication.provenance.find(
+        (item) => getPublicationSourceId(item.source) === activeSource.id,
+      )?.source ??
+      publication.provenance[0]?.source ??
+      "Manual";
+    // Glaukoma punya dua baris workbook dari SATU sistem sumber. Badge +N
+    // harus menghitung sistem sumber yang berbeda, bukan jumlah jejaknya.
+    const extraSourceCount =
+      new Set(publication.provenance.map((item) => item.source)).size - 1;
+    const open = () => setSelectedPublicationId(publication.id);
+    const sourceBadge = (
+      <NexusWorkspaceTableBadge
+        key={`${publication.id}-source`}
+        tone={sourceTone(primarySource)}
+      >
+        {primarySource}
+        {extraSourceCount > 0 ? ` +${extraSourceCount}` : ""}
+      </NexusWorkspaceTableBadge>
+    );
+    const qualityBadge = (
+      <NexusWorkspaceTableBadge
+        key={`${publication.id}-quality`}
+        tone={publication.quality === "Lengkap" ? "success" : "danger"}
+      >
+        {publication.quality}
+      </NexusWorkspaceTableBadge>
+    );
+
     return {
       cells: {
-        actions: (
+        action: (
           <NexusWorkspaceTableAction
-            label={`Ubah ${record.title}`}
-            onClick={() => openEdit(record.publicId)}
+            label={`Lihat rincian publikasi: ${title}`}
+            onClick={open}
           >
-            Ubah
+            Rincian
           </NexusWorkspaceTableAction>
         ),
-        citationCount: record.citationCount,
-        indicator: (
-          <span className={styles.plainCell}>
-            {content.indicatorUnavailable}
-          </span>
-        ),
-        quartile: <QuartileCell record={record} />,
-        status: <StatusBadge record={record} />,
-        title: (
-          <NexusWorkspaceTablePrimary
-            onClick={() => openEdit(record.publicId)}
-            subtitle={`${workTypeLabels[record.workType]} · ${record.venue ?? "—"}`}
-            title={record.title}
+        citations: (
+          <NexusWorkspaceTableSignal
+            primary={publication.citations ?? "—"}
+            secondary={
+              publication.citations === null
+                ? "belum tersinkron"
+                : `${publication.citationProvider} · berkala`
+            }
+            tone={publication.citations === null ? "neutral" : "info"}
           />
         ),
-        year: record.year,
+        primary: (
+          <NexusWorkspaceTablePrimary
+            onClick={open}
+            subtitle={`${publicationAuthorNames(publication)} · ${publication.venue}`}
+            title={title}
+          />
+        ),
+        quartile: <QuartileCell publication={publication} />,
+        signal: <KmLinkCell publication={publication} />,
+        source: sourceBadge,
+        status: qualityBadge,
+        year: (
+          <NexusWorkspaceTableText>
+            {publication.year ?? "Belum tercatat"}
+          </NexusWorkspaceTableText>
+        ),
       },
-      id: record.publicId,
+      id: publication.id,
       mobile: (
         <NexusWorkspaceMobileCard
           action={
             <NexusWorkspaceMobileAction
-              label={`Ubah ${record.title}`}
-              onClick={() => openEdit(record.publicId)}
+              label={`Lihat rincian publikasi: ${title}`}
+              onClick={open}
             >
-              Ubah
+              Lihat rincian
             </NexusWorkspaceMobileAction>
           }
-          eyebrow={<StatusBadge record={record} />}
+          eyebrow={
+            <>
+              {sourceBadge}
+              {qualityBadge}
+            </>
+          }
           meta={
             <dl>
               <div>
-                <dt>{content.columns.indicator}</dt>
-                <dd>{content.indicatorUnavailable}</dd>
-              </div>
-              <div>
-                <dt>{content.columns.quartile}</dt>
+                <dt>Indikator</dt>
                 <dd>
-                  {record.quartile === null
-                    ? content.noQuartile
-                    : quartileLabels[record.quartile]}
+                  {publication.kmLinks.length === 0
+                    ? officialKpiEmptyCopy(publication.kpiResolutionStatus)
+                        .label
+                    : publication.kmLinks
+                        .map((link) => link.indicator.id)
+                        .join(", ")}{" "}
+                  · {publication.type}
                 </dd>
               </div>
               <div>
-                <dt>{content.columns.year}</dt>
-                <dd>{record.year}</dd>
+                <dt>Kuartil</dt>
+                <dd>{publicationQuartileLabel(publication)}</dd>
               </div>
               <div>
-                <dt>{content.columns.citationCount}</dt>
-                <dd>{record.citationCount}</dd>
+                <dt>Tahun</dt>
+                <dd>{publication.year ?? "Belum tercatat"}</dd>
+              </div>
+              <div>
+                <dt>Sitasi</dt>
+                <dd>
+                  {publication.citations === null
+                    ? "Belum tersinkron"
+                    : `${publication.citations} · ${publication.citationProvider}`}
+                </dd>
               </div>
             </dl>
           }
-          title={record.title}
+          title={title}
         >
-          <p className={styles.mobileSubtitle}>
-            {workTypeLabels[record.workType]} · {record.venue ?? "—"}
-          </p>
+          <NexusWorkspaceMobileSubtitle>
+            {publicationAuthorNames(publication)} · {publication.venue}
+          </NexusWorkspaceMobileSubtitle>
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -499,351 +659,164 @@ export function NexusPublications() {
   return (
     <NexusWorkspacePage
       actions={
-        <>
-          <NexusManualSubmissionLink
-            domain="publication"
-            label={content.manualSubmissionLabel}
-          />
-          <NexusWorkspaceButton
-            onClick={openCreate}
-            tone="primary"
-            type="button"
-          >
-            {content.createLabel}
-          </NexusWorkspaceButton>
-        </>
+        <NexusManualSubmissionLink
+          domain="publication"
+          label="Ajukan publikasi"
+        />
       }
       description={content.description}
       descriptionId="publications-description"
+      meta={content.updatedAt}
       title={content.title}
       titleId="publications-title"
     >
-      {loadError !== null ? (
-        <NexusWorkspaceNotice tone="danger">{loadError}</NexusWorkspaceNotice>
-      ) : null}
-
+      <NexusMemberContextFilter
+        clearHref="/nexus/publikasi"
+        memberId={initialMemberId}
+      />
       <NexusWorkspaceMetrics
         metrics={[
           {
             icon: <NexusPublicationsIcon name="book" />,
-            id: "official",
-            label: content.metricOfficialLabel,
+            id: "official-publications",
+            label: "Publikasi Resmi",
             tone: "completed",
-            unit: content.metricUnit,
-            value: metrics.official,
+            unit: "data",
+            value: contextRecords.length,
           },
           {
             icon: <NexusPublicationsIcon name="quartile" />,
             id: "top-quartile",
-            label: content.metricTopQuartileLabel,
+            label: "Setara Q1/Q2",
             tone: "waiting",
-            unit: content.metricUnit,
-            value: metrics.topQuartile,
+            unit: "data",
+            value: topQuartileCount,
           },
           {
             icon: <NexusPublicationsIcon name="alert" />,
-            id: "unofficial",
-            label: content.metricUnofficialLabel,
+            id: "needs-completion",
+            label: "Perlu Dilengkapi",
             tone: "needs-fix",
-            unit: content.metricUnit,
-            value: metrics.unofficial,
+            unit: "data",
+            value: needsCompletionCount,
           },
         ]}
       />
 
-      <div className={styles.toolbar}>
-        <NexusWorkspaceSearch
-          label={content.searchLabel}
-          name="search"
-          onValueChange={setSearch}
-          placeholder={content.searchPlaceholder}
-          value={search}
-        />
-        <NexusWorkspaceSelect
-          config={workTypeFilterConfig}
-          isOpen={openSelectId === "work-type"}
-          name="filter-work-type"
-          onOpenChange={(open) => setOpenSelectId(open ? "work-type" : null)}
-          onValueChange={setWorkType}
-          value={workType}
-        />
-        <NexusWorkspaceSelect
-          config={statusFilterConfig}
-          isOpen={openSelectId === "status"}
-          name="filter-status"
-          onOpenChange={(open) => setOpenSelectId(open ? "status" : null)}
-          onValueChange={setIsOfficialFilter}
-          value={isOfficialFilter}
-        />
-        <NexusWorkspaceSelect
-          config={quartileFilterConfig}
-          isOpen={openSelectId === "quartile"}
-          name="filter-quartile"
-          onOpenChange={(open) => setOpenSelectId(open ? "quartile" : null)}
-          onValueChange={setQuartileFilter}
-          value={quartileFilter}
-        />
-        <NexusWorkspaceSelect
-          config={sortConfig}
-          isOpen={openSelectId === "sort"}
-          name="filter-sort"
-          onOpenChange={(open) => setOpenSelectId(open ? "sort" : null)}
-          onValueChange={(value) =>
-            setSortBy(value as (typeof sortOptions)[number]["value"])
-          }
-          value={sortBy}
-        />
-      </div>
-
-      <NexusWorkspaceResultMeta
-        isUpdating={isSearchUpdating}
-        onResetFilters={hasActiveFilters ? resetFilters : undefined}
-        resultLabel={`${meta?.total ?? 0} ${content.resultUnit} ditemukan`}
-        updatingLabel="Memperbarui hasil pencarian"
-      />
-
-      <NexusWorkspaceTableSection
-        guidance={content.officialNote}
-        summary={resultSummary}
-        title={content.title}
-        titleId="official-publications-title"
+      <NexusWorkspaceCatalog
+        className={styles.catalog}
+        labelledBy="official-publications-title"
       >
-        <NexusWorkspaceRecordTable
-          caption={content.tableCaption}
-          columns={columns}
-          empty={
-            <NexusWorkspaceEmptyState
-              description={
-                hasActiveFilters
-                  ? content.emptyDescription
-                  : content.emptyTrueDescription
-              }
-              onResetFilters={hasActiveFilters ? resetFilters : undefined}
-              title={
-                hasActiveFilters ? content.emptyTitle : content.emptyTrueTitle
-              }
-            />
-          }
-          isLoading={isLoading}
-          pagination={
-            <NexusTablePagination
-              currentPage={page}
-              itemCount={meta?.total ?? 0}
-              navigationLabel={content.navigationLabel}
-              nextPageLabel={content.nextPageLabel}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSizeValue}
-              pageLabel={content.pageLabel}
-              pageSizeConfig={pageSizeConfig}
-              pageSizeValue={pageSizeValue}
-              previousPageLabel={content.previousPageLabel}
-              rangePrefix={content.rangePrefix}
-              totalUnit={content.resultUnit}
-            />
-          }
-          rows={rows}
+        <NexusWorkspaceTabs
+          activeId={activeSource.id}
+          label="Filter publikasi berdasarkan sumber pembentuk"
+          onActiveChange={(sourceId) => {
+            setActiveSourceId(sourceId as PublicationSourceId);
+            setCurrentPage(1);
+          }}
+          panelId="publication-source-panel"
+          tabs={sourceTabs}
         />
-      </NexusWorkspaceTableSection>
 
-      {drawer !== null ? (
-        <NexusWorkspaceDrawer
-          closeLabel={content.drawerCloseLabel}
-          description={content.description}
-          eyebrow={
-            drawer.mode === "edit" ? content.editEyebrow : content.newEyebrow
-          }
-          onClose={closeDrawer}
-          title={
-            drawer.mode === "edit" ? drawer.record.title : content.newEyebrow
-          }
+        <NexusWorkspaceToolbar id="publication-source-panel" role="tabpanel">
+          <NexusWorkspaceSearch
+            label="Cari publikasi resmi"
+            name="publication-search"
+            onValueChange={(value) => {
+              setSearchQuery(value);
+              setCurrentPage(1);
+            }}
+            placeholder="Cari judul, penulis, jurnal, DOI, atau indikator"
+            value={searchQuery}
+          />
+          {[
+            indicatorConfig,
+            quartileConfig,
+            yearConfig,
+            completenessConfig,
+            sortConfig,
+          ].map((config) => (
+            <NexusWorkspaceSelect
+              config={config}
+              isOpen={openFilterId === config.id}
+              key={config.id}
+              name={`publication-${config.id}`}
+              onOpenChange={(isOpen) =>
+                setOpenFilterId(isOpen ? config.id : null)
+              }
+              onValueChange={(value) => changeFilterValue(config.id, value)}
+              placement="top-on-narrow"
+              value={
+                filterValues[config.id as PublicationFilterId] ??
+                config.defaultValue
+              }
+            />
+          ))}
+        </NexusWorkspaceToolbar>
+
+        <NexusWorkspaceResultMeta
+          isUpdating={isSearchUpdating}
+          onResetFilters={hasActiveFilters ? resetFilters : undefined}
+          resultLabel={`${filteredPublications.length} publikasi ditemukan`}
+          updatingLabel="Memperbarui hasil pencarian"
+        />
+
+        <NexusWorkspaceTableSection
+          guidance={content.officialNote}
+          summary={resultSummary}
+          title="Daftar publikasi resmi"
+          titleId="official-publications-title"
         >
-          <div className={styles.form}>
-            {formError !== null ? (
-              <NexusWorkspaceNotice tone="danger">
-                {formError}
-              </NexusWorkspaceNotice>
-            ) : null}
-
-            <NexusWorkspaceFormField
-              id="publication-title"
-              label={content.fieldTitle}
-              name="title"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  title: event.target.value,
-                }))
-              }
-              required
-              type="text"
-              value={form.title}
-              wide
-            />
-
-            <NexusWorkspaceFormField
-              id="publication-work-type"
-              label={content.fieldWorkType}
-              name="workType"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  workType: event.target.value as WorkType,
-                }))
-              }
-              options={workTypeOptions}
-              required
-              type="select"
-              value={form.workType}
-            />
-
-            <NexusWorkspaceFormField
-              id="publication-year"
-              label={content.fieldYear}
-              min={1900}
-              name="year"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  year: event.target.value,
-                }))
-              }
-              required
-              type="number"
-              value={form.year}
-            />
-
-            <NexusWorkspaceFormField
-              id="publication-venue"
-              label={content.fieldVenue}
-              name="venue"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  venue: event.target.value,
-                }))
-              }
-              type="text"
-              value={form.venue}
-            />
-
-            <NexusWorkspaceFormField
-              id="publication-doi"
-              label={content.fieldDoi}
-              name="doi"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  doi: event.target.value,
-                }))
-              }
-              type="text"
-              value={form.doi}
-            />
-
-            <NexusWorkspaceFormField
-              id="publication-issn-l"
-              label={content.fieldIssnL}
-              name="issnL"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  issnL: event.target.value,
-                }))
-              }
-              type="text"
-              value={form.issnL}
-            />
-
-            <NexusWorkspaceFormField
-              id="publication-quartile"
-              label={content.fieldQuartile}
-              name="quartile"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  quartile: event.target.value as Quartile,
-                }))
-              }
-              options={quartileOptions}
-              type="select"
-              value={form.quartile}
-            />
-
-            <NexusWorkspaceFormField
-              id="publication-sjr"
-              label={content.fieldSjr}
-              min={0}
-              name="sjr"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  sjr: event.target.value,
-                }))
-              }
-              type="number"
-              value={form.sjr}
-            />
-
-            <NexusWorkspaceFormField
-              id="publication-citation-count"
-              label={content.fieldCitationCount}
-              min={0}
-              name="citationCount"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  citationCount: event.target.value,
-                }))
-              }
-              type="number"
-              value={form.citationCount}
-            />
-
-            <label className={styles.checkboxField}>
-              <input
-                checked={form.isOfficial}
-                name="isOfficial"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    isOfficial: event.target.checked,
-                  }))
+          <NexusWorkspaceRecordTable
+            caption="Publikasi resmi CoE BHT beserta metadata karya, kuartil, dan keterkaitan indikator KM"
+            columns={columns}
+            empty={
+              <NexusWorkspaceEmptyState
+                description={
+                  records.length === 0
+                    ? "Publikasi akan muncul setelah kandidat disetujui melalui proses Tinjauan."
+                    : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
                 }
-                type="checkbox"
+                onResetFilters={hasActiveFilters ? resetFilters : undefined}
+                title={
+                  records.length === 0
+                    ? "Belum ada publikasi resmi"
+                    : "Tidak ada publikasi yang cocok"
+                }
               />
-              <span>{content.fieldIsOfficial}</span>
-            </label>
+            }
+            isLoading={isSearchUpdating}
+            pagination={
+              <NexusTablePagination
+                currentPage={safePage}
+                itemCount={filteredPublications.length}
+                navigationLabel="Navigasi halaman publikasi"
+                nextPageLabel="Halaman berikutnya"
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(value) => {
+                  setPageSizeValue(value);
+                  setCurrentPage(1);
+                }}
+                pageLabel="Halaman"
+                pageSizeConfig={pageSizeConfig}
+                pageSizeValue={pageSizeValue}
+                previousPageLabel="Halaman sebelumnya"
+                rangePrefix="Menampilkan"
+                totalUnit="data"
+              />
+            }
+            rows={rows}
+          />
+        </NexusWorkspaceTableSection>
+      </NexusWorkspaceCatalog>
 
-            {confirmingDeleteId !== null ? (
-              <NexusWorkspaceNotice tone="danger">
-                {content.deleteConfirmPrompt}
-              </NexusWorkspaceNotice>
-            ) : null}
-
-            <div className={styles.formActions}>
-              {drawer.mode === "edit" ? (
-                <NexusWorkspaceButton
-                  disabled={isSubmitting}
-                  onClick={handleDelete}
-                  tone="danger"
-                  type="button"
-                >
-                  {confirmingDeleteId !== null
-                    ? content.deleteConfirmLabel
-                    : content.removeLabel}
-                </NexusWorkspaceButton>
-              ) : null}
-              <NexusWorkspaceButton
-                disabled={isSubmitting}
-                onClick={handleSubmit}
-                tone="primary"
-                type="button"
-              >
-                {isSubmitting ? content.savingLabel : content.saveLabel}
-              </NexusWorkspaceButton>
-            </div>
-          </div>
-        </NexusWorkspaceDrawer>
+      {selectedPublication ? (
+        <NexusPublicationDetail
+          onClose={() => setSelectedPublicationId(null)}
+          onSubmitCompletionProposal={submitCompletionProposal}
+          proposal={completionProposals[selectedPublication.id]}
+          publication={selectedPublication}
+        />
       ) : null}
     </NexusWorkspacePage>
   );

@@ -285,12 +285,29 @@
   display: none;
 }
 
+/*
+ * Kartu ringkas mengisi penuh sel kisinya lalu menjadi kolom lentur, sehingga
+ * kartu yang bersebelahan selalu setinggi kartu dengan judul terpanjang dan
+ * tombolnya rata di dasar kartu.
+ */
+.mobileList > * {
+  display: flex;
+  min-width: 0;
+}
+
 .mobileCard {
-  display: grid;
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
   gap: 0.7rem;
   padding: 0.85rem;
   border: 1px solid var(--color-nexus-border-soft);
   border-radius: 0.75rem;
+}
+
+.mobileCard > :last-child {
+  margin-top: auto;
 }
 
 .mobileCardTop {
@@ -360,9 +377,9 @@
   height: 1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   border: 0;
   margin: -1px;
+  clip-path: inset(50%);
   white-space: nowrap;
 }
 
@@ -413,4 +430,35 @@
   .mobileLoading > span {
     animation: none;
   }
+}
+
+/*
+ * Wadah daftar rekam resmi: baris tab, baris filter, dan tabelnya. Jarak atas
+ * dan perilaku menyempitnya dipegang di sini supaya seluruh rumah data
+ * mempunyai ritme vertikal yang sama; lebar kolom tabel tetap milik tiap
+ * halaman karena kolomnya memang berbeda.
+ */
+.catalog {
+  min-width: 0;
+  margin-top: clamp(1.7rem, 2.2vw, 2.15rem);
+}
+
+@media (max-width: 42rem) {
+  .catalog {
+    margin-top: 1.5rem;
+  }
+}
+
+/* Keterangan pendek di bawah judul pada kartu ringkas. */
+.mobileSubtitle {
+  margin: -0.25rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+/* Nilai sel tabel yang tidak memerlukan penekanan tersendiri. */
+.plainCell {
+  color: var(--color-nexus-text-soft);
+  font-size: 0.72rem;
 }

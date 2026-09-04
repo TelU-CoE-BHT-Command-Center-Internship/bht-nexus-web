@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
 import constructionImage from "@/assets/nexus-monitoring-under-construction.webp";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import type { NexusMonitoringDomain } from "@/components/nexus-monitoring/nexus-monitoring-domains";
@@ -18,22 +19,32 @@ const sourceHrefs: Partial<Record<NexusKmIndicatorCategory, string>> = {
   Proposal: "/nexus/kontrak-proposal",
 };
 
-export function NexusMonitoringUnderConstruction({
-  domain,
-  onBack,
-  periodLabel,
+/**
+ * Keadaan "sedang disiapkan" pada Monitoring KM. Bentuknya satu supaya domain
+ * yang halamannya belum ada dan indikator yang rinciannya belum ada memakai
+ * bahasa visual yang sama, sedangkan isinya ditentukan pemanggilnya.
+ */
+export function MonitoringConstructionState({
+  actions,
+  compact = false,
+  description,
+  note,
+  title,
+  titleId,
 }: {
-  domain: NexusMonitoringDomain;
-  onBack: () => void;
-  periodLabel: string;
+  actions: ReactNode;
+  /** Susunan yang lebih rapat untuk pesan pendek pada satu alamat indikator. */
+  compact?: boolean;
+  description: string;
+  note?: ReactNode;
+  title: string;
+  titleId: string;
 }) {
-  const sourceHref = domain.category ? sourceHrefs[domain.category] : undefined;
-  const hasRecords = domain.records > 0;
-
   return (
     <section
-      aria-labelledby="monitoring-construction-title"
+      aria-labelledby={titleId}
       className={styles.constructionState}
+      data-compact={compact}
     >
       <div aria-hidden="true" className={styles.constructionVisual}>
         <Image
@@ -48,44 +59,67 @@ export function NexusMonitoringUnderConstruction({
         <span className={styles.constructionEyebrow}>
           Halaman sedang disiapkan
         </span>
-        <h3 id="monitoring-construction-title">
-          {`Monitoring ${domain.label} sedang dibangun`}
-        </h3>
-        <p>
-          {`Kami sedang menyiapkan pemantauan ${domain.indicators} indikator ${domain.label} untuk ${periodLabel}.`}
-        </p>
+        <h3 id={titleId}>{title}</h3>
+        <p>{description}</p>
       </div>
-      <div className={styles.constructionActions}>
-        <NexusWorkspaceButton onClick={onBack} tone="primary" type="button">
-          Kembali ke Ringkasan
-        </NexusWorkspaceButton>
-        {sourceHref ? (
-          <NexusWorkspaceLinkButton href={sourceHref} tone="secondary">
-            Lihat Data Resmi
-          </NexusWorkspaceLinkButton>
-        ) : null}
-        <NexusWorkspaceLinkButton
-          href={`${COE_BHT_LINKS.email}?subject=Monitoring%20KM%20BHT%20Nexus`}
-          tone="secondary"
-        >
-          Hubungi pengelola
-        </NexusWorkspaceLinkButton>
-      </div>
-      <div className={styles.constructionNote}>
-        <span aria-hidden="true">
-          <MonitoringIcon name={hasRecords ? "database" : "alert"} />
-        </span>
-        <p>
-          <strong>
-            {hasRecords
-              ? `${domain.records} rekam resmi sudah terkait.`
-              : "Sumber realisasi belum tersedia."}
-          </strong>{" "}
-          {hasRecords
-            ? "Data tetap dapat dibuka melalui rumah Data Resmi terkait."
-            : "Pemantauan akan terisi setelah sumber resminya terhubung."}
-        </p>
-      </div>
+      <div className={styles.constructionActions}>{actions}</div>
+      {note ? <div className={styles.constructionNote}>{note}</div> : null}
     </section>
+  );
+}
+
+export function NexusMonitoringUnderConstruction({
+  domain,
+  onBack,
+  periodLabel,
+}: {
+  domain: NexusMonitoringDomain;
+  onBack: () => void;
+  periodLabel: string;
+}) {
+  const sourceHref = domain.category ? sourceHrefs[domain.category] : undefined;
+  const hasRecords = domain.records > 0;
+
+  return (
+    <MonitoringConstructionState
+      actions={
+        <>
+          <NexusWorkspaceButton onClick={onBack} tone="primary" type="button">
+            Kembali ke Ringkasan
+          </NexusWorkspaceButton>
+          {sourceHref ? (
+            <NexusWorkspaceLinkButton href={sourceHref} tone="secondary">
+              Lihat Data Resmi
+            </NexusWorkspaceLinkButton>
+          ) : null}
+          <NexusWorkspaceLinkButton
+            href={`${COE_BHT_LINKS.email}?subject=Monitoring%20KM%20BHT%20Nexus`}
+            tone="secondary"
+          >
+            Hubungi pengelola
+          </NexusWorkspaceLinkButton>
+        </>
+      }
+      description={`Kami sedang menyiapkan pemantauan ${domain.indicators} indikator ${domain.label} untuk ${periodLabel}.`}
+      note={
+        <>
+          <span aria-hidden="true">
+            <MonitoringIcon name={hasRecords ? "database" : "alert"} />
+          </span>
+          <p>
+            <strong>
+              {hasRecords
+                ? `${domain.records} rekam resmi sudah terkait.`
+                : "Sumber realisasi belum tersedia."}
+            </strong>{" "}
+            {hasRecords
+              ? "Data tetap dapat dibuka melalui rumah Data Resmi terkait."
+              : "Pemantauan akan terisi setelah sumber resminya terhubung."}
+          </p>
+        </>
+      }
+      title={`Monitoring ${domain.label} sedang dibangun`}
+      titleId="monitoring-construction-title"
+    />
   );
 }
