@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
-import { NEXUS_MONITORED_CATEGORY } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import {
   MonitoringProgressChart,
   type MonitoringProgressPoint,
@@ -18,8 +17,8 @@ import {
 } from "@/components/nexus-monitoring/nexus-monitoring-ui";
 import type { NexusMonitoringUpdate } from "@/components/nexus-monitoring/nexus-monitoring-updates";
 import type {
+  MonitoringDomainView,
   MonitoringIndicatorSummary,
-  MonitoringRisetView,
 } from "@/components/nexus-monitoring/nexus-monitoring-view";
 import { NexusWorkspaceEmptyState } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -94,19 +93,29 @@ function percentLabel(share: number) {
 }
 
 /**
- * Ikhtisar domain Riset di dalam kerangka Monitoring KM. Komponen ini adalah
- * satu-satunya susunan Riset: halaman Ringkasan dan alamat `/nexus/monitoring/
- * riset` memakai komponen yang sama, sehingga tidak ada dua kebenaran untuk
- * satu domain.
+ * Target apa adanya. Workbook memakai satu angka untuk hampir semua indikator,
+ * tetapi ada target gabungan seperti `9/1M` yang ditampilkan utuh dan tidak
+ * dipecah menjadi angka pembanding.
  */
-export function NexusMonitoringRisetOverview({
+function targetLabel(indicator: MonitoringIndicatorSummary) {
+  if (indicator.target !== null) return String(indicator.target);
+  return indicator.targetLiteral ?? "Belum tersedia";
+}
+
+/**
+ * Ikhtisar satu domain KM di dalam kerangka Monitoring. Komponen ini adalah
+ * satu-satunya susunan ikhtisar domain: halaman Ringkasan dan alamat
+ * `/nexus/monitoring/<domain>` memakai komponen yang sama, sehingga tidak ada
+ * dua kebenaran untuk satu domain.
+ */
+export function NexusMonitoringDomainOverview({
   periodLabel,
   updates,
   view,
 }: {
   periodLabel: string;
   updates: readonly NexusMonitoringUpdate[];
-  view: MonitoringRisetView;
+  view: MonitoringDomainView;
 }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("semua");
 
@@ -117,20 +126,11 @@ export function NexusMonitoringRisetOverview({
       ),
     [statusFilter, view.indicators],
   );
-  const risetUpdates = useMemo(
-    () =>
-      updates.filter((update) =>
-        update.domains.includes(NEXUS_MONITORED_CATEGORY),
-      ),
-    [updates],
+  const domainUpdates = useMemo(
+    () => updates.filter((update) => update.domains.includes(view.category)),
+    [updates, view.category],
   );
 
-  const firstIndicator = view.indicators[0];
-  const lastIndicator = view.indicators[view.indicators.length - 1];
-  const rangeLabel =
-    firstIndicator && lastIndicator
-      ? `${firstIndicator.id} sampai ${lastIndicator.id}`
-      : "Indikator Riset";
   const computableShare = view.total === 0 ? 0 : view.computable / view.total;
   const visibleGaps = view.gaps.slice(0, GAP_LIMIT);
   const hiddenGaps = view.gaps.length - visibleGaps.length;
@@ -143,9 +143,9 @@ export function NexusMonitoringRisetOverview({
     <>
       <div className={styles.summaryMetricGrid}>
         <MonitoringMetricCard
-          detail={`${rangeLabel} · ${periodLabel}`}
-          icon="flask"
-          label="Indikator Riset"
+          detail={`${view.indicatorRange} · ${periodLabel}`}
+          icon="chart"
+          label={`Indikator ${view.label}`}
           tone="blue"
           unit="indikator"
           value={view.total}
@@ -187,27 +187,27 @@ export function NexusMonitoringRisetOverview({
               Capaian terhadap target
             </span>
           }
-          description={`Setiap indikator dibandingkan dengan targetnya sendiri pada ${periodLabel}. Target seluruh indikator tidak dijumlahkan menjadi satu angka Riset.`}
-          headingId="monitoring-riset-progress"
+          description={`Setiap indikator dibandingkan dengan targetnya sendiri pada ${periodLabel}. Target seluruh indikator tidak dijumlahkan menjadi satu angka ${view.label}.`}
+          headingId="monitoring-domain-progress"
           title="Pemenuhan Target per Indikator"
         >
           <MonitoringProgressChart
-            label={`Capaian ${view.total} indikator Riset terhadap targetnya masing-masing pada ${periodLabel}`}
+            label={`Capaian ${view.total} indikator ${view.label} terhadap targetnya masing-masing pada ${periodLabel}`}
             points={view.indicators.map(progressPoint)}
-            scopeKey="riset"
+            scopeKey={view.category}
           />
         </MonitoringCard>
       </div>
 
       <div className={styles.insightGrid}>
         <MonitoringCard
-          description={`Rekam resmi berbeda yang membentuk realisasi indikator Riset pada ${periodLabel}, menurut rumah data resminya.`}
-          headingId="monitoring-riset-sources"
+          description={`Rekam resmi berbeda yang membentuk realisasi indikator ${view.label} pada ${periodLabel}, menurut rumah data resminya.`}
+          headingId="monitoring-domain-sources"
           title="Sebaran Rekam Pembentuk"
         >
           {view.sources.length === 0 ? (
             <MonitoringUnavailable
-              description="Belum ada rekam resmi yang dikaitkan dengan indikator Riset pada periode ini."
+              description={`Belum ada rekam resmi yang dikaitkan dengan indikator ${view.label} pada periode ini.`}
               title="Belum ada sumber realisasi"
             />
           ) : (
@@ -227,12 +227,12 @@ export function NexusMonitoringRisetOverview({
 
         <MonitoringCard
           description="Indikator yang realisasinya masih di bawah target, diurutkan dari selisih terbesar. Batangnya menunjukkan capaian terhadap target, angkanya menunjukkan kekurangannya."
-          headingId="monitoring-riset-gaps"
+          headingId="monitoring-domain-gaps"
           title="Gap Target Terbesar"
         >
           {view.gaps.length === 0 ? (
             <MonitoringUnavailable
-              description="Seluruh indikator Riset yang dapat dihitung sudah mencapai targetnya pada periode ini."
+              description={`Seluruh indikator ${view.label} yang dapat dihitung sudah mencapai targetnya pada periode ini.`}
               title="Tidak ada selisih terhadap target"
             />
           ) : (
@@ -250,7 +250,7 @@ export function NexusMonitoringRisetOverview({
               />
               {hiddenGaps > 0 ? (
                 <MonitoringChartSummary>
-                  {`${hiddenGaps} indikator lain juga masih di bawah target dengan selisih lebih kecil; seluruhnya tercantum pada Capaian Indikator Riset.`}
+                  {`${hiddenGaps} indikator lain juga masih di bawah target dengan selisih lebih kecil; seluruhnya tercantum pada Capaian Indikator ${view.label}.`}
                 </MonitoringChartSummary>
               ) : null}
             </>
@@ -278,14 +278,14 @@ export function NexusMonitoringRisetOverview({
               ))}
             </fieldset>
           }
-          description={`Menampilkan ${filtered.length} dari ${view.indicators.length} indikator Riset. Buka rincian untuk menelusuri rekam resmi pembentuk realisasinya.`}
-          headingId="monitoring-riset-indicators"
+          description={`Menampilkan ${filtered.length} dari ${view.indicators.length} indikator ${view.label}. Buka rincian untuk menelusuri rekam resmi pembentuk realisasinya.`}
+          headingId="monitoring-domain-indicators"
           inlineHeader={false}
-          title="Capaian Indikator Riset"
+          title={`Capaian Indikator ${view.label}`}
         >
           <div className={styles.tableSurface}>
             <NexusWorkspaceRecordTable
-              caption="Target, realisasi, capaian, dan status indikator Riset"
+              caption={`Target, realisasi, capaian, dan status indikator ${view.label}`}
               columns={[
                 { id: "indicator", label: "Indikator", primary: true },
                 { id: "house", label: "Rumah data" },
@@ -297,7 +297,7 @@ export function NexusMonitoringRisetOverview({
               ]}
               empty={
                 <NexusWorkspaceEmptyState
-                  description="Tidak ada indikator Riset dengan status tersebut pada periode ini."
+                  description={`Tidak ada indikator ${view.label} dengan status tersebut pada periode ini.`}
                   onResetFilters={() => setStatusFilter("semua")}
                   title="Tidak ada indikator yang cocok"
                 />
@@ -335,10 +335,7 @@ export function NexusMonitoringRisetOverview({
                       {indicator.statusLabel}
                     </NexusWorkspaceTableBadge>
                   ),
-                  target:
-                    indicator.target === null
-                      ? "Belum tersedia"
-                      : `${indicator.target}`,
+                  target: targetLabel(indicator),
                 },
                 id: indicator.id,
                 mobile: (
@@ -362,11 +359,7 @@ export function NexusMonitoringRisetOverview({
                       <dl>
                         <div>
                           <dt>Target</dt>
-                          <dd>
-                            {indicator.target === null
-                              ? "Belum tersedia"
-                              : indicator.target}
-                          </dd>
+                          <dd>{targetLabel(indicator)}</dd>
                         </div>
                         <div>
                           <dt>Realisasi</dt>
@@ -396,15 +389,22 @@ export function NexusMonitoringRisetOverview({
               }))}
             />
           </div>
+          {view.notes.length > 0 ? (
+            <ul className={styles.computabilityNotes}>
+              {view.notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          ) : null}
         </MonitoringCard>
       </div>
 
       <NexusMonitoringRecentUpdates
-        description="Data Resmi terakhir yang terkait indikator Riset."
-        emptyDescription="Pembaruan akan muncul setelah Data Resmi dikaitkan dengan indikator Riset."
-        headingId="monitoring-riset-recent-updates"
-        title="Pembaruan Data Riset Terbaru"
-        updates={risetUpdates}
+        description={`Data Resmi terakhir yang terkait indikator ${view.label}.`}
+        emptyDescription={`Pembaruan akan muncul setelah Data Resmi dikaitkan dengan indikator ${view.label}.`}
+        headingId="monitoring-domain-recent-updates"
+        title={`Pembaruan Data ${view.label} Terbaru`}
+        updates={domainUpdates}
       />
     </>
   );

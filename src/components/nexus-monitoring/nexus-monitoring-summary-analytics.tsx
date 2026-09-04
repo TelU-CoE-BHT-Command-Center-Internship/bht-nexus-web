@@ -13,8 +13,21 @@ import {
   MonitoringCard,
   MonitoringChartFrame,
 } from "@/components/nexus-monitoring/nexus-monitoring-ui";
+import type { NexusKmIndicatorCategory } from "@/content/nexus-km-indicators";
+
+/**
+ * Status target satu domain pada periode berjalan. Domain yang belum punya
+ * metadata evaluasi tidak dikirim ke sini; grafik menandainya sebagai belum
+ * dihitung, bukan sebagai capaian nol.
+ */
+export type NexusMonitoringDomainStatus = {
+  category: NexusKmIndicatorCategory;
+  notReached: number;
+  reached: number;
+};
 
 export type NexusMonitoringTargetSummary = {
+  domains: readonly NexusMonitoringDomainStatus[];
   notComputable: number;
   notReached: number;
   period: string;
@@ -25,16 +38,22 @@ function targetPoints(
   domains: readonly NexusMonitoringDomain[],
   targetSummary: NexusMonitoringTargetSummary,
 ): readonly MonitoringDomainTargetPoint[] {
+  const statusByCategory = new Map(
+    targetSummary.domains.map((domain) => [domain.category, domain]),
+  );
+
   return domains.flatMap((domain) => {
     if (!domain.category) return [];
-    const isRiset = domain.category === "Riset";
+    const status = statusByCategory.get(domain.category);
+    const computed = status ? status.reached + status.notReached : 0;
+
     return [
       {
         id: domain.id,
         label: domain.chartLabel,
-        notReached: isRiset ? targetSummary.notReached : 0,
-        reached: isRiset ? targetSummary.reached : 0,
-        unavailable: isRiset ? targetSummary.notComputable : domain.indicators,
+        notReached: status?.notReached ?? 0,
+        reached: status?.reached ?? 0,
+        unavailable: domain.indicators - computed,
       },
     ];
   });
@@ -68,7 +87,7 @@ export function NexusMonitoringSummaryAnalytics({
       >
         <MonitoringChartFrame
           fluid
-          label={`Grafik batang bertumpuk status target tahunan ${targetSummary.period} pada sembilan domain KM. Riset memiliki ${targetSummary.reached} indikator memenuhi target dan ${targetSummary.notReached} belum memenuhi; ${unavailable} indikator pada domain lain belum dihitung.`}
+          label={`Grafik batang bertumpuk status target tahunan ${targetSummary.period} pada sembilan domain KM. ${targetSummary.reached} indikator memenuhi target, ${targetSummary.notReached} belum memenuhi, dan ${unavailable} indikator belum dihitung.`}
         >
           <MonitoringDomainTargetChart height={270} points={points} />
         </MonitoringChartFrame>

@@ -14,12 +14,13 @@ import {
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import type { NexusMonitoringCategory } from "@/components/nexus-monitoring/nexus-monitoring-categories";
 import { NexusMonitoringCategoryProgress } from "@/components/nexus-monitoring/nexus-monitoring-category-progress";
+import { NexusMonitoringDomainOverview } from "@/components/nexus-monitoring/nexus-monitoring-domain-overview";
 import {
   NEXUS_ALL_DOMAINS,
   type NexusMonitoringDomainId,
   nexusMonitoringDomains,
 } from "@/components/nexus-monitoring/nexus-monitoring-domains";
-import { NEXUS_MONITORED_CATEGORY } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
+import { nexusCategoryIsMonitored } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import type { NexusMonitoringIndicatorProgress } from "@/components/nexus-monitoring/nexus-monitoring-indicator-progress";
 import {
   NEXUS_DEFAULT_MONITORING_PERIOD_ID,
@@ -28,7 +29,6 @@ import {
   nexusMonitoringPeriods,
 } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusMonitoringRecentUpdates } from "@/components/nexus-monitoring/nexus-monitoring-recent-updates";
-import { NexusMonitoringRisetOverview } from "@/components/nexus-monitoring/nexus-monitoring-riset-overview";
 import {
   NexusMonitoringSummaryAnalytics,
   type NexusMonitoringTargetSummary,
@@ -39,12 +39,13 @@ import {
 } from "@/components/nexus-monitoring/nexus-monitoring-ui";
 import { NexusMonitoringUnderConstruction } from "@/components/nexus-monitoring/nexus-monitoring-under-construction";
 import type { NexusMonitoringUpdate } from "@/components/nexus-monitoring/nexus-monitoring-updates";
-import type { MonitoringRisetView } from "@/components/nexus-monitoring/nexus-monitoring-view";
+import type { MonitoringDomainView } from "@/components/nexus-monitoring/nexus-monitoring-view";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
   type NexusSelectConfig,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import type { NexusKmIndicatorCategory } from "@/content/nexus-km-indicators";
 
 function CalendarIcon() {
   return (
@@ -235,17 +236,20 @@ function useDomainScroller() {
 
 export function NexusMonitoringLanding({
   categories,
+  domainViews,
   indicatorProgress,
   initialDomain = NEXUS_ALL_DOMAINS,
-  risetView,
   targetSummary,
   updates,
 }: {
   categories: readonly NexusMonitoringCategory[];
+  domainViews: Record<
+    NexusKmIndicatorCategory,
+    MonitoringDomainView | undefined
+  >;
   indicatorProgress: readonly NexusMonitoringIndicatorProgress[];
-  /** Domain yang aktif saat halaman dibuka; alamat Riset masuk lewat sini. */
+  /** Domain yang aktif saat halaman dibuka; alamat domain masuk lewat sini. */
   initialDomain?: NexusMonitoringDomainId;
-  risetView: MonitoringRisetView;
   targetSummary: NexusMonitoringTargetSummary;
   updates: readonly NexusMonitoringUpdate[];
 }) {
@@ -262,6 +266,9 @@ export function NexusMonitoringLanding({
   const period = nexusMonitoringPeriod(periodId);
   const activeDomain =
     domains.find((domain) => domain.id === domainId) ?? domains[0];
+  const activeDomainView = activeDomain.category
+    ? domainViews[activeDomain.category]
+    : undefined;
   const summary = useMemo(
     () =>
       categories.reduce(
@@ -430,11 +437,13 @@ export function NexusMonitoringLanding({
             />
             <NexusMonitoringRecentUpdates updates={updates} />
           </>
-        ) : activeDomain.category === NEXUS_MONITORED_CATEGORY ? (
-          <NexusMonitoringRisetOverview
+        ) : activeDomain.category &&
+          nexusCategoryIsMonitored(activeDomain.category) &&
+          activeDomainView ? (
+          <NexusMonitoringDomainOverview
             periodLabel={period.label}
             updates={updates}
-            view={risetView}
+            view={activeDomainView}
           />
         ) : (
           <NexusMonitoringUnderConstruction

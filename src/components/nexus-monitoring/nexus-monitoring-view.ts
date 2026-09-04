@@ -9,19 +9,22 @@ import {
   type NexusIndicatorStatus,
   nexusIndicatorStatusLabels,
   nexusIndicatorStatusTones,
-  summarizeRiset,
+  summarizeCategory,
 } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
 import {
   getNexusMonitoringRecords,
   type NexusMonitoringRecord,
 } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import type { MonitoringTone } from "@/components/nexus-monitoring/nexus-monitoring-ui";
-import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
+import type {
+  NexusKmIndicatorCategory,
+  NexusKmIndicatorId,
+} from "@/content/nexus-km-indicators";
 
 /**
- * Bentuk tampilan untuk ikhtisar domain Riset. Modul ini hanya menyiapkan angka
- * yang dibaca Ringkasan dan ikhtisar domain; penyajian rincian satu indikator
- * disiapkan ulang pada paket kerja tersendiri.
+ * Bentuk tampilan untuk ikhtisar satu domain KM. Modul ini hanya menyiapkan
+ * angka yang dibaca Ringkasan dan ikhtisar domain; penyajian rincian satu
+ * indikator disiapkan ulang pada paket kerja tersendiri.
  */
 export type MonitoringIndicatorSummary = {
   detailHref: string;
@@ -37,6 +40,8 @@ export type MonitoringIndicatorSummary = {
   statusLabel: string;
   statusTone: MonitoringTone;
   target: number | null;
+  /** Tulisan target apa adanya ketika workbook tidak memuat satu angka. */
+  targetLiteral: string | null;
 };
 
 export type MonitoringSourceShareView = {
@@ -63,13 +68,20 @@ export type MonitoringGapView = {
   target: number;
 };
 
-export type MonitoringRisetView = {
-  /** Indikator Riset yang realisasinya sudah dapat dihitung dari data resmi. */
+export type MonitoringDomainView = {
+  category: NexusKmIndicatorCategory;
+  /** Indikator domain yang capaiannya dapat dibandingkan dengan targetnya. */
   computable: number;
   contributingRecords: number;
   gaps: readonly MonitoringGapView[];
   indicators: readonly MonitoringIndicatorSummary[];
+  /** Rentang indikator domain, mis. `KM-9 sampai KM-18`. */
+  indicatorRange: string;
+  /** Nama domain apa adanya, dipakai seluruh teks ikhtisar. */
+  label: string;
   notComputable: number;
+  /** Alasan sebuah indikator belum dapat dihitung, apa adanya menurut sumber. */
+  notes: readonly string[];
   notReached: number;
   period: NexusEvaluationPeriodId;
   reached: number;
@@ -100,6 +112,7 @@ function indicatorSummary(
     statusLabel: nexusIndicatorStatusLabels[measurement.status],
     statusTone: nexusIndicatorStatusTones[measurement.status],
     target: evaluation.target.value,
+    targetLiteral: evaluation.target.literal,
   };
 }
 
@@ -136,19 +149,68 @@ function targetGaps(
     );
 }
 
-export function buildRisetView(
+/**
+ * Keterangan mengapa sebagian indikator belum dapat dihitung. Alasannya diambil
+ * dari sumbernya sendiri—target yang belum tercatat, target gabungan yang tidak
+ * dapat dibandingkan sebagai satu angka, atau nilai yang memang bukan jumlah
+ * rekam—supaya keadaan itu tidak berhenti sebagai label tanpa penjelasan.
+ */
+function computabilityNotes(
+  measurements: readonly NexusIndicatorMeasurement[],
+): readonly string[] {
+  const notes: string[] = [];
+
+  const withoutTarget = measurements
+    .filter((measurement) => measurement.status === "target-belum-tersedia")
+    .map((measurement) => measurement.evaluation.indicator.id);
+  if (withoutTarget.length > 0) {
+    notes.push(
+      `Workbook KM 2026 belum mencatat target untuk ${withoutTarget.join(", ")}, sehingga capaiannya belum dapat dihitung.`,
+    );
+  }
+
+  for (const measurement of measurements) {
+    const { evaluation } = measurement;
+    if (evaluation.target.literal !== null) {
+      notes.push(
+        `Target ${evaluation.indicator.id} tercatat sebagai ${evaluation.target.literal} yang menggabungkan jumlah dan nilai rupiah, sehingga tidak dibandingkan sebagai satu angka.`,
+      );
+    }
+    if (evaluation.realization.kind === "unavailable") {
+      notes.push(
+        `${evaluation.indicator.id}: ${evaluation.realization.reason}`,
+      );
+    }
+  }
+
+  return notes;
+}
+
+function indicatorRange(indicators: readonly MonitoringIndicatorSummary[]) {
+  const first = indicators[0];
+  const last = indicators[indicators.length - 1];
+  if (!first || !last) return "Belum ada indikator";
+  return first.id === last.id ? first.id : `${first.id} sampai ${last.id}`;
+}
+
+export function buildDomainView(
+  category: NexusKmIndicatorCategory,
   period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
   records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
-): MonitoringRisetView {
-  const summary = summarizeRiset(period, records);
+): MonitoringDomainView {
+  const summary = summarizeCategory(category, period, records);
   const indicators = summary.measurements.map(indicatorSummary);
 
   return {
+    category,
     computable: summary.computable,
     contributingRecords: summary.contributingRecords,
     gaps: targetGaps(indicators),
     indicators,
+    indicatorRange: indicatorRange(indicators),
+    label: category,
     notComputable: summary.notComputable,
+    notes: computabilityNotes(summary.measurements),
     notReached: summary.notReached,
     period: summary.period,
     reached: summary.reached,

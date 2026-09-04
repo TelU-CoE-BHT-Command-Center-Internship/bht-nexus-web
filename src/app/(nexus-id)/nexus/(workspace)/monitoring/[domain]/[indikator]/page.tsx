@@ -6,11 +6,13 @@ import {
 import {
   NEXUS_EVALUATION_PERIOD,
   NEXUS_MONITORING_HREF,
-  NEXUS_MONITORING_RISET_HREF,
+  nexusCategoryFromDomainSlug,
+  nexusDomainHref,
+  nexusDomainSlug,
+  nexusEvaluations,
   nexusIndicatorEvaluation,
   nexusIndicatorIdFromSlug,
   nexusIndicatorSlug,
-  nexusRisetEvaluations,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import { monitoringStyles } from "@/components/nexus-monitoring/nexus-monitoring-ui";
 import { MonitoringConstructionState } from "@/components/nexus-monitoring/nexus-monitoring-under-construction";
@@ -23,31 +25,49 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
 type NexusMonitoringIndicatorPageProps = {
-  params: Promise<{ indikator: string }>;
+  params: Promise<{ domain: string; indikator: string }>;
 };
 
 export function generateStaticParams() {
-  return nexusRisetEvaluations.map((evaluation) => ({
+  return nexusEvaluations.map((evaluation) => ({
+    domain: nexusDomainSlug(evaluation.indicator.category),
     indikator: nexusIndicatorSlug(evaluation.indicator.id),
   }));
+}
+
+/**
+ * Indikator yang benar-benar berada pada domain tersebut. Kecocokan domain
+ * ikut diperiksa supaya alamat seperti `riset/km-20` tidak pernah membuka
+ * indikator milik domain lain.
+ */
+function resolveIndicator(domain: string, indikator: string) {
+  const category = nexusCategoryFromDomainSlug(domain);
+  if (!category) return undefined;
+
+  const indicatorId = nexusIndicatorIdFromSlug(indikator);
+  const evaluation = indicatorId
+    ? nexusIndicatorEvaluation(indicatorId)
+    : undefined;
+  if (!evaluation || evaluation.indicator.category !== category) {
+    return undefined;
+  }
+
+  return evaluation;
 }
 
 export async function generateMetadata({
   params,
 }: NexusMonitoringIndicatorPageProps): Promise<Metadata> {
-  const { indikator } = await params;
-  const indicatorId = nexusIndicatorIdFromSlug(indikator);
-  const evaluation = indicatorId
-    ? nexusIndicatorEvaluation(indicatorId)
-    : undefined;
+  const { domain, indikator } = await params;
+  const evaluation = resolveIndicator(domain, indikator);
 
   return {
     title: evaluation
       ? `${evaluation.indicator.id} · Monitoring KM`
       : "Indikator tidak ditemukan · Monitoring KM",
     description: evaluation
-      ? `Rincian indikator ${evaluation.indicator.id} pada pemantauan Riset sedang disiapkan.`
-      : "Indikator KM yang diminta tidak tersedia pada pemantauan Riset.",
+      ? `Rincian indikator ${evaluation.indicator.id} pada pemantauan ${evaluation.indicator.category} sedang disiapkan.`
+      : "Indikator KM yang diminta tidak tersedia pada Monitoring KM.",
     robots: {
       follow: false,
       index: false,
@@ -56,22 +76,22 @@ export async function generateMetadata({
 }
 
 /**
- * Alamat satu indikator Riset. Identitas indikator tetap kanonis dan setiap
- * alamat KM-9 sampai KM-18 tetap sah, sedangkan penyajian rinciannya disiapkan
- * pada paket kerja tersendiri.
+ * Alamat satu indikator KM. Identitas indikator tetap kanonis dan setiap
+ * alamat indikator terpantau tetap sah, sedangkan penyajian rinciannya
+ * disiapkan pada paket kerja tersendiri.
  */
 export default async function NexusMonitoringIndicatorPage({
   params,
 }: NexusMonitoringIndicatorPageProps) {
   const access = nexusPreviewWorkspaceAccess;
-  const { indikator } = await params;
+  const { domain, indikator } = await params;
 
   if (!nexusWorkspaceCanOpen(access, "monitoring")) {
     return (
       <NexusWorkspacePage
-        description="Rincian indikator KM kategori Riset."
+        description="Rincian indikator KM."
         descriptionId="monitoring-indicator-no-access-description"
-        title="Monitoring KM · Riset"
+        title="Monitoring KM"
         titleId="monitoring-indicator-no-access-title"
       >
         <NexusWorkspaceNoAccess
@@ -84,34 +104,32 @@ export default async function NexusMonitoringIndicatorPage({
     );
   }
 
-  const indicatorId = nexusIndicatorIdFromSlug(indikator);
-  const evaluation = indicatorId
-    ? nexusIndicatorEvaluation(indicatorId)
-    : undefined;
+  const evaluation = resolveIndicator(domain, indikator);
 
   if (!evaluation) {
     return (
       <NexusWorkspacePage
-        description="Rincian indikator KM kategori Riset."
+        description="Rincian indikator KM."
         descriptionId="monitoring-indicator-not-found-description"
-        title="Monitoring KM · Riset"
+        title="Monitoring KM"
         titleId="monitoring-indicator-not-found-title"
       >
         <NexusWorkspaceState
           actions={
-            <NexusWorkspaceLinkButton href={NEXUS_MONITORING_RISET_HREF}>
-              Kembali ke pemantauan Riset
+            <NexusWorkspaceLinkButton href={NEXUS_MONITORING_HREF}>
+              Kembali ke Ringkasan
             </NexusWorkspaceLinkButton>
           }
-          description="Alamat yang dibuka tidak menunjuk indikator Riset yang dipantau. Pilih indikator dari halaman pemantauan Riset agar konteksnya tetap benar."
+          description="Alamat yang dibuka tidak menunjuk indikator KM yang dipantau pada domain tersebut. Pilih indikator dari ikhtisar domainnya agar konteksnya tetap benar."
           eyebrow="Indikator tidak ditemukan"
-          title="Indikator KM ini tidak tersedia pada pemantauan Riset"
+          title="Indikator KM ini tidak tersedia pada domain tersebut"
         />
       </NexusWorkspacePage>
     );
   }
 
-  const { id, label } = evaluation.indicator;
+  const { category, id, label } = evaluation.indicator;
+  const domainHref = nexusDomainHref(category);
 
   return (
     <NexusWorkspacePage
@@ -126,22 +144,19 @@ export default async function NexusMonitoringIndicatorPage({
           current={id}
           trail={[
             { href: NEXUS_MONITORING_HREF, label: "Monitoring KM" },
-            { href: NEXUS_MONITORING_RISET_HREF, label: "Riset" },
+            { href: domainHref, label: category },
           ]}
         />
       </div>
 
       <MonitoringConstructionState
         actions={
-          <NexusWorkspaceLinkButton
-            href={NEXUS_MONITORING_RISET_HREF}
-            tone="primary"
-          >
-            Kembali ke Riset
+          <NexusWorkspaceLinkButton href={domainHref} tone="primary">
+            {`Kembali ke ${category}`}
           </NexusWorkspaceLinkButton>
         }
         compact
-        description={`Kami sedang menyiapkan halaman rincian ${id}. Target, realisasi, dan statusnya sudah dapat dibaca pada pemantauan Riset.`}
+        description={`Kami sedang menyiapkan halaman rincian ${id}. Target, realisasi, dan statusnya sudah dapat dibaca pada pemantauan ${category}.`}
         title={`Rincian ${id} sedang disiapkan`}
         titleId="monitoring-indicator-construction-title"
       />

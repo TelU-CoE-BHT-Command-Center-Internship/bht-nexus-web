@@ -182,6 +182,14 @@ const indicatorById = new Map<NexusKmIndicatorId, NexusKmIndicator>(
   nexusKmIndicators.map((indicator) => [indicator.id, indicator]),
 );
 
+/**
+ * Kategori KM kanonis dalam urutan workbook. Diturunkan dari daftar indikator
+ * supaya tidak ada daftar kategori kedua yang bisa berbeda isinya.
+ */
+export const nexusKmIndicatorCategories: readonly NexusKmIndicatorCategory[] = [
+  ...new Set(nexusKmIndicators.map((indicator) => indicator.category)),
+];
+
 export function kmIndicator(id: NexusKmIndicatorId): NexusKmIndicator {
   const indicator = indicatorById.get(id);
 

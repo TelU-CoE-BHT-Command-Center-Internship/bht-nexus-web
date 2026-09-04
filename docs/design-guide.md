@@ -28,7 +28,7 @@ Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum
 
 Dokumen mempunyai navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi. Ketiganya tidak menjadi tiga kategori teknologi terpisah di sidebar.
 
-Monitoring KM juga memakai satu butir sidebar. Domain dipilih di dalam halaman, dan indikator KM-9 sampai KM-18 mempunyai route sendiri di bawah `/nexus/monitoring/riset`. Empat puluh enam indikator tidak dipindahkan ke sidebar hanya karena masing-masing punya halaman.
+Monitoring KM juga memakai satu butir sidebar. Domain dipilih di dalam halaman, sedangkan setiap domain dan indikator terpantau mempunyai alamatnya sendiri di bawah `/nexus/monitoring/[domain]`. Sembilan domain dan empat puluh enam indikator tidak dipindahkan ke sidebar hanya karena masing-masing punya alamat.
 
 Pemilih domain pada Ringkasan berbentuk satu baris chip: ikon berwarna, nama domain, lalu jumlah indikatornya. Barisnya tidak memakai batang gulir karena batang abu-abu memotong tampilan kartu; penggeserannya disediakan langsung pada kartunya—diseret dengan tetikus, roda tetikus mendatar, sentuh, atau panah papan ketik—dan bayangan tipis di tepi menandakan masih ada domain di arah tersebut. Kunci pointer baru dipasang setelah kursor benar-benar bergeser; menguncinya sejak tombol ditekan membuat event klik pindah dari chip ke barisnya sehingga domain tidak pernah terpilih.
 
@@ -76,7 +76,7 @@ Monitoring KM mempunyai tiga tingkat: Semua Domain, ikhtisar satu domain, lalu r
 
 Ringkasan dan ikhtisar domain membuka dengan empat kartu metrik pada satu baris. Semua Domain melanjutkannya dengan grafik capaian per domain dan kartu busur capaian tahunan; ikhtisar domain tidak mengulang busur itu karena proporsi indikator yang mencapai target sudah menjadi salah satu dari empat kartu metriknya, sehingga grafik pemenuhan target per indikator memakai lebar penuh. Sesudahnya menyusul kartu wawasan berdampingan, daftar indikator, lalu pembaruan Data Resmi terbaru.
 
-Alamat satu indikator saat ini menampilkan keadaan sedang disiapkan: jejak halaman, judul yang membawa identitas indikator, dan satu kartu pesan dengan jalan kembali ke Riset. Bentuk keadaan itu sama dengan domain yang halamannya belum ada, hanya lebih rapat karena pesannya pendek. Penyajian rinciannya dibongkar lebih dahulu, bukan ditata ulang sedikit demi sedikit, supaya rancangan berikutnya tidak mewarisi susunan lama; kerangkanya dirancang pada paket kerja tersendiri.
+Alamat satu indikator saat ini menampilkan keadaan sedang disiapkan: jejak halaman, judul yang membawa identitas indikator, dan satu kartu pesan dengan jalan kembali ke domainnya. Bentuk keadaan itu sama dengan domain yang halamannya belum ada, hanya lebih rapat karena pesannya pendek. Penyajian rinciannya dibongkar lebih dahulu, bukan ditata ulang sedikit demi sedikit, supaya rancangan berikutnya tidak mewarisi susunan lama; kerangkanya dirancang pada paket kerja tersendiri.
 
 Meteran pada daftar sebaran selalu searah dengan angkanya. Pada kartu gap target, batangnya menunjukkan capaian terhadap target dan angkanya menunjukkan kekurangan, sehingga batang panjang tidak pernah terbaca sebagai kekurangan besar. Kartu ringkas pada daftar memakai kolom lentur agar kartu sebaris punya tinggi yang sama dan tombolnya rata di dasar kartu.
 

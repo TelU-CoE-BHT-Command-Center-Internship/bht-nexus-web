@@ -3,16 +3,20 @@ import {
   type NexusEvaluationPeriodId,
   type NexusIndicatorEvaluation,
   type NexusMonitoringSourceFamily,
+  nexusCategoryEvaluations,
+  nexusEvaluations,
   nexusIndicatorEvaluation,
   nexusMonitoringSourceHouses,
-  nexusRisetEvaluations,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import type { NexusEvaluationQuarter } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import {
   getNexusMonitoringRecords,
   type NexusMonitoringRecord,
 } from "@/components/nexus-monitoring/nexus-monitoring-sources";
-import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
+import type {
+  NexusKmIndicatorCategory,
+  NexusKmIndicatorId,
+} from "@/content/nexus-km-indicators";
 
 /**
  * Keadaan indikator yang seluruhnya objektif. Ambang seperti "on track" atau
@@ -78,6 +82,7 @@ export type NexusIndicatorMeasurement = {
 };
 
 const modeledFamilies: readonly NexusMonitoringSourceFamily[] = [
+  "academic",
   "activities",
   "contracts",
   "intellectual-property",
@@ -146,14 +151,23 @@ function quarterBreakdown(
   return { available: true, counts, field, undated };
 }
 
+/**
+ * Status indikator. Target gabungan seperti `9/1M` memang tercatat pada
+ * workbook, tetapi tidak dapat dibandingkan sebagai satu angka, sehingga
+ * indikatornya dinyatakan belum dapat dihitung dan bukan tanpa target.
+ */
 function resolveStatus(
   realization: number | null,
-  target: number | null,
+  target: NexusIndicatorEvaluation["target"],
 ): NexusIndicatorStatus {
   if (realization === null) return "belum-dapat-dihitung";
-  if (target === null) return "target-belum-tersedia";
+  if (target.value === null) {
+    return target.literal === null
+      ? "target-belum-tersedia"
+      : "belum-dapat-dihitung";
+  }
   if (realization === 0) return "belum-ada-realisasi";
-  return realization >= target ? "tercapai" : "belum-tercapai";
+  return realization >= target.value ? "tercapai" : "belum-tercapai";
 }
 
 export function measureIndicator(
@@ -164,42 +178,49 @@ export function measureIndicator(
   const evaluation = nexusIndicatorEvaluation(indicatorId);
   if (!evaluation) return undefined;
 
-  const computable = modeledFamilies.includes(evaluation.sourceFamily);
-  const contributing = computable
+  const countable =
+    evaluation.realization.kind === "record-count" &&
+    modeledFamilies.includes(evaluation.sourceFamily);
+  const contributing = countable
     ? eligibleRecords(indicatorId, period, records)
     : [];
-  const realization = computable ? contributing.length : null;
+  const realization = countable ? contributing.length : null;
   const target = evaluation.target.value;
   const progress =
     realization !== null && target !== null && target > 0
       ? realization / target
       : null;
+  const unavailableReason =
+    evaluation.realization.kind === "unavailable"
+      ? evaluation.realization.reason
+      : "Sumber realisasi indikator ini belum terhubung.";
 
   return {
-    computable,
+    computable: countable,
     difference:
       realization !== null && target !== null ? realization - target : null,
     evaluation,
     period,
     progress,
-    quarterly: computable
+    quarterly: countable
       ? quarterBreakdown(evaluation.businessDateLabel, contributing)
       : {
           available: false,
           field: evaluation.businessDateLabel,
-          reason: "Sumber realisasi indikator ini belum terhubung.",
+          reason: unavailableReason,
         },
     realization,
     records: contributing,
-    status: resolveStatus(realization, target),
+    status: resolveStatus(realization, evaluation.target),
   };
 }
 
-export function measureRisetIndicators(
-  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+function measureEvaluations(
+  evaluations: readonly NexusIndicatorEvaluation[],
+  period: NexusEvaluationPeriodId,
+  records: readonly NexusMonitoringRecord[],
 ): readonly NexusIndicatorMeasurement[] {
-  return nexusRisetEvaluations
+  return evaluations
     .map((evaluation) =>
       measureIndicator(evaluation.indicator.id, period, records),
     )
@@ -208,10 +229,31 @@ export function measureRisetIndicators(
     );
 }
 
-export type NexusRisetSummary = {
-  /** Indikator yang realisasinya sudah dapat dihitung dari data resmi. */
+/** Pengukuran seluruh indikator satu kategori KM. */
+export function measureCategoryIndicators(
+  category: NexusKmIndicatorCategory,
+  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
+  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+): readonly NexusIndicatorMeasurement[] {
+  return measureEvaluations(
+    nexusCategoryEvaluations(category),
+    period,
+    records,
+  );
+}
+
+/** Pengukuran seluruh indikator yang metadata evaluasinya sudah tersedia. */
+export function measureMonitoredIndicators(
+  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
+  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+): readonly NexusIndicatorMeasurement[] {
+  return measureEvaluations(nexusEvaluations, period, records);
+}
+
+export type NexusMonitoringSummary = {
+  /** Indikator yang capaiannya sudah dapat dibandingkan dengan targetnya. */
   computable: number;
-  /** Rekam resmi berbeda yang membentuk realisasi seluruh indikator Riset. */
+  /** Rekam resmi berbeda yang membentuk realisasi seluruh indikator dihitung. */
   contributingRecords: number;
   measurements: readonly NexusIndicatorMeasurement[];
   notComputable: number;
@@ -224,11 +266,11 @@ export type NexusRisetSummary = {
    * kedua halaman tidak pernah menyebut proporsi yang berbeda.
    */
   reachedShare: number;
-  sourceBreakdown: readonly NexusRisetSourceShare[];
+  sourceBreakdown: readonly NexusMonitoringSourceShare[];
   total: number;
 };
 
-export type NexusRisetSourceShare = {
+export type NexusMonitoringSourceShare = {
   family: NexusMonitoringSourceFamily;
   href: string;
   indicators: number;
@@ -237,14 +279,21 @@ export type NexusRisetSourceShare = {
   share: number;
 };
 
-export function summarizeRiset(
-  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
-): NexusRisetSummary {
-  const measurements = measureRisetIndicators(period, records);
+function summarize(
+  measurements: readonly NexusIndicatorMeasurement[],
+  period: NexusEvaluationPeriodId,
+): NexusMonitoringSummary {
   const reached = measurements.filter((item) => item.status === "tercapai");
+  /*
+   * Indikator dihitung ketika capaiannya benar-benar dapat dibandingkan dengan
+   * target. Indikator yang realisasinya diketahui tetapi targetnya belum ada
+   * juga masuk ke sini supaya kartu, gauge, dan batang capaian menyebut
+   * keadaan yang sama untuk indikator yang sama.
+   */
   const notComputable = measurements.filter(
-    (item) => item.status === "belum-dapat-dihitung",
+    (item) =>
+      item.status === "belum-dapat-dihitung" ||
+      item.status === "target-belum-tersedia",
   );
   const contributing = new Set<string>();
   const byFamily = new Map<
@@ -299,4 +348,16 @@ export function summarizeRiset(
     sourceBreakdown,
     total: measurements.length,
   };
+}
+
+/** Ringkasan capaian satu kategori KM pada satu periode evaluasi. */
+export function summarizeCategory(
+  category: NexusKmIndicatorCategory,
+  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
+  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+): NexusMonitoringSummary {
+  return summarize(
+    measureCategoryIndicators(category, period, records),
+    period,
+  );
 }
