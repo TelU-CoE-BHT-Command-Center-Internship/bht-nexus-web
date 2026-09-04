@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, apiFetchPaginated } from "@/lib/api-client";
 
 export type JobStatus =
   | "failed"
@@ -37,6 +37,17 @@ export function createJob(input: CreateJobInput): Promise<JobRecord> {
 
 export function getJob(publicId: string): Promise<JobRecord> {
   return apiFetch(`/jobs/${publicId}`);
+}
+
+export function listJobs(
+  params: { limit?: number; page?: number } = {},
+): Promise<{ data: JobRecord[]; meta: { total: number } }> {
+  const search = new URLSearchParams();
+  if (params.limit !== undefined) search.set("limit", String(params.limit));
+  if (params.page !== undefined) search.set("page", String(params.page));
+  search.set("sortBy", "createdAt");
+  search.set("sortOrder", "desc");
+  return apiFetchPaginated(`/jobs?${search.toString()}`);
 }
 
 export function syncReviewCasesFromJob(

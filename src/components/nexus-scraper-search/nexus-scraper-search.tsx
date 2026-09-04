@@ -1,7 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useDeferredValue, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import { NexusMemberContext } from "@/components/nexus-members/nexus-member-context";
 import { knownMemberName } from "@/components/nexus-members/nexus-member-identity";
@@ -54,6 +60,7 @@ import {
   createJob,
   getJob,
   type JobRecord,
+  listJobs,
   syncReviewCasesFromJob,
 } from "@/lib/api-jobs";
 
@@ -92,6 +99,47 @@ function CollectionIcon({ name }: { name: "check" | "clock" | "search" }) {
   );
 }
 
+/**
+ * Riwayat pekerjaan asli dari GET /jobs tidak membawa profileUrl, aktor
+ * pengaju, atau jumlah kandidat, jadi field itu diisi placeholder yang jujur.
+ * ponytail: jumlah kandidat selalu 0 untuk rekam riwayat (bukan hasil submit
+ * baru di sesi ini) karena listing job tidak mengembalikannya dan memanggil
+ * ulang sync-from-job per baris hanya untuk menghitung akan jadi N+1 fetch.
+ * Naikkan ke sini kalau endpoint /jobs atau /reviews/cases suatu saat
+ * menyediakan jumlah kandidat per job secara langsung.
+ */
+function jobRecordToCollectionJob(
+  record: JobRecord,
+  content: NexusScraperSearchContent,
+): CollectionJob {
+  const source: CollectionSource =
+    record.inputKind === "scholar_url" ? "scholar" : "sinta";
+  const sourceLabel =
+    content.sourceOptions.find((option) => option.id === source)?.label ??
+    source;
+
+  return {
+    candidates: [],
+    failureReason:
+      record.status === "failed" || record.status === "failed_permanently"
+        ? record.progressMessage
+        : undefined,
+    fullName:
+      record.normalizedName ??
+      (content.locale === "id" ? "Belum diketahui" : "Unknown"),
+    id: record.publicId,
+    profileUrl: "",
+    source,
+    sourceLabel,
+    status: record.status,
+    statusLabel: getAutomationStatusLabel(content.locale, record.status),
+    submittedAt: record.createdAt,
+    submittedAtLabel: formatTimestamp(record.createdAt),
+    submittedBy:
+      content.locale === "id" ? "Pengguna ruang kerja" : "Workspace user",
+  };
+}
+
 function statusTone(status: CollectionJob["status"]) {
   if (status === "succeeded") return "success" as const;
   if (status === "failed" || status === "failed_permanently")
@@ -109,7 +157,35 @@ export function NexusScraperSearch({
 }) {
   const router = useRouter();
   const reviewSession = useOptionalNexusReviewSession();
-  const [jobs, setJobs] = useState(content.jobs);
+  const [jobs, setJobs] = useState<CollectionJob[]>([]);
+  const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+  const [loadJobsError, setLoadJobsError] = useState<string | null>(null);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: content is stable per locale, refetching on it would just repeat the same request
+  useEffect(() => {
+    let cancelled = false;
+    listJobs({ limit: 50 })
+      .then((result) => {
+        if (cancelled) return;
+        setJobs(
+          result.data.map((record) =>
+            jobRecordToCollectionJob(record, content),
+          ),
+        );
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setLoadJobsError(
+          error instanceof ApiRequestError ? error.message : content.errorLabel,
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingJobs(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const requestedMemberName = initialRequest?.memberName?.trim() || undefined;
   const initialMemberName = initialRequest?.memberId
     ? (knownMemberName(initialRequest.memberId) ?? requestedMemberName)
@@ -569,6 +645,11 @@ export function NexusScraperSearch({
       title={content.title}
       titleId="collection-title"
     >
+      {loadJobsError !== null ? (
+        <NexusWorkspaceNotice tone="danger">
+          {loadJobsError}
+        </NexusWorkspaceNotice>
+      ) : null}
       <NexusWorkspaceMetrics metrics={metrics} />
       <div className={styles.workspace}>
         <NexusWorkspaceCard
@@ -707,6 +788,7 @@ export function NexusScraperSearch({
           <NexusWorkspaceRecordTable
             caption={content.tableCaption}
             columns={columns}
+            isLoading={isLoadingJobs}
             empty={
               <p className={styles.noAction}>
                 {isHistoryFiltered
