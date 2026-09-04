@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import styles from "@/components/nexus-workspace-ui/nexus-workspace-controls.module.css";
 
 export type NexusWorkspaceTab = {
@@ -49,6 +49,29 @@ function getAdjacentTabIndex(
     return (currentIndex - 1 + tabCount) % tabCount;
   }
   return null;
+}
+
+/**
+ * Baris pencarian dan filter satu halaman ruang kerja. Seluruh halaman memakai
+ * bingkai ini supaya tinggi kontrol, jarak antarkontrol, dan cara barisnya
+ * menyempit tetap sama di mana pun, tanpa ada halaman yang menyetel lebar
+ * kolomnya sendiri.
+ */
+export function NexusWorkspaceToolbar({
+  children,
+  id,
+  role,
+}: {
+  children: ReactNode;
+  /** Diisi ketika baris ini sekaligus menjadi panel dari sederet tab. */
+  id?: string;
+  role?: "tabpanel";
+}) {
+  return (
+    <div className={styles.toolbar} id={id} role={role}>
+      {children}
+    </div>
+  );
 }
 
 export function NexusWorkspaceSearch({

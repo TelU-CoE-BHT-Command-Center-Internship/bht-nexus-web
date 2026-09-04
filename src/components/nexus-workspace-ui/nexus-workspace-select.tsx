@@ -247,9 +247,18 @@ export function NexusWorkspaceSelect({
     }
   };
 
+  /*
+   * Pilihan berketerangan ditulis dua baris, sehingga tombol dan barisnya lebih
+   * tinggi. Keadaan itu ditandai dari isi pilihannya, bukan dari nama filternya,
+   * supaya dua filter bernama sama tidak ikut meninggi ketika hanya salah satu
+   * yang benar-benar mempunyai keterangan.
+   */
+  const hasDescriptions = config.options.some((option) => option.description);
+
   return (
     <div
       className={styles.selectField}
+      data-detailed={hasDescriptions}
       data-filter={config.id}
       data-open={isOpen}
       data-placement={placement}

@@ -94,6 +94,14 @@ Perbandingan yang tidak menjumlah menjadi satu keseluruhan tetap memakai batang.
 
 Kartu yang berdampingan pada satu kisi memakai `fill` supaya isinya memenuhi tinggi yang tersedia. Tanpa itu kartu berisi lebih pendek—misalnya domain yang hanya punya satu rumah data, atau yang seluruh indikatornya sudah mencapai target—menyisakan ruang kosong di bawahnya sementara kartu sebelahnya penuh. Keadaan kosong pada kartu semacam itu diletakkan di tengah ruang yang tersedia, bukan menempel di atas.
 
+Baris pencarian dan filter memakai satu bingkai bersama `NexusWorkspaceToolbar`. Jumlah kolomnya ditentukan lebar yang tersedia, bukan disetel tiap halaman, sehingga halaman dengan tiga filter dan halaman dengan enam filter mempunyai tinggi kontrol, jarak, dan cara menyempit yang sama. Lantai kolomnya 12,25rem—diukur dari label terpanjang beserta padding dan ikonnya—karena kolom yang lebih sempit membuat label terbungkus dua baris, dan seluruh sel pada baris kisi itu ikut meninggi sehingga satu kontrol sempit membuat halamannya terlihat berbeda dari halaman lain.
+
+Wadah daftar rekam resmi memakai `NexusWorkspaceCatalog`; jarak atas dan perilaku menyempitnya milik bersama, sedangkan lebar kolom tabel tetap ditulis tiap halaman karena kolomnya memang berbeda. Keterangan pada kartu ringkas memakai `NexusWorkspaceMobileSubtitle` dan nilai sel biasa memakai `NexusWorkspaceTableText`.
+
+Gaya tidak boleh bergantung pada nama sebuah filter. Tinggi kontrol pilihan mengikuti bentuk isinya: pilihan yang mempunyai keterangan ditulis dua baris dan ditandai dari daftar pilihannya sendiri, bukan dari `id` filternya. Aturan yang memilih berdasarkan nama pernah membuat filter periode pada satu halaman ikut meninggi padahal pilihannya hanya satu baris.
+
+Teks khusus pembaca layar memakai satu definisi yang sama di seluruh modul: `position: absolute`, ukuran 1 px, `margin: -1px`, `clip-path: inset(50%)`, dan `white-space: nowrap`. Salin apa adanya; salinan yang kehilangan `margin: -1px` menyisakan satu piksel pada tata letak.
+
 Kendali pilihan pada kartu analitik memakai `NexusWorkspaceSelect` yang sama dengan filter rumah data resmi. Menunya mengukur posisinya terhadap viewport ketika dibuka dan saat ukuran jendela berubah, lalu bergeser secukupnya agar tetap berjarak minimal 16 px dari tepi layar; tidak ada bagian menu yang terpotong dan tidak ada gulir horizontal yang muncul karenanya. Pilihan yang mempunyai keterangan tambahan—misalnya periode evaluasi dengan rentang bulannya—ditulis dua baris, nama di atas dan keterangan di bawah.
 
 Grafik pada Monitoring bersifat baca saja. Pemilihan area dengan seretan, zoom roda tetikus, pinch, dan toolbar zoom dimatikan supaya grafik tidak pernah terjebak pada keadaan zoom yang menuntut tombol reset. Sorotan, tooltip, legenda, dan animasi batang tetap berjalan seperti biasa.

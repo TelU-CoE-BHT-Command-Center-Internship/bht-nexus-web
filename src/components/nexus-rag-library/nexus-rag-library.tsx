@@ -17,7 +17,10 @@ import type {
 } from "@/components/nexus-rag-library/nexus-rag-library-content";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceLinkButton,
@@ -434,7 +437,7 @@ export function NexusRagLibrary({
             {feedback.message}
           </NexusWorkspaceNotice>
         ) : null}
-        <div className={styles.toolbar}>
+        <NexusWorkspaceToolbar>
           <NexusWorkspaceSearch
             label={
               content.locale === "id" ? "Cari dokumen" : "Search documents"
@@ -462,7 +465,7 @@ export function NexusRagLibrary({
             }}
             value={status}
           />
-        </div>
+        </NexusWorkspaceToolbar>
         <div aria-live="polite" className={styles.resultMeta}>
           {query !== deferredQuery
             ? content.locale === "id"

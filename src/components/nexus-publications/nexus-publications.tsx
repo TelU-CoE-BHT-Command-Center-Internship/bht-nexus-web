@@ -34,6 +34,7 @@ import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-tabl
 import {
   NexusWorkspaceSearch,
   NexusWorkspaceTabs,
+  NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceEmptyState,
@@ -45,14 +46,17 @@ import {
   NexusWorkspacePage,
 } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   NexusWorkspaceMobileAction,
   NexusWorkspaceMobileCard,
+  NexusWorkspaceMobileSubtitle,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
   NexusWorkspaceTableBadge,
   NexusWorkspaceTablePrimary,
   NexusWorkspaceTableSignal,
+  NexusWorkspaceTableText,
 } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import {
   type NexusSelectConfig,
@@ -314,9 +318,9 @@ function QuartileCell({ publication }: { publication: OfficialPublication }) {
   const state = publicationQuartileState(publication);
   if (state !== "available" && state !== "unresolved") {
     return (
-      <span className={styles.plainCell}>
+      <NexusWorkspaceTableText>
         {publicationQuartileLabel(publication)}
-      </span>
+      </NexusWorkspaceTableText>
     );
   }
   if (state === "unresolved") {
@@ -588,9 +592,9 @@ export function NexusPublications({
         source: sourceBadge,
         status: qualityBadge,
         year: (
-          <span className={styles.plainCell}>
+          <NexusWorkspaceTableText>
             {publication.year ?? "Belum tercatat"}
-          </span>
+          </NexusWorkspaceTableText>
         ),
       },
       id: publication.id,
@@ -644,9 +648,9 @@ export function NexusPublications({
           }
           title={title}
         >
-          <p className={styles.mobileSubtitle}>
+          <NexusWorkspaceMobileSubtitle>
             {publicationAuthorNames(publication)} · {publication.venue}
-          </p>
+          </NexusWorkspaceMobileSubtitle>
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -699,9 +703,9 @@ export function NexusPublications({
         ]}
       />
 
-      <section
-        aria-labelledby="official-publications-title"
+      <NexusWorkspaceCatalog
         className={styles.catalog}
+        labelledBy="official-publications-title"
       >
         <NexusWorkspaceTabs
           activeId={activeSource.id}
@@ -714,11 +718,7 @@ export function NexusPublications({
           tabs={sourceTabs}
         />
 
-        <div
-          className={styles.toolbar}
-          id="publication-source-panel"
-          role="tabpanel"
-        >
+        <NexusWorkspaceToolbar id="publication-source-panel" role="tabpanel">
           <NexusWorkspaceSearch
             label="Cari publikasi resmi"
             name="publication-search"
@@ -752,7 +752,7 @@ export function NexusPublications({
               }
             />
           ))}
-        </div>
+        </NexusWorkspaceToolbar>
 
         <NexusWorkspaceResultMeta
           isUpdating={isSearchUpdating}
@@ -808,7 +808,7 @@ export function NexusPublications({
             rows={rows}
           />
         </NexusWorkspaceTableSection>
-      </section>
+      </NexusWorkspaceCatalog>
 
       {selectedPublication ? (
         <NexusPublicationDetail
