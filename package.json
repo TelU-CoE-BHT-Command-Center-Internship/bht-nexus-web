@@ -11,6 +11,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "backend": "node scripts/start-backend.mjs",
     "validate:config": "node scripts/validate-github-config.mjs",
     "validate:contrast": "node scripts/validate-contrast.mjs",
     "lint": "biome check",
