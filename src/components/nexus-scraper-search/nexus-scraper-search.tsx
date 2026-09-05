@@ -26,6 +26,7 @@ import type {
 } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
@@ -60,7 +61,9 @@ import { ApiRequestError } from "@/lib/api-client";
 import {
   createJob,
   getJob,
+  type JobAttemptRecord,
   type JobRecord,
+  listJobAttempts,
   listJobs,
   syncReviewCasesFromJob,
 } from "@/lib/api-jobs";
@@ -297,6 +300,33 @@ export function NexusScraperSearch({
     message: string;
     tone: "danger" | "success";
   } | null>(null);
+  const [attemptsJobId, setAttemptsJobId] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState<JobAttemptRecord[]>([]);
+  const [isLoadingAttempts, setIsLoadingAttempts] = useState(false);
+  const [attemptsError, setAttemptsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (attemptsJobId === null) return;
+    let cancelled = false;
+    setIsLoadingAttempts(true);
+    setAttemptsError(null);
+    listJobAttempts(attemptsJobId)
+      .then((result) => {
+        if (!cancelled) setAttempts(result.data);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setAttemptsError(
+          error instanceof ApiRequestError ? error.message : content.errorLabel,
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingAttempts(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [attemptsJobId, content.errorLabel]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSizeValue, setPageSizeValue] = useState("10");
   const [historyQuery, setHistoryQuery] = useState("");
@@ -634,7 +664,16 @@ export function NexusScraperSearch({
     return {
       id: job.id,
       cells: {
-        primary: <NexusWorkspaceTablePrimary title={job.fullName} />,
+        primary: (
+          <NexusWorkspaceTablePrimary
+            onClick={
+              job.id.startsWith("local-")
+                ? undefined
+                : () => setAttemptsJobId(job.id)
+            }
+            title={job.fullName}
+          />
+        ),
         sinta: <ProfileLinkCell source="sinta" url={job.sintaUrl} />,
         scholar: <ProfileLinkCell source="scholar" url={job.scholarUrl} />,
         status: (
@@ -905,6 +944,46 @@ export function NexusScraperSearch({
           />
         </NexusWorkspaceTableSection>
       </div>
+
+      {attemptsJobId !== null ? (
+        <NexusWorkspaceDrawer
+          closeLabel={content.locale === "id" ? "Tutup" : "Close"}
+          description={
+            content.locale === "id"
+              ? "Riwayat percobaan pengumpulan untuk pekerjaan ini."
+              : "Collection attempt history for this job."
+          }
+          eyebrow={content.locale === "id" ? "Percobaan" : "Attempts"}
+          onClose={() => setAttemptsJobId(null)}
+          title={jobs.find((job) => job.id === attemptsJobId)?.fullName ?? ""}
+        >
+          {attemptsError !== null ? (
+            <NexusWorkspaceNotice tone="danger">
+              {attemptsError}
+            </NexusWorkspaceNotice>
+          ) : isLoadingAttempts ? (
+            <p>{content.locale === "id" ? "Memuat…" : "Loading…"}</p>
+          ) : attempts.length === 0 ? (
+            <p>
+              {content.locale === "id"
+                ? "Belum ada percobaan."
+                : "No attempts yet."}
+            </p>
+          ) : (
+            <ul>
+              {attempts.map((attempt) => (
+                <li key={attempt.publicId}>
+                  <strong>{attempt.source}</strong> {attempt.status},{" "}
+                  <time dateTime={attempt.createdAt}>
+                    {formatTimestamp(attempt.createdAt)}
+                  </time>
+                  {attempt.errorMessage ? <p>{attempt.errorMessage}</p> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </NexusWorkspaceDrawer>
+      ) : null}
     </NexusWorkspacePage>
   );
 }

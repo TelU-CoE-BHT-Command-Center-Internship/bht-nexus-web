@@ -282,6 +282,7 @@ const navigationDefinitions: NavigationDefinition[] = [
         "/nexus/administrasi",
         "/nexus/administrasi/peran",
         "/nexus/administrasi/akses",
+        "/nexus/administrasi/audit",
       ],
     },
     implemented: { en: false, id: true },

@@ -59,3 +59,19 @@ export function syncReviewCasesFromJob(
     method: "POST",
   });
 }
+
+export type JobAttemptRecord = {
+  completedAt: string | null;
+  createdAt: string;
+  errorMessage: string | null;
+  publicId: string;
+  requestUrl: string | null;
+  source: string;
+  status: string;
+};
+
+export function listJobAttempts(
+  publicId: string,
+): Promise<{ data: JobAttemptRecord[]; meta: { total: number } }> {
+  return apiFetchPaginated(`/jobs/${publicId}/attempts?limit=50`);
+}
