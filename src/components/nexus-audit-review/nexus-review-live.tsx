@@ -11,7 +11,10 @@ import {
   statusOptions,
 } from "@/components/nexus-audit-review/nexus-review-live-content";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 import {
   NexusWorkspaceButton,
@@ -22,6 +25,7 @@ import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-w
 import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
@@ -286,65 +290,71 @@ export function NexusReviewLive() {
         <NexusWorkspaceNotice tone="danger">{loadError}</NexusWorkspaceNotice>
       ) : null}
 
-      <NexusWorkspaceSearch
-        label={content.searchLabel}
-        name="search"
-        onValueChange={setSearch}
-        placeholder={content.searchPlaceholder}
-        value={search}
-      />
-      <NexusWorkspaceSelect
-        config={statusFilterConfig}
-        isOpen={openSelectId === "status"}
-        name="filter-status"
-        onOpenChange={(open) => setOpenSelectId(open ? "status" : null)}
-        onValueChange={setStatusFilter}
-        value={statusFilter}
-      />
-      <NexusWorkspaceSelect
-        config={candidateTypeFilterConfig}
-        isOpen={openSelectId === "candidate-type"}
-        name="filter-candidate-type"
-        onOpenChange={(open) => setOpenSelectId(open ? "candidate-type" : null)}
-        onValueChange={setCandidateTypeFilter}
-        value={candidateTypeFilter}
-      />
+      <NexusWorkspaceCatalog labelledBy="review-title">
+        <NexusWorkspaceToolbar>
+          <NexusWorkspaceSearch
+            label={content.searchLabel}
+            name="search"
+            onValueChange={setSearch}
+            placeholder={content.searchPlaceholder}
+            value={search}
+          />
+          <NexusWorkspaceSelect
+            config={statusFilterConfig}
+            isOpen={openSelectId === "status"}
+            name="filter-status"
+            onOpenChange={(open) => setOpenSelectId(open ? "status" : null)}
+            onValueChange={setStatusFilter}
+            value={statusFilter}
+          />
+          <NexusWorkspaceSelect
+            config={candidateTypeFilterConfig}
+            isOpen={openSelectId === "candidate-type"}
+            name="filter-candidate-type"
+            onOpenChange={(open) =>
+              setOpenSelectId(open ? "candidate-type" : null)
+            }
+            onValueChange={setCandidateTypeFilter}
+            value={candidateTypeFilter}
+          />
+        </NexusWorkspaceToolbar>
 
-      <NexusWorkspaceRecordTable
-        caption={content.tableCaption}
-        columns={columns}
-        empty={
-          <NexusWorkspaceEmptyState
-            description={
-              hasActiveFilters
-                ? content.emptyDescription
-                : content.emptyTrueDescription
-            }
-            onResetFilters={hasActiveFilters ? resetFilters : undefined}
-            title={
-              hasActiveFilters ? content.emptyTitle : content.emptyTrueTitle
-            }
-          />
-        }
-        isLoading={isLoading || isSearchUpdating}
-        pagination={
-          <NexusTablePagination
-            currentPage={page}
-            itemCount={total}
-            navigationLabel="Navigasi halaman kandidat"
-            nextPageLabel="Halaman berikutnya"
-            onPageChange={setPage}
-            onPageSizeChange={setPageSizeValue}
-            pageLabel="Halaman"
-            pageSizeConfig={pageSizeConfig}
-            pageSizeValue={pageSizeValue}
-            previousPageLabel="Halaman sebelumnya"
-            rangePrefix="Menampilkan"
-            totalUnit={content.resultUnit}
-          />
-        }
-        rows={rows}
-      />
+        <NexusWorkspaceRecordTable
+          caption={content.tableCaption}
+          columns={columns}
+          empty={
+            <NexusWorkspaceEmptyState
+              description={
+                hasActiveFilters
+                  ? content.emptyDescription
+                  : content.emptyTrueDescription
+              }
+              onResetFilters={hasActiveFilters ? resetFilters : undefined}
+              title={
+                hasActiveFilters ? content.emptyTitle : content.emptyTrueTitle
+              }
+            />
+          }
+          isLoading={isLoading || isSearchUpdating}
+          pagination={
+            <NexusTablePagination
+              currentPage={page}
+              itemCount={total}
+              navigationLabel="Navigasi halaman kandidat"
+              nextPageLabel="Halaman berikutnya"
+              onPageChange={setPage}
+              onPageSizeChange={setPageSizeValue}
+              pageLabel="Halaman"
+              pageSizeConfig={pageSizeConfig}
+              pageSizeValue={pageSizeValue}
+              previousPageLabel="Halaman sebelumnya"
+              rangePrefix="Menampilkan"
+              totalUnit={content.resultUnit}
+            />
+          }
+          rows={rows}
+        />
+      </NexusWorkspaceCatalog>
 
       {selectedId !== null ? (
         <NexusWorkspaceDrawer

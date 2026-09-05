@@ -7,7 +7,10 @@ import {
   roleCategoryOptions,
 } from "@/components/nexus-access-policy/nexus-role-live-content";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
-import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
+import {
+  NexusWorkspaceSearch,
+  NexusWorkspaceToolbar,
+} from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 import {
   NexusWorkspaceButton,
@@ -17,6 +20,7 @@ import {
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
+  NexusWorkspaceCatalog,
   type NexusWorkspaceRecordColumn,
   NexusWorkspaceRecordTable,
   NexusWorkspaceTableAction,
@@ -411,65 +415,69 @@ export function NexusRoleManagementLive() {
         <NexusWorkspaceNotice tone="danger">{loadError}</NexusWorkspaceNotice>
       ) : null}
 
-      <NexusWorkspaceSearch
-        label={content.searchLabel}
-        name="search"
-        onValueChange={setSearch}
-        placeholder={content.searchPlaceholder}
-        value={search}
-      />
-      <NexusWorkspaceSelect
-        config={typeFilterConfig}
-        isOpen={openSelectId === "type"}
-        name="filter-type"
-        onOpenChange={(open) => setOpenSelectId(open ? "type" : null)}
-        onValueChange={setTypeFilter}
-        value={typeFilter}
-      />
-      <NexusWorkspaceSelect
-        config={categoryFilterConfig}
-        isOpen={openSelectId === "category"}
-        name="filter-category"
-        onOpenChange={(open) => setOpenSelectId(open ? "category" : null)}
-        onValueChange={setCategoryFilter}
-        value={categoryFilter}
-      />
+      <NexusWorkspaceCatalog labelledBy="role-management-title">
+        <NexusWorkspaceToolbar>
+          <NexusWorkspaceSearch
+            label={content.searchLabel}
+            name="search"
+            onValueChange={setSearch}
+            placeholder={content.searchPlaceholder}
+            value={search}
+          />
+          <NexusWorkspaceSelect
+            config={typeFilterConfig}
+            isOpen={openSelectId === "type"}
+            name="filter-type"
+            onOpenChange={(open) => setOpenSelectId(open ? "type" : null)}
+            onValueChange={setTypeFilter}
+            value={typeFilter}
+          />
+          <NexusWorkspaceSelect
+            config={categoryFilterConfig}
+            isOpen={openSelectId === "category"}
+            name="filter-category"
+            onOpenChange={(open) => setOpenSelectId(open ? "category" : null)}
+            onValueChange={setCategoryFilter}
+            value={categoryFilter}
+          />
+        </NexusWorkspaceToolbar>
 
-      <NexusWorkspaceRecordTable
-        caption={content.tableCaption}
-        columns={columns}
-        empty={
-          <NexusWorkspaceEmptyState
-            description={
-              hasActiveFilters
-                ? content.emptyDescription
-                : content.emptyTrueDescription
-            }
-            onResetFilters={hasActiveFilters ? resetFilters : undefined}
-            title={
-              hasActiveFilters ? content.emptyTitle : content.emptyTrueTitle
-            }
-          />
-        }
-        isLoading={isLoading || isSearchUpdating}
-        pagination={
-          <NexusTablePagination
-            currentPage={page}
-            itemCount={total}
-            navigationLabel="Navigasi halaman peran"
-            nextPageLabel="Halaman berikutnya"
-            onPageChange={setPage}
-            onPageSizeChange={setPageSizeValue}
-            pageLabel="Halaman"
-            pageSizeConfig={pageSizeConfig}
-            pageSizeValue={pageSizeValue}
-            previousPageLabel="Halaman sebelumnya"
-            rangePrefix="Menampilkan"
-            totalUnit={content.resultUnit}
-          />
-        }
-        rows={rows}
-      />
+        <NexusWorkspaceRecordTable
+          caption={content.tableCaption}
+          columns={columns}
+          empty={
+            <NexusWorkspaceEmptyState
+              description={
+                hasActiveFilters
+                  ? content.emptyDescription
+                  : content.emptyTrueDescription
+              }
+              onResetFilters={hasActiveFilters ? resetFilters : undefined}
+              title={
+                hasActiveFilters ? content.emptyTitle : content.emptyTrueTitle
+              }
+            />
+          }
+          isLoading={isLoading || isSearchUpdating}
+          pagination={
+            <NexusTablePagination
+              currentPage={page}
+              itemCount={total}
+              navigationLabel="Navigasi halaman peran"
+              nextPageLabel="Halaman berikutnya"
+              onPageChange={setPage}
+              onPageSizeChange={setPageSizeValue}
+              pageLabel="Halaman"
+              pageSizeConfig={pageSizeConfig}
+              pageSizeValue={pageSizeValue}
+              previousPageLabel="Halaman sebelumnya"
+              rangePrefix="Menampilkan"
+              totalUnit={content.resultUnit}
+            />
+          }
+          rows={rows}
+        />
+      </NexusWorkspaceCatalog>
 
       {drawer !== null ? (
         <NexusWorkspaceDrawer
