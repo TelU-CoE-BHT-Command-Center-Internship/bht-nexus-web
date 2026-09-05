@@ -12,6 +12,7 @@ export type JobRecord = {
   availableAt: string;
   createdAt: string;
   inputKind: string;
+  inputValue: string;
   kind: string;
   leaseUntil: string | null;
   normalizedName: string | null;
@@ -23,9 +24,10 @@ export type JobRecord = {
 };
 
 export type CreateJobInput = {
-  inputKind: string;
-  inputValue: string;
   kind?: string;
+  name: string;
+  scholarUrl: string;
+  sintaUrl: string;
 };
 
 export function createJob(input: CreateJobInput): Promise<JobRecord> {

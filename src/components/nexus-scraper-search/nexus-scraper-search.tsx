@@ -79,8 +79,8 @@ const pageSizeConfig: NexusSelectConfig = {
 export type NexusCollectionRequest = {
   memberId?: string;
   memberName?: string;
-  profileUrl?: string;
-  source?: CollectionSource;
+  scholarUrl?: string;
+  sintaUrl?: string;
 };
 
 const columns: readonly NexusWorkspaceRecordColumn[] = [
@@ -143,26 +143,57 @@ function rememberSubmittedName(publicId: string, name: string) {
 }
 
 /**
- * Riwayat pekerjaan asli dari GET /jobs tidak membawa profileUrl, aktor
- * pengaju, atau jumlah kandidat, jadi field itu diisi placeholder yang jujur.
+ * inputValue membawa bentuk berbeda tergantung inputKind: "combined_profile"
+ * menyimpannya sebagai JSON {name, sintaUrl, scholarUrl} (lihat
+ * resolveJobInput di job.service.ts), sedangkan job lama sebelum jadi
+ * pekerjaan-langsung hanya menyimpan satu URL mentah per inputKind. Kedua
+ * bentuk ditangani supaya riwayat lama tetap tampil, tidak hanya job baru.
  * ponytail: jumlah kandidat selalu 0 untuk rekam riwayat (bukan hasil submit
  * baru di sesi ini) karena listing job tidak mengembalikannya dan memanggil
  * ulang sync-from-job per baris hanya untuk menghitung akan jadi N+1 fetch.
  * Naikkan ke sini kalau endpoint /jobs atau /reviews/cases suatu saat
  * menyediakan jumlah kandidat per job secara langsung.
- * normalizedName juga tidak pernah diisi backend saat ini (dicek di
- * job.service.ts: field itu cuma dibaca, tidak pernah ditulis), jadi nama
- * yang diketik pengguna disimpan di localStorage saat submit supaya baris
- * yang sama tidak berubah jadi "Belum diketahui" ketika daftar dimuat ulang
- * dari server. Ini hanya menutupi gejalanya di browser yang sama; jobnya
- * sendiri tetap tidak punya nama di server sampai backend menyimpannya.
  */
+function parseJobInput(record: JobRecord) {
+  if (record.inputKind === "combined_profile") {
+    try {
+      const parsed = JSON.parse(record.inputValue) as {
+        name?: string;
+        scholarUrl?: string;
+        sintaUrl?: string;
+      };
+      return {
+        name: parsed.name,
+        scholarUrl: parsed.scholarUrl,
+        sintaUrl: parsed.sintaUrl,
+      };
+    } catch {
+      return {};
+    }
+  }
+  if (
+    record.inputKind === "sinta_profile_url" ||
+    record.inputKind === "sinta_url"
+  ) {
+    return { sintaUrl: record.inputValue };
+  }
+  if (
+    record.inputKind === "scholar_profile_url" ||
+    record.inputKind === "scholar_url"
+  ) {
+    return { scholarUrl: record.inputValue };
+  }
+  return {};
+}
+
 function jobRecordToCollectionJob(
   record: JobRecord,
   content: NexusScraperSearchContent,
 ): CollectionJob {
-  const source: CollectionSource =
-    record.inputKind === "scholar_url" ? "scholar" : "sinta";
+  const parsedInput = parseJobInput(record);
+  const sintaUrl = parsedInput.sintaUrl;
+  const scholarUrl = parsedInput.scholarUrl;
+  const source: CollectionSource = sintaUrl ? "sinta" : "scholar";
   const sourceLabel =
     content.sourceOptions.find((option) => option.id === source)?.label ??
     source;
@@ -175,10 +206,13 @@ function jobRecordToCollectionJob(
         : undefined,
     fullName:
       record.normalizedName ??
+      parsedInput.name ??
       readSubmittedName(record.publicId) ??
       (content.locale === "id" ? "Belum diketahui" : "Unknown"),
     id: record.publicId,
-    profileUrl: "",
+    profileUrl: sintaUrl ?? scholarUrl ?? "",
+    scholarUrl,
+    sintaUrl,
     source,
     sourceLabel,
     status: record.status,
@@ -243,23 +277,22 @@ export function NexusScraperSearch({
     ? (knownMemberName(initialRequest.memberId) ?? requestedMemberName)
     : undefined;
   const [name, setName] = useState(initialMemberName ?? "");
-  const [profileUrl, setProfileUrl] = useState(
-    initialRequest?.profileUrl ?? "",
-  );
-  const [source, setSource] = useState<CollectionSource>(
-    initialRequest?.source ?? "sinta",
+  const [sintaUrl, setSintaUrl] = useState(initialRequest?.sintaUrl ?? "");
+  const [scholarUrl, setScholarUrl] = useState(
+    initialRequest?.scholarUrl ?? "",
   );
   const initialMemberBinding = createCollectionMemberBinding({
-    ...initialRequest,
+    memberId: initialRequest?.memberId,
     memberName: initialMemberName,
+    profileUrl: initialRequest?.sintaUrl,
+    source: "sinta",
   });
   const activeMemberBinding = collectionMemberBindingMatches(
     initialMemberBinding,
-    { memberName: name, profileUrl, source },
+    { memberName: name, profileUrl: sintaUrl, source: "sinta" },
   )
     ? initialMemberBinding
     : undefined;
-  const [isSourceOpen, setIsSourceOpen] = useState(false);
   const [feedback, setFeedback] = useState<{
     message: string;
     tone: "danger" | "success";
@@ -272,23 +305,6 @@ export function NexusScraperSearch({
   const [isHistorySourceOpen, setIsHistorySourceOpen] = useState(false);
   const [historyStatus, setHistoryStatus] = useState("all");
   const [isHistoryStatusOpen, setIsHistoryStatusOpen] = useState(false);
-  const sourceConfig = useMemo<NexusSelectConfig>(
-    () => ({
-      defaultValue: "sinta",
-      id: "collection-source",
-      label: content.sourceLabel,
-      options: [
-        {
-          label: content.sourceOptions[0]?.label ?? "SINTA",
-          value: content.sourceOptions[0]?.id ?? "sinta",
-        },
-        ...content.sourceOptions
-          .slice(1)
-          .map((option) => ({ label: option.label, value: option.id })),
-      ],
-    }),
-    [content.sourceLabel, content.sourceOptions],
-  );
   const historySourceConfig = useMemo<NexusSelectConfig>(
     () => ({
       defaultValue: "all",
@@ -359,7 +375,7 @@ export function NexusScraperSearch({
         (historyStatus === "all" || job.status === historyStatus) &&
         (needle.length === 0 ||
           normalizeWorkspaceSearch(
-            `${job.fullName} ${job.profileUrl} ${job.sourceLabel} ${job.statusLabel}`,
+            `${job.fullName} ${job.sintaUrl ?? ""} ${job.scholarUrl ?? ""} ${job.statusLabel}`,
           ).includes(needle)),
     );
   }, [deferredHistoryQuery, historySource, historyStatus, jobs]);
@@ -472,25 +488,29 @@ export function NexusScraperSearch({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const cleanName = name.trim();
-    const cleanUrl = profileUrl.trim();
-    if (!cleanName || !collectionProfileMatchesSource(cleanUrl, source)) {
+    const cleanSintaUrl = sintaUrl.trim();
+    const cleanScholarUrl = scholarUrl.trim();
+    if (
+      !cleanName ||
+      !collectionProfileMatchesSource(cleanSintaUrl, "sinta") ||
+      !collectionProfileMatchesSource(cleanScholarUrl, "scholar")
+    ) {
       setFeedback({ message: content.errorLabel, tone: "danger" });
       return;
     }
 
     const now = new Date();
     const id = `local-${now.getTime()}`;
-    const sourceLabel =
-      content.sourceOptions.find((option) => option.id === source)?.label ??
-      source;
     const queued: CollectionJob = {
       candidates: [],
       fullName: cleanName,
       id,
       memberBinding: activeMemberBinding,
-      profileUrl: cleanUrl,
-      source,
-      sourceLabel,
+      profileUrl: cleanSintaUrl,
+      scholarUrl: cleanScholarUrl,
+      sintaUrl: cleanSintaUrl,
+      source: "sinta",
+      sourceLabel: "SINTA",
       status: "queued",
       statusLabel: content.waitingForServiceLabel,
       submittedAt: now.toISOString(),
@@ -504,12 +524,14 @@ export function NexusScraperSearch({
     setJobs((current) => [queued, ...current]);
     setFeedback({ message: content.queuedLabel, tone: "success" });
     setName("");
-    setProfileUrl("");
+    setSintaUrl("");
+    setScholarUrl("");
     setCurrentPage(1);
 
     createJob({
-      inputKind: source === "sinta" ? "sinta_url" : "scholar_url",
-      inputValue: cleanUrl,
+      name: cleanName,
+      scholarUrl: cleanScholarUrl,
+      sintaUrl: cleanSintaUrl,
     })
       .then((created) => {
         rememberSubmittedName(created.publicId, cleanName);
@@ -613,18 +635,8 @@ export function NexusScraperSearch({
       id: job.id,
       cells: {
         primary: <NexusWorkspaceTablePrimary title={job.fullName} />,
-        sinta: (
-          <ProfileLinkCell
-            source="sinta"
-            url={job.source === "sinta" ? job.profileUrl : undefined}
-          />
-        ),
-        scholar: (
-          <ProfileLinkCell
-            source="scholar"
-            url={job.source === "scholar" ? job.profileUrl : undefined}
-          />
-        ),
+        sinta: <ProfileLinkCell source="sinta" url={job.sintaUrl} />,
+        scholar: <ProfileLinkCell source="scholar" url={job.scholarUrl} />,
         status: (
           <span className={styles.statusDetail}>
             <NexusWorkspaceTableBadge tone={tone}>
@@ -663,19 +675,13 @@ export function NexusScraperSearch({
               <div>
                 <dt>SINTA</dt>
                 <dd>
-                  <ProfileLinkCell
-                    source="sinta"
-                    url={job.source === "sinta" ? job.profileUrl : undefined}
-                  />
+                  <ProfileLinkCell source="sinta" url={job.sintaUrl} />
                 </dd>
               </div>
               <div>
                 <dt>Scholar</dt>
                 <dd>
-                  <ProfileLinkCell
-                    source="scholar"
-                    url={job.source === "scholar" ? job.profileUrl : undefined}
-                  />
+                  <ProfileLinkCell source="scholar" url={job.scholarUrl} />
                 </dd>
               </div>
               <div>
@@ -719,8 +725,8 @@ export function NexusScraperSearch({
         <NexusWorkspaceCard
           description={
             content.locale === "id"
-              ? "Sumber hanya menerima profil publik HTTPS. Hasil selalu masuk ke antrean Tinjauan."
-              : "Only public HTTPS profiles are accepted. Candidate review is currently completed in the Indonesian workspace."
+              ? "Nama lengkap, URL SINTA, dan URL Google Scholar wajib diisi. Hasil selalu masuk ke antrean Tinjauan."
+              : "Full name, SINTA URL, and Google Scholar URL are all required. Candidate review is currently completed in the Indonesian workspace."
           }
           title={
             content.locale === "id"
@@ -734,7 +740,7 @@ export function NexusScraperSearch({
                 description="Hasil pengumpulan akan ditautkan ke profil anggota ini."
                 label="Anggota terpilih"
                 memberName={activeMemberBinding.memberName}
-                sourceLabel={source === "sinta" ? "SINTA" : "Google Scholar"}
+                sourceLabel="SINTA"
               />
             </div>
           ) : null}
@@ -745,32 +751,32 @@ export function NexusScraperSearch({
               label={content.nameLabel}
               onChange={(event) => setName(event.target.value)}
               placeholder={content.namePlaceholder}
+              required
               value={name}
             />
-            <div className={styles.selectField}>
-              <span>{content.sourceLabel}</span>
-              <NexusWorkspaceSelect
-                config={sourceConfig}
-                isOpen={isSourceOpen}
-                name="collection-source"
-                onOpenChange={setIsSourceOpen}
-                onValueChange={(value) => {
-                  setSource(value as CollectionSource);
-                  setProfileUrl("");
-                }}
-                value={source}
-              />
-            </div>
             <NexusWorkspaceField
               autoComplete="url"
-              id="collection-url"
+              id="collection-sinta-url"
               inputMode="url"
-              label={content.profileUrlLabel}
-              onChange={(event) => setProfileUrl(event.target.value)}
-              placeholder={content.profileUrlPlaceholder}
+              label={content.sintaUrlLabel}
+              onChange={(event) => setSintaUrl(event.target.value)}
+              placeholder={content.sintaUrlPlaceholder}
+              required
               spellCheck={false}
               type="url"
-              value={profileUrl}
+              value={sintaUrl}
+            />
+            <NexusWorkspaceField
+              autoComplete="url"
+              id="collection-scholar-url"
+              inputMode="url"
+              label={content.scholarUrlLabel}
+              onChange={(event) => setScholarUrl(event.target.value)}
+              placeholder={content.scholarUrlPlaceholder}
+              required
+              spellCheck={false}
+              type="url"
+              value={scholarUrl}
             />
             <NexusWorkspaceButton tone="primary" type="submit">
               {content.submitLabel}

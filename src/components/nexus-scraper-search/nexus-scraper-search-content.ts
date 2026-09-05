@@ -39,7 +39,10 @@ export type CollectionJob = {
   fullName: string;
   id: string;
   memberBinding?: CollectionMemberBinding;
+  /** Alias untuk profil utama (SINTA), dipakai bukti tinjauan dan pencocokan anggota. */
   profileUrl: string;
+  scholarUrl?: string;
+  sintaUrl?: string;
   source: CollectionSource;
   sourceLabel: string;
   status: AutomationJobStatus;
@@ -67,11 +70,13 @@ export type NexusScraperSearchContent = {
   nameLabel: string;
   namePlaceholder: string;
   noResultsLabel: string;
-  profileUrlLabel: string;
-  profileUrlPlaceholder: string;
   queuedLabel: string;
   reviewHref?: string;
   reviewLabel: string;
+  scholarUrlLabel: string;
+  scholarUrlPlaceholder: string;
+  sintaUrlLabel: string;
+  sintaUrlPlaceholder: string;
   sourceLabel: string;
   sourceOptions: Array<{ id: CollectionSource; label: string }>;
   submitLabel: string;
@@ -297,18 +302,20 @@ const copy = {
       submittedAt: "Diajukan",
     },
     description:
-      "Ajukan profil publik SINTA atau Google Scholar sebagai pekerjaan pengumpulan. Hasilnya masuk ke Tinjauan, bukan langsung ke data resmi.",
+      "Ajukan nama peneliti beserta profil SINTA dan Google Scholar-nya sebagai pekerjaan pengumpulan. Hasilnya masuk ke Tinjauan, bukan langsung ke data resmi.",
     errorLabel:
-      "Isi nama dan URL HTTPS yang sesuai dengan sumber SINTA atau Google Scholar.",
-    nameLabel: "Nama peneliti",
-    namePlaceholder: "Contoh: Nama peneliti",
+      "Isi nama lengkap, URL SINTA, dan URL Google Scholar. Ketiganya wajib diisi.",
+    nameLabel: "Nama lengkap",
+    namePlaceholder: "Contoh: Nama lengkap peneliti",
     noResultsLabel: "Tidak ada hasil",
-    profileUrlLabel: "URL profil publik",
-    profileUrlPlaceholder:
-      "https://sinta.kemdiktisaintek.go.id/authors/profile/…",
     queuedLabel: "Pekerjaan ditambahkan ke antrean pengumpulan.",
     reviewHref: "/nexus/tinjauan",
     reviewLabel: "Buka Tinjauan",
+    scholarUrlLabel: "URL Google Scholar",
+    scholarUrlPlaceholder: "https://scholar.google.com/citations?user=…",
+    sintaUrlLabel: "URL SINTA",
+    sintaUrlPlaceholder:
+      "https://sinta.kemdiktisaintek.go.id/authors/profile/…",
     sourceLabel: "Sumber",
     sourceOptions: [
       { id: "sinta", label: "SINTA" },
@@ -330,17 +337,19 @@ const copy = {
       submittedAt: "Submitted",
     },
     description:
-      "Submit a public SINTA or Google Scholar profile as a collection job. This page shows candidate results without writing them directly to official data.",
+      "Submit a researcher's name with their SINTA and Google Scholar profiles as a collection job. This page shows candidate results without writing them directly to official data.",
     errorLabel:
-      "Enter a name and an HTTPS URL matching the selected SINTA or Google Scholar source.",
-    nameLabel: "Researcher name",
-    namePlaceholder: "Example: Researcher name",
+      "Enter the full name, a SINTA URL, and a Google Scholar URL. All three are required.",
+    nameLabel: "Full name",
+    namePlaceholder: "Example: Researcher's full name",
     noResultsLabel: "No results",
-    profileUrlLabel: "Public profile URL",
-    profileUrlPlaceholder:
-      "https://sinta.kemdiktisaintek.go.id/authors/profile/…",
     queuedLabel: "The collection job was added to the queue.",
     reviewLabel: "Switch to Indonesian to review candidates",
+    scholarUrlLabel: "Google Scholar URL",
+    scholarUrlPlaceholder: "https://scholar.google.com/citations?user=…",
+    sintaUrlLabel: "SINTA URL",
+    sintaUrlPlaceholder:
+      "https://sinta.kemdiktisaintek.go.id/authors/profile/…",
     sourceLabel: "Source",
     sourceOptions: [
       { id: "sinta", label: "SINTA" },
@@ -365,6 +374,8 @@ export function getNexusScraperSearchContent(
     ...copy[locale],
     jobs: seeds.map((seed) => ({
       ...seed,
+      scholarUrl: seed.source === "scholar" ? seed.profileUrl : undefined,
+      sintaUrl: seed.source === "sinta" ? seed.profileUrl : undefined,
       sourceLabel: sourceLabels[seed.source],
       statusLabel: getAutomationStatusLabel(locale, seed.status),
       submittedAtLabel: formatTimestamp(seed.submittedAt),

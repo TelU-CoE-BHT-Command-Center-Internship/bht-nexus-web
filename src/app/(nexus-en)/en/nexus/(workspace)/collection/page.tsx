@@ -13,8 +13,8 @@ type CollectionPageProps = {
   searchParams: Promise<{
     member?: string | string[];
     name?: string | string[];
-    profile?: string | string[];
-    source?: string | string[];
+    scholar?: string | string[];
+    sinta?: string | string[];
   }>;
 };
 
@@ -28,18 +28,10 @@ export default async function CollectionPage({
   const params = await searchParams;
   const memberId = firstValue(params.member);
   const memberName = firstValue(params.name);
-  const profileUrl = firstValue(params.profile);
-  const sourceValue = firstValue(params.source);
+  const sintaUrl = firstValue(params.sinta);
+  const scholarUrl = firstValue(params.scholar);
   const initialRequest: NexusCollectionRequest | undefined = memberId
-    ? {
-        memberId,
-        memberName,
-        profileUrl,
-        source:
-          sourceValue === "scholar" || sourceValue === "sinta"
-            ? sourceValue
-            : undefined,
-      }
+    ? { memberId, memberName, scholarUrl, sintaUrl }
     : undefined;
 
   return (
