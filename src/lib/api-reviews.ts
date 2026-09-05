@@ -87,3 +87,19 @@ export function decideReviewCase(
     method: "POST",
   });
 }
+
+export function submitReviewEdit(
+  publicId: string,
+  fieldChanges: Record<string, unknown>,
+): Promise<ReviewCaseDetail> {
+  return apiFetch(`/reviews/cases/${publicId}/candidate`, {
+    body: JSON.stringify({ fieldChanges }),
+    method: "PATCH",
+  });
+}
+
+export function restoreReviewCandidate(
+  publicId: string,
+): Promise<ReviewCaseDetail> {
+  return apiFetch(`/reviews/cases/${publicId}/restore`, { method: "POST" });
+}

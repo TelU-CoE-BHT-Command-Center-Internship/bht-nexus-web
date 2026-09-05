@@ -44,7 +44,15 @@ import {
   type ReviewCaseDetail,
   type ReviewCaseRecord,
   type ReviewDecisionKind,
+  restoreReviewCandidate,
+  submitReviewEdit,
 } from "@/lib/api-reviews";
+
+function editablePayloadEntries(payload: Record<string, unknown>) {
+  return Object.entries(payload).filter(
+    ([, value]) => typeof value === "string" || typeof value === "number",
+  );
+}
 
 function humanizeKey(key: string): string {
   const spaced = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
@@ -137,6 +145,9 @@ export function NexusReviewLive() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [decidingAs, setDecidingAs] = useState<ReviewDecisionKind | null>(null);
+  const [fieldEdits, setFieldEdits] = useState<Record<string, string>>({});
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: resets page to 1 whenever a filter changes, deps aren't read in the body
   useEffect(() => {
@@ -197,13 +208,27 @@ export function NexusReviewLive() {
     setReloadToken((token) => token + 1);
   }
 
+  function seedFieldEdits(caseDetail: ReviewCaseDetail) {
+    setFieldEdits(
+      Object.fromEntries(
+        editablePayloadEntries(caseDetail.payload).map(([key, value]) => [
+          key,
+          String(value),
+        ]),
+      ),
+    );
+  }
+
   function openDetail(publicId: string) {
     setSelectedId(publicId);
     setReason("");
     setDetailError(null);
     setDetailLoading(true);
     getReviewCase(publicId)
-      .then(setDetail)
+      .then((caseDetail) => {
+        setDetail(caseDetail);
+        seedFieldEdits(caseDetail);
+      })
       .catch((error: unknown) => setDetailError(errorMessage(error)))
       .finally(() => setDetailLoading(false));
   }
@@ -213,6 +238,46 @@ export function NexusReviewLive() {
     setDetail(null);
     setDetailError(null);
     setReason("");
+    setFieldEdits({});
+  }
+
+  async function saveFieldEdits() {
+    if (selectedId === null || detail === null) return;
+    const changes: Record<string, unknown> = {};
+    for (const [key, original] of editablePayloadEntries(detail.payload)) {
+      const next = fieldEdits[key] ?? String(original);
+      if (next === String(original)) continue;
+      changes[key] = typeof original === "number" ? Number(next) : next;
+    }
+    if (Object.keys(changes).length === 0) return;
+    setIsSavingEdit(true);
+    setDetailError(null);
+    try {
+      const updated = await submitReviewEdit(selectedId, changes);
+      setDetail(updated);
+      seedFieldEdits(updated);
+      reload();
+    } catch (error) {
+      setDetailError(errorMessage(error));
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }
+
+  async function restoreOriginal() {
+    if (selectedId === null) return;
+    setIsRestoring(true);
+    setDetailError(null);
+    try {
+      const restored = await restoreReviewCandidate(selectedId);
+      setDetail(restored);
+      seedFieldEdits(restored);
+      reload();
+    } catch (error) {
+      setDetailError(errorMessage(error));
+    } finally {
+      setIsRestoring(false);
+    }
   }
 
   async function submitDecision(decision: ReviewDecisionKind) {
@@ -385,6 +450,56 @@ export function NexusReviewLive() {
                   <h3 id="review-payload-title">{content.payloadTitle}</h3>
                   {Object.keys(detail.payload).length === 0 ? (
                     <p>{content.payloadEmptyLabel}</p>
+                  ) : detail.status === "pending" ? (
+                    <>
+                      {Object.entries(detail.payload).map(([key, value]) =>
+                        typeof value === "string" ||
+                        typeof value === "number" ? (
+                          <NexusWorkspaceFormField
+                            id={`review-field-${key}`}
+                            key={key}
+                            label={humanizeKey(key)}
+                            name={key}
+                            onChange={(event) =>
+                              setFieldEdits((current) => ({
+                                ...current,
+                                [key]: event.target.value,
+                              }))
+                            }
+                            type={typeof value === "number" ? "number" : "text"}
+                            value={fieldEdits[key] ?? String(value)}
+                          />
+                        ) : (
+                          <dl key={key}>
+                            <div>
+                              <dt>{humanizeKey(key)}</dt>
+                              <dd>{formatPayloadValue(value)}</dd>
+                            </div>
+                          </dl>
+                        ),
+                      )}
+                      <NexusWorkspaceButton
+                        disabled={isSavingEdit}
+                        onClick={saveFieldEdits}
+                        tone="primary"
+                        type="button"
+                      >
+                        {isSavingEdit
+                          ? content.savingLabel
+                          : "Simpan perubahan"}
+                      </NexusWorkspaceButton>
+                      {detail.edits.length > 0 ? (
+                        <NexusWorkspaceButton
+                          disabled={isRestoring}
+                          onClick={restoreOriginal}
+                          type="button"
+                        >
+                          {isRestoring
+                            ? content.savingLabel
+                            : "Pulihkan ke data asli"}
+                        </NexusWorkspaceButton>
+                      ) : null}
+                    </>
                   ) : (
                     <dl>
                       {Object.entries(detail.payload).map(([key, value]) => (
