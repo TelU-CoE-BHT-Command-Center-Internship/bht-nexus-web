@@ -49,6 +49,7 @@ import {
   NexusWorkspaceTableBadge,
   NexusWorkspaceTablePrimary,
   NexusWorkspaceTableSignal,
+  NexusWorkspaceTableText,
 } from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import {
   type NexusSelectConfig,
@@ -84,12 +85,43 @@ export type NexusCollectionRequest = {
 
 const columns: readonly NexusWorkspaceRecordColumn[] = [
   { id: "primary", label: "Peneliti", primary: true },
-  { id: "source", label: "Sumber" },
+  { id: "sinta", label: "SINTA" },
+  { id: "scholar", label: "Scholar" },
   { id: "status", label: "Status" },
   { id: "result", label: "Hasil" },
   { id: "submitted", label: "Diajukan" },
   { id: "action", label: "Aksi" },
 ];
+
+/**
+ * Setiap pekerjaan hanya membawa satu profil (SINTA atau Scholar), sedangkan
+ * peneliti yang sama bisa akhirnya punya keduanya begitu resolver
+ * lintas-sumber (lihat catatan Name/SINTA/Scholar Cross-Resolver) menemukan
+ * pasangannya. Sel ini kosong sampai profil itu diketahui, isi begitu ada,
+ * mengikuti pola tautan profil yang sama dengan direktori Anggota.
+ */
+function ProfileLinkCell({
+  source,
+  url,
+}: {
+  source: CollectionSource;
+  url?: string;
+}) {
+  if (!url) {
+    return <NexusWorkspaceTableText>Belum ada</NexusWorkspaceTableText>;
+  }
+  const label = source === "sinta" ? "SINTA" : "Scholar";
+  return (
+    <a
+      aria-label={`Buka profil ${label} pada tab baru`}
+      href={url}
+      rel="noreferrer"
+      target="_blank"
+    >
+      Buka profil
+    </a>
+  );
+}
 
 function CollectionIcon({ name }: { name: "check" | "clock" | "search" }) {
   return (
@@ -97,6 +129,17 @@ function CollectionIcon({ name }: { name: "check" | "clock" | "search" }) {
       <NexusWorkspaceIconPaths name={name} />
     </svg>
   );
+}
+
+const submittedNameStorageKey = (publicId: string) =>
+  `nexus-collection-submitted-name:${publicId}`;
+
+function readSubmittedName(publicId: string): string | null {
+  return window.localStorage.getItem(submittedNameStorageKey(publicId));
+}
+
+function rememberSubmittedName(publicId: string, name: string) {
+  window.localStorage.setItem(submittedNameStorageKey(publicId), name);
 }
 
 /**
@@ -107,6 +150,12 @@ function CollectionIcon({ name }: { name: "check" | "clock" | "search" }) {
  * ulang sync-from-job per baris hanya untuk menghitung akan jadi N+1 fetch.
  * Naikkan ke sini kalau endpoint /jobs atau /reviews/cases suatu saat
  * menyediakan jumlah kandidat per job secara langsung.
+ * normalizedName juga tidak pernah diisi backend saat ini (dicek di
+ * job.service.ts: field itu cuma dibaca, tidak pernah ditulis), jadi nama
+ * yang diketik pengguna disimpan di localStorage saat submit supaya baris
+ * yang sama tidak berubah jadi "Belum diketahui" ketika daftar dimuat ulang
+ * dari server. Ini hanya menutupi gejalanya di browser yang sama; jobnya
+ * sendiri tetap tidak punya nama di server sampai backend menyimpannya.
  */
 function jobRecordToCollectionJob(
   record: JobRecord,
@@ -126,6 +175,7 @@ function jobRecordToCollectionJob(
         : undefined,
     fullName:
       record.normalizedName ??
+      readSubmittedName(record.publicId) ??
       (content.locale === "id" ? "Belum diketahui" : "Unknown"),
     id: record.publicId,
     profileUrl: "",
@@ -167,11 +217,13 @@ export function NexusScraperSearch({
     listJobs({ limit: 50 })
       .then((result) => {
         if (cancelled) return;
-        setJobs(
-          result.data.map((record) =>
-            jobRecordToCollectionJob(record, content),
-          ),
+        const fetched = result.data.map((record) =>
+          jobRecordToCollectionJob(record, content),
         );
+        setJobs((current) => [
+          ...current.filter((job) => job.id.startsWith("local-")),
+          ...fetched,
+        ]);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -460,6 +512,7 @@ export function NexusScraperSearch({
       inputValue: cleanUrl,
     })
       .then((created) => {
+        rememberSubmittedName(created.publicId, cleanName);
         setJobs((current) =>
           current.map((job) =>
             job.id === id
@@ -559,18 +612,18 @@ export function NexusScraperSearch({
     return {
       id: job.id,
       cells: {
-        primary: (
-          <NexusWorkspaceTablePrimary
-            title={job.fullName}
-            subtitle={job.profileUrl}
+        primary: <NexusWorkspaceTablePrimary title={job.fullName} />,
+        sinta: (
+          <ProfileLinkCell
+            source="sinta"
+            url={job.source === "sinta" ? job.profileUrl : undefined}
           />
         ),
-        source: (
-          <NexusWorkspaceTableBadge
-            tone={job.source === "sinta" ? "success" : "info"}
-          >
-            {job.sourceLabel}
-          </NexusWorkspaceTableBadge>
+        scholar: (
+          <ProfileLinkCell
+            source="scholar"
+            url={job.source === "scholar" ? job.profileUrl : undefined}
+          />
         ),
         status: (
           <span className={styles.statusDetail}>
@@ -601,19 +654,30 @@ export function NexusScraperSearch({
         <NexusWorkspaceMobileCard
           action={action}
           eyebrow={
-            <>
-              <NexusWorkspaceTableBadge
-                tone={job.source === "sinta" ? "success" : "info"}
-              >
-                {job.sourceLabel}
-              </NexusWorkspaceTableBadge>
-              <NexusWorkspaceTableBadge tone={tone}>
-                {job.statusLabel}
-              </NexusWorkspaceTableBadge>
-            </>
+            <NexusWorkspaceTableBadge tone={tone}>
+              {job.statusLabel}
+            </NexusWorkspaceTableBadge>
           }
           meta={
             <dl>
+              <div>
+                <dt>SINTA</dt>
+                <dd>
+                  <ProfileLinkCell
+                    source="sinta"
+                    url={job.source === "sinta" ? job.profileUrl : undefined}
+                  />
+                </dd>
+              </div>
+              <div>
+                <dt>Scholar</dt>
+                <dd>
+                  <ProfileLinkCell
+                    source="scholar"
+                    url={job.source === "scholar" ? job.profileUrl : undefined}
+                  />
+                </dd>
+              </div>
               <div>
                 <dt>{content.columns.candidates}</dt>
                 <dd>
