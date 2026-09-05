@@ -108,6 +108,7 @@ export function NexusTablePagination({
           className={styles.arrow}
           disabled={safeCurrentPage === 1 || itemCount === 0}
           onClick={() => changePage(safeCurrentPage - 1)}
+          suppressHydrationWarning
           type="button"
         >
           <ArrowIcon direction="left" />
@@ -126,6 +127,7 @@ export function NexusTablePagination({
                 disabled={itemCount === 0}
                 key={item}
                 onClick={() => changePage(item)}
+                suppressHydrationWarning
                 type="button"
               >
                 {item}
@@ -138,6 +140,7 @@ export function NexusTablePagination({
           className={styles.arrow}
           disabled={safeCurrentPage === totalPages || itemCount === 0}
           onClick={() => changePage(safeCurrentPage + 1)}
+          suppressHydrationWarning
           type="button"
         >
           <ArrowIcon direction="right" />
