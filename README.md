@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/status-pengembangan_aktif-d7193f)](docs/current-scope.md)
 [![CI](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/actions/workflows/ci.yml/badge.svg)](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/actions/workflows/ci.yml)
-[![Next.js](https://img.shields.io/badge/Next.js-16.3.0-111827)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.3.5-111827)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933)](https://nodejs.org/)
 
 [Situs](https://bht-nexus-web.vercel.app) · [Menjalankan proyek](#menjalankan-proyek) · [Dokumentasi](#dokumentasi) · [Kontribusi](CONTRIBUTING.md) · [Keamanan](SECURITY.md)
@@ -68,7 +68,7 @@ npm run audit:deps
 
 | Bagian | Teknologi |
 |---|---|
-| Kerangka web | Next.js 16.3.0 |
+| Kerangka web | Next.js 16.3.5 |
 | Pustaka antarmuka | React 19.2.4 |
 | Bahasa | TypeScript 5.9.3 |
 | Gaya tampilan | CSS Modules dan token CSS |
