@@ -38,11 +38,16 @@ export function LocationMapClient({
 
     let disposed = false;
     let loaded = false;
+    let loadingTimeout: ReturnType<typeof setTimeout> | undefined;
     let map: import("maplibre-gl").Map | undefined;
     let marker: import("maplibre-gl").Marker | undefined;
 
     const initializeMap = async () => {
       setStatus("loading");
+      // Kegagalan worker atau jaringan tidak selalu memicu event error peta.
+      loadingTimeout = setTimeout(() => {
+        if (!(disposed || loaded)) setStatus("error");
+      }, 30_000);
 
       try {
         const maplibre = await import("maplibre-gl");
@@ -51,6 +56,7 @@ export function LocationMapClient({
           return;
         }
 
+        maplibre.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
         map = new maplibre.Map({
           center: [longitude, latitude],
           container,
@@ -69,12 +75,14 @@ export function LocationMapClient({
           }
 
           loaded = true;
+          clearTimeout(loadingTimeout);
           setStatus("ready");
         };
 
         map.once("load", handleReady);
         map.once("error", () => {
           if (!(disposed || loaded)) {
+            clearTimeout(loadingTimeout);
             setStatus("error");
           }
         });
@@ -104,6 +112,7 @@ export function LocationMapClient({
           handleReady();
         }
       } catch {
+        clearTimeout(loadingTimeout);
         if (!disposed) {
           setStatus("error");
         }
@@ -115,6 +124,7 @@ export function LocationMapClient({
 
       return () => {
         disposed = true;
+        clearTimeout(loadingTimeout);
         marker?.remove();
         map?.remove();
       };
@@ -136,6 +146,7 @@ export function LocationMapClient({
 
     return () => {
       disposed = true;
+      clearTimeout(loadingTimeout);
       observer.disconnect();
       marker?.remove();
       map?.remove();

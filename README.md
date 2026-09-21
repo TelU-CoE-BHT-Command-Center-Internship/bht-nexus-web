@@ -84,7 +84,7 @@ npm run audit:deps
 .
 ├── .github/            # template kontribusi dan pemeriksaan otomatis
 ├── docs/               # cakupan produk, panduan desain, dan batas data frontend
-├── scripts/            # pemeriksaan konfigurasi, kontras, dan kerentanan dependency
+├── scripts/            # penyiapan worker peta dan pemeriksaan kualitas
 ├── src/
 │   ├── app/             # route, layout, metadata, font, dan gaya global
 │   ├── assets/          # logo serta gambar landing page dan ruang kerja
@@ -98,6 +98,8 @@ npm run audit:deps
 ```
 
 Komponen dipisahkan menurut bagian tampilan supaya isi, presentasi, dan interaksi dapat diperbarui tanpa membuat satu halaman menjadi sulit dirawat. Palet dasar ruang kerja—permukaan, teks, garis, aksen, dan warna status—didefinisikan sebagai token CSS di `src/app/globals.css`.
+
+MapLibre 6 membutuhkan worker ESM beserta modul shared di alamat yang sama. `npm run dev` dan `npm run build` otomatis menyalin kedua berkas dari versi dependency yang terpasang ke `public/maplibre/`. Folder hasil salinan ini diabaikan Git; jangan mengedit atau menyalinnya secara manual. Gunakan perintah npm tersebut agar penyiapan worker ikut berjalan. Jika peta belum selesai dimuat dalam 30 detik, halaman menampilkan petunjuk menggunakan tautan arah; peta tetap dapat tampil bila pemuatan kemudian berhasil.
 
 ## Dokumentasi
 

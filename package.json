@@ -8,7 +8,9 @@
   },
   "packageManager": "npm@11.16.0",
   "scripts": {
+    "predev": "node scripts/copy-maplibre-worker.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-maplibre-worker.mjs",
     "build": "next build",
     "start": "next start",
     "validate:config": "node scripts/validate-github-config.mjs",

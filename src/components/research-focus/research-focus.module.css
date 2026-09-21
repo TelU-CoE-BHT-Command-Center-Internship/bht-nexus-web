@@ -7,7 +7,6 @@
   width: min(100% - 3rem, 80rem);
   margin-inline: auto;
   padding-block: var(--section-space);
-  border-top: 1px solid var(--color-brand-navy-dark);
 }
 
 .title {
