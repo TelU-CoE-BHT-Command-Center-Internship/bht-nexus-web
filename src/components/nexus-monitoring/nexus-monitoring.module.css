@@ -1180,12 +1180,286 @@
  * keterangan, dan jejaknya tidak menempel menjadi satu blok.
  */
 .indicatorTrail {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
   margin-top: clamp(1.15rem, 1.8vw, 1.6rem);
   margin-bottom: clamp(0.9rem, 1.5vw, 1.25rem);
 }
 
 .indicatorTrail nav {
   margin-bottom: 0;
+}
+
+/*
+ * Perpindahan ke indikator tetangga di dalam domain yang sama. Urutannya
+ * mengikuti tabel ikhtisar domain, sehingga menekan Berikutnya dari tabel dan
+ * dari sini selalu membuka indikator yang sama.
+ */
+.indicatorNav {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.indicatorNavLink {
+  display: inline-flex;
+  min-height: 2.75rem;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.625rem;
+  background: var(--color-nexus-surface);
+  color: var(--color-nexus-text-strong);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.indicatorNavLink:hover {
+  border-color: #b9c6dd;
+  background: var(--color-nexus-surface-subtle);
+}
+
+.indicatorNavLink span {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  line-height: 1.25;
+}
+
+.indicatorNavLink small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.indicatorNavLink svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.indicatorAnalyticsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: start;
+}
+
+.indicatorMetrics .metricValue[data-available="false"] {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+.indicatorQuarterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-nexus-border-soft);
+}
+
+.indicatorQuarterGrid dt {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.indicatorQuarterGrid dt span {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.indicatorQuarterGrid dd {
+  margin: 0.4rem 0 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.indicatorQuarterGrid dd small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.indicatorCalculation {
+  margin: 1rem 0;
+  color: var(--color-nexus-text);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.indicatorReferences {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.indicatorReferences > summary {
+  padding: 1rem 0;
+  color: var(--color-nexus-text-strong);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.indicatorReferences > summary span {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.indicatorReferences > div {
+  margin-top: 0;
+  align-items: start;
+}
+
+.indicatorMethodNote {
+  margin: 0.75rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 74.99rem) {
+  .indicatorAnalyticsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 35rem) {
+  .indicatorMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .indicatorMetrics .metricCard {
+    min-height: 0;
+    padding: 1rem;
+  }
+
+  .indicatorMetrics .metricIcon {
+    display: none;
+  }
+
+  .indicatorQuarterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/*
+ * Daftar aturan pengukuran. Nilainya berupa kalimat penuh dari workbook,
+ * sehingga barisnya dibiarkan membungkus dan tidak pernah dipotong elipsis.
+ */
+.ruleList {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.ruleItem dt {
+  margin-bottom: 0.2rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.ruleItem dd {
+  margin: 0;
+  color: var(--color-nexus-text);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.ruleSource {
+  margin: 1rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-nexus-border-soft);
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/*
+ * Tabel rekam pembentuk pada rincian indikator. Berbeda dari tabel pembaruan
+ * pada Ringkasan, tabel ini masih diikuti keterangan saringan, sehingga
+ * bingkainya berdiri sendiri tanpa ditarik ke tepi bawah kartu.
+ */
+.indicatorRecordsTable {
+  margin-top: 1rem;
+  border: 1px solid var(--color-nexus-border-soft);
+  border-radius: 0.75rem;
+}
+
+.indicatorRecordsTable:first-child {
+  margin-top: 0;
+}
+
+/*
+ * Lebar kolom tabel rekam pembentuk. Mengikuti aturan kit tabel bersama:
+ * kolom berisi nilai pendek diberi lebar tetap, sedangkan kolom `record`
+ * sengaja dibiarkan tanpa lebar supaya judul rekam menyerap sisa ruang.
+ * Tanpa ini `table-layout: fixed` membagi seluruh kolom sama rata dan kolom
+ * paling kanan menyisakan ruang kosong yang lebar.
+ */
+.indicatorRecordsTable th[data-column="house"] {
+  width: 9.25rem;
+}
+
+.indicatorRecordsTable th[data-column="date"] {
+  width: 9.5rem;
+}
+
+.indicatorRecordsTable th[data-column="evidence"] {
+  width: 10.5rem;
+}
+
+.indicatorRecordsTable th[data-column="quality"] {
+  width: 8.5rem;
+}
+
+/* Tanggal bisnis satu rekam beserta triwulan yang dihasilkannya. */
+.indicatorRecordDate {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.indicatorRecordDate strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.indicatorRecordDate small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
 }
 
 .constructionState {
@@ -1356,21 +1630,6 @@
   .constructionActions > * {
     width: 100%;
   }
-}
-
-/*
- * Alamat satu indikator memakai keadaan yang sama dengan domain, hanya lebih
- * ringkas: pesannya pendek sehingga tinggi minimum penuh hanya menyisakan
- * ruang kosong.
- */
-.constructionState[data-compact="true"] {
-  min-height: 0;
-  gap: 0.85rem;
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-.constructionState[data-compact="true"] .constructionVisual {
-  height: clamp(10.5rem, 19vw, 14.5rem);
 }
 
 @media (prefers-reduced-motion: reduce) {

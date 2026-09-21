@@ -84,6 +84,7 @@ type MonitoringMetricCardProps = {
   fallback?: string;
   icon: NexusWorkspaceIconName;
   label: string;
+  signDisplay?: Intl.NumberFormatOptions["signDisplay"];
   tone?: "blue" | "gold" | "green" | "violet";
   unit?: string;
   value: number | null;
@@ -96,6 +97,7 @@ export function MonitoringMetricCard({
   fallback,
   icon,
   label,
+  signDisplay,
   tone = "blue",
   unit,
   value,
@@ -113,8 +115,15 @@ export function MonitoringMetricCard({
       <div className={styles.metricFoot}>
         <div className={styles.metricCopy}>
           <span>{label}</span>
-          <strong className={styles.metricValue}>
-            <MonitoringNumber fallback={fallback} value={value} />
+          <strong
+            className={styles.metricValue}
+            data-available={value !== null}
+          >
+            <MonitoringNumber
+              fallback={fallback}
+              signDisplay={signDisplay}
+              value={value}
+            />
             {unit && value !== null ? <small>{unit}</small> : null}
           </strong>
           {detail ? (

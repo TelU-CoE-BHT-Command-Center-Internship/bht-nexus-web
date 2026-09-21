@@ -7,6 +7,7 @@ type MonitoringNumberProps = {
   /** Teks pengganti ketika nilainya memang belum diketahui. */
   fallback?: string;
   fractionDigits?: number;
+  signDisplay?: Intl.NumberFormatOptions["signDisplay"];
   suffix?: string;
   value: number | null;
 };
@@ -16,10 +17,15 @@ const DURATION_MS = 900;
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-function formatValue(value: number, fractionDigits: number) {
+function formatValue(
+  value: number,
+  fractionDigits: number,
+  signDisplay: Intl.NumberFormatOptions["signDisplay"],
+) {
   return new Intl.NumberFormat("id-ID", {
     maximumFractionDigits: fractionDigits,
     minimumFractionDigits: fractionDigits,
+    signDisplay,
   }).format(value);
 }
 
@@ -53,6 +59,7 @@ function isHidden() {
 export function MonitoringNumber({
   fallback = "—",
   fractionDigits = 0,
+  signDisplay = "auto",
   suffix,
   value,
 }: MonitoringNumberProps) {
@@ -124,7 +131,7 @@ export function MonitoringNumber({
     return <span>{fallback}</span>;
   }
 
-  const finalLabel = `${formatValue(value, fractionDigits)}${suffix ?? ""}`;
+  const finalLabel = `${formatValue(value, fractionDigits, signDisplay)}${suffix ?? ""}`;
 
   if (running === null) {
     return <span>{finalLabel}</span>;
@@ -133,7 +140,7 @@ export function MonitoringNumber({
   return (
     <span>
       <span aria-hidden="true">
-        {`${formatValue(running, fractionDigits)}${suffix ?? ""}`}
+        {`${formatValue(running, fractionDigits, signDisplay)}${suffix ?? ""}`}
       </span>
       <span className={styles.visuallyHidden}>{finalLabel}</span>
     </span>

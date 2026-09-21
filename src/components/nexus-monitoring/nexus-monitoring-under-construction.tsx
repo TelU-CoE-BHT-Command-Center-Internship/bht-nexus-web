@@ -20,32 +20,25 @@ const sourceHrefs: Partial<Record<NexusKmIndicatorCategory, string>> = {
 };
 
 /**
- * Keadaan "sedang disiapkan" pada Monitoring KM. Bentuknya satu supaya domain
- * yang halamannya belum ada dan indikator yang rinciannya belum ada memakai
- * bahasa visual yang sama, sedangkan isinya ditentukan pemanggilnya.
+ * Keadaan "sedang disiapkan" pada Monitoring KM. Bentuknya satu supaya setiap
+ * domain yang pemantauannya belum ada memakai bahasa visual yang sama,
+ * sedangkan isinya ditentukan pemanggilnya.
  */
-export function MonitoringConstructionState({
+function MonitoringConstructionState({
   actions,
-  compact = false,
   description,
   note,
   title,
   titleId,
 }: {
   actions: ReactNode;
-  /** Susunan yang lebih rapat untuk pesan pendek pada satu alamat indikator. */
-  compact?: boolean;
   description: string;
   note?: ReactNode;
   title: string;
   titleId: string;
 }) {
   return (
-    <section
-      aria-labelledby={titleId}
-      className={styles.constructionState}
-      data-compact={compact}
-    >
+    <section aria-labelledby={titleId} className={styles.constructionState}>
       <div aria-hidden="true" className={styles.constructionVisual}>
         <Image
           alt=""

@@ -62,6 +62,14 @@ export type NexusMonitoringBusinessDate =
     }
   | { available: false; field: string; reason: string };
 
+/** Tanggal lintas tahun tetap disimpan, tetapi tidak dialokasikan ke TW periode ini. */
+export function monitoringRecordQuarter(record: NexusMonitoringRecord) {
+  const date = record.businessDate;
+  return date.available && date.iso.slice(0, 4) === record.evaluationPeriod
+    ? date.quarter
+    : null;
+}
+
 type NexusMonitoringRecordCore = {
   businessDate: NexusMonitoringBusinessDate;
   contributors: readonly NexusMonitoringContributor[];

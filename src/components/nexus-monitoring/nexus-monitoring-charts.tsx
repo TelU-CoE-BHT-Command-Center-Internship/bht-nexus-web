@@ -420,3 +420,97 @@ export function MonitoringCompositionChart({
     />
   );
 }
+
+export type MonitoringQuarterColumn = {
+  id: string;
+  label: string;
+  value: number;
+};
+
+/**
+ * Sebaran rekam resmi pada keempat triwulan evaluasi. Triwulan tanpa rekam
+ * digambar sebagai batang nol karena nolnya memang diketahui: rekamnya ada,
+ * tanggalnya terbaca, dan tidak satu pun jatuh pada triwulan itu. Triwulan yang
+ * tidak dapat dibentuk sama sekali tidak pernah sampai ke grafik ini.
+ */
+export function MonitoringQuarterChart({
+  height = 240,
+  columns,
+  unitLabel,
+}: {
+  columns: readonly MonitoringQuarterColumn[];
+  height?: number;
+  unitLabel: string;
+}) {
+  const reducedMotion = useReducedMotion();
+  const base = baseOptions(reducedMotion);
+  /*
+   * Sumbu jumlah rekam hanya boleh berhenti di bilangan bulat. Banyaknya tanda
+   * dibatasi oleh nilai tertinggi supaya sumbu untuk satu rekam tidak
+   * menampilkan pecahan yang dibulatkan menjadi label kembar.
+   */
+  const highest = Math.max(1, ...columns.map((column) => column.value));
+  const step = Math.max(1, Math.ceil(highest / 4));
+  const axisMax = Math.ceil((highest + 1) / step) * step;
+  const options: ApexOptions = {
+    ...base,
+    chart: {
+      ...base.chart,
+      toolbar: { show: false },
+      zoom: { allowMouseWheelZoom: false, enabled: false, pinch: false },
+    },
+    colors: [MONITORING_SERIES_COLOR],
+    dataLabels: {
+      enabled: true,
+      formatter: (value: number) => (value > 0 ? wholeNumberLabel(value) : ""),
+      offsetY: -22,
+      style: { colors: ["#344054"], fontSize: "12px", fontWeight: 600 },
+    },
+    fill: { opacity: 1 },
+    legend: { show: false },
+    plotOptions: {
+      bar: {
+        borderRadius: 6,
+        borderRadiusApplication: "end",
+        columnWidth: "32%",
+        dataLabels: { position: "top" },
+        horizontal: false,
+      },
+    },
+    stroke: { show: false, width: 0 },
+    tooltip: {
+      ...base.tooltip,
+      y: {
+        formatter: (value: number) => `${wholeNumberLabel(value)} ${unitLabel}`,
+      },
+    },
+    xaxis: {
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      categories: columns.map((column) => column.label),
+      labels: { style: { colors: "#667085", fontSize: "12px" } },
+      tickPlacement: "on",
+    },
+    yaxis: {
+      forceNiceScale: false,
+      labels: {
+        formatter: wholeNumberLabel,
+        style: { colors: "#667085", fontSize: "11px" },
+      },
+      max: axisMax,
+      min: 0,
+      tickAmount: axisMax / step,
+    },
+  };
+
+  return (
+    <ApexChart
+      height={height}
+      options={options}
+      series={[
+        { data: columns.map((column) => column.value), name: unitLabel },
+      ]}
+      type="bar"
+    />
+  );
+}

@@ -11,6 +11,7 @@ import {
 import type { NexusEvaluationQuarter } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import {
   getNexusMonitoringRecords,
+  monitoringRecordQuarter,
   type NexusMonitoringRecord,
 } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import type {
@@ -128,13 +129,18 @@ function quarterBreakdown(
   const reasons = new Set<string>();
 
   for (const record of records) {
-    if (record.businessDate.available) {
-      counts[record.businessDate.quarter] += 1;
+    const quarter = monitoringRecordQuarter(record);
+    if (quarter !== null) {
+      counts[quarter] += 1;
       dated += 1;
       continue;
     }
     undated += 1;
-    reasons.add(record.businessDate.reason);
+    reasons.add(
+      record.businessDate.available
+        ? "Tanggal peristiwa berada di luar tahun evaluasi; rekam belum dialokasikan ke triwulan periode ini."
+        : record.businessDate.reason,
+    );
   }
 
   if (dated === 0) {
