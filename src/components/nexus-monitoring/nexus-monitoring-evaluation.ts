@@ -509,7 +509,7 @@ const evaluationSeeds: readonly EvaluationSeed[] = [
     targetValue: 1,
   },
   {
-    businessDateLabel: "Tanggal mulai kontrak",
+    businessDateLabel: "Tanggal pengajuan",
     calculation:
       "Jumlah submit proposal riset pada tingkat nasional oleh dosen anggota CoE.",
     definition:
@@ -524,7 +524,7 @@ const evaluationSeeds: readonly EvaluationSeed[] = [
     targetValue: 8,
   },
   {
-    businessDateLabel: "Tanggal mulai kontrak",
+    businessDateLabel: "Tanggal pengajuan",
     calculation:
       "Jumlah submit proposal riset pada tingkat internasional oleh dosen anggota CoE.",
     definition:
@@ -539,7 +539,7 @@ const evaluationSeeds: readonly EvaluationSeed[] = [
     targetValue: 11,
   },
   {
-    businessDateLabel: "Tanggal mulai kontrak",
+    businessDateLabel: "Tanggal pengajuan",
     calculation:
       "Jumlah submit proposal non-riset oleh dosen anggota CoE, termasuk pelatihan, transfer teknologi, jasa konsultasi, dan pengabdian masyarakat.",
     definition:

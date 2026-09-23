@@ -21,8 +21,12 @@ import {
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import {
   measureIndicator,
+  type NexusAssessedRecord,
+  type NexusCountingState,
   type NexusIndicatorMeasurement,
   type NexusIndicatorStatus,
+  type NexusMonitoringCountingSummary,
+  nexusCountingLabels,
   nexusIndicatorStatusLabels,
   nexusIndicatorStatusTones,
   summarizeCategory,
@@ -97,11 +101,49 @@ export type MonitoringGapView = {
   target: number;
 };
 
+/**
+ * Satu irisan sebuah komposisi, dengan nilai aslinya tetap dibawa supaya
+ * legenda dan ringkasan teks tidak pernah membulatkan proporsi yang sama
+ * dengan dua cara berbeda.
+ */
+export type MonitoringBreakdownSlice = {
+  detail: string;
+  id: string;
+  label: string;
+  share: number;
+  value: number;
+};
+
+/**
+ * Sebuah sebaran beserta populasi yang diwakilinya. `population` selalu sama
+ * dengan jumlah seluruh irisan, termasuk irisan "belum terklasifikasi",
+ * sehingga grafik tidak pernah diam-diam menghilangkan rekam.
+ */
+export type MonitoringBreakdownView = {
+  centerLabel: string;
+  description: string;
+  id: string;
+  population: number;
+  slices: readonly MonitoringBreakdownSlice[];
+  title: string;
+  unitLabel: string;
+};
+
+/** Perbandingan rekam tertaut dengan rekam yang benar-benar dihitung. */
+export type MonitoringCountingView = {
+  items: readonly MonitoringBreakdownSlice[];
+  linked: number;
+  summary: string;
+};
+
 export type MonitoringDomainView = {
   category: NexusKmIndicatorCategory;
   /** Indikator domain yang capaiannya dapat dibandingkan dengan targetnya. */
   computable: number;
   contributingRecords: number;
+  /** Bentuk rekam resmi pembentuk realisasi domain ini. */
+  recordForms: MonitoringBreakdownView | null;
+  counting: MonitoringCountingView;
   gaps: readonly MonitoringGapView[];
   indicators: readonly MonitoringIndicatorSummary[];
   /** Rentang indikator domain, mis. `KM-9 sampai KM-18`. */
@@ -222,6 +264,124 @@ function indicatorRange(indicators: readonly MonitoringIndicatorSummary[]) {
   return first.id === last.id ? first.id : `${first.id} sampai ${last.id}`;
 }
 
+/**
+ * Bentuk sebuah rekam resmi menurut rumah data asalnya. Tiap rumpun memakai
+ * kosakata tertutupnya sendiri—bentuk karya, jenis kegiatan, jenis kontrak,
+ * bentuk perlindungan, atau bentuk kegiatan akademik—sehingga nilainya selalu
+ * berasal dari daftar yang memang dikenal sumbernya, bukan dari teks bebas.
+ */
+function recordFormLabel(record: NexusMonitoringRecord) {
+  switch (record.family) {
+    case "publications":
+      return record.publication.type;
+    case "activities":
+      return record.activity.kind;
+    case "intellectual-property":
+      return record.intellectualProperty.protection;
+    case "contracts":
+      return record.contract.kind;
+    default:
+      return record.academic.activity;
+  }
+}
+
+/**
+ * Sebaran sebuah populasi rekam menurut satu bidang. Rekam yang bidangnya
+ * belum terisi tetap muncul sebagai irisan tersendiri, sehingga jumlah seluruh
+ * irisan selalu sama dengan populasinya.
+ */
+function buildBreakdown(
+  id: string,
+  title: string,
+  description: string,
+  unitLabel: string,
+  centerLabel: string,
+  values: readonly (string | undefined)[],
+  /**
+   * Keterangan tiap irisan. Bentuk terpusat menyebut jumlah rekamnya di sini
+   * karena kolom nilai di tepi kanan memang ditiadakan, sehingga angkanya tetap
+   * terbaca sebagai teks dan tidak hanya tersirat dari besar irisan cincin.
+   */
+  detail: (value: number, percent: number, population: number) => string = (
+    _value,
+    percent,
+    population,
+  ) => `${percent}% dari ${population} ${unitLabel}`,
+): MonitoringBreakdownView | null {
+  if (values.length === 0) return null;
+
+  const counts = new Map<string, number>();
+  for (const value of values) {
+    const key = value?.trim() || "Belum terklasifikasi";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const population = values.length;
+  const slices = [...counts.entries()]
+    .map(([label, value]) => ({
+      detail: detail(value, Math.round((value / population) * 100), population),
+      id: label,
+      label,
+      share: value / population,
+      value,
+    }))
+    .sort(
+      (first, second) =>
+        second.value - first.value ||
+        first.label.localeCompare(second.label, "id-ID"),
+    );
+
+  return {
+    centerLabel,
+    description,
+    id,
+    population,
+    slices,
+    title,
+    unitLabel,
+  };
+}
+
+const countingOrder: readonly NexusCountingState[] = [
+  "counted",
+  "needs-verification",
+  "not-counted",
+];
+
+const countingDetails: Record<NexusCountingState, string> = {
+  counted: "Memenuhi ketentuan indikator pada periode ini",
+  "needs-verification":
+    "Bidang penentu belum tercatat, sehingga ketentuannya belum dapat diperiksa",
+  "not-counted":
+    "Di luar periode evaluasi atau belum memenuhi ketentuan indikator",
+};
+
+function buildCountingView(
+  counting: NexusMonitoringCountingSummary,
+): MonitoringCountingView {
+  const values: Record<NexusCountingState, number> = {
+    counted: counting.counted,
+    "needs-verification": counting.needsVerification,
+    "not-counted": counting.notCounted,
+  };
+  const { linked } = counting;
+
+  return {
+    items: countingOrder.map((state) => ({
+      detail: countingDetails[state],
+      id: state,
+      label: nexusCountingLabels[state],
+      share: linked === 0 ? 0 : values[state] / linked,
+      value: values[state],
+    })),
+    linked,
+    summary:
+      linked === 0
+        ? "Belum ada rekam resmi yang tertaut ke indikator domain ini pada periode berjalan."
+        : `${counting.counted} dari ${linked} rekam tertaut membentuk realisasi. Sisanya tetap tercantum pada rincian indikatornya beserta alasannya.`,
+  };
+}
+
 export function buildDomainView(
   category: NexusKmIndicatorCategory,
   period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
@@ -229,11 +389,26 @@ export function buildDomainView(
 ): MonitoringDomainView {
   const summary = summarizeCategory(category, period, records);
   const indicators = summary.measurements.map(indicatorSummary);
+  const contributingByPublicId = new Map<string, NexusMonitoringRecord>();
+  for (const measurement of summary.measurements) {
+    for (const record of measurement.contributing) {
+      contributingByPublicId.set(record.publicId, record);
+    }
+  }
 
   return {
     category,
     computable: summary.computable,
     contributingRecords: summary.contributingRecords,
+    counting: buildCountingView(summary.counting),
+    recordForms: buildBreakdown(
+      "bentuk-rekam",
+      "Bentuk Rekam Pembentuk",
+      `Bentuk rekam resmi yang membentuk realisasi indikator ${category} pada periode berjalan, menurut kosakata rumah data asalnya.`,
+      "rekam",
+      "rekam",
+      [...contributingByPublicId.values()].map(recordFormLabel),
+    ),
     gaps: targetGaps(indicators),
     indicators,
     indicatorRange: indicatorRange(indicators),
@@ -294,10 +469,21 @@ export type MonitoringRecordField = {
   wide?: boolean;
 };
 
-/** Satu rekam resmi yang membentuk realisasi, siap ditampilkan apa adanya. */
+/** Satu rekam resmi yang tertaut ke indikator, siap ditampilkan apa adanya. */
 export type MonitoringRecordView = {
   /** Tanggal peristiwanya; kosong ketika sumbernya belum mencatatnya. */
   businessDateLabel: string | null;
+  /**
+   * Apakah rekam ini ikut membentuk realisasi indikator, beserta alasannya
+   * ketika tidak. Alasannya ditulis sebagai kalimat untuk pengguna, bukan
+   * sebagai pengenal aturan.
+   */
+  counting: {
+    label: string;
+    reason: string | null;
+    state: NexusCountingState;
+    tone: MonitoringTone;
+  };
   evidenceLabel: string;
   evidenceTone: MonitoringTone;
   evidenceUrl: string | null;
@@ -339,10 +525,17 @@ export type MonitoringIndicatorNeighbour = {
 };
 
 export type MonitoringIndicatorView = {
+  /**
+   * Sebaran khusus indikator ini; `null` ketika rekam resminya memang tidak
+   * membawa dimensi yang menambah keterangan di luar angka realisasinya.
+   */
+  analytics: MonitoringBreakdownView | null;
   /** Nama tanggal yang menentukan triwulan sebuah rekam. */
   businessDateLabel: string;
   calculation: string;
   category: NexusKmIndicatorCategory;
+  /** Perbandingan rekam tertaut dengan rekam yang benar-benar dihitung. */
+  counting: MonitoringCountingView;
   definition: string;
   /** Selisih realisasi terhadap target; nilai negatif berarti masih kurang. */
   difference: number | null;
@@ -539,12 +732,20 @@ function recordMetadata(
   }
 }
 
+const countingTones: Record<NexusCountingState, MonitoringTone> = {
+  counted: "success",
+  "needs-verification": "waiting",
+  "not-counted": "neutral",
+};
+
 function recordView(
-  record: NexusMonitoringRecord,
+  assessed: NexusAssessedRecord,
   indicatorId: NexusKmIndicatorId,
+  period: NexusEvaluationPeriodId,
 ): MonitoringRecordView {
+  const { counting, record } = assessed;
   const { businessDate } = record;
-  const quarter = monitoringRecordQuarter(record);
+  const quarter = monitoringRecordQuarter(record, period);
   const source =
     record.family === "publications"
       ? record.publication
@@ -578,6 +779,12 @@ function recordView(
 
   return {
     businessDateLabel: businessDate.available ? businessDate.label : null,
+    counting: {
+      label: nexusCountingLabels[counting.state],
+      reason: counting.state === "counted" ? null : counting.reason,
+      state: counting.state,
+      tone: countingTones[counting.state],
+    },
     evidenceLabel: record.evidenceLabel,
     evidenceTone: evidenceTones[record.evidenceState],
     evidenceUrl,
@@ -641,6 +848,54 @@ function neighbours(
  * sama dengan ikhtisar domain, dan daftar rekamnya adalah rekam yang memang
  * membentuk realisasi, bukan salinan rumah data resmi.
  */
+/**
+ * Sebaran khusus satu indikator.
+ *
+ * Hanya indikator yang rekam resminya memang membawa dimensi bermakna yang
+ * mempunyai sebaran di sini. Indikator lain sengaja tidak diberi grafik kedua:
+ * bidang penentunya berupa teks bebas, bernilai sama untuk seluruh rekamnya,
+ * atau memang tidak dicatat sumbernya, sehingga grafiknya hanya akan
+ * mengulang angka realisasi tanpa menambah keterangan.
+ */
+function indicatorBreakdown(
+  measurement: NexusIndicatorMeasurement,
+): MonitoringBreakdownView | null {
+  const { contributing } = measurement;
+  const indicatorId = measurement.evaluation.indicator.id;
+
+  if (indicatorId === "KM-14") {
+    return buildBreakdown(
+      "kuartil-jurnal",
+      "Kuartil Jurnal yang Dihitung",
+      "Kuartil jurnal rekam resmi yang membentuk realisasi indikator ini. Kuartil adalah pemeringkatan reputasi jurnal, bukan triwulan evaluasi.",
+      "rekam",
+      "rekam",
+      contributing.map((record) =>
+        record.family === "publications"
+          ? record.publication.quartile
+          : undefined,
+      ),
+      (value, percent) => `${value} rekam · ${percent}%`,
+    );
+  }
+
+  if (indicatorId === "KM-13") {
+    return buildBreakdown(
+      "bentuk-karya",
+      "Bentuk Karya yang Dihitung",
+      "Bentuk karya rekam resmi yang membentuk realisasi indikator ini. Definisinya mencakup jurnal bereputasi selain Q1/Q2 beserta book chapter, sehingga bentuk karyanya memang beragam.",
+      "rekam",
+      "rekam",
+      contributing.map((record) =>
+        record.family === "publications" ? record.publication.type : undefined,
+      ),
+      (value, percent) => `${value} rekam · ${percent}%`,
+    );
+  }
+
+  return null;
+}
+
 export function buildIndicatorView(
   indicatorId: NexusKmIndicatorId,
   period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
@@ -653,11 +908,22 @@ export function buildIndicatorView(
   const { category, id, label } = evaluation.indicator;
   const house = nexusMonitoringSourceHouses[evaluation.sourceFamily];
   const { next, previous } = neighbours(category, id);
+  const counted =
+    measurement.linked.length -
+    measurement.notCounted -
+    measurement.needsVerification;
 
   return {
+    analytics: indicatorBreakdown(measurement),
     businessDateLabel: evaluation.businessDateLabel,
     calculation: evaluation.calculation,
     category,
+    counting: buildCountingView({
+      counted,
+      linked: measurement.linked.length,
+      needsVerification: measurement.needsVerification,
+      notCounted: measurement.notCounted,
+    }),
     definition: evaluation.definition,
     difference: measurement.difference,
     domainHref: nexusDomainHref(category),
@@ -676,7 +942,9 @@ export function buildIndicatorView(
     purpose: evaluation.purpose,
     quarterly: quarterlyView(measurement),
     realization: measurement.realization,
-    records: measurement.records.map((record) => recordView(record, id)),
+    records: measurement.linked.map((assessed) =>
+      recordView(assessed, id, period),
+    ),
     status: measurement.status,
     statusLabel: nexusIndicatorStatusLabels[measurement.status],
     statusTone: nexusIndicatorStatusTones[measurement.status],

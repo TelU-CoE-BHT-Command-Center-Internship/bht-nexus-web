@@ -132,6 +132,15 @@ export type OfficialPublication = {
   pages?: string;
   provenance: PublicationProvenance[];
   publicId: string;
+  /**
+   * Bulan atau tanggal terbit menurut sumbernya. Hanya sebagian sumber
+   * mencatatnya: worksheet KM-12 memuat kolom tanggal publikasi berformat
+   * bulan-tahun, sedangkan worksheet KM-11, KM-13, KM-14, dan KM-33 memang
+   * tidak punya kolom tanggal sama sekali. Nilainya ditulis `YYYY-MM` ketika
+   * sumber hanya mencatat bulannya, supaya hari yang tidak dicatat tidak
+   * pernah dikarang. `year` tetap disimpan apa adanya.
+   */
+  publishedOn?: string;
   publisherUrl?: string;
   quality: PublicationQuality;
   /** Nilai atau pengecualian pelengkapan yang sudah disetujui. */
@@ -244,6 +253,20 @@ type PublicationSeed = readonly [
   year: number | 0,
   publisherUrl: string,
 ];
+
+/**
+ * Tanggal terbit yang benar-benar dicatat sumbernya. Worksheet `no. 12`
+ * memuat kolom `Tanggal publikasi` berformat bulan-tahun, sehingga nilainya
+ * disimpan sampai bulan saja. Rekam publikasi lain tidak dicantumkan di sini
+ * karena worksheet asalnya tidak memuat kolom tanggal.
+ */
+const publishedMonths: Record<string, string> = {
+  "PUB-2026-0042": "2026-02",
+  "PUB-2026-0043": "2026-01",
+  "PUB-2026-0044": "2026-04",
+  "PUB-2026-0045": "2026-01",
+  "PUB-2026-0046": "2026-04",
+};
 
 const seeds: readonly PublicationSeed[] = [
   // Sheet no.14 — Publikasi jurnal internasional bereputasi setara Q1/Q2.
@@ -979,6 +1002,7 @@ function createPublication(seed: PublicationSeed): OfficialPublication {
       })),
     ],
     publicId,
+    publishedOn: publishedMonths[publicId],
     publisherUrl: url || undefined,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     quartile: canonicalQuartile,
