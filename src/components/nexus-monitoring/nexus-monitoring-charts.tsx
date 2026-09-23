@@ -338,6 +338,21 @@ export function MonitoringCompositionChart({
 }) {
   const reducedMotion = useReducedMotion();
   const total = slices.reduce((sum, slice) => sum + slice.value, 0);
+  /*
+   * Penangan peristiwa hanya disertakan ketika irisannya memang dapat ditekan.
+   * Menyetel kunci `events` menjadi `undefined` membuat pustaka grafik menimpa
+   * penangan bawaannya dengan nilai kosong, sehingga cincin gagal digambar pada
+   * kartu yang irisannya tidak bertautan.
+   */
+  const selectionEvents: NonNullable<ApexOptions["chart"]>["events"] = onSelect
+    ? {
+        dataPointSelection: (_event, _context, config) => {
+          const index = config?.dataPointIndex;
+          const slice = typeof index === "number" ? slices[index] : undefined;
+          if (slice) onSelect(slice.id);
+        },
+      }
+    : undefined;
 
   const options: ApexOptions = {
     chart: {
@@ -348,16 +363,7 @@ export function MonitoringCompositionChart({
         easing: "easeinout",
         speed: 700,
       },
-      events: onSelect
-        ? {
-            dataPointSelection: (_event, _context, config) => {
-              const index = config?.dataPointIndex;
-              const slice =
-                typeof index === "number" ? slices[index] : undefined;
-              if (slice) onSelect(slice.id);
-            },
-          }
-        : undefined,
+      ...(selectionEvents ? { events: selectionEvents } : {}),
       fontFamily: "inherit",
       toolbar: { show: false },
     },
