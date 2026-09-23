@@ -55,7 +55,7 @@ function DetailField({
  */
 function evidenceExplanation(record: MonitoringRecordView) {
   if (record.evidenceUrl) {
-    return "Eviden rekam ini dapat dibuka langsung dari sumber penerbitnya.";
+    return "Eviden rekam ini dapat dibuka langsung dari sumber publik yang tercatat pada rekam resmi.";
   }
   if (record.evidenceTone === "waiting") {
     return "Eviden rekam ini belum tercatat. Lengkapi melalui rumah Data Resmi agar realisasi indikator dapat ditelusuri sampai buktinya.";
@@ -135,8 +135,9 @@ export function MonitoringRecordDetail({
           <div>
             <strong>Metadata rekam masih perlu dilengkapi</strong>
             <p>
-              Rekam tetap dihitung sebagai realisasi indikator, tetapi sebagian
-              bidangnya belum selesai diperiksa pada rumah Data Resmi.
+              Sebagian bidang rekam ini belum selesai diperiksa pada rumah Data
+              Resmi. Kelengkapan metadata dinilai terpisah dari ketentuan
+              perhitungan indikator, sehingga keduanya dapat berbeda.
             </p>
           </div>
         </aside>
@@ -177,7 +178,7 @@ export function MonitoringRecordDetail({
             <span className={detail.sectionIndex}>02</span>
             <h3 id="monitoring-record-link-title">Kaitan dengan indikator</h3>
           </div>
-          <p>Alasan rekam dihitung pada indikator ini</p>
+          <p>Kaitan rekam dan keadaan perhitungannya</p>
         </div>
 
         <p className={detail.explanation}>{record.linkNote}</p>
@@ -187,14 +188,20 @@ export function MonitoringRecordDetail({
           className={detail.metadataDetails}
         >
           <DetailField
+            label="Perhitungan realisasi"
+            value={record.counting.label}
+          />
+          <DetailField
             label={`Dasar triwulan (${businessDateLabel.toLocaleLowerCase("id-ID")})`}
             value={
               record.businessDateLabel
                 ? `${record.businessDateLabel} · ${record.quarterLabel}`
                 : "Belum tercatat, sehingga rekam tidak masuk triwulan mana pun"
             }
-            wide
           />
+          {record.counting.reason ? (
+            <DetailField label="Alasan" value={record.counting.reason} wide />
+          ) : null}
         </dl>
 
         <Link

@@ -1253,12 +1253,64 @@
   stroke-width: 1.8;
 }
 
+/*
+ * Pada layar sempit, baris remah dan navigasi indikator berpindah ke barisnya
+ * sendiri. Navigasinya menjadi dua kolom sama lebar supaya tombol Sebelumnya
+ * dan Berikutnya seimbang dan tidak ada yang terpotong tepi layar; ketika
+ * indikatornya hanya punya satu tetangga, tombol itu memakai lebar penuh.
+ */
+@media (max-width: 40rem) {
+  .indicatorTrail {
+    align-items: flex-start;
+  }
+
+  .indicatorNav {
+    display: grid;
+    width: 100%;
+    flex: 1 1 auto;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .indicatorNavLink {
+    justify-content: flex-start;
+  }
+
+  .indicatorNavLink[data-align="end"] {
+    justify-content: flex-end;
+  }
+}
+
+/*
+ * Kartu yang berdampingan pada satu baris selalu setinggi baris itu, bukan
+ * setinggi isinya masing-masing. Sebaran triwulan tidak selalu dapat dibentuk,
+ * sehingga tanpa aturan ini kartu kiri menyusut dan menyisakan ruang kosong di
+ * sebelah kartu kanan yang lebih panjang.
+ */
 .indicatorAnalyticsGrid {
   display: grid;
+  min-width: 0;
   grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 1fr);
+  align-items: stretch;
   gap: 1rem;
   margin-top: 1rem;
-  align-items: start;
+}
+
+.indicatorAnalyticsGrid > .card {
+  height: 100%;
+}
+
+.indicatorInsightGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: stretch;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.indicatorInsightGrid > .card {
+  height: 100%;
 }
 
 .indicatorMetrics .metricValue[data-available="false"] {
@@ -1403,6 +1455,17 @@
   color: var(--color-nexus-text-muted);
   font-size: 0.75rem;
   line-height: 1.5;
+}
+
+/*
+ * Ketika kartu memenuhi tinggi barisnya, baris penutup tiap kartu menempel ke
+ * bawah: rincian per triwulan pada kartu sebaran, dan kalimat capaian pada
+ * kartu dasar perhitungan. Grafiknya sendiri tetap setinggi aslinya supaya
+ * tidak teregang.
+ */
+.indicatorAnalyticsGrid .card[data-fill="true"] .indicatorQuarterGrid,
+.indicatorAnalyticsGrid .card[data-fill="true"] .ruleSource {
+  margin-top: auto;
 }
 
 /*
@@ -1690,6 +1753,7 @@
 
 .compositionChart {
   min-width: 0;
+  min-height: 13rem;
   flex: 1 1 10.5rem;
   max-width: 13rem;
 }
@@ -1707,6 +1771,20 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/*
+ * Bentuk terpusat untuk kartu selebar penuh: legenda berhenti melebar mengikuti
+ * kartu, sehingga cincin dan keterangannya berdiri sebagai satu blok di tengah
+ * dan tidak meninggalkan jarak panjang menuju tepi kanan.
+ */
+.composition[data-variant="centered"] {
+  gap: 1rem 2.25rem;
+}
+
+.composition[data-variant="centered"] .compositionLegend {
+  flex: 0 1 auto;
+  gap: 0.5rem;
 }
 
 .compositionRow {

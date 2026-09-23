@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import { MonitoringQuarterChart } from "@/components/nexus-monitoring/nexus-monitoring-charts";
+import { MonitoringComposition } from "@/components/nexus-monitoring/nexus-monitoring-composition";
 import { NEXUS_MONITORING_HREF } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import type { NexusEvaluationQuarter } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import { MonitoringRecordDetail } from "@/components/nexus-monitoring/nexus-monitoring-record-detail";
@@ -12,6 +13,7 @@ import {
   MonitoringCard,
   MonitoringChartFrame,
   MonitoringChartSummary,
+  MonitoringDistributionList,
   MonitoringMetricCard,
   MonitoringUnavailable,
 } from "@/components/nexus-monitoring/nexus-monitoring-ui";
@@ -122,6 +124,17 @@ export function NexusMonitoringIndicator({
   );
 
   const businessDateColumn = view.businessDateLabel;
+  /*
+   * Panel kesiapan hanya muncul ketika memang ada yang perlu dijelaskan.
+   * Saat seluruh rekam tertaut sudah dihitung, kartu metrik sudah menyebut
+   * hubungan itu dan panel tambahan hanya mengulanginya.
+   */
+  const showCountingPanel = view.counting.items.some(
+    (item) => item.id !== "counted" && item.value > 0,
+  );
+  const countedVisible = filteredRecords.filter(
+    (record) => record.counting.state === "counted",
+  ).length;
 
   const quarterFilters: readonly { id: QuarterFilter; label: string }[] =
     quarterly.available
@@ -196,7 +209,7 @@ export function NexusMonitoringIndicator({
           variant="summary"
         />
         <MonitoringMetricCard
-          detail="Rekam resmi yang tertaut ke indikator"
+          detail={`Dari ${view.counting.linked} rekam resmi yang tertaut`}
           fallback="Belum dapat dihitung"
           icon="database"
           label="Realisasi"
@@ -233,7 +246,8 @@ export function NexusMonitoringIndicator({
           actions={
             <span className={styles.summaryChartUnit}>Jumlah rekam</span>
           }
-          description={`Rekam resmi pembentuk realisasi dikelompokkan menurut ${lowerFirst(businessDateColumn)} pada ${periodLabel}.`}
+          description={`Rekam resmi yang dihitung sebagai realisasi, dikelompokkan menurut ${lowerFirst(businessDateColumn)} pada ${periodLabel}.`}
+          fill
           headingId="monitoring-indicator-quarters"
           title="Realisasi per Triwulan"
         >
@@ -241,7 +255,7 @@ export function NexusMonitoringIndicator({
             <>
               <MonitoringChartFrame
                 fluid
-                label={`Grafik batang sebaran ${view.records.length} rekam resmi pembentuk realisasi ${view.id} pada empat triwulan ${periodLabel}. ${quarterly.points
+                label={`Grafik batang sebaran ${view.realization ?? 0} rekam resmi yang dihitung sebagai realisasi ${view.id} pada empat triwulan ${periodLabel}. ${quarterly.points
                   .map((point) => `${point.label} ${point.value} rekam`)
                   .join(", ")}.`}
               >
@@ -270,7 +284,7 @@ export function NexusMonitoringIndicator({
               </dl>
               {quarterly.undated > 0 ? (
                 <MonitoringChartSummary>
-                  {`${quarterly.undated} rekam belum terpetakan: tanggal belum tersedia atau berada di luar tahun evaluasi. Rekam tersebut tetap tercantum pada daftar tahunan.`}
+                  {`${quarterly.undated} rekam yang dihitung belum terpetakan ke triwulan karena ${lowerFirst(businessDateColumn)}-nya belum tercatat. Rekam tersebut tetap masuk realisasi tahunan.`}
                 </MonitoringChartSummary>
               ) : null}
             </>
@@ -283,6 +297,7 @@ export function NexusMonitoringIndicator({
         </MonitoringCard>
 
         <MonitoringCard
+          fill
           headingId="monitoring-indicator-calculation"
           title="Dasar Perhitungan"
         >
@@ -308,6 +323,49 @@ export function NexusMonitoringIndicator({
         </MonitoringCard>
       </div>
 
+      {showCountingPanel || view.analytics ? (
+        <div className={styles.indicatorInsightGrid}>
+          {showCountingPanel ? (
+            <MonitoringCard
+              description={`Rekam resmi yang tertaut ke ${view.id} tidak seluruhnya membentuk realisasinya. Alasan tiap rekam tercantum pada daftar di bawah.`}
+              fill
+              headingId="monitoring-indicator-counting"
+              title="Kesiapan Perhitungan"
+            >
+              <MonitoringDistributionList
+                items={view.counting.items}
+                valueLabel={(item) => `${item.value} rekam`}
+              />
+              <MonitoringChartSummary>
+                {view.counting.summary}
+              </MonitoringChartSummary>
+            </MonitoringCard>
+          ) : null}
+
+          {view.analytics ? (
+            <MonitoringCard
+              description={view.analytics.description}
+              fill
+              headingId="monitoring-indicator-breakdown"
+              title={view.analytics.title}
+            >
+              <MonitoringComposition
+                centerLabel={view.analytics.centerLabel}
+                chartLabel={`Cincin komposisi ${view.analytics.population} ${view.analytics.unitLabel} yang dihitung sebagai realisasi ${view.id}. ${view.analytics.slices
+                  .map(
+                    (slice) =>
+                      `${slice.label} ${slice.value} ${view.analytics?.unitLabel ?? "rekam"}`,
+                  )
+                  .join(", ")}.`}
+                items={view.analytics.slices}
+                unitLabel={view.analytics.unitLabel}
+                variant="centered"
+              />
+            </MonitoringCard>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className={styles.summaryUpdates}>
         <MonitoringCard
           actions={
@@ -315,18 +373,15 @@ export function NexusMonitoringIndicator({
               {`Buka ${view.houseLabel}`}
             </NexusWorkspaceLinkButton>
           }
-          description={`Rekam resmi yang tertaut ke ${view.id} pada ${periodLabel}. Buka judul rekam untuk memeriksa eviden dan asal datanya.`}
+          description={`Rekam resmi yang tertaut ke ${view.id} pada ${periodLabel}, termasuk rekam yang belum membentuk realisasinya. Buka judul rekam untuk memeriksa alasan, eviden, dan asal datanya.`}
           headingId="monitoring-indicator-records"
           inlineHeader={false}
           title="Data Pembentuk Realisasi"
         >
           {view.records.length === 0 ? (
             <MonitoringUnavailable
-              description={
-                view.unavailableReason ??
-                `Belum ada rekam resmi yang dikaitkan dengan ${view.id} pada ${periodLabel}. Rekam akan muncul di sini setelah lolos Tinjauan dan tertaut ke indikator ini.`
-              }
-              title="Belum ada rekam pembentuk realisasi"
+              description={`Belum ada rekam resmi yang dikaitkan dengan ${view.id}. Rekam akan muncul di sini setelah lolos Tinjauan dan tertaut ke indikator ini.`}
+              title="Belum ada rekam tertaut"
             />
           ) : (
             <>
@@ -353,7 +408,7 @@ export function NexusMonitoringIndicator({
                   caption={`Rekam resmi pembentuk realisasi ${view.id} pada ${periodLabel}`}
                   columns={[
                     { id: "record", label: "Rekam resmi", primary: true },
-                    { id: "house", label: "Rumah data" },
+                    { id: "counting", label: "Perhitungan" },
                     { id: "date", label: businessDateColumn },
                     { id: "evidence", label: "Eviden" },
                     { id: "quality", label: "Kelengkapan" },
@@ -423,9 +478,16 @@ export function NexusMonitoringIndicator({
                             Rincian
                           </NexusWorkspaceTableAction>
                         ),
+                        counting: (
+                          <NexusWorkspaceTableBadge
+                            key={`${record.publicId}-perhitungan`}
+                            tone={record.counting.tone}
+                          >
+                            {record.counting.label}
+                          </NexusWorkspaceTableBadge>
+                        ),
                         date: dateCell,
                         evidence: evidenceBadge,
-                        house: record.houseLabel,
                         quality: (
                           <NexusWorkspaceTableBadge
                             tone={
@@ -458,7 +520,11 @@ export function NexusMonitoringIndicator({
                           }
                           eyebrow={
                             <>
-                              {evidenceBadge}
+                              <NexusWorkspaceTableBadge
+                                tone={record.counting.tone}
+                              >
+                                {record.counting.label}
+                              </NexusWorkspaceTableBadge>
                               <span className={styles.summaryUpdateTime}>
                                 {record.id}
                               </span>
@@ -475,13 +541,19 @@ export function NexusMonitoringIndicator({
                                 </dd>
                               </div>
                               <div>
-                                <dt>Rumah data</dt>
-                                <dd>{record.houseLabel}</dd>
+                                <dt>Eviden</dt>
+                                <dd>{record.evidenceLabel}</dd>
                               </div>
                               <div>
                                 <dt>Kelengkapan</dt>
                                 <dd>{record.quality}</dd>
                               </div>
+                              {record.counting.reason ? (
+                                <div>
+                                  <dt>Alasan</dt>
+                                  <dd>{record.counting.reason}</dd>
+                                </div>
+                              ) : null}
                             </dl>
                           }
                           title={record.title}
@@ -495,11 +567,11 @@ export function NexusMonitoringIndicator({
                   })}
                 />
               </div>
-              {quarterFilter !== ALL_QUARTERS ? (
-                <MonitoringChartSummary>
-                  {`Saringan triwulan hanya mempersempit daftar ini. Realisasi ${view.id} pada ${periodLabel} tetap ${view.realization} rekam untuk satu tahun penuh.`}
-                </MonitoringChartSummary>
-              ) : null}
+              <MonitoringChartSummary>
+                {quarterFilter === ALL_QUARTERS
+                  ? `Daftar ini memuat ${filteredRecords.length} rekam tertaut; ${countedVisible} di antaranya dihitung sebagai realisasi ${view.id} pada ${periodLabel}.`
+                  : `Saringan triwulan hanya mempersempit daftar ini: ${filteredRecords.length} rekam tertaut, ${countedVisible} di antaranya dihitung. Realisasi ${view.id} pada ${periodLabel} tetap ${view.realization} rekam untuk satu tahun penuh.`}
+              </MonitoringChartSummary>
             </>
           )}
         </MonitoringCard>
@@ -549,9 +621,10 @@ export function NexusMonitoringIndicator({
         </div>
       </details>
       <p className={styles.indicatorMethodNote}>
-        Realisasi berasal dari rekam resmi yang tertaut ke indikator. Kandidat
-        yang masih menunggu Tinjauan belum dihitung. Saringan triwulan hanya
-        mengubah daftar, bukan angka tahunan.
+        Realisasi berasal dari rekam resmi tertaut yang memenuhi ketentuan
+        indikator pada periode ini; rekam tertaut lain tetap tercantum beserta
+        alasannya. Kandidat yang masih menunggu Tinjauan belum dihitung.
+        Saringan triwulan hanya mengubah daftar, bukan angka tahunan.
       </p>
       {selectedRecord ? (
         <MonitoringRecordDetail
