@@ -560,6 +560,63 @@
 }
 
 /*
+ * Tindakan kanan atas: periode, kelola target, dan unduh. Tombol mengikuti
+ * tinggi pemilih periode supaya satu baris tampak rata; pada layar sempit
+ * pemilih periode mengambil satu baris penuh dan kedua tombol berbagi baris
+ * berikutnya.
+ */
+.headerActions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.headerActions > .summaryPeriod {
+  flex: 0 0 15.5rem;
+  width: 15.5rem;
+}
+
+.headerActions > button {
+  white-space: nowrap;
+}
+
+@media (max-width: 56rem) {
+  .headerActions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+.headerActions > button svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+@media (max-width: 40rem) {
+  .headerActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .headerActions > .summaryPeriod {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .headerActions > button:only-of-type {
+    grid-column: 1 / -1;
+  }
+}
+
+/*
  * Wadah pemilih domain. Barisnya digeser mendatar tanpa batang gulir supaya
  * tepinya tetap bersih; bayangan tipis di kiri dan kanan menandakan masih ada
  * domain lain di arah tersebut.
@@ -1934,4 +1991,272 @@
 .card[data-fill="true"] .chartSummary {
   margin-top: auto;
   padding-top: 1rem;
+}
+
+/*
+ * Pengelolaan target dan koreksi rekam. Kontrolnya memakai token yang sama
+ * dengan bidang formulir ruang kerja; baris target dipadatkan menjadi tiga
+ * kolom supaya seluruh indikator satu periode dapat ditinjau sekaligus.
+ */
+.targetForm {
+  display: grid;
+  gap: 1rem;
+}
+
+.targetToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.targetToolbar p {
+  flex: 1 1 16rem;
+  margin: 0;
+  color: #52657d;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.targetGroup {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.6rem;
+}
+
+.targetGroup legend {
+  padding: 0 0.4rem;
+  margin-left: 0.6rem;
+  color: #2d405c;
+  font-size: 0.7rem;
+  font-weight: 720;
+}
+
+.targetRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7.5rem 8.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+}
+
+.targetRow + .targetRow {
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.targetRow label {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+  color: #233851;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.targetRow label strong {
+  font-size: 0.7rem;
+  font-weight: 760;
+}
+
+.targetCurrent {
+  display: grid;
+  color: #233851;
+  font-size: 0.74rem;
+  font-weight: 680;
+}
+
+.targetCurrent small {
+  color: #6b7c91;
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+
+.targetInput {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.targetInput input,
+.correctionCheckbox input {
+  accent-color: var(--color-brand-navy);
+}
+
+.targetInput input {
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.34rem 0.6rem;
+  border: 1px solid #cbd7e5;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #233851;
+  font: inherit;
+  font-size: 0.74rem;
+}
+
+.targetInput input:focus {
+  border-color: #6ea0d8;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgb(24 92 168 / 10%);
+}
+
+.targetInput input[aria-invalid="true"] {
+  border-color: #cf6575;
+  background: #fffafb;
+}
+
+.targetInput small {
+  color: #b42339;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.formFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.targetHistory {
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.6rem;
+  padding: 0.7rem 0.85rem;
+  color: #233851;
+  font-size: 0.72rem;
+}
+
+.targetHistory summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.targetHistory ol {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.targetHistory li {
+  display: grid;
+  gap: 0.15rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid #d8e2ef;
+}
+
+.targetHistory li span {
+  color: #6b7c91;
+  font-size: 0.66rem;
+}
+
+.targetHistory li p,
+.targetHistory > p {
+  margin: 0.2rem 0 0;
+  line-height: 1.45;
+}
+
+.correctionCheckboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.4rem 0.9rem;
+  margin: 0;
+  padding: 0.6rem 0.8rem 0.75rem;
+  border: 1px solid #cbd7e5;
+  border-radius: 0.5rem;
+}
+
+.correctionCheckboxes legend {
+  padding: 0 0.3rem;
+  color: #2d405c;
+  font-size: 0.67rem;
+  font-weight: 690;
+}
+
+.correctionCheckbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  color: #233851;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.correctionCheckbox input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0.1rem 0 0;
+  flex: 0 0 auto;
+}
+
+.pageNotice {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 40rem) {
+  .targetRow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .targetRow label {
+    grid-column: 1 / -1;
+  }
+}
+
+.recordCorrectAction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.recordCorrectAction span {
+  flex: 1 1 14rem;
+  color: #52657d;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.correctionHistory {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.correctionHistory > li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.6rem;
+  color: #233851;
+  font-size: 0.72rem;
+}
+
+.correctionHistory > li > span {
+  color: #6b7c91;
+  font-size: 0.66rem;
+}
+
+.correctionHistory ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.correctionHistory p {
+  margin: 0.3rem 0 0;
+  color: #52657d;
+  line-height: 1.45;
 }

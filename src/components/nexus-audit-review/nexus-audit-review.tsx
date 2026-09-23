@@ -31,6 +31,7 @@ import {
   manualSubmissionPresentation,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { useNexusOfficialRecords } from "@/components/nexus-official-records/nexus-official-records-hooks";
 import { reconcileMemberPersonBinding } from "@/components/nexus-review-session/nexus-member-person-binding";
 import {
   type AuditRuntimeState,
@@ -311,6 +312,7 @@ export function NexusAuditReview({
   initialRecordId?: string;
 }) {
   const reviewSession = useNexusReviewSession();
+  const officialRecords = useNexusOfficialRecords();
   const allRecords = useMemo(
     () => [
       ...reviewSession.records,
@@ -505,6 +507,9 @@ export function NexusAuditReview({
     if (!decisionIsAllowed) return;
 
     const label = decisionLabel(kind);
+    const selfReview = recordCapabilities.selfReview
+      ? (true as const)
+      : undefined;
     const occurredAt = new Date().toISOString();
     const reviewer = `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`;
     if (
@@ -558,6 +563,7 @@ export function NexusAuditReview({
         personMappings,
         label,
         note,
+        selfReview,
         targetRecordId,
         targetPersonId,
         occurredAt,
@@ -587,6 +593,7 @@ export function NexusAuditReview({
           kind: "decision",
           label,
           note,
+          selfReview,
           targetRecordId,
           occurredAt,
           version: previous.version,
@@ -671,10 +678,13 @@ export function NexusAuditReview({
           ? previous.matches
           : createManualOfficialMatches(
               matchingValues as ManualSubmissionValues,
-              record.manualSubmission?.comparisonCandidates ??
-                getManualComparisonCandidates(
-                  manualDomainForReviewRecord(record),
-                ),
+              // Pencocokan ulang memakai rekam resmi sesi berjalan, bukan
+              // salinan pembanding saat kandidat pertama kali dikirim, supaya
+              // rekam yang disetujui sesudahnya ikut terdeteksi.
+              getManualComparisonCandidates(
+                manualDomainForReviewRecord(record),
+                officialRecords,
+              ),
             );
 
       return {

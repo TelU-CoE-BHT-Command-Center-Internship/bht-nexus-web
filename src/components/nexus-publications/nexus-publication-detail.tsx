@@ -12,6 +12,7 @@ import {
   metadataCompletionFieldState,
   metadataCompletionResolvedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
 import {
   type OfficialPublication,
@@ -198,6 +199,7 @@ function getMetadataItems(
     })),
   );
 
+  items.push(...officialReportedQuarterItems(publication));
   return items.map((item) => ({
     ...item,
     fieldState: isMetadataCompletionFieldKey(item.key)

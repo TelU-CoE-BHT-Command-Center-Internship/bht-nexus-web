@@ -3,9 +3,9 @@ import {
   resolveRecordEligibility,
 } from "@/components/nexus-monitoring/nexus-monitoring-eligibility";
 import {
-  NEXUS_EVALUATION_PERIOD,
   type NexusEvaluationPeriodId,
   type NexusIndicatorEvaluation,
+  type NexusIndicatorTarget,
   type NexusMonitoringSourceFamily,
   nexusCategoryEvaluations,
   nexusEvaluations,
@@ -14,15 +14,26 @@ import {
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import type { NexusEvaluationQuarter } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import {
-  getNexusMonitoringRecords,
   monitoringRecordQuarter,
   type NexusMonitoringRecord,
   resolveRecordPeriod,
 } from "@/components/nexus-monitoring/nexus-monitoring-sources";
+import type { NexusMonitoringTargetLookup } from "@/components/nexus-monitoring/nexus-monitoring-targets";
 import type {
   NexusKmIndicatorCategory,
   NexusKmIndicatorId,
 } from "@/content/nexus-km-indicators";
+
+/**
+ * Masukan satu pengukuran Monitoring: periode yang diukur, rekam resmi yang
+ * berlaku pada sesi, dan target periode tersebut. Tidak ada fungsi pengukuran
+ * yang membaca data sendiri, sehingga seluruh halaman memakai satu kebenaran.
+ */
+export type NexusMonitoringInput = {
+  period: NexusEvaluationPeriodId;
+  records: readonly NexusMonitoringRecord[];
+  targets: NexusMonitoringTargetLookup;
+};
 
 /**
  * Keadaan indikator yang seluruhnya objektif. Ambang seperti "on track" atau
@@ -119,6 +130,8 @@ export type NexusIndicatorMeasurement = {
   quarterly: NexusQuarterBreakdown;
   realization: number | null;
   status: NexusIndicatorStatus;
+  /** Target periode yang berlaku saat pengukuran dibuat. */
+  target: NexusIndicatorTarget;
 };
 
 const modeledFamilies: readonly NexusMonitoringSourceFamily[] = [
@@ -223,7 +236,11 @@ function quarterBreakdown(
       continue;
     }
     undated += 1;
-    if (!record.businessDate.available) reasons.add(record.businessDate.reason);
+    if (!record.businessDate.available) {
+      reasons.add(
+        `${record.businessDate.reason} Triwulan dilaporkan juga belum tercatat.`,
+      );
+    }
   }
 
   if (dated === 0) {
@@ -247,7 +264,7 @@ function quarterBreakdown(
  */
 function resolveStatus(
   realization: number | null,
-  target: NexusIndicatorEvaluation["target"],
+  target: NexusIndicatorTarget,
 ): NexusIndicatorStatus {
   if (realization === null) return "belum-dapat-dihitung";
   if (target.value === null) {
@@ -261,11 +278,12 @@ function resolveStatus(
 
 export function measureIndicator(
   indicatorId: NexusKmIndicatorId,
-  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+  input: NexusMonitoringInput,
 ): NexusIndicatorMeasurement | undefined {
   const evaluation = nexusIndicatorEvaluation(indicatorId);
   if (!evaluation) return undefined;
+  const { period, records } = input;
+  const targetDefinition = input.targets(indicatorId);
 
   const countable =
     evaluation.realization.kind === "record-count" &&
@@ -284,7 +302,7 @@ export function measureIndicator(
     .map((item) => item.record);
 
   const realization = countable ? contributing.length : null;
-  const target = evaluation.target.value;
+  const target = targetDefinition.value;
   const progress =
     realization !== null && target !== null && target > 0
       ? realization / target
@@ -312,19 +330,17 @@ export function measureIndicator(
           reason: unavailableReason ?? "",
         },
     realization,
-    status: resolveStatus(realization, evaluation.target),
+    status: resolveStatus(realization, targetDefinition),
+    target: targetDefinition,
   };
 }
 
 function measureEvaluations(
   evaluations: readonly NexusIndicatorEvaluation[],
-  period: NexusEvaluationPeriodId,
-  records: readonly NexusMonitoringRecord[],
+  input: NexusMonitoringInput,
 ): readonly NexusIndicatorMeasurement[] {
   return evaluations
-    .map((evaluation) =>
-      measureIndicator(evaluation.indicator.id, period, records),
-    )
+    .map((evaluation) => measureIndicator(evaluation.indicator.id, input))
     .filter((measurement): measurement is NexusIndicatorMeasurement =>
       Boolean(measurement),
     );
@@ -333,22 +349,16 @@ function measureEvaluations(
 /** Pengukuran seluruh indikator satu kategori KM. */
 export function measureCategoryIndicators(
   category: NexusKmIndicatorCategory,
-  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+  input: NexusMonitoringInput,
 ): readonly NexusIndicatorMeasurement[] {
-  return measureEvaluations(
-    nexusCategoryEvaluations(category),
-    period,
-    records,
-  );
+  return measureEvaluations(nexusCategoryEvaluations(category), input);
 }
 
 /** Pengukuran seluruh indikator yang metadata evaluasinya sudah tersedia. */
 export function measureMonitoredIndicators(
-  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+  input: NexusMonitoringInput,
 ): readonly NexusIndicatorMeasurement[] {
-  return measureEvaluations(nexusEvaluations, period, records);
+  return measureEvaluations(nexusEvaluations, input);
 }
 
 /**
@@ -491,11 +501,7 @@ function summarize(
 /** Ringkasan capaian satu kategori KM pada satu periode evaluasi. */
 export function summarizeCategory(
   category: NexusKmIndicatorCategory,
-  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+  input: NexusMonitoringInput,
 ): NexusMonitoringSummary {
-  return summarize(
-    measureCategoryIndicators(category, period, records),
-    period,
-  );
+  return summarize(measureCategoryIndicators(category, input), input.period);
 }

@@ -6,9 +6,9 @@ import type { NexusWorkspaceNavigationId } from "@/components/nexus-dashboard-sh
  *
  * Modul memakai identitas navigasi yang sudah ada, sedangkan tindakan mengikuti
  * kosakata izin pada kebutuhan REQ-FUNC-019: baca, buat, ubah, periksa,
- * setujui, dan kelola. Izin ekspor belum dimasukkan karena belum ada fungsi
- * ekspor pada ruang kerja; menampilkannya akan menjanjikan kendali atas fungsi
- * yang tidak dimiliki produk.
+ * setujui, dan kelola. Unduhan laporan Monitoring KM mengikuti izin melihat
+ * Monitoring, sehingga belum ada tindakan ekspor tersendiri; bila kelak
+ * diperlukan pembatasan ekspor terpisah, tindakannya ditambahkan di sini.
  *
  * Penegakan otorisasi, penyimpanan, dan audit tetap milik layanan server.
  * Modul ini hanya menyusun kebijakan yang dilihat dan disetel administrator.
@@ -118,9 +118,9 @@ const moduleBlueprints: readonly ModuleBlueprint[] = [
     resource: "dashboard",
   },
   {
-    actions: ["view"],
+    actions: ["view", "update", "manage"],
     description:
-      "Capaian indikator KM per domain beserta rekam resmi pembentuknya.",
+      "Capaian indikator KM, koreksi rekam pembentuk, serta periode dan target evaluasi.",
     icon: "monitoring",
     id: "monitoring",
     label: "Monitoring KM",
@@ -262,7 +262,7 @@ const operationalBaseline = permissionIdsFor({
   documents: ["view", "create"],
   "intellectual-property": ["view", "create", "update"],
   members: ["view"],
-  monitoring: ["view"],
+  monitoring: ["view", "update", "manage"],
   publications: ["view", "create", "update"],
   reviews: ["view", "update", "review", "approve"],
 });

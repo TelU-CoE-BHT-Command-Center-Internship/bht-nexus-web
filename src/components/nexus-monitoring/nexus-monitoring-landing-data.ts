@@ -1,11 +1,10 @@
 import { getNexusMonitoringCategories } from "@/components/nexus-monitoring/nexus-monitoring-categories";
-import {
-  NEXUS_EVALUATION_PERIOD,
-  nexusMonitoredCategories,
-} from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
+import { nexusMonitoredCategories } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import { nexusMonitoringIndicatorProgress } from "@/components/nexus-monitoring/nexus-monitoring-indicator-progress";
-import { summarizeCategory } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
-import { getNexusMonitoringRecords } from "@/components/nexus-monitoring/nexus-monitoring-sources";
+import {
+  type NexusMonitoringInput,
+  summarizeCategory,
+} from "@/components/nexus-monitoring/nexus-monitoring-measurement";
 import { nexusMonitoringUpdates } from "@/components/nexus-monitoring/nexus-monitoring-updates";
 import {
   buildDomainView,
@@ -18,21 +17,17 @@ import type { NexusKmIndicatorCategory } from "@/content/nexus-km-indicators";
  * ikhtisar domain memakai fungsi yang sama supaya kartu, grafik, tabel, dan
  * pembaruan selalu dibaca dari satu perhitungan yang sama.
  */
-export function getNexusMonitoringLandingData() {
-  const records = getNexusMonitoringRecords();
+export function getNexusMonitoringLandingData(input: NexusMonitoringInput) {
+  const { records } = input;
   const domainViews = Object.fromEntries(
     nexusMonitoredCategories.map((category) => [
       category,
-      buildDomainView(category, NEXUS_EVALUATION_PERIOD, records),
+      buildDomainView(category, input),
     ]),
   ) as Record<NexusKmIndicatorCategory, MonitoringDomainView | undefined>;
 
   const domainStatuses = nexusMonitoredCategories.map((category) => {
-    const summary = summarizeCategory(
-      category,
-      NEXUS_EVALUATION_PERIOD,
-      records,
-    );
+    const summary = summarizeCategory(category, input);
     return {
       category,
       notComputable: summary.notComputable,
@@ -53,7 +48,7 @@ export function getNexusMonitoringLandingData() {
   return {
     categories: getNexusMonitoringCategories(records),
     domainViews,
-    indicatorProgress: nexusMonitoringIndicatorProgress(records),
+    indicatorProgress: nexusMonitoringIndicatorProgress(input),
     targetSummary: {
       domains: domainStatuses.map(({ category, notReached, reached }) => ({
         category,
@@ -62,9 +57,13 @@ export function getNexusMonitoringLandingData() {
       })),
       notComputable: totals.notComputable,
       notReached: totals.notReached,
-      period: NEXUS_EVALUATION_PERIOD,
+      period: input.period,
       reached: totals.reached,
     },
     updates: nexusMonitoringUpdates(records),
   };
 }
+
+export type NexusMonitoringLandingData = ReturnType<
+  typeof getNexusMonitoringLandingData
+>;

@@ -21,6 +21,7 @@ import {
   type ManualSubmissionValues,
   manualEntityYear,
   manualKmSuggestion,
+  manualReportedQuarterField,
   manualSubmissionDefinitions,
   manualSubmissionIdentifiers,
   manualSubtype,
@@ -67,6 +68,7 @@ const commonFieldKeys = new Set([
   "evaluationPeriod",
   "note",
   "recordType",
+  "reportedQuarter",
   "title",
 ]);
 
@@ -323,6 +325,7 @@ export function NexusManualSubmissionPage({
       ? [firstPublicationInformationField.key]
       : []),
     "evaluationPeriod",
+    "reportedQuarter",
     ...remainingInformationFields.map((field) => field.key),
     ...involvementFields.map((field) => field.key),
     "evidenceUrl",
@@ -630,6 +633,12 @@ export function NexusManualSubmissionPage({
                       }}
                       onChange={changeValue}
                       value={values.evaluationPeriod}
+                    />
+                    <ManualField
+                      error={errors.reportedQuarter}
+                      field={manualReportedQuarterField}
+                      onChange={changeValue}
+                      value={values.reportedQuarter ?? ""}
                     />
                     {remainingInformationFields.map((field) => (
                       <ManualField

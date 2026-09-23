@@ -133,6 +133,13 @@ export type OfficialPublication = {
   provenance: PublicationProvenance[];
   publicId: string;
   /**
+   * Triwulan realisasi menurut pelapor atau auditor (1–4). Dipakai hanya bila
+   * tanggal bisnis rekam belum tercatat; tanggal selalu lebih menentukan.
+   */
+  reportedQuarter?: 1 | 2 | 3 | 4;
+  /** Asal nilai triwulan dilaporkan, misalnya sel workbook atau koreksi. */
+  reportedQuarterSource?: string;
+  /**
    * Bulan atau tanggal terbit menurut sumbernya. Hanya sebagian sumber
    * mencatatnya: worksheet KM-12 memuat kolom tanggal publikasi berformat
    * bulan-tahun, sedangkan worksheet KM-11, KM-13, KM-14, dan KM-33 memang
@@ -926,6 +933,74 @@ function extractDoi(url: string) {
   return match?.[0].replace(/\/(?:meta|full|abstract)$/, "");
 }
 
+/**
+ * Triwulan yang dicatat pelapor pada workbook KM 2026. Worksheet `no.11`,
+ * `no.13`, dan `no.14` tidak memuat kolom tanggal terbit, tetapi kolom tanpa
+ * judul (`no.11!I`, `no.13!K`, `no.14!K`) berisi "Q1" atau "Q2". Nilai itu
+ * dibaca sebagai triwulan pelaporan, bukan kuartil jurnal: penandanya juga
+ * muncul pada jurnal di luar Q1/Q2 dan pada makalah konferensi, dan tujuh baris
+ * "Q2" pada `no.11` sama dengan realisasi TW2 KM-11 di worksheet `Evaluasi 2026`.
+ * Kuartil jurnal tetap dibaca dari kolom `Level Jurnal`.
+ */
+const workbookReportedQuarterColumns: Record<string, string> = {
+  "no.11": "I",
+  "no.13": "K",
+  "no.14": "K",
+};
+
+const workbookReportedQuarters: Record<string, 1 | 2> = {
+  "no.11!4": 1,
+  "no.11!5": 1,
+  "no.11!6": 1,
+  "no.11!7": 1,
+  "no.11!8": 1,
+  "no.11!9": 1,
+  "no.11!11": 1,
+  "no.11!14": 1,
+  "no.11!17": 1,
+  "no.11!21": 1,
+  "no.11!22": 2,
+  "no.11!27": 1,
+  "no.11!31": 1,
+  "no.11!33": 2,
+  "no.13!4": 2,
+  "no.13!5": 1,
+  "no.13!6": 2,
+  "no.13!7": 2,
+  "no.13!8": 2,
+  "no.13!9": 1,
+  "no.13!10": 1,
+  "no.13!13": 1,
+  "no.13!15": 2,
+  "no.14!4": 1,
+  "no.14!5": 2,
+  "no.14!6": 1,
+  "no.14!7": 2,
+  "no.14!8": 1,
+  "no.14!9": 2,
+  "no.14!11": 1,
+  "no.14!12": 2,
+  "no.14!13": 2,
+  "no.14!14": 1,
+  "no.14!15": 1,
+  "no.14!16": 2,
+  "no.14!17": 2,
+  "no.14!19": 1,
+};
+
+function workbookReportedQuarter(sourceRange: string) {
+  const match = /^(no\.\d+)!A(\d+):/.exec(sourceRange);
+  if (!match) return {};
+  const [, sheet, row] = match;
+  const quarter = workbookReportedQuarters[`${sheet}!${row}`];
+  const column = workbookReportedQuarterColumns[sheet];
+  if (!quarter || !column) return {};
+  return {
+    reportedQuarter: quarter,
+    reportedQuarterSource: `Workbook KM 2026 · ${sheet}!${column}${row}`,
+  };
+}
+
 function createPublication(seed: PublicationSeed): OfficialPublication {
   const [
     publicId,
@@ -1004,6 +1079,7 @@ function createPublication(seed: PublicationSeed): OfficialPublication {
     publicId,
     publishedOn: publishedMonths[publicId],
     publisherUrl: url || undefined,
+    ...workbookReportedQuarter(sourceRange),
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     quartile: canonicalQuartile,
     quartileApplies,

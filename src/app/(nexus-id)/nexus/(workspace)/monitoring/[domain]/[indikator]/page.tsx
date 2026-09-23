@@ -12,9 +12,8 @@ import {
   nexusIndicatorIdFromSlug,
   nexusIndicatorSlug,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import { NexusMonitoringIndicator } from "@/components/nexus-monitoring/nexus-monitoring-indicator";
-import { nexusMonitoringPeriod } from "@/components/nexus-monitoring/nexus-monitoring-period";
-import { buildIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
+import { NexusMonitoringIndicatorScreen } from "@/components/nexus-monitoring/nexus-monitoring-indicator-screen";
+import { nexusMonitoringPeriodParam } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
@@ -24,6 +23,7 @@ import {
 
 type NexusMonitoringIndicatorPageProps = {
   params: Promise<{ domain: string; indikator: string }>;
+  searchParams: Promise<{ periode?: string | string[] }>;
 };
 
 export function generateStaticParams() {
@@ -80,9 +80,11 @@ export async function generateMetadata({
  */
 export default async function NexusMonitoringIndicatorPage({
   params,
+  searchParams,
 }: NexusMonitoringIndicatorPageProps) {
   const access = nexusPreviewWorkspaceAccess;
   const { domain, indikator } = await params;
+  const { periode } = await searchParams;
 
   if (!nexusWorkspaceCanOpen(access, "monitoring")) {
     return (
@@ -103,11 +105,8 @@ export default async function NexusMonitoringIndicatorPage({
   }
 
   const evaluation = resolveIndicator(domain, indikator);
-  const view = evaluation
-    ? buildIndicatorView(evaluation.indicator.id)
-    : undefined;
 
-  if (!view) {
+  if (!evaluation) {
     return (
       <NexusWorkspacePage
         description="Rincian indikator KM."
@@ -129,21 +128,12 @@ export default async function NexusMonitoringIndicatorPage({
     );
   }
 
-  const period = nexusMonitoringPeriod(view.period);
-
   return (
-    <NexusWorkspacePage
-      description={view.definition}
-      descriptionId="monitoring-indicator-description"
-      meta={`Periode evaluasi ${period.label.replace("Tahun ", "")}`}
-      title={`${view.id} · ${view.label}`}
-      titleId="monitoring-indicator-title"
-    >
-      <NexusMonitoringIndicator
-        key={view.id}
-        periodLabel={period.label}
-        view={view}
-      />
-    </NexusWorkspacePage>
+    <NexusMonitoringIndicatorScreen
+      capabilities={access.monitoringCapabilities}
+      indicatorId={evaluation.indicator.id}
+      key={evaluation.indicator.id}
+      requestedPeriodId={nexusMonitoringPeriodParam(periode)}
+    />
   );
 }

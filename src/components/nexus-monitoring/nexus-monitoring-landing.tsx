@@ -11,67 +11,67 @@ import {
   useRef,
   useState,
 } from "react";
+import type { NexusMonitoringCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
-import type { NexusMonitoringCategory } from "@/components/nexus-monitoring/nexus-monitoring-categories";
 import { NexusMonitoringCategoryProgress } from "@/components/nexus-monitoring/nexus-monitoring-category-progress";
+import { useNexusMonitoringData } from "@/components/nexus-monitoring/nexus-monitoring-data";
 import { NexusMonitoringDomainOverview } from "@/components/nexus-monitoring/nexus-monitoring-domain-overview";
 import {
   NEXUS_ALL_DOMAINS,
+  type NexusMonitoringDomain,
   type NexusMonitoringDomainId,
   nexusMonitoringDomains,
 } from "@/components/nexus-monitoring/nexus-monitoring-domains";
-import { nexusCategoryIsMonitored } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import type { NexusMonitoringIndicatorProgress } from "@/components/nexus-monitoring/nexus-monitoring-indicator-progress";
+import {
+  NEXUS_MONITORING_HREF,
+  nexusCategoryIsMonitored,
+  nexusDomainHref,
+} from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
+import {
+  downloadNexusCsv,
+  nexusMonitoringPeriodCsv,
+} from "@/components/nexus-monitoring/nexus-monitoring-export";
+import { NexusMonitoringHeaderActions } from "@/components/nexus-monitoring/nexus-monitoring-header-actions";
+import { getNexusMonitoringLandingData } from "@/components/nexus-monitoring/nexus-monitoring-landing-data";
 import {
   NEXUS_DEFAULT_MONITORING_PERIOD_ID,
-  type NexusMonitoringPeriod,
-  nexusMonitoringPeriod,
-  nexusMonitoringPeriods,
+  nexusMonitoringPeriodHref,
 } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusMonitoringRecentUpdates } from "@/components/nexus-monitoring/nexus-monitoring-recent-updates";
-import {
-  NexusMonitoringSummaryAnalytics,
-  type NexusMonitoringTargetSummary,
-} from "@/components/nexus-monitoring/nexus-monitoring-summary-analytics";
+import { NexusMonitoringSummaryAnalytics } from "@/components/nexus-monitoring/nexus-monitoring-summary-analytics";
+import { NexusMonitoringTargetDrawer } from "@/components/nexus-monitoring/nexus-monitoring-target-drawer";
 import {
   MonitoringIcon,
   MonitoringMetricCard,
 } from "@/components/nexus-monitoring/nexus-monitoring-ui";
 import { NexusMonitoringUnderConstruction } from "@/components/nexus-monitoring/nexus-monitoring-under-construction";
-import type { NexusMonitoringUpdate } from "@/components/nexus-monitoring/nexus-monitoring-updates";
-import type { MonitoringDomainView } from "@/components/nexus-monitoring/nexus-monitoring-view";
-import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
-  type NexusSelectConfig,
-  NexusWorkspaceSelect,
-} from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import type { NexusKmIndicatorCategory } from "@/content/nexus-km-indicators";
+  NexusWorkspaceButton,
+  NexusWorkspaceNotice,
+} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
-function CalendarIcon() {
-  return (
-    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      <rect height="15.5" rx="2.2" width="17" x="3.5" y="5" />
-      <path d="M8 3.5v3.6M16 3.5v3.6M3.5 10.4h17" />
-    </svg>
+/**
+ * Menyelaraskan alamat dengan periode dan domain yang sedang dilihat tanpa
+ * memuat ulang halaman, supaya tautan yang disalin membuka konteks yang sama.
+ */
+function replaceMonitoringUrl(
+  domain: NexusMonitoringDomainId,
+  domains: readonly NexusMonitoringDomain[],
+  periodId: string,
+) {
+  const category = domains.find((item) => item.id === domain)?.category;
+  const path =
+    domain === NEXUS_ALL_DOMAINS || !category
+      ? NEXUS_MONITORING_HREF
+      : nexusDomainHref(category);
+  window.history.replaceState(
+    window.history.state,
+    "",
+    nexusMonitoringPeriodHref(path, periodId),
   );
 }
-
-const [firstPeriod, ...otherPeriods] = nexusMonitoringPeriods;
-
-function periodOption(period: NexusMonitoringPeriod) {
-  return {
-    description: period.rangeLabel,
-    label: period.label,
-    value: period.id,
-  };
-}
-
-const periodSelectConfig: NexusSelectConfig = {
-  defaultValue: NEXUS_DEFAULT_MONITORING_PERIOD_ID,
-  id: "period",
-  label: "Pilih periode evaluasi",
-  options: [periodOption(firstPeriod), ...otherPeriods.map(periodOption)],
-};
 
 /**
  * Perpindahan domain memakai kontrak papan ketik yang sama dengan tab ruang
@@ -235,35 +235,40 @@ function useDomainScroller() {
 }
 
 export function NexusMonitoringLanding({
-  categories,
-  domainViews,
-  indicatorProgress,
+  capabilities,
   initialDomain = NEXUS_ALL_DOMAINS,
-  targetSummary,
-  updates,
+  requestedPeriodId = NEXUS_DEFAULT_MONITORING_PERIOD_ID,
 }: {
-  categories: readonly NexusMonitoringCategory[];
-  domainViews: Record<
-    NexusKmIndicatorCategory,
-    MonitoringDomainView | undefined
-  >;
-  indicatorProgress: readonly NexusMonitoringIndicatorProgress[];
+  capabilities: NexusMonitoringCapabilities;
   /** Domain yang aktif saat halaman dibuka; alamat domain masuk lewat sini. */
   initialDomain?: NexusMonitoringDomainId;
-  targetSummary: NexusMonitoringTargetSummary;
-  updates: readonly NexusMonitoringUpdate[];
+  /** Periode dari alamat `?periode=`; kosong berarti periode bawaan. */
+  requestedPeriodId?: string;
 }) {
-  const [periodId, setPeriodId] = useState(NEXUS_DEFAULT_MONITORING_PERIOD_ID);
-  const [isPeriodOpen, setIsPeriodOpen] = useState(false);
+  const [periodId, setPeriodId] = useState(requestedPeriodId);
   const [domainId, setDomainId] =
     useState<NexusMonitoringDomainId>(initialDomain);
+  const [targetDrawerOpen, setTargetDrawerOpen] = useState(false);
+  const [notice, setNotice] = useState("");
   const { edges, isDragging, rowHandlers, rowRef } = useDomainScroller();
+  const { input, isKnownPeriod, period, periodOptions } =
+    useNexusMonitoringData(periodId);
+  const { categories, domainViews, indicatorProgress, targetSummary, updates } =
+    useMemo(() => getNexusMonitoringLandingData(input), [input]);
 
   const domains = useMemo(
     () => nexusMonitoringDomains(categories),
     [categories],
   );
-  const period = nexusMonitoringPeriod(periodId);
+  const selectDomain = (nextDomain: NexusMonitoringDomainId) => {
+    setDomainId(nextDomain);
+    replaceMonitoringUrl(nextDomain, domains, periodId);
+  };
+  const selectPeriod = (nextPeriod: string) => {
+    setPeriodId(nextPeriod);
+    setNotice("");
+    replaceMonitoringUrl(domainId, domains, nextPeriod);
+  };
   const activeDomain =
     domains.find((domain) => domain.id === domainId) ?? domains[0];
   const activeDomainView = activeDomain.category
@@ -302,17 +307,27 @@ export function NexusMonitoringLanding({
   return (
     <NexusWorkspacePage
       actions={
-        <div className={styles.summaryPeriod}>
-          <NexusWorkspaceSelect
-            config={periodSelectConfig}
-            isOpen={isPeriodOpen}
-            leadingIcon={<CalendarIcon />}
-            name="monitoring-period"
-            onOpenChange={setIsPeriodOpen}
-            onValueChange={setPeriodId}
-            value={periodId}
-          />
-        </div>
+        <NexusMonitoringHeaderActions
+          downloadLabel="Unduh laporan"
+          manageLabel="Kelola target"
+          onDownload={
+            isKnownPeriod
+              ? () =>
+                  downloadNexusCsv(
+                    `monitoring-km-${periodId}.csv`,
+                    nexusMonitoringPeriodCsv(input),
+                  )
+              : undefined
+          }
+          onManageTargets={
+            capabilities.canManageTargets
+              ? () => setTargetDrawerOpen(true)
+              : undefined
+          }
+          onPeriodChange={selectPeriod}
+          period={period}
+          periodOptions={periodOptions}
+        />
       }
       description={
         activeDomain.id === NEXUS_ALL_DOMAINS
@@ -346,7 +361,7 @@ export function NexusMonitoringLanding({
                 data-active={isActive}
                 id={`monitoring-domain-tab-${index}`}
                 key={domain.id}
-                onClick={() => setDomainId(domain.id)}
+                onClick={() => selectDomain(domain.id)}
                 onKeyDown={(event) => {
                   const nextIndex = adjacentDomainIndex(
                     event,
@@ -357,7 +372,7 @@ export function NexusMonitoringLanding({
                   event.preventDefault();
                   const nextDomain = domains[nextIndex];
                   if (!nextDomain) return;
-                  setDomainId(nextDomain.id);
+                  selectDomain(nextDomain.id);
                   event.currentTarget.parentElement
                     ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
                     [nextIndex]?.focus();
@@ -380,7 +395,34 @@ export function NexusMonitoringLanding({
         </div>
       </div>
 
+      {notice ? (
+        <div className={styles.pageNotice}>
+          <NexusWorkspaceNotice tone="success">{notice}</NexusWorkspaceNotice>
+        </div>
+      ) : null}
+
+      {isKnownPeriod ? null : (
+        <NexusWorkspaceState
+          actions={
+            <NexusWorkspaceButton
+              onClick={() => selectPeriod(NEXUS_DEFAULT_MONITORING_PERIOD_ID)}
+              type="button"
+            >
+              Buka periode {NEXUS_DEFAULT_MONITORING_PERIOD_ID}
+            </NexusWorkspaceButton>
+          }
+          description={
+            capabilities.canManageTargets
+              ? `Periode ${periodId} belum didaftarkan pada Monitoring KM. Tambahkan periodenya melalui Kelola target, atau buka periode yang sudah terdaftar.`
+              : `Periode ${periodId} belum didaftarkan pada Monitoring KM. Pilih periode yang sudah terdaftar.`
+          }
+          eyebrow="Periode belum terdaftar"
+          title={`Periode ${periodId} belum tersedia`}
+        />
+      )}
+
       <section
+        hidden={!isKnownPeriod}
         aria-labelledby={`monitoring-domain-tab-${Math.max(activeDomainIndex, 0)}`}
         aria-live="polite"
         className={styles.domainPanel}
@@ -448,11 +490,30 @@ export function NexusMonitoringLanding({
         ) : (
           <NexusMonitoringUnderConstruction
             domain={activeDomain}
-            onBack={() => setDomainId(NEXUS_ALL_DOMAINS)}
+            onBack={() => selectDomain(NEXUS_ALL_DOMAINS)}
             periodLabel={period.label}
           />
         )}
       </section>
+
+      {targetDrawerOpen ? (
+        <NexusMonitoringTargetDrawer
+          onClose={() => setTargetDrawerOpen(false)}
+          onPeriodAdded={selectPeriod}
+          onSaved={(message) => {
+            setTargetDrawerOpen(false);
+            setNotice(message);
+          }}
+          periodId={
+            isKnownPeriod ? periodId : NEXUS_DEFAULT_MONITORING_PERIOD_ID
+          }
+          suggestedYear={
+            !isKnownPeriod && Number.isInteger(Number(periodId))
+              ? Number(periodId)
+              : undefined
+          }
+        />
+      ) : null}
     </NexusWorkspacePage>
   );
 }

@@ -11,7 +11,8 @@ type NexusWorkspaceConfirmDialogProps = {
   onCancel: () => void;
   onConfirm: () => void;
   title: string;
-  tone?: "danger" | "warning";
+  /** `primary` untuk konfirmasi penyimpanan yang tidak merusak data. */
+  tone?: "danger" | "primary" | "warning";
 };
 
 export function NexusWorkspaceConfirmDialog({
@@ -106,7 +107,13 @@ export function NexusWorkspaceConfirmDialog({
           <NexusWorkspaceButton
             className={styles.confirmAction}
             onClick={onConfirm}
-            tone={tone === "danger" ? "danger" : "secondary"}
+            tone={
+              tone === "danger"
+                ? "danger"
+                : tone === "primary"
+                  ? "primary"
+                  : "secondary"
+            }
             type="button"
           >
             {confirmLabel}

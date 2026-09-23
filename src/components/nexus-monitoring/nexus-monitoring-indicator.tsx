@@ -6,6 +6,7 @@ import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import { MonitoringQuarterChart } from "@/components/nexus-monitoring/nexus-monitoring-charts";
 import { MonitoringComposition } from "@/components/nexus-monitoring/nexus-monitoring-composition";
 import { NEXUS_MONITORING_HREF } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
+import { nexusMonitoringPeriodHref } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import type { NexusEvaluationQuarter } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import { MonitoringRecordDetail } from "@/components/nexus-monitoring/nexus-monitoring-record-detail";
 import {
@@ -17,10 +18,12 @@ import {
   MonitoringMetricCard,
   MonitoringUnavailable,
 } from "@/components/nexus-monitoring/nexus-monitoring-ui";
+import type { MonitoringIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
 import type {
-  MonitoringIndicatorView,
-  MonitoringRecordView,
-} from "@/components/nexus-monitoring/nexus-monitoring-view";
+  OfficialRecordCorrectionChange,
+  OfficialRecordCorrectionMap,
+  OfficialRecordCorrectionValues,
+} from "@/components/nexus-official-records/nexus-official-record-corrections";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceBreadcrumb } from "@/components/nexus-workspace-ui/nexus-workspace-breadcrumb";
 import {
@@ -91,17 +94,36 @@ function progressSentence(view: MonitoringIndicatorView) {
 }
 
 export function NexusMonitoringIndicator({
+  canCorrectRecords,
+  corrections,
+  onCorrect,
   periodLabel,
   view,
 }: {
+  canCorrectRecords: boolean;
+  corrections: OfficialRecordCorrectionMap;
+  onCorrect: (
+    recordPublicId: string,
+    input: {
+      changes: readonly OfficialRecordCorrectionChange[];
+      reason: string;
+      values: OfficialRecordCorrectionValues;
+    },
+  ) => void;
   periodLabel: string;
   view: MonitoringIndicatorView;
 }) {
   const [quarterFilter, setQuarterFilter] =
     useState<QuarterFilter>(ALL_QUARTERS);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRecord, setSelectedRecord] =
-    useState<MonitoringRecordView | null>(null);
+  /*
+   * Rekam terpilih dirujuk lewat ID, bukan salinan tampilannya, supaya panel
+   * langsung memuat nilai terbaru setelah koreksi. Bila koreksi melepas rekam
+   * dari indikator ini, panelnya tertutup dengan sendirinya.
+   */
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const selectedRecord =
+    view.records.find((record) => record.publicId === selectedRecordId) ?? null;
   const [pageSizeValue, setPageSizeValue] = useState(
     pageSizeConfig.defaultValue,
   );
@@ -158,7 +180,13 @@ export function NexusMonitoringIndicator({
         <NexusWorkspaceBreadcrumb
           current={view.id}
           trail={[
-            { href: NEXUS_MONITORING_HREF, label: "Monitoring KM" },
+            {
+              href: nexusMonitoringPeriodHref(
+                NEXUS_MONITORING_HREF,
+                view.period,
+              ),
+              label: "Monitoring KM",
+            },
             { href: view.domainHref, label: view.category },
           ]}
         />
@@ -200,7 +228,11 @@ export function NexusMonitoringIndicator({
 
       <div className={`${styles.summaryMetricGrid} ${styles.indicatorMetrics}`}>
         <MonitoringMetricCard
-          detail={`Periode evaluasi ${view.period}`}
+          detail={
+            view.targetVersion > 0
+              ? `Periode ${view.period} · versi target ${view.targetVersion}`
+              : `Periode ${view.period} · target belum ditetapkan`
+          }
           fallback={view.targetLiteral ?? "Belum tersedia"}
           icon="target"
           label="Target tahunan"
@@ -246,7 +278,7 @@ export function NexusMonitoringIndicator({
           actions={
             <span className={styles.summaryChartUnit}>Jumlah rekam</span>
           }
-          description={`Rekam resmi yang dihitung sebagai realisasi, dikelompokkan menurut ${lowerFirst(businessDateColumn)} pada ${periodLabel}.`}
+          description={`Rekam resmi yang dihitung sebagai realisasi, dikelompokkan menurut ${lowerFirst(businessDateColumn)} pada ${periodLabel}; rekam tanpa tanggal memakai triwulan yang dilaporkan.`}
           fill
           headingId="monitoring-indicator-quarters"
           title="Realisasi per Triwulan"
@@ -284,7 +316,7 @@ export function NexusMonitoringIndicator({
               </dl>
               {quarterly.undated > 0 ? (
                 <MonitoringChartSummary>
-                  {`${quarterly.undated} rekam yang dihitung belum terpetakan ke triwulan karena ${lowerFirst(businessDateColumn)}-nya belum tercatat. Rekam tersebut tetap masuk realisasi tahunan.`}
+                  {`${quarterly.undated} rekam yang dihitung belum terpetakan ke triwulan karena ${lowerFirst(businessDateColumn)} maupun triwulan dilaporkannya belum tercatat. Rekam tersebut tetap masuk realisasi tahunan${canCorrectRecords ? "; lengkapi melalui Koreksi data pada rincian rekam" : ""}.`}
                 </MonitoringChartSummary>
               ) : null}
             </>
@@ -312,7 +344,7 @@ export function NexusMonitoringIndicator({
             </div>
             <div className={styles.ruleItem}>
               <dt>Dasar triwulan</dt>
-              <dd>{businessDateColumn}</dd>
+              <dd>{`${businessDateColumn}, atau triwulan dilaporkan`}</dd>
             </div>
           </dl>
           <p className={styles.ruleSource}>
@@ -473,7 +505,7 @@ export function NexusMonitoringIndicator({
                         action: (
                           <NexusWorkspaceTableAction
                             label={`Lihat rincian rekam: ${record.title}`}
-                            onClick={() => setSelectedRecord(record)}
+                            onClick={() => setSelectedRecordId(record.publicId)}
                           >
                             Rincian
                           </NexusWorkspaceTableAction>
@@ -501,8 +533,8 @@ export function NexusMonitoringIndicator({
                         ),
                         record: (
                           <NexusWorkspaceTablePrimary
-                            onClick={() => setSelectedRecord(record)}
-                            subtitle={`${record.id} · ${record.subtitle}`}
+                            onClick={() => setSelectedRecordId(record.publicId)}
+                            subtitle={`${record.publicId} · ${record.subtitle}`}
                             title={record.title}
                           />
                         ),
@@ -513,7 +545,9 @@ export function NexusMonitoringIndicator({
                           action={
                             <NexusWorkspaceTableAction
                               label={`Lihat rincian rekam: ${record.title}`}
-                              onClick={() => setSelectedRecord(record)}
+                              onClick={() =>
+                                setSelectedRecordId(record.publicId)
+                              }
                             >
                               Rincian
                             </NexusWorkspaceTableAction>
@@ -526,7 +560,7 @@ export function NexusMonitoringIndicator({
                                 {record.counting.label}
                               </NexusWorkspaceTableBadge>
                               <span className={styles.summaryUpdateTime}>
-                                {record.id}
+                                {record.publicId}
                               </span>
                             </>
                           }
@@ -607,7 +641,7 @@ export function NexusMonitoringIndicator({
               </div>
               <div className={styles.ruleItem}>
                 <dt>Dasar triwulan</dt>
-                <dd>{`${businessDateColumn} pada rekam resmi`}</dd>
+                <dd>{`${businessDateColumn} pada rekam resmi. Bila tanggal belum tercatat, dipakai triwulan yang dilaporkan pengaju atau auditor; tanggal selalu lebih menentukan.`}</dd>
               </div>
               <div className={styles.ruleItem}>
                 <dt>Eviden</dt>
@@ -629,8 +663,11 @@ export function NexusMonitoringIndicator({
       {selectedRecord ? (
         <MonitoringRecordDetail
           businessDateLabel={businessDateColumn}
+          canCorrect={canCorrectRecords}
+          corrections={corrections[selectedRecord.publicId] ?? []}
           indicatorId={view.id}
-          onClose={() => setSelectedRecord(null)}
+          onClose={() => setSelectedRecordId(null)}
+          onCorrect={(input) => onCorrect(selectedRecord.publicId, input)}
           record={selectedRecord}
         />
       ) : null}

@@ -4,7 +4,7 @@ import {
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { NexusMonitoringLanding } from "@/components/nexus-monitoring/nexus-monitoring-landing";
-import { getNexusMonitoringLandingData } from "@/components/nexus-monitoring/nexus-monitoring-landing-data";
+import { nexusMonitoringPeriodParam } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -18,8 +18,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function NexusMonitoringPage() {
+type NexusMonitoringPageProps = {
+  searchParams: Promise<{ periode?: string | string[] }>;
+};
+
+export default async function NexusMonitoringPage({
+  searchParams,
+}: NexusMonitoringPageProps) {
   const access = nexusPreviewWorkspaceAccess;
+  const { periode } = await searchParams;
 
   if (!nexusWorkspaceCanOpen(access, "monitoring")) {
     return (
@@ -39,5 +46,10 @@ export default function NexusMonitoringPage() {
     );
   }
 
-  return <NexusMonitoringLanding {...getNexusMonitoringLandingData()} />;
+  return (
+    <NexusMonitoringLanding
+      capabilities={access.monitoringCapabilities}
+      requestedPeriodId={nexusMonitoringPeriodParam(periode)}
+    />
+  );
 }

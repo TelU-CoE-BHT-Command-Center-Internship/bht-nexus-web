@@ -15,10 +15,10 @@ import {
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
-import { projectOfficialContractProposals } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
+import { projectNexusContractProposals } from "@/components/nexus-official-records/nexus-official-records";
+import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
 import { createContractProposalCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -193,20 +193,10 @@ export function NexusContractProposals({
   initialMemberId,
 }: NexusContractProposalsProps) {
   const reviewSession = useNexusReviewSession();
+  const officialRecordSession = useNexusOfficialRecordSession();
   const records = useMemo(
-    () =>
-      projectOfficialContractProposals(
-        projectOfficialMetadataRecords(
-          content.records,
-          reviewSession.officialMetadataByRecordId,
-        ),
-        reviewSession.officialRecordDecisions,
-      ),
-    [
-      content.records,
-      reviewSession.officialMetadataByRecordId,
-      reviewSession.officialRecordDecisions,
-    ],
+    () => projectNexusContractProposals(content.records, officialRecordSession),
+    [content.records, officialRecordSession],
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [filterValues, setFilterValues] =

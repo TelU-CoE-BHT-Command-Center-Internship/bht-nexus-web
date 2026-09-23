@@ -12,8 +12,8 @@ import {
   type OfficialIntellectualProperty,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import {
-  NEXUS_EVALUATION_PERIOD,
   type NexusEvaluationPeriodId,
+  type NexusMonitoringSourceFamily,
   nexusCategoryEvaluations,
   nexusDomainHref,
   nexusIndicatorHref,
@@ -26,11 +26,13 @@ import {
   type NexusIndicatorMeasurement,
   type NexusIndicatorStatus,
   type NexusMonitoringCountingSummary,
+  type NexusMonitoringInput,
   nexusCountingLabels,
   nexusIndicatorStatusLabels,
   nexusIndicatorStatusTones,
   summarizeCategory,
 } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
+import { nexusMonitoringPeriodHref } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import {
   type NexusEvaluationQuarter,
   nexusQuarterLabels,
@@ -38,9 +40,9 @@ import {
   nexusQuarters,
 } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import {
-  getNexusMonitoringRecords,
-  monitoringRecordQuarter,
+  monitoringRecordQuarterBasis,
   type NexusMonitoringEvidenceState,
+  type NexusMonitoringQuarterBasis,
   type NexusMonitoringRecord,
 } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import type { MonitoringTone } from "@/components/nexus-monitoring/nexus-monitoring-ui";
@@ -168,7 +170,10 @@ function indicatorSummary(
   const house = nexusMonitoringSourceHouses[evaluation.sourceFamily];
 
   return {
-    detailHref: nexusIndicatorHref(evaluation.indicator.id),
+    detailHref: nexusMonitoringPeriodHref(
+      nexusIndicatorHref(evaluation.indicator.id),
+      measurement.period,
+    ),
     houseHref: house.href,
     houseLabel: house.label,
     id: evaluation.indicator.id,
@@ -182,8 +187,8 @@ function indicatorSummary(
     status: measurement.status,
     statusLabel: nexusIndicatorStatusLabels[measurement.status],
     statusTone: nexusIndicatorStatusTones[measurement.status],
-    target: evaluation.target.value,
-    targetLiteral: evaluation.target.literal,
+    target: measurement.target.value,
+    targetLiteral: measurement.target.literal,
   };
 }
 
@@ -241,10 +246,10 @@ function computabilityNotes(
   }
 
   for (const measurement of measurements) {
-    const { evaluation } = measurement;
-    if (evaluation.target.literal !== null) {
+    const { evaluation, target } = measurement;
+    if (target.value === null && target.literal !== null) {
       notes.push(
-        `Target ${evaluation.indicator.id} tercatat sebagai ${evaluation.target.literal} yang menggabungkan jumlah dan nilai rupiah, sehingga tidak dibandingkan sebagai satu angka.`,
+        `Target ${evaluation.indicator.id} tercatat sebagai ${target.literal} yang menggabungkan jumlah dan nilai rupiah, sehingga tidak dibandingkan sebagai satu angka. Tetapkan target angka melalui Kelola target bila indikator ini hendak dihitung.`,
       );
     }
     if (evaluation.realization.kind === "unavailable") {
@@ -384,10 +389,9 @@ function buildCountingView(
 
 export function buildDomainView(
   category: NexusKmIndicatorCategory,
-  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+  input: NexusMonitoringInput,
 ): MonitoringDomainView {
-  const summary = summarizeCategory(category, period, records);
+  const summary = summarizeCategory(category, input);
   const indicators = summary.measurements.map(indicatorSummary);
   const contributingByPublicId = new Map<string, NexusMonitoringRecord>();
   for (const measurement of summary.measurements) {
@@ -469,8 +473,31 @@ export type MonitoringRecordField = {
   wide?: boolean;
 };
 
+/**
+ * Nilai rekam yang dapat dikoreksi langsung dari Monitoring, dibaca dari rekam
+ * resmi yang sama. Tanggal hanya diisi bila sumbernya mencatat tanggal penuh;
+ * tanggal berpresisi bulan tidak pernah diubah menjadi tanggal rekaan.
+ */
+export type MonitoringRecordCorrectionSnapshot = {
+  /** Nama bidang tanggal milik rumah datanya; `null` bila rumah itu tidak punya tanggal. */
+  businessDateField: string | null;
+  businessDateIso: string;
+  /** Keterangan tanggal berpresisi bulan yang belum dapat dijadikan tanggal. */
+  businessDateNote: string | null;
+  family: NexusMonitoringSourceFamily;
+  kmIds: readonly NexusKmIndicatorId[];
+  protection?: OfficialIntellectualProperty["protection"];
+  publicationType?: OfficialPublication["type"];
+  quartile?: NonNullable<OfficialPublication["quartile"]> | null;
+  registrationNumber?: string;
+  reportedQuarter: NexusEvaluationQuarter | null;
+  year: number | null;
+};
+
 /** Satu rekam resmi yang tertaut ke indikator, siap ditampilkan apa adanya. */
 export type MonitoringRecordView = {
+  /** Nilai yang dapat dikoreksi dari Monitoring. */
+  correction: MonitoringRecordCorrectionSnapshot;
   /** Tanggal peristiwanya; kosong ketika sumbernya belum mencatatnya. */
   businessDateLabel: string | null;
   /**
@@ -510,7 +537,11 @@ export type MonitoringRecordView = {
   publicId: string;
   quality: "Lengkap" | "Perlu dilengkapi";
   quarter: NexusEvaluationQuarter | null;
+  /** Asal triwulan rekam: tanggal bisnis atau triwulan dilaporkan. */
+  quarterBasis: NexusMonitoringQuarterBasis | null;
   quarterLabel: string | null;
+  /** Asal nilai triwulan dilaporkan, bila ada. */
+  reportedQuarterSource: string | null;
   subtitle: string;
   title: string;
   /** Waktu rekam terakhir diperbarui pada rumah Data Resmi. */
@@ -559,6 +590,8 @@ export type MonitoringIndicatorView = {
   statusTone: MonitoringTone;
   target: number | null;
   targetLiteral: string | null;
+  /** Versi target yang berlaku; `0` berarti target periode belum ditetapkan. */
+  targetVersion: number;
   /** Alasan realisasi belum dapat dihitung; kosong ketika memang terhitung. */
   unavailableReason: string | null;
   unit: string | null;
@@ -732,6 +765,43 @@ function recordMetadata(
   }
 }
 
+function correctionSnapshot(
+  record: NexusMonitoringRecord,
+): MonitoringRecordCorrectionSnapshot {
+  const { businessDate } = record;
+  const base = {
+    businessDateField: record.family === "academic" ? null : businessDate.field,
+    businessDateIso:
+      businessDate.available && businessDate.precision === "tanggal"
+        ? businessDate.iso
+        : "",
+    businessDateNote:
+      businessDate.available && businessDate.precision === "bulan"
+        ? `Sumber mencatat ${businessDate.label}; hari belum tercatat.`
+        : null,
+    family: record.family,
+    kmIds: record.kmIds,
+    reportedQuarter: record.reportedQuarter ?? null,
+    year: record.sourceYear ?? null,
+  };
+
+  if (record.family === "publications") {
+    return {
+      ...base,
+      publicationType: record.publication.type,
+      quartile: record.publication.quartile ?? null,
+    };
+  }
+  if (record.family === "intellectual-property") {
+    return {
+      ...base,
+      protection: record.intellectualProperty.protection,
+      registrationNumber: record.intellectualProperty.registrationNumber ?? "",
+    };
+  }
+  return base;
+}
+
 const countingTones: Record<NexusCountingState, MonitoringTone> = {
   counted: "success",
   "needs-verification": "waiting",
@@ -745,7 +815,8 @@ function recordView(
 ): MonitoringRecordView {
   const { counting, record } = assessed;
   const { businessDate } = record;
-  const quarter = monitoringRecordQuarter(record, period);
+  const quarterBasis = monitoringRecordQuarterBasis(record, period);
+  const quarter = quarterBasis?.quarter ?? null;
   const source =
     record.family === "publications"
       ? record.publication
@@ -779,6 +850,7 @@ function recordView(
 
   return {
     businessDateLabel: businessDate.available ? businessDate.label : null,
+    correction: correctionSnapshot(record),
     counting: {
       label: nexusCountingLabels[counting.state],
       reason: counting.state === "counted" ? null : counting.reason,
@@ -801,12 +873,16 @@ function recordView(
     publicId: record.publicId,
     quality: record.quality,
     quarter,
+    quarterBasis: quarterBasis?.basis ?? null,
     quarterLabel:
-      quarter !== null
-        ? nexusQuarterLabels[quarter]
+      quarterBasis !== null
+        ? quarterBasis.basis === "dilaporkan"
+          ? `${nexusQuarterLabels[quarterBasis.quarter]} · dilaporkan`
+          : nexusQuarterLabels[quarterBasis.quarter]
         : businessDate.available
           ? "Di luar tahun evaluasi"
           : "Belum terpetakan",
+    reportedQuarterSource: record.reportedQuarterSource ?? null,
     subtitle: record.subtitle,
     title: record.title,
     updatedAt: record.updatedAt,
@@ -820,6 +896,7 @@ function recordView(
 function neighbours(
   category: NexusKmIndicatorCategory,
   id: NexusKmIndicatorId,
+  period: NexusEvaluationPeriodId,
 ): {
   next: MonitoringIndicatorNeighbour | null;
   previous: MonitoringIndicatorNeighbour | null;
@@ -834,7 +911,10 @@ function neighbours(
     if (!evaluation) return null;
 
     return {
-      href: nexusIndicatorHref(evaluation.indicator.id),
+      href: nexusMonitoringPeriodHref(
+        nexusIndicatorHref(evaluation.indicator.id),
+        period,
+      ),
       id: evaluation.indicator.id,
       label: evaluation.indicator.label,
     };
@@ -898,16 +978,16 @@ function indicatorBreakdown(
 
 export function buildIndicatorView(
   indicatorId: NexusKmIndicatorId,
-  period: NexusEvaluationPeriodId = NEXUS_EVALUATION_PERIOD,
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+  input: NexusMonitoringInput,
 ): MonitoringIndicatorView | undefined {
-  const measurement = measureIndicator(indicatorId, period, records);
+  const measurement = measureIndicator(indicatorId, input);
   if (!measurement) return undefined;
 
+  const { period } = input;
   const { evaluation } = measurement;
   const { category, id, label } = evaluation.indicator;
   const house = nexusMonitoringSourceHouses[evaluation.sourceFamily];
-  const { next, previous } = neighbours(category, id);
+  const { next, previous } = neighbours(category, id, period);
   const counted =
     measurement.linked.length -
     measurement.notCounted -
@@ -926,7 +1006,7 @@ export function buildIndicatorView(
     }),
     definition: evaluation.definition,
     difference: measurement.difference,
-    domainHref: nexusDomainHref(category),
+    domainHref: nexusMonitoringPeriodHref(nexusDomainHref(category), period),
     evidenceValue: evaluation.evidence.value,
     houseHref: house.href,
     houseLabel: house.label,
@@ -948,8 +1028,9 @@ export function buildIndicatorView(
     status: measurement.status,
     statusLabel: nexusIndicatorStatusLabels[measurement.status],
     statusTone: nexusIndicatorStatusTones[measurement.status],
-    target: evaluation.target.value,
-    targetLiteral: evaluation.target.literal,
+    target: measurement.target.value,
+    targetLiteral: measurement.target.literal,
+    targetVersion: measurement.target.version,
     unavailableReason:
       evaluation.realization.kind === "unavailable"
         ? evaluation.realization.reason

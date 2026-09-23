@@ -15,6 +15,7 @@ import {
   auditDecisionConsequence,
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
+import { manualDomainForReviewRecord } from "@/components/nexus-manual-submission/nexus-manual-submission-comparison";
 import {
   type ManualSubmissionValues,
   manualSubmissionDefinitions,
@@ -35,6 +36,11 @@ import {
   normalizeMetadataCompletionResolution,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
+  type NexusMonitoringSourceFamily,
+  nexusEvaluations,
+  nexusMonitoringSourceHouses,
+} from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
+import {
   memberPersonField,
   reviewPeople,
 } from "@/components/nexus-review-session/nexus-member-person-binding";
@@ -49,6 +55,42 @@ import {
   type NexusKmIndicatorId,
   nexusKmIndicators,
 } from "@/content/nexus-km-indicators";
+
+const familyByManualDomain: Record<
+  ReturnType<typeof manualDomainForReviewRecord>,
+  NexusMonitoringSourceFamily
+> = {
+  academic: "academic",
+  activity: "activities",
+  contract: "contracts",
+  "intellectual-property": "intellectual-property",
+  publication: "publications",
+};
+
+/**
+ * Indikator KM yang dapat dipilih reviewer untuk satu kandidat. Indikator yang
+ * dipantau hanya ditawarkan bila realisasinya memang dibentuk dari rumah data
+ * kandidat, karena kaitan lintas rumah data tidak pernah dapat dihitung.
+ * Indikator yang belum dipantau tetap dapat dipilih sebagai klasifikasi.
+ */
+function kpiChoicesFor(family: NexusMonitoringSourceFamily) {
+  const evaluatedIds = new Set(
+    nexusEvaluations.map((evaluation) => evaluation.indicator.id),
+  );
+  const familyIds = new Set(
+    nexusEvaluations
+      .filter((evaluation) => evaluation.sourceFamily === family)
+      .map((evaluation) => evaluation.indicator.id),
+  );
+  return {
+    matching: nexusKmIndicators.filter((indicator) =>
+      familyIds.has(indicator.id),
+    ),
+    unmonitored: nexusKmIndicators.filter(
+      (indicator) => !evaluatedIds.has(indicator.id),
+    ),
+  };
+}
 
 type AuditReviewDecisionSectionProps = AuditReviewDrawerProps & {
   decisionIndex: ReviewSectionIndexes["decision"];
@@ -493,6 +535,8 @@ export function AuditReviewDecisionSection({
     decisionChoice !== "merged" ||
     !memberPersonBindingRequired ||
     Boolean(effectiveTargetPersonId);
+  const kpiFamily = familyByManualDomain[manualDomainForReviewRecord(record)];
+  const kpiChoices = kpiChoicesFor(kpiFamily);
   const kpiResolutionReady =
     !resolvesKpi ||
     !approvalChoice ||
@@ -943,7 +987,10 @@ export function AuditReviewDecisionSection({
         <dl className={drawerStyles.reviewFinalMeta}>
           <div>
             <dt>Reviewer</dt>
-            <dd>{state.decision.actor}</dd>
+            <dd>
+              {state.decision.actor}
+              {state.decision.selfReview ? " · persetujuan mandiri" : ""}
+            </dd>
           </div>
           <div>
             <dt>Waktu keputusan</dt>
@@ -1009,6 +1056,13 @@ export function AuditReviewDecisionSection({
         title="Tetapkan keputusan"
       />
 
+      {capabilities.selfReview ? (
+        <NexusWorkspaceNotice>
+          Kandidat ini Anda ajukan sendiri. Keputusan tetap dapat Anda tetapkan
+          dan dicatat sebagai persetujuan mandiri pada riwayat tinjauan.
+        </NexusWorkspaceNotice>
+      ) : null}
+
       {matchingIsStale ? (
         <NexusWorkspaceNotice tone="danger">
           Pencocokan versi sebelumnya sudah kedaluwarsa setelah kandidat
@@ -1062,13 +1116,30 @@ export function AuditReviewDecisionSection({
                 value=""
               >
                 <option value="">Tambahkan indikator KM</option>
-                {nexusKmIndicators
-                  .filter((indicator) => !selectedKpiIds.includes(indicator.id))
-                  .map((indicator) => (
-                    <option key={indicator.id} value={indicator.id}>
-                      {indicator.id} · {indicator.label}
-                    </option>
-                  ))}
+                <optgroup
+                  label={`Dihitung dari ${nexusMonitoringSourceHouses[kpiFamily].label}`}
+                >
+                  {kpiChoices.matching
+                    .filter(
+                      (indicator) => !selectedKpiIds.includes(indicator.id),
+                    )
+                    .map((indicator) => (
+                      <option key={indicator.id} value={indicator.id}>
+                        {indicator.id} · {indicator.label}
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="Indikator yang belum dipantau">
+                  {kpiChoices.unmonitored
+                    .filter(
+                      (indicator) => !selectedKpiIds.includes(indicator.id),
+                    )
+                    .map((indicator) => (
+                      <option key={indicator.id} value={indicator.id}>
+                        {indicator.id} · {indicator.label}
+                      </option>
+                    ))}
+                </optgroup>
               </select>
               {selectedKpiIds.length > 0 ? (
                 <ul aria-label="Indikator KM hasil verifikasi">
@@ -1109,7 +1180,9 @@ export function AuditReviewDecisionSection({
             Saran sistem tidak pernah menjadi keputusan otomatis. Reviewer harus
             mengonfirmasi, mengubah, menghapus, atau menandainya belum dapat
             ditentukan. Satu kandidat boleh terkait dengan lebih dari satu
-            indikator KM.
+            indikator KM. Indikator yang dipantau hanya ditawarkan bila
+            realisasinya dibentuk dari{" "}
+            {nexusMonitoringSourceHouses[kpiFamily].label}.
           </small>
         </div>
       ) : null}
