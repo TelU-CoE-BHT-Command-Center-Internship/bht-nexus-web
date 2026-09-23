@@ -118,6 +118,15 @@ const moduleBlueprints: readonly ModuleBlueprint[] = [
     resource: "dashboard",
   },
   {
+    actions: ["view"],
+    description:
+      "Capaian indikator KM per domain beserta rekam resmi pembentuknya.",
+    icon: "monitoring",
+    id: "monitoring",
+    label: "Monitoring KM",
+    resource: "monitoring",
+  },
+  {
     actions: ["view", "create"],
     description: "Pencarian sumber publik dan pekerjaan pengumpulan kandidat.",
     icon: "search",
@@ -253,6 +262,7 @@ const operationalBaseline = permissionIdsFor({
   documents: ["view", "create"],
   "intellectual-property": ["view", "create", "update"],
   members: ["view"],
+  monitoring: ["view"],
   publications: ["view", "create", "update"],
   reviews: ["view", "update", "review", "approve"],
 });
@@ -265,6 +275,7 @@ const memberBaseline = permissionIdsFor({
   documents: ["view", "create"],
   "intellectual-property": ["view", "create"],
   members: ["view"],
+  monitoring: ["view"],
   publications: ["view", "create"],
 });
 
@@ -278,6 +289,7 @@ const administratorBaseline = permissionIdsFor({
   documents: ["view"],
   "intellectual-property": ["view"],
   members: ["view"],
+  monitoring: ["view"],
   publications: ["view"],
   reviews: ["view"],
 });
