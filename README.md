@@ -21,10 +21,11 @@ Web dan server dikelola terpisah. Repository ini berisi halaman dan interaksi pe
 
 ## Status singkat
 
-- Landing page dan halaman anggota tersedia dalam bahasa Indonesia dan Inggris, responsif, dan masih akan dilengkapi—terutama bagian mitra dan informasi yang menunggu konfirmasi tim.
-- Ruang kerja BHT Nexus sudah mempunyai Dashboard, Monitoring KM, Pengumpulan, Tinjauan, lima rumah Data Resmi, Dokumen, Anggota, Profil Saya, serta Administrasi beserta peran dan hak aksesnya.
+- Landing page dan halaman anggota sudah tersedia dalam bahasa Indonesia dan Inggris serta nyaman dibuka di berbagai ukuran layar, tetapi isinya masih terus berkembang. Beberapa bagian—terutama daftar mitra—masih menunggu data dan konfirmasi tim.
+- Ruang kerja BHT Nexus sudah mempunyai Dashboard, Monitoring KM, Broadcast / Newsletter, Pengumpulan, Tinjauan, lima rumah Data Resmi, Dokumen, Anggota, Profil Saya, serta Administrasi beserta peran dan hak aksesnya.
 - Monitoring KM menghitung realisasi hanya dari rekam resmi yang memenuhi ketentuan indikatornya. Rekam yang tertaut tetapi belum memenuhi ketentuan, atau yang bidang penentunya belum tercatat, tetap ditampilkan beserta alasannya sehingga selisihnya dapat ditelusuri.
 - Target Monitoring KM dapat dikelola per periode dengan riwayat versi, rekam pembentuk dapat dikoreksi langsung dari rinciannya, dan laporan periode maupun rekam indikator dapat diunduh sebagai berkas Excel (.xlsx).
+- Broadcast / Newsletter dipakai pengurus untuk menyusun email pengumuman bagi anggota aktif. Editornya visual seperti editor LMS: gambar bisa diletakkan di kiri, tengah, atau kanan dan diubah ukurannya, penerima dihitung dari direktori Anggota, dan hasil emailnya bisa dicek untuk desktop maupun ponsel. Pengirimannya masih menunggu layanan email di server, jadi untuk sekarang alurnya berhenti di tahap peninjauan.
 - Autentikasi, penyimpanan permanen, worker, dan audit belum ada di repository ini; keempatnya milik server.
 
 Inventaris per halaman, daftar route, batas implementasi, dan prioritas berikutnya ada di [cakupan produk saat ini](docs/current-scope.md).
@@ -75,6 +76,7 @@ npm run audit:deps
 | Bahasa | TypeScript 5.9.3 |
 | Gaya tampilan | CSS Modules dan token CSS |
 | Grafik | ApexCharts |
+| Editor isi broadcast | Tiptap 3.31.3 (ProseMirror) |
 | Peta interaktif | MapLibre GL JS dan OpenFreeMap |
 | Pemeriksaan kode | Biome 2.2.0 |
 | Runtime | Node.js 24.18.0 |

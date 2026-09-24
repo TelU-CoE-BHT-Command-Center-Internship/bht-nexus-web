@@ -19,7 +19,7 @@ Worker pengumpulan, pemrosesan dokumen, dan ekstraksi tidak boleh menulis langsu
 
 Navigasi Indonesia dikelompokkan mengikuti perjalanan datanya:
 
-- **Utama** — Dashboard dan Monitoring KM.
+- **Utama** — Dashboard, Monitoring KM, dan Broadcast / Newsletter.
 - **Alur Data** — Pengumpulan, Dokumen, dan Tinjauan. Ketiganya adalah jalur kandidat sebelum menjadi data resmi.
 - **Data Resmi** — Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian sebagai rumah data resmi yang sudah tersedia.
 - **Administrasi** — Anggota untuk identitas organisasi dan Administrasi untuk Accounts & Access. Keduanya tersedia pada ruang kerja Indonesia dan tetap dipisahkan agar profil anggota tidak berubah menjadi akun login atau role.
@@ -116,6 +116,18 @@ Grafik pada Monitoring bersifat baca saja. Pemilihan area dengan seretan, zoom r
 
 Angka metrik berjalan menuju nilai akhirnya saat pertama kali tampil dan saat nilainya berganti, sedangkan pembaca layar menerima nilai akhirnya seketika. Grafik dan busur capaian memakai animasi bawaan pustaka grafik. Preferensi `prefers-reduced-motion: reduce` menampilkan seluruh angka dan grafik pada keadaan akhirnya tanpa animasi, dan halaman yang dimuat pada tab latar juga langsung menampilkan angka akhirnya.
 
+### Penyusun Broadcast / Newsletter
+
+Penyusun broadcast mengikuti dua rujukan yang sudah dikenal pengurus: editor isi LMS untuk perkakasnya dan email yang diterima anggota untuk kertasnya. Perkakas bergrup menempel di atas kertas selama isi pesan digulir. Setiap tombol mempunyai nama aksesibel, tanda aktif berupa latar dan garis—bukan hanya warna ikon—serta keterangan yang muncul saat disorot atau difokus. Keterangan perkakas pertama dan terakhir pada setiap grup dibuka ke arah dalam agar tidak terpotong ketika perkakas terlipat ke baris baru.
+
+Kertas tulis bukan area teks generik, melainkan kartu email itu sendiri: pita BHT Nexus, judul email, isi pesan, lalu catatan kaki otomatis. Ukuran piksel, huruf Arial, jarak, dan warnanya disalin dari templat email server dan sama dengan `nexus-broadcast-email.module.css`; bila salah satunya berubah, keduanya diubah bersama. Bagian kartu yang tidak disunting disembunyikan dari pembaca layar karena isinya sudah tersedia pada kolom Judul dan Tampilan email. Kendali gambar tetap memakai huruf ruang kerja karena merupakan antarmuka, bukan isi email.
+
+Gambar mengikuti pola editor blog dan pengolah dokumen. Klik gambar untuk memunculkan satu baris perkakas berisi posisi (kiri, tengah, kanan), ukuran (Kecil 33%, Sedang 50%, Besar 75%, Penuh 100%), deskripsi, dan hapus; pegangan di sisi gambar dapat ditarik, dengan lencana persentase selama ditarik. Perkakas, bingkai pilihan, dan pegangan hanya tampil selama isi pesan disunting, sehingga tidak menutupi tulisan ketika penulis bekerja di bagian lain halaman. Gambar tanpa deskripsi diberi chip kuning **Tambahkan deskripsi**.
+
+Kertas tulis dan Tampilan email memakai aturan gambar yang sama: gambar samping paling lebar 60% isi, judul memulai bagian baru di bawah gambar samping, daftar di samping gambar menempati kolomnya sendiri, dan pada lebar 600 px atau kurang gambar samping menjadi selebar isi. Tampilan Desktop pada layar sempit karena itu memperlihatkan email selebar layar tersebut, bukan kolom teks yang terjepit. Pada kertas tulis yang sempit, pegangan tarik gambar samping disembunyikan dan editor menjelaskan bahwa posisi kiri atau kanan berlaku di layar lebar.
+
+Dialog Broadcast memakai `<dialog>` bawaan peramban. Dialog dilepas dari halaman ketika ditutup sehingga peramban tidak lagi mengembalikan fokus; karena itu fokus dikembalikan sendiri ke pemicunya bila jatuh ke halaman.
+
 ### Ikon
 
 Ikon digambar pada satu grid: sisi terpanjang sekitar 17 unit dari viewBox 24 dan terpusat pada titik (12, 12). Wadahnya sudah seragam, sehingga ukuran gambar yang berbeda-beda langsung terbaca sebagai kumpulan ikon yang tidak satu set. Ukuran dan titik pusat diukur dari `getBBox()` di peramban, bukan diperkirakan.
@@ -150,7 +162,7 @@ Administrasi Accounts & Access memakai pola daftar desktop, kartu mobile, tiga m
 
 Peran dan hak akses memakai dua halaman penuh di bawah Administrasi, bukan drawer sempit. `/nexus/administrasi/peran` memakai ruang kerja dua kolom: daftar peran yang dapat dicari di kiri, rincian peran dengan tab matriks, pengguna, dan informasi di kanan, lalu satu baris aksi di bawahnya. Keduanya memakai `NexusWorkspaceBreadcrumb` untuk jejak lokasi dan mengembalikan konteks melalui ID, bukan label.
 
-`/nexus/administrasi/akses` menangani satu akun terhadap 32 izin, sehingga daftarnya tidak dibiarkan menjadi gulir panjang. Halaman dibuka dengan ringkasan akses berisi jumlah izin aktif, penyesuaian, tambahan, dan pembatasan, lalu menyediakan saringan Semua, Penyesuaian, Aktif, dan Nonaktif. Setiap modul menjadi bagian yang dapat dibuka-tutup dan hanya modul yang mempunyai penyesuaian yang terbuka lebih dahulu, sehingga pengecualian langsung terlihat tanpa menelusuri seluruh izin. Satu izin ditulis pada satu baris berisi hak akses bawaan peran, kendali penyesuaian, dan hasil akhirnya; baris yang disesuaikan diberi garis tepi hijau untuk tambahan dan merah untuk pembatasan. Baris aksi menempel di bawah layar agar Simpan dan Reset selalu terjangkau tanpa menggulir sampai akhir halaman.
+`/nexus/administrasi/akses` menangani satu akun terhadap 37 izin, sehingga daftarnya tidak dibiarkan menjadi gulir panjang. Halaman dibuka dengan ringkasan akses berisi jumlah izin aktif, penyesuaian, tambahan, dan pembatasan, lalu menyediakan saringan Semua, Penyesuaian, Aktif, dan Nonaktif. Setiap modul menjadi bagian yang dapat dibuka-tutup dan hanya modul yang mempunyai penyesuaian yang terbuka lebih dahulu, sehingga pengecualian langsung terlihat tanpa menelusuri seluruh izin. Satu izin ditulis pada satu baris berisi hak akses bawaan peran, kendali penyesuaian, dan hasil akhirnya; baris yang disesuaikan diberi garis tepi hijau untuk tambahan dan merah untuk pembatasan. Baris aksi menempel di bawah layar agar Simpan dan Reset selalu terjangkau tanpa menggulir sampai akhir halaman.
 
 Kendali izin peran memakai sakelar dua keadaan berbasis checkbox dengan nama aksesibel spesifik seperti `Izinkan peran Auditor mengubah Publikasi`, sedangkan penyesuaian akun memakai kendali tiga keadaan berbasis radio: mengikuti peran, tambahan, dan dibatasi. Keadaan tidak pernah disampaikan hanya lewat warna; setiap kendali menyertakan label teks dan kombinasi yang tidak berlaku ditandai sebagai tidak tersedia, bukan sebagai izin nonaktif. Pada lebar tablet ke bawah, matriks dan perbandingan berubah menjadi kartu per modul agar tidak ada gulir horizontal halaman.
 
