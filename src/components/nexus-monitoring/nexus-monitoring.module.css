@@ -560,6 +560,63 @@
 }
 
 /*
+ * Tindakan kanan atas: periode, kelola target, dan unduh. Tombol mengikuti
+ * tinggi pemilih periode supaya satu baris tampak rata; pada layar sempit
+ * pemilih periode mengambil satu baris penuh dan kedua tombol berbagi baris
+ * berikutnya.
+ */
+.headerActions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.headerActions > .summaryPeriod {
+  flex: 0 0 15.5rem;
+  width: 15.5rem;
+}
+
+.headerActions > button {
+  white-space: nowrap;
+}
+
+@media (max-width: 56rem) {
+  .headerActions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+.headerActions > button svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+@media (max-width: 40rem) {
+  .headerActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .headerActions > .summaryPeriod {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .headerActions > button:only-of-type {
+    grid-column: 1 / -1;
+  }
+}
+
+/*
  * Wadah pemilih domain. Barisnya digeser mendatar tanpa batang gulir supaya
  * tepinya tetap bersih; bayangan tipis di kiri dan kanan menandakan masih ada
  * domain lain di arah tersebut.
@@ -1180,12 +1237,349 @@
  * keterangan, dan jejaknya tidak menempel menjadi satu blok.
  */
 .indicatorTrail {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
   margin-top: clamp(1.15rem, 1.8vw, 1.6rem);
   margin-bottom: clamp(0.9rem, 1.5vw, 1.25rem);
 }
 
 .indicatorTrail nav {
   margin-bottom: 0;
+}
+
+/*
+ * Perpindahan ke indikator tetangga di dalam domain yang sama. Urutannya
+ * mengikuti tabel ikhtisar domain, sehingga menekan Berikutnya dari tabel dan
+ * dari sini selalu membuka indikator yang sama.
+ */
+.indicatorNav {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.indicatorNavLink {
+  display: inline-flex;
+  min-height: 2.75rem;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.625rem;
+  background: var(--color-nexus-surface);
+  color: var(--color-nexus-text-strong);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.indicatorNavLink:hover {
+  border-color: #b9c6dd;
+  background: var(--color-nexus-surface-subtle);
+}
+
+.indicatorNavLink span {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  line-height: 1.25;
+}
+
+.indicatorNavLink small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.indicatorNavLink svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+/*
+ * Pada layar sempit, baris remah dan navigasi indikator berpindah ke barisnya
+ * sendiri. Navigasinya menjadi dua kolom sama lebar supaya tombol Sebelumnya
+ * dan Berikutnya seimbang dan tidak ada yang terpotong tepi layar; ketika
+ * indikatornya hanya punya satu tetangga, tombol itu memakai lebar penuh.
+ */
+@media (max-width: 40rem) {
+  .indicatorTrail {
+    align-items: flex-start;
+  }
+
+  .indicatorNav {
+    display: grid;
+    width: 100%;
+    flex: 1 1 auto;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .indicatorNavLink {
+    justify-content: flex-start;
+  }
+
+  .indicatorNavLink[data-align="end"] {
+    justify-content: flex-end;
+  }
+}
+
+/*
+ * Kartu yang berdampingan pada satu baris selalu setinggi baris itu, bukan
+ * setinggi isinya masing-masing. Sebaran triwulan tidak selalu dapat dibentuk,
+ * sehingga tanpa aturan ini kartu kiri menyusut dan menyisakan ruang kosong di
+ * sebelah kartu kanan yang lebih panjang.
+ */
+.indicatorAnalyticsGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 1fr);
+  align-items: stretch;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.indicatorAnalyticsGrid > .card {
+  height: 100%;
+}
+
+.indicatorInsightGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: stretch;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.indicatorInsightGrid > .card {
+  height: 100%;
+}
+
+.indicatorMetrics .metricValue[data-available="false"] {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+.indicatorQuarterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-nexus-border-soft);
+}
+
+.indicatorQuarterGrid dt {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.indicatorQuarterGrid dt span {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.indicatorQuarterGrid dd {
+  margin: 0.4rem 0 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.indicatorQuarterGrid dd small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.indicatorCalculation {
+  margin: 1rem 0;
+  color: var(--color-nexus-text);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.indicatorReferences {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.indicatorReferences > summary {
+  padding: 1rem 0;
+  color: var(--color-nexus-text-strong);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.indicatorReferences > summary span {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.indicatorReferences > div {
+  margin-top: 0;
+  align-items: start;
+}
+
+.indicatorMethodNote {
+  margin: 0.75rem 0 0;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 74.99rem) {
+  .indicatorAnalyticsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 35rem) {
+  .indicatorMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .indicatorMetrics .metricCard {
+    min-height: 0;
+    padding: 1rem;
+  }
+
+  .indicatorMetrics .metricIcon {
+    display: none;
+  }
+
+  .indicatorQuarterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/*
+ * Daftar aturan pengukuran. Nilainya berupa kalimat penuh dari workbook,
+ * sehingga barisnya dibiarkan membungkus dan tidak pernah dipotong elipsis.
+ */
+.ruleList {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.ruleItem dt {
+  margin-bottom: 0.2rem;
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.ruleItem dd {
+  margin: 0;
+  color: var(--color-nexus-text);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.ruleSource {
+  margin: 1rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-nexus-border-soft);
+  color: var(--color-nexus-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/*
+ * Ketika kartu memenuhi tinggi barisnya, baris penutup tiap kartu menempel ke
+ * bawah: rincian per triwulan pada kartu sebaran, dan kalimat capaian pada
+ * kartu dasar perhitungan. Grafiknya sendiri tetap setinggi aslinya supaya
+ * tidak teregang.
+ */
+.indicatorAnalyticsGrid .card[data-fill="true"] .indicatorQuarterGrid,
+.indicatorAnalyticsGrid .card[data-fill="true"] .ruleSource {
+  margin-top: auto;
+}
+
+/*
+ * Tabel rekam pembentuk pada rincian indikator. Berbeda dari tabel pembaruan
+ * pada Ringkasan, tabel ini masih diikuti keterangan saringan, sehingga
+ * bingkainya berdiri sendiri tanpa ditarik ke tepi bawah kartu.
+ */
+.indicatorRecordsTable {
+  margin-top: 1rem;
+  border: 1px solid var(--color-nexus-border-soft);
+  border-radius: 0.75rem;
+}
+
+.indicatorRecordsTable:first-child {
+  margin-top: 0;
+}
+
+/*
+ * Lebar kolom tabel rekam pembentuk. Mengikuti aturan kit tabel bersama:
+ * kolom berisi nilai pendek diberi lebar tetap, sedangkan kolom `record`
+ * sengaja dibiarkan tanpa lebar supaya judul rekam menyerap sisa ruang.
+ * Tanpa ini `table-layout: fixed` membagi seluruh kolom sama rata dan kolom
+ * paling kanan menyisakan ruang kosong yang lebar.
+ */
+.indicatorRecordsTable th[data-column="house"] {
+  width: 9.25rem;
+}
+
+.indicatorRecordsTable th[data-column="date"] {
+  width: 9.5rem;
+}
+
+.indicatorRecordsTable th[data-column="evidence"] {
+  width: 10.5rem;
+}
+
+.indicatorRecordsTable th[data-column="quality"] {
+  width: 8.5rem;
+}
+
+/* Tanggal bisnis satu rekam beserta triwulan yang dihasilkannya. */
+.indicatorRecordDate {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.indicatorRecordDate strong {
+  color: var(--color-nexus-text-strong);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.indicatorRecordDate small {
+  color: var(--color-nexus-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
 }
 
 .constructionState {
@@ -1358,21 +1752,6 @@
   }
 }
 
-/*
- * Alamat satu indikator memakai keadaan yang sama dengan domain, hanya lebih
- * ringkas: pesannya pendek sehingga tinggi minimum penuh hanya menyisakan
- * ruang kosong.
- */
-.constructionState[data-compact="true"] {
-  min-height: 0;
-  gap: 0.85rem;
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-.constructionState[data-compact="true"] .constructionVisual {
-  height: clamp(10.5rem, 19vw, 14.5rem);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .domainChip {
     transition: none;
@@ -1431,6 +1810,7 @@
 
 .compositionChart {
   min-width: 0;
+  min-height: 13rem;
   flex: 1 1 10.5rem;
   max-width: 13rem;
 }
@@ -1448,6 +1828,20 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/*
+ * Bentuk terpusat untuk kartu selebar penuh: legenda berhenti melebar mengikuti
+ * kartu, sehingga cincin dan keterangannya berdiri sebagai satu blok di tengah
+ * dan tidak meninggalkan jarak panjang menuju tepi kanan.
+ */
+.composition[data-variant="centered"] {
+  gap: 1rem 2.25rem;
+}
+
+.composition[data-variant="centered"] .compositionLegend {
+  flex: 0 1 auto;
+  gap: 0.5rem;
 }
 
 .compositionRow {
@@ -1597,4 +1991,505 @@
 .card[data-fill="true"] .chartSummary {
   margin-top: auto;
   padding-top: 1rem;
+}
+
+/*
+ * Pengelolaan target dan koreksi rekam. Kontrolnya memakai token yang sama
+ * dengan bidang formulir ruang kerja; baris target dipadatkan menjadi tiga
+ * kolom supaya seluruh indikator satu periode dapat ditinjau sekaligus.
+ */
+.targetForm {
+  display: grid;
+  gap: 1rem;
+}
+
+.targetContext {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.65rem;
+  background: #eaf1fa;
+  color: #203b5c;
+  font-size: 0.75rem;
+}
+
+.targetContext strong {
+  font-size: 0.95rem;
+}
+
+.targetHelp {
+  margin: -0.35rem 0 0;
+  color: #52657d;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.targetToolbar {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) auto auto;
+  align-items: end;
+  gap: 0.6rem;
+}
+
+.targetToolbar > button {
+  height: 2.45rem;
+  min-height: 2.45rem;
+  align-self: end;
+  white-space: nowrap;
+}
+
+.targetSearch {
+  display: grid;
+  gap: 0.25rem;
+  color: #52657d;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.targetSearch input {
+  width: 100%;
+  height: 2.45rem;
+  min-height: 2.45rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #cbd7e5;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #233851;
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.targetSearch input:focus-visible {
+  outline: 2px solid var(--color-brand-navy);
+  outline-offset: 2px;
+}
+
+.targetChangedToggle {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #cbd7e5;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #233851;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.targetChangedToggle[aria-pressed="true"] {
+  border-color: #8fb1dc;
+  background: #eaf2fc;
+  color: #123f78;
+}
+
+.targetChangedToggle:focus-visible {
+  outline: 2px solid var(--color-brand-navy);
+  outline-offset: 2px;
+}
+
+.targetGroup {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.targetColumnHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7.5rem 8.5rem;
+  gap: 0.75rem;
+  padding: 0.2rem 0.8rem;
+  color: #61738a;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.targetGroup legend {
+  padding: 0 0.5rem 0 0;
+  color: #2d405c;
+  font-size: 0.78rem;
+  font-weight: 720;
+}
+
+.targetRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7.5rem 8.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+}
+
+.targetRow + .targetRow {
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.targetRow[data-changed="true"] {
+  background: #edf5ff;
+  box-shadow: inset 3px 0 #3676c2;
+}
+
+.targetRow label {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+  color: #233851;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.targetRow label strong {
+  font-size: 0.7rem;
+  font-weight: 760;
+}
+
+.targetCurrent {
+  display: grid;
+  color: #233851;
+  font-size: 0.74rem;
+  font-weight: 680;
+}
+
+.targetCurrent small {
+  color: #6b7c91;
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+
+.targetCurrent strong {
+  font-size: 0.83rem;
+}
+
+.targetInput {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.targetInput input,
+.correctionCheckbox input {
+  accent-color: var(--color-brand-navy);
+}
+
+.targetInput input {
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.34rem 0.6rem;
+  border: 1px solid #cbd7e5;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #233851;
+  font: inherit;
+  font-size: 0.74rem;
+}
+
+.targetInput input:focus {
+  border-color: #6ea0d8;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgb(24 92 168 / 10%);
+}
+
+.targetInput input[aria-invalid="true"] {
+  border-color: #cf6575;
+  background: #fffafb;
+}
+
+.targetInput small {
+  color: #b42339;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.targetInput .targetCompositeHint {
+  color: #61738a;
+}
+
+.targetInput em {
+  color: #24598e;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.targetReview {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid #3676c2;
+  border-radius: 0.4rem;
+  background: #edf5ff;
+  color: #233851;
+  font-size: 0.75rem;
+}
+
+.targetReview ul {
+  display: grid;
+  gap: 0.3rem;
+  max-height: 9rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.targetReview li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.targetActionBar,
+.targetActionBar > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.targetActionBar > span {
+  color: #52657d;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.formFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.targetHistory {
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.6rem;
+  padding: 0.7rem 0.85rem;
+  color: #233851;
+  font-size: 0.72rem;
+}
+
+.targetHistory summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.targetHistory ol {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.targetHistory li {
+  display: grid;
+  gap: 0.15rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid #d8e2ef;
+}
+
+.targetHistory li span {
+  color: #6b7c91;
+  font-size: 0.66rem;
+}
+
+.targetHistory li p,
+.targetHistory > p {
+  margin: 0.2rem 0 0;
+  line-height: 1.45;
+}
+
+.correctionCheckboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.4rem 0.9rem;
+  margin: 0;
+  padding: 0.6rem 0.8rem 0.75rem;
+  border: 1px solid #cbd7e5;
+  border-radius: 0.5rem;
+}
+
+.correctionCheckboxes legend {
+  padding: 0 0.3rem;
+  color: #2d405c;
+  font-size: 0.67rem;
+  font-weight: 690;
+}
+
+.correctionCheckbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  color: #233851;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.correctionCheckbox input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0.1rem 0 0;
+  flex: 0 0 auto;
+}
+
+.pageNotice {
+  margin-bottom: 1rem;
+}
+
+.monitoringToast {
+  position: fixed;
+  z-index: 60;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  width: min(28rem, calc(100vw - 2rem));
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem 0.8rem 0.85rem 0.9rem;
+  border: 1px solid #b7dece;
+  border-radius: 0.8rem;
+  background: #f5fcf8;
+  box-shadow: 0 0.75rem 2rem rgb(20 52 40 / 16%);
+  color: #154b36;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.monitoringToastIcon {
+  display: grid;
+  width: 1.3rem;
+  height: 1.3rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #11764f;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.monitoringToast p {
+  flex: 1;
+  margin: 0;
+  font-weight: 650;
+}
+
+.monitoringToast button {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: #335a49;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.monitoringToast button:hover,
+.monitoringToast button:focus-visible {
+  background: #dcefe5;
+  outline: 0;
+}
+
+@media (max-width: 40rem) {
+  .monitoringToast {
+    bottom: 4.25rem;
+    right: 1rem;
+  }
+
+  .targetToolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .targetSearch {
+    grid-column: 1 / -1;
+  }
+
+  .targetToolbar > button {
+    width: 100%;
+  }
+
+  .targetRow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .targetColumnHead {
+    display: none;
+  }
+
+  .targetRow label {
+    grid-column: 1 / -1;
+  }
+
+  .targetActionBar > div {
+    width: 100%;
+  }
+
+  .targetActionBar > div > button {
+    flex: 1;
+  }
+}
+
+.recordCorrectAction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-nexus-border);
+}
+
+.recordCorrectAction span {
+  flex: 1 1 14rem;
+  color: #52657d;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.correctionHistory {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.correctionHistory > li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--color-nexus-border);
+  border-radius: 0.6rem;
+  color: #233851;
+  font-size: 0.72rem;
+}
+
+.correctionHistory > li > span {
+  color: #6b7c91;
+  font-size: 0.66rem;
+}
+
+.correctionHistory ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.correctionHistory p {
+  margin: 0.3rem 0 0;
+  color: #52657d;
+  line-height: 1.45;
 }

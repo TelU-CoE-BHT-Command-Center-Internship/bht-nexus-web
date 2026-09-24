@@ -133,6 +133,9 @@ export function NexusMonitoringDomainOverview({
   );
 
   const computableShare = view.total === 0 ? 0 : view.computable / view.total;
+  const allLinkedCounted = view.counting.items.every(
+    (item) => item.id === "counted" || item.value === 0,
+  );
   const visibleGaps = view.gaps.slice(0, GAP_LIMIT);
   const hiddenGaps = view.gaps.length - visibleGaps.length;
   /* Rumah data yang benar-benar menyumbang rekam, bukan sekadar yang dirujuk. */
@@ -258,6 +261,55 @@ export function NexusMonitoringDomainOverview({
                   {`${hiddenGaps} indikator lain juga masih di bawah target dengan selisih lebih kecil; seluruhnya tercantum pada Capaian Indikator ${view.label}.`}
                 </MonitoringChartSummary>
               ) : null}
+            </>
+          )}
+        </MonitoringCard>
+      </div>
+
+      <div className={styles.insightGrid}>
+        <MonitoringCard
+          description={view.recordForms?.description ?? ""}
+          fill
+          headingId="monitoring-domain-record-forms"
+          title="Bentuk Rekam Pembentuk"
+        >
+          {view.recordForms ? (
+            <MonitoringDistributionList
+              items={view.recordForms.slices}
+              valueLabel={(item) => `${item.value} rekam`}
+            />
+          ) : (
+            <MonitoringUnavailable
+              description={`Belum ada rekam resmi yang membentuk realisasi indikator ${view.label} pada periode ini, sehingga bentuk rekamnya belum dapat disebarkan.`}
+              title="Belum ada rekam yang dihitung"
+            />
+          )}
+        </MonitoringCard>
+
+        <MonitoringCard
+          description={
+            allLinkedCounted
+              ? `Seluruh rekam resmi yang tertaut ke indikator ${view.label} memenuhi ketentuan indikatornya pada periode berjalan.`
+              : `Rekam resmi yang tertaut ke indikator ${view.label} tidak seluruhnya membentuk realisasinya. Alasan tiap rekam tercantum pada rincian indikatornya.`
+          }
+          fill
+          headingId="monitoring-domain-counting"
+          title="Kesiapan Perhitungan"
+        >
+          {view.counting.linked === 0 ? (
+            <MonitoringUnavailable
+              description={view.counting.summary}
+              title="Belum ada rekam tertaut"
+            />
+          ) : (
+            <>
+              <MonitoringDistributionList
+                items={view.counting.items}
+                valueLabel={(item) => `${item.value} rekam`}
+              />
+              <MonitoringChartSummary>
+                {view.counting.summary}
+              </MonitoringChartSummary>
             </>
           )}
         </MonitoringCard>

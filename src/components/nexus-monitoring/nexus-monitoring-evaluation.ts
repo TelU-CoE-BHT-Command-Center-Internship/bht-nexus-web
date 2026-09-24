@@ -7,11 +7,12 @@ import {
 } from "@/content/nexus-km-indicators";
 
 /**
- * Periode evaluasi yang benar-benar dimodelkan. Tahun lain tidak ditawarkan
- * sebagai pilihan supaya kontrol periode tidak menjanjikan data yang belum ada.
+ * Pengenal periode evaluasi, berupa tahun evaluasi seperti `2026`. Periode
+ * berikutnya ditambahkan pengelola dari Monitoring KM.
  */
-export type NexusEvaluationPeriodId = "2026";
+export type NexusEvaluationPeriodId = string;
 
+/** Periode yang target awalnya berasal dari workbook KM 2026. */
 export const NEXUS_EVALUATION_PERIOD: NexusEvaluationPeriodId = "2026";
 
 /** Rumah data resmi tempat realisasi sebuah indikator dibentuk. */
@@ -70,7 +71,17 @@ export type NexusIndicatorTarget = {
    * Nilai gabungan tidak pernah dipecah sendiri menjadi angka pembanding.
    */
   literal: string | null;
-  /** Lokasi nilai pada workbook KM 2026 sehingga angkanya dapat diperiksa. */
+  /** Asal nilai: letak pada workbook atau versi target yang menetapkannya. */
+  reference: string;
+  value: number | null;
+  /** Versi target yang berlaku; `0` berarti target periode belum ditetapkan. */
+  version: number;
+};
+
+/** Target awal per indikator menurut workbook KM 2026 beserta letak barisnya. */
+export type NexusEvaluationTargetSeed = {
+  indicatorId: NexusKmIndicatorId;
+  literal: string | null;
   reference: string;
   value: number | null;
 };
@@ -109,9 +120,10 @@ export type NexusIndicatorRealizationRule =
   | { kind: "unavailable"; reason: string };
 
 /**
- * Metadata evaluasi satu indikator: satuan, definisi, cara perhitungan, target
- * periode, eviden, rumah data resmi, aturan realisasi, dan tanggal bisnis yang
- * menentukan triwulan.
+ * Metadata evaluasi satu indikator: satuan, definisi, cara perhitungan, eviden,
+ * rumah data resmi, aturan realisasi, dan tanggal bisnis yang menentukan
+ * triwulan. Target bukan bagian dari definisi karena target milik periode;
+ * nilainya dibaca dari versi target periode yang sedang diukur.
  *
  * Definisi dan perhitungan ditulis ulang dalam ejaan baku yang setia pada
  * makna kolom `Definisi`, `Tujuan`, dan `Perhitungan Indikator` pada workbook
@@ -126,7 +138,6 @@ export type NexusIndicatorEvaluation = {
   purpose: string;
   realization: NexusIndicatorRealizationRule;
   sourceFamily: NexusMonitoringSourceFamily;
-  target: NexusIndicatorTarget;
   /** Satuan menurut workbook; `null` ketika kolomnya memang belum diisi. */
   unit: string | null;
   workbookNote: NexusIndicatorWorkbookNote;
@@ -509,7 +520,7 @@ const evaluationSeeds: readonly EvaluationSeed[] = [
     targetValue: 1,
   },
   {
-    businessDateLabel: "Tanggal mulai kontrak",
+    businessDateLabel: "Tanggal pengajuan",
     calculation:
       "Jumlah submit proposal riset pada tingkat nasional oleh dosen anggota CoE.",
     definition:
@@ -524,7 +535,7 @@ const evaluationSeeds: readonly EvaluationSeed[] = [
     targetValue: 8,
   },
   {
-    businessDateLabel: "Tanggal mulai kontrak",
+    businessDateLabel: "Tanggal pengajuan",
     calculation:
       "Jumlah submit proposal riset pada tingkat internasional oleh dosen anggota CoE.",
     definition:
@@ -539,7 +550,7 @@ const evaluationSeeds: readonly EvaluationSeed[] = [
     targetValue: 11,
   },
   {
-    businessDateLabel: "Tanggal mulai kontrak",
+    businessDateLabel: "Tanggal pengajuan",
     calculation:
       "Jumlah submit proposal non-riset oleh dosen anggota CoE, termasuk pelatihan, transfer teknologi, jasa konsultasi, dan pengabdian masyarakat.",
     definition:
@@ -571,11 +582,6 @@ const evaluationById = new Map<NexusKmIndicatorId, NexusIndicatorEvaluation>(
         ? { kind: "unavailable", reason: seed.realizationUnavailableReason }
         : { kind: "record-count" },
       sourceFamily: seed.sourceFamily,
-      target: {
-        literal: seed.targetLiteral ?? null,
-        reference: `Workbook KM 2026 · Evaluasi 2026 baris ${seed.row}`,
-        value: seed.targetValue,
-      },
       unit: seed.unitValue === undefined ? "Jumlah" : seed.unitValue,
       workbookNote: {
         previousPeriodLabel: "2025",
@@ -586,6 +592,15 @@ const evaluationById = new Map<NexusKmIndicatorId, NexusIndicatorEvaluation>(
     },
   ]),
 );
+
+/** Target awal periode workbook, sebagai versi pertama setiap target. */
+export const nexusEvaluationTargetSeeds: readonly NexusEvaluationTargetSeed[] =
+  evaluationSeeds.map((seed) => ({
+    indicatorId: seed.id,
+    literal: seed.targetLiteral ?? null,
+    reference: `Workbook KM 2026 · Evaluasi 2026 baris ${seed.row}`,
+    value: seed.targetValue,
+  }));
 
 /**
  * Seluruh indikator yang metadata evaluasinya sudah tersedia, mengikuti urutan

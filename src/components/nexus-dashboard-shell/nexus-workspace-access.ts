@@ -22,7 +22,18 @@ export type NexusWorkspaceAccess = {
   administrationCapabilities: NexusAdministrationCapabilities;
   allowedNavigationIds: readonly NexusWorkspaceNavigationId[];
   memberCapabilities: NexusMemberCapabilities;
+  monitoringCapabilities: NexusMonitoringCapabilities;
   reviewCapabilities: NexusReviewCapabilities;
+};
+
+/**
+ * Kemampuan pada Monitoring KM. Mengelola periode dan target (`monitoring.manage`)
+ * terpisah dari mengoreksi rekam pembentuk realisasi (`monitoring.update`).
+ * Mengunduh laporan mengikuti izin melihat Monitoring.
+ */
+export type NexusMonitoringCapabilities = {
+  canCorrectRecords: boolean;
+  canManageTargets: boolean;
 };
 
 export type NexusAdministrationCapabilities = {
@@ -69,6 +80,10 @@ export const nexusPreviewWorkspaceAccess = {
     canDeactivateMember: true,
     canEditMember: true,
     canGrantAccess: true,
+  },
+  monitoringCapabilities: {
+    canCorrectRecords: true,
+    canManageTargets: true,
   },
   reviewCapabilities: {
     canReview: true,

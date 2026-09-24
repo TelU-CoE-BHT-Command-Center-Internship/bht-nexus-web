@@ -22,6 +22,7 @@ import {
   metadataCompletionFieldState,
   metadataCompletionResolvedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
@@ -139,6 +140,7 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
     })),
   );
 
+  items.push(...officialReportedQuarterItems(record));
   return items.map((item) => ({
     ...item,
     fieldState: isMetadataCompletionFieldKey(item.key)

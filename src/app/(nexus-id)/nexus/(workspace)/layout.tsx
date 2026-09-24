@@ -9,6 +9,11 @@ import { NexusDashboardShell } from "@/components/nexus-dashboard-shell/nexus-da
 import { getNexusDashboardShellPreviewContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { NexusMemberSessionProvider } from "@/components/nexus-member-session/nexus-member-session";
 import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
+import { NexusMonitoringSessionProvider } from "@/components/nexus-monitoring/nexus-monitoring-session";
+import {
+  nexusWorkbookPeriods,
+  nexusWorkbookTargetVersions,
+} from "@/components/nexus-monitoring/nexus-monitoring-targets";
 import { NexusCurrentUserReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusWorkspaceUnsavedChangesProvider } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
@@ -31,11 +36,16 @@ export default function NexusWorkspaceLayout({
           <NexusCurrentUserReviewSessionProvider
             capabilities={content.reviewCapabilities}
           >
-            <NexusWorkspaceUnsavedChangesProvider>
-              <NexusDashboardShell content={content}>
-                {children}
-              </NexusDashboardShell>
-            </NexusWorkspaceUnsavedChangesProvider>
+            <NexusMonitoringSessionProvider
+              initialPeriods={nexusWorkbookPeriods}
+              initialTargetVersions={nexusWorkbookTargetVersions}
+            >
+              <NexusWorkspaceUnsavedChangesProvider>
+                <NexusDashboardShell content={content}>
+                  {children}
+                </NexusDashboardShell>
+              </NexusWorkspaceUnsavedChangesProvider>
+            </NexusMonitoringSessionProvider>
           </NexusCurrentUserReviewSessionProvider>
         </NexusAccountSessionProvider>
       </NexusAccessPolicySessionProvider>

@@ -15,6 +15,7 @@ type NexusWorkspaceDrawerProps = {
   closeLabel: string;
   description: string;
   eyebrow: string;
+  footer?: ReactNode;
   onClose: () => void;
   steps?: readonly NexusDrawerStep[];
   title: string;
@@ -41,6 +42,7 @@ export function NexusWorkspaceDrawer({
   closeLabel,
   description,
   eyebrow,
+  footer,
   onClose,
   steps,
   title,
@@ -157,6 +159,7 @@ export function NexusWorkspaceDrawer({
         ) : null}
 
         <div className={styles.body}>{children}</div>
+        {footer ? <div className={styles.footer}>{footer}</div> : null}
       </aside>
     </div>
   );

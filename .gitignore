@@ -44,3 +44,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# konfigurasi alat bantu lokal yang tidak dipakai bersama
+/.claude/launch.json

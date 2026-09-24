@@ -8,18 +8,17 @@ import {
   intellectualPropertyCreatorNames,
   intellectualPropertyKmLabel,
   type NexusIntellectualPropertyContent,
-  normalizeProjectedIntellectualProperty,
   type OfficialIntellectualProperty,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
-import { projectOfficialIntellectualProperties } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import {
   type MetadataCompletionResolutions,
   metadataCompletionAvailabilityLabel,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
+import { projectNexusIntellectualProperties } from "@/components/nexus-official-records/nexus-official-records";
+import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
 import { createIntellectualPropertyCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -212,21 +211,14 @@ export function NexusIntellectualProperty({
   initialMemberId,
 }: NexusIntellectualPropertyProps) {
   const reviewSession = useNexusReviewSession();
+  const officialRecordSession = useNexusOfficialRecordSession();
   const records = useMemo(
     () =>
-      projectOfficialIntellectualProperties(
-        projectOfficialMetadataRecords(
-          content.records,
-          reviewSession.officialMetadataByRecordId,
-          normalizeProjectedIntellectualProperty,
-        ),
-        reviewSession.officialRecordDecisions,
+      projectNexusIntellectualProperties(
+        content.records,
+        officialRecordSession,
       ),
-    [
-      content.records,
-      reviewSession.officialMetadataByRecordId,
-      reviewSession.officialRecordDecisions,
-    ],
+    [content.records, officialRecordSession],
   );
   const [currentPage, setCurrentPage] = useState(1);
   const proposals = reviewSession.completionProposals;

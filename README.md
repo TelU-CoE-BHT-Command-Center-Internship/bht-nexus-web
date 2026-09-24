@@ -23,6 +23,8 @@ Web dan server dikelola terpisah. Repository ini berisi halaman dan interaksi pe
 
 - Landing page dan halaman anggota tersedia dalam bahasa Indonesia dan Inggris, responsif, dan masih akan dilengkapi—terutama bagian mitra dan informasi yang menunggu konfirmasi tim.
 - Ruang kerja BHT Nexus sudah mempunyai Dashboard, Monitoring KM, Pengumpulan, Tinjauan, lima rumah Data Resmi, Dokumen, Anggota, Profil Saya, serta Administrasi beserta peran dan hak aksesnya.
+- Monitoring KM menghitung realisasi hanya dari rekam resmi yang memenuhi ketentuan indikatornya. Rekam yang tertaut tetapi belum memenuhi ketentuan, atau yang bidang penentunya belum tercatat, tetap ditampilkan beserta alasannya sehingga selisihnya dapat ditelusuri.
+- Target Monitoring KM dapat dikelola per periode dengan riwayat versi, rekam pembentuk dapat dikoreksi langsung dari rinciannya, dan laporan periode maupun rekam indikator dapat diunduh sebagai berkas Excel (.xlsx).
 - Autentikasi, penyimpanan permanen, worker, dan audit belum ada di repository ini; keempatnya milik server.
 
 Inventaris per halaman, daftar route, batas implementasi, dan prioritas berikutnya ada di [cakupan produk saat ini](docs/current-scope.md).
