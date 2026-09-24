@@ -12,6 +12,7 @@ import {
   metadataCompletionFieldState,
   metadataCompletionResolvedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { parseBusinessDate } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
 import {
@@ -158,6 +159,14 @@ function getMetadataItems(
         publication.year ? String(publication.year) : "Belum tercatat",
       ),
     },
+    {
+      key: "publishedOn",
+      label: "Tanggal terbit",
+      value:
+        parseBusinessDate(publication.publishedOn)?.label ??
+        publication.publishedOn ??
+        "Belum tercatat",
+    },
     ...optionalItems,
     ...(publication.identifier && publication.identifier !== publication.doi
       ? [
@@ -264,6 +273,14 @@ export function NexusPublicationDetail({
             label="Tahun terbit"
             value={
               publication.year ? String(publication.year) : "Belum tercatat"
+            }
+          />
+          <MetaItem
+            label="Tanggal terbit"
+            value={
+              parseBusinessDate(publication.publishedOn)?.label ??
+              publication.publishedOn ??
+              "Belum tercatat"
             }
           />
           <MetaItem

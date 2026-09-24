@@ -28,14 +28,34 @@ type TargetDrawerMode = "period" | "targets";
 
 const NO_COPY = "none";
 
-function parseTarget(value: string) {
+function parseTarget(value: string, composite: boolean) {
   const trimmed = value.trim();
   if (!trimmed) return { empty: true as const };
+  if (composite) {
+    const match = /^(\d+)\s*\/\s*(\d+)M$/i.exec(trimmed);
+    const count = match ? Number(match[1]) : Number.NaN;
+    const value = match ? Number(match[2]) : Number.NaN;
+    if (
+      !Number.isSafeInteger(count) ||
+      !Number.isSafeInteger(value) ||
+      value <= 0
+    ) {
+      return {
+        empty: false as const,
+        error: "Gunakan format jumlah/nilai, misalnya 9/1M.",
+      };
+    }
+    return {
+      empty: false as const,
+      literal: `${count}/${value}M`,
+      value: null,
+    };
+  }
   const numeric = Number(trimmed.replace(",", "."));
-  if (!Number.isInteger(numeric) || numeric < 0) {
+  if (!Number.isSafeInteger(numeric) || numeric < 0) {
     return { empty: false as const, error: "Isi bilangan bulat 0 atau lebih." };
   }
-  return { empty: false as const, value: numeric };
+  return { empty: false as const, literal: null, value: numeric };
 }
 
 function versionOrigin(version: NexusIndicatorTargetVersion) {
@@ -73,6 +93,8 @@ export function NexusMonitoringTargetDrawer({
   );
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [reason, setReason] = useState("");
+  const [query, setQuery] = useState("");
+  const [showChangedOnly, setShowChangedOnly] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -86,6 +108,10 @@ export function NexusMonitoringTargetDrawer({
   );
   const [copyFrom, setCopyFrom] = useState(latestPeriod?.id ?? NO_COPY);
   const [periodReason, setPeriodReason] = useState("");
+  const [periodBaseline, setPeriodBaseline] = useState({
+    year: newYear,
+    copyFrom,
+  });
 
   const groups = useMemo(
     () =>
@@ -103,11 +129,17 @@ export function NexusMonitoringTargetDrawer({
 
   const parsed = Object.entries(drafts).map(([indicatorId, value]) => ({
     indicatorId: indicatorId as NexusKmIndicatorId,
-    parsed: parseTarget(value),
+    parsed: parseTarget(value, indicatorId === "KM-23"),
   }));
   const changes = parsed.flatMap((item) =>
     "value" in item.parsed && item.parsed.value !== undefined
-      ? [{ indicatorId: item.indicatorId, value: item.parsed.value }]
+      ? [
+          {
+            indicatorId: item.indicatorId,
+            literal: item.parsed.literal,
+            value: item.parsed.value,
+          },
+        ]
       : [],
   );
   const effectiveChanges = changes.filter((change) => {
@@ -116,7 +148,9 @@ export function NexusMonitoringTargetDrawer({
       periodId,
       change.indicatorId,
     );
-    return !(current?.value === change.value && current.literal === null);
+    return !(
+      current?.value === change.value && current.literal === change.literal
+    );
   });
   const rowErrors = new Map(
     parsed.flatMap((item) =>
@@ -125,10 +159,36 @@ export function NexusMonitoringTargetDrawer({
         : [],
     ),
   );
+  const changedIds = new Set(
+    effectiveChanges.map((change) => change.indicatorId),
+  );
+  const search = query.trim().toLocaleLowerCase("id-ID");
+  const visibleGroups = groups
+    .map((group) => ({
+      ...group,
+      evaluations: group.evaluations.filter((evaluation) => {
+        const id = evaluation.indicator.id;
+        return (
+          (!showChangedOnly || changedIds.has(id)) &&
+          (!search ||
+            `${id} ${evaluation.indicator.label}`
+              .toLocaleLowerCase("id-ID")
+              .includes(search))
+        );
+      }),
+    }))
+    .filter((group) => group.evaluations.length > 0);
+  const indicatorCount = groups.reduce(
+    (count, group) => count + group.evaluations.length,
+    0,
+  );
   const targetsDirty =
     Object.values(drafts).some((value) => value.trim() !== "") ||
     reason.trim() !== "";
-  const periodDirty = mode === "period" && periodReason.trim() !== "";
+  const periodDirty =
+    periodReason.trim() !== "" ||
+    newYear !== periodBaseline.year ||
+    copyFrom !== periodBaseline.copyFrom;
   const isDirty = targetsDirty || periodDirty;
 
   const yearNumber = Number(newYear);
@@ -181,6 +241,9 @@ export function NexusMonitoringTargetDrawer({
       year: yearNumber,
     });
     setMode("targets");
+    setNewYear(String(period.year + 1));
+    setCopyFrom(period.id);
+    setPeriodBaseline({ year: String(period.year + 1), copyFrom: period.id });
     setPeriodReason("");
     setSubmitted(false);
     onPeriodAdded(period.id);
@@ -196,6 +259,32 @@ export function NexusMonitoringTargetDrawer({
             : `Target berlaku untuk periode ${periodId}. Setiap perubahan disimpan sebagai versi baru dan versi sebelumnya tetap tercatat.`
         }
         eyebrow="Monitoring KM"
+        footer={
+          <div className={styles.targetActionBar}>
+            <span aria-live="polite">
+              {mode === "period"
+                ? `Periode baru ${newYear || "—"}`
+                : `${effectiveChanges.length} dari ${indicatorCount} target berubah`}
+            </span>
+            <div>
+              <NexusWorkspaceButton onClick={requestClose} type="button">
+                Batal
+              </NexusWorkspaceButton>
+              <NexusWorkspaceButton
+                disabled={mode === "targets" && effectiveChanges.length === 0}
+                form={
+                  mode === "period"
+                    ? "monitoring-period-form"
+                    : "monitoring-target-form"
+                }
+                tone="primary"
+                type="submit"
+              >
+                {mode === "period" ? "Tambah periode" : "Simpan target"}
+              </NexusWorkspaceButton>
+            </div>
+          </div>
+        }
         onClose={requestClose}
         title={
           mode === "period"
@@ -208,9 +297,17 @@ export function NexusMonitoringTargetDrawer({
         {mode === "period" ? (
           <form
             className={styles.targetForm}
+            id="monitoring-period-form"
             noValidate
             onSubmit={submitPeriod}
           >
+            <div className={styles.targetContext}>
+              <strong>Siapkan tahun evaluasi berikutnya</strong>
+              <span>
+                Target awal dapat disalin lalu disesuaikan tanpa mengubah
+                periode sebelumnya.
+              </span>
+            </div>
             <NexusWorkspaceFormField
               error={submitted ? yearError : undefined}
               hint="Satu periode mewakili satu tahun evaluasi, Januari–Desember."
@@ -259,7 +356,7 @@ export function NexusMonitoringTargetDrawer({
               value={periodReason}
               wide
             />
-            <footer className={styles.formFooter}>
+            {!suggestedYear ? (
               <NexusWorkspaceButton
                 onClick={() => {
                   setMode("targets");
@@ -267,25 +364,47 @@ export function NexusMonitoringTargetDrawer({
                 }}
                 type="button"
               >
-                Kembali ke target
+                Kembali ke target {periodId}
               </NexusWorkspaceButton>
-              <NexusWorkspaceButton tone="primary" type="submit">
-                Tambah periode
-              </NexusWorkspaceButton>
-            </footer>
+            ) : null}
           </form>
         ) : (
           <form
             className={styles.targetForm}
+            id="monitoring-target-form"
             noValidate
             onSubmit={submitTargets}
           >
+            <div className={styles.targetContext}>
+              <strong>Periode {periodId}</strong>
+              <span>
+                {indicatorCount} indikator · target berlaku sampai akhir tahun
+                evaluasi
+              </span>
+            </div>
+            <p className={styles.targetHelp}>
+              Isi hanya target yang berubah. Kolom kosong tetap memakai target
+              yang berlaku.
+            </p>
             {focusIndicatorId ? null : (
               <div className={styles.targetToolbar}>
-                <p>
-                  Isi hanya target yang berubah. Kolom yang dibiarkan kosong
-                  tetap memakai target yang berlaku.
-                </p>
+                <label className={styles.targetSearch}>
+                  <span>Cari indikator</span>
+                  <input
+                    onChange={(event) => setQuery(event.currentTarget.value)}
+                    placeholder="Cari KM atau nama indikator"
+                    type="search"
+                    value={query}
+                  />
+                </label>
+                <button
+                  aria-pressed={showChangedOnly}
+                  className={styles.targetChangedToggle}
+                  onClick={() => setShowChangedOnly((value) => !value)}
+                  type="button"
+                >
+                  Hanya yang berubah ({effectiveChanges.length})
+                </button>
                 <NexusWorkspaceButton
                   onClick={() => {
                     setMode("period");
@@ -297,95 +416,6 @@ export function NexusMonitoringTargetDrawer({
                 </NexusWorkspaceButton>
               </div>
             )}
-
-            {groups.map((group) => (
-              <fieldset className={styles.targetGroup} key={group.category}>
-                <legend>{group.category}</legend>
-                {group.evaluations.map((evaluation) => {
-                  const id = evaluation.indicator.id;
-                  const current = nexusCurrentTargetVersion(
-                    targetVersions,
-                    periodId,
-                    id,
-                  );
-                  const inputId = `monitoring-target-${id}`;
-                  const error = rowErrors.get(id);
-                  return (
-                    <div className={styles.targetRow} key={id}>
-                      <label htmlFor={inputId}>
-                        <strong>{id}</strong>
-                        <span>{evaluation.indicator.label}</span>
-                      </label>
-                      <span className={styles.targetCurrent}>
-                        <small>Berlaku</small>
-                        {current
-                          ? `${nexusTargetDisplay(current)} · v${current.version}`
-                          : "Belum ditetapkan"}
-                      </span>
-                      <span className={styles.targetInput}>
-                        <input
-                          aria-describedby={
-                            error ? `${inputId}-error` : undefined
-                          }
-                          aria-invalid={Boolean(error)}
-                          aria-label={`Target baru ${id} ${evaluation.indicator.label}`}
-                          id={inputId}
-                          inputMode="numeric"
-                          min="0"
-                          onChange={(event) => {
-                            const value = event.currentTarget.value;
-                            setDrafts((draftsNow) => ({
-                              ...draftsNow,
-                              [id]: value,
-                            }));
-                          }}
-                          placeholder="Target baru"
-                          type="number"
-                          value={drafts[id] ?? ""}
-                        />
-                        {error ? (
-                          <small id={`${inputId}-error`}>{error}</small>
-                        ) : null}
-                      </span>
-                    </div>
-                  );
-                })}
-              </fieldset>
-            ))}
-
-            <NexusWorkspaceFormField
-              error={
-                submitted && effectiveChanges.length > 0 && !reason.trim()
-                  ? "Tuliskan alasan perubahan target."
-                  : undefined
-              }
-              hint="Alasan tercatat pada riwayat bersama nama Anda dan waktu perubahan."
-              id="monitoring-target-reason"
-              label="Alasan perubahan"
-              name="reason"
-              onChange={(event) => setReason(event.currentTarget.value)}
-              required
-              type="textarea"
-              value={reason}
-              wide
-            />
-
-            {submitted &&
-            effectiveChanges.length === 0 &&
-            rowErrors.size === 0 ? (
-              <NexusWorkspaceNotice>
-                Belum ada target yang berbeda dari target yang berlaku.
-              </NexusWorkspaceNotice>
-            ) : null}
-
-            <footer className={styles.formFooter}>
-              <NexusWorkspaceButton onClick={requestClose} type="button">
-                Batal
-              </NexusWorkspaceButton>
-              <NexusWorkspaceButton tone="primary" type="submit">
-                Simpan target
-              </NexusWorkspaceButton>
-            </footer>
 
             <details className={styles.targetHistory}>
               <summary>
@@ -426,6 +456,151 @@ export function NexusMonitoringTargetDrawer({
                 </ol>
               )}
             </details>
+
+            {visibleGroups.length === 0 ? (
+              <NexusWorkspaceNotice>
+                Tidak ada indikator yang cocok. Ubah pencarian atau tampilkan
+                semua target.
+              </NexusWorkspaceNotice>
+            ) : null}
+
+            {visibleGroups.length > 0 ? (
+              <div aria-hidden="true" className={styles.targetColumnHead}>
+                <span>Indikator</span>
+                <span>Target berlaku</span>
+                <span>Target baru</span>
+              </div>
+            ) : null}
+
+            {visibleGroups.map((group) => (
+              <fieldset className={styles.targetGroup} key={group.category}>
+                <legend>
+                  {group.category} · {group.evaluations.length} indikator
+                </legend>
+                {group.evaluations.map((evaluation) => {
+                  const id = evaluation.indicator.id;
+                  const current = nexusCurrentTargetVersion(
+                    targetVersions,
+                    periodId,
+                    id,
+                  );
+                  const inputId = `monitoring-target-${id}`;
+                  const composite = id === "KM-23";
+                  const error = rowErrors.get(id);
+                  return (
+                    <div
+                      className={styles.targetRow}
+                      data-changed={changedIds.has(id) || undefined}
+                      key={id}
+                    >
+                      <label htmlFor={inputId}>
+                        <strong>{id}</strong>
+                        <span>{evaluation.indicator.label}</span>
+                      </label>
+                      <span className={styles.targetCurrent}>
+                        <small>Berlaku</small>
+                        <strong>
+                          {current
+                            ? nexusTargetDisplay(current)
+                            : "Belum ditetapkan"}
+                        </strong>
+                        {current ? (
+                          <small>Versi {current.version}</small>
+                        ) : null}
+                      </span>
+                      <span className={styles.targetInput}>
+                        <input
+                          aria-describedby={
+                            error ? `${inputId}-error` : undefined
+                          }
+                          aria-invalid={Boolean(error)}
+                          aria-label={`Target baru ${id} ${evaluation.indicator.label}`}
+                          id={inputId}
+                          inputMode={composite ? "text" : "numeric"}
+                          min={composite ? undefined : "0"}
+                          onChange={(event) => {
+                            const value = event.currentTarget.value;
+                            setDrafts((draftsNow) => ({
+                              ...draftsNow,
+                              [id]: value,
+                            }));
+                          }}
+                          placeholder={
+                            composite ? "Contoh 9/1M" : "Target baru"
+                          }
+                          type={composite ? "text" : "number"}
+                          value={drafts[id] ?? ""}
+                        />
+                        {composite ? (
+                          <small className={styles.targetCompositeHint}>
+                            Target gabungan jumlah / nilai dalam Miliar.
+                          </small>
+                        ) : null}
+                        {changedIds.has(id) ? (
+                          <em>Perubahan siap disimpan</em>
+                        ) : null}
+                        {error ? (
+                          <small id={`${inputId}-error`}>{error}</small>
+                        ) : null}
+                      </span>
+                    </div>
+                  );
+                })}
+              </fieldset>
+            ))}
+
+            {effectiveChanges.length > 0 ? (
+              <section aria-live="polite" className={styles.targetReview}>
+                <strong>
+                  {effectiveChanges.length} perubahan siap disimpan
+                </strong>
+                <ul>
+                  {effectiveChanges.map((change) => {
+                    const current = nexusCurrentTargetVersion(
+                      targetVersions,
+                      periodId,
+                      change.indicatorId,
+                    );
+                    return (
+                      <li key={change.indicatorId}>
+                        <span>{change.indicatorId}</span>
+                        <span>
+                          {current
+                            ? nexusTargetDisplay(current)
+                            : "Belum ditetapkan"}{" "}
+                          → {change.literal ?? change.value}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ) : null}
+
+            <NexusWorkspaceFormField
+              error={
+                submitted && effectiveChanges.length > 0 && !reason.trim()
+                  ? "Tuliskan alasan perubahan target."
+                  : undefined
+              }
+              hint="Alasan tercatat pada riwayat bersama nama Anda dan waktu perubahan."
+              id="monitoring-target-reason"
+              label="Alasan perubahan"
+              name="reason"
+              onChange={(event) => setReason(event.currentTarget.value)}
+              required
+              type="textarea"
+              value={reason}
+              wide
+            />
+
+            {submitted &&
+            effectiveChanges.length === 0 &&
+            rowErrors.size === 0 ? (
+              <NexusWorkspaceNotice>
+                Belum ada target yang berbeda dari target yang berlaku.
+              </NexusWorkspaceNotice>
+            ) : null}
           </form>
         )}
       </NexusWorkspaceDrawer>

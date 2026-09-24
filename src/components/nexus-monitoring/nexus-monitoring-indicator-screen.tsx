@@ -8,10 +8,6 @@ import {
   nexusIndicatorEvaluation,
   nexusIndicatorHref,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import {
-  downloadNexusCsv,
-  nexusMonitoringIndicatorCsv,
-} from "@/components/nexus-monitoring/nexus-monitoring-export";
 import { NexusMonitoringHeaderActions } from "@/components/nexus-monitoring/nexus-monitoring-header-actions";
 import { NexusMonitoringIndicator } from "@/components/nexus-monitoring/nexus-monitoring-indicator";
 import {
@@ -19,6 +15,7 @@ import {
   nexusMonitoringPeriodHref,
 } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusMonitoringTargetDrawer } from "@/components/nexus-monitoring/nexus-monitoring-target-drawer";
+import { NexusMonitoringToast } from "@/components/nexus-monitoring/nexus-monitoring-toast";
 import { buildIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import {
@@ -46,7 +43,10 @@ export function NexusMonitoringIndicatorScreen({
   const reviewSession = useNexusReviewSession();
   const [periodId, setPeriodId] = useState(requestedPeriodId);
   const [targetDrawerOpen, setTargetDrawerOpen] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<{ id: number; message: string } | null>(
+    null,
+  );
+  const [exportError, setExportError] = useState("");
   const { input, isKnownPeriod, period, periodOptions } =
     useNexusMonitoringData(periodId);
   const view = useMemo(
@@ -57,7 +57,7 @@ export function NexusMonitoringIndicatorScreen({
 
   const selectPeriod = (nextPeriod: string) => {
     setPeriodId(nextPeriod);
-    setNotice("");
+    setNotice(null);
     window.history.replaceState(
       window.history.state,
       "",
@@ -71,15 +71,29 @@ export function NexusMonitoringIndicatorScreen({
     <NexusWorkspacePage
       actions={
         <NexusMonitoringHeaderActions
-          downloadLabel="Unduh rekam"
+          downloadLabel="Unduh Excel"
           manageLabel="Ubah target"
           onDownload={
             isKnownPeriod
-              ? () =>
-                  downloadNexusCsv(
-                    `monitoring-km-${periodId}-${indicatorId.toLocaleLowerCase("id-ID")}-rekam.csv`,
-                    nexusMonitoringIndicatorCsv(view),
-                  )
+              ? async () => {
+                  setExportError("");
+                  try {
+                    const {
+                      downloadNexusWorkbook,
+                      nexusMonitoringIndicatorWorkbook,
+                    } = await import(
+                      "@/components/nexus-monitoring/nexus-monitoring-export"
+                    );
+                    await downloadNexusWorkbook(
+                      `monitoring-km-${periodId}-${indicatorId.toLocaleLowerCase("id-ID")}-rekam.xlsx`,
+                      nexusMonitoringIndicatorWorkbook(view),
+                    );
+                  } catch {
+                    setExportError(
+                      "Berkas Excel belum dapat dibuat. Silakan coba lagi.",
+                    );
+                  }
+                }
               : undefined
           }
           onManageTargets={
@@ -98,10 +112,19 @@ export function NexusMonitoringIndicatorScreen({
       title={`${view.id} · ${view.label}`}
       titleId="monitoring-indicator-title"
     >
-      {notice ? (
+      {exportError ? (
         <div className={styles.pageNotice}>
-          <NexusWorkspaceNotice tone="success">{notice}</NexusWorkspaceNotice>
+          <NexusWorkspaceNotice tone="danger">
+            {exportError}
+          </NexusWorkspaceNotice>
         </div>
+      ) : null}
+      {notice ? (
+        <NexusMonitoringToast
+          key={notice.id}
+          message={notice.message}
+          onDismiss={() => setNotice(null)}
+        />
       ) : null}
 
       {isKnownPeriod ? (
@@ -148,7 +171,7 @@ export function NexusMonitoringIndicatorScreen({
           onPeriodAdded={selectPeriod}
           onSaved={(message) => {
             setTargetDrawerOpen(false);
-            setNotice(message);
+            setNotice({ id: Date.now(), message });
           }}
           periodId={periodId}
         />

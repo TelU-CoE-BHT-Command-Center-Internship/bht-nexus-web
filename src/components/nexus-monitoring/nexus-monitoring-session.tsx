@@ -18,7 +18,8 @@ import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
 
 export type NexusTargetChange = {
   indicatorId: NexusKmIndicatorId;
-  value: number;
+  literal: string | null;
+  value: number | null;
 };
 
 type NexusMonitoringSessionValue = {
@@ -71,7 +72,10 @@ export function NexusMonitoringSessionProvider({
           periodId,
           change.indicatorId,
         );
-        if (previous?.value === change.value && previous.literal === null) {
+        if (
+          previous?.value === change.value &&
+          previous.literal === change.literal
+        ) {
           return [];
         }
         const version = (previous?.version ?? 0) + 1;
@@ -81,7 +85,7 @@ export function NexusMonitoringSessionProvider({
             actorRoleLabel: actor.roleLabel,
             id: `TGT-${periodId}-${change.indicatorId}-${version}`,
             indicatorId: change.indicatorId,
-            literal: null,
+            literal: change.literal,
             origin: "manual" as const,
             periodId,
             reason,

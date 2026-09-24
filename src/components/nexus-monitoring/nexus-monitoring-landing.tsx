@@ -27,10 +27,6 @@ import {
   nexusCategoryIsMonitored,
   nexusDomainHref,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import {
-  downloadNexusCsv,
-  nexusMonitoringPeriodCsv,
-} from "@/components/nexus-monitoring/nexus-monitoring-export";
 import { NexusMonitoringHeaderActions } from "@/components/nexus-monitoring/nexus-monitoring-header-actions";
 import { getNexusMonitoringLandingData } from "@/components/nexus-monitoring/nexus-monitoring-landing-data";
 import {
@@ -40,6 +36,7 @@ import {
 import { NexusMonitoringRecentUpdates } from "@/components/nexus-monitoring/nexus-monitoring-recent-updates";
 import { NexusMonitoringSummaryAnalytics } from "@/components/nexus-monitoring/nexus-monitoring-summary-analytics";
 import { NexusMonitoringTargetDrawer } from "@/components/nexus-monitoring/nexus-monitoring-target-drawer";
+import { NexusMonitoringToast } from "@/components/nexus-monitoring/nexus-monitoring-toast";
 import {
   MonitoringIcon,
   MonitoringMetricCard,
@@ -249,7 +246,10 @@ export function NexusMonitoringLanding({
   const [domainId, setDomainId] =
     useState<NexusMonitoringDomainId>(initialDomain);
   const [targetDrawerOpen, setTargetDrawerOpen] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<{ id: number; message: string } | null>(
+    null,
+  );
+  const [exportError, setExportError] = useState("");
   const { edges, isDragging, rowHandlers, rowRef } = useDomainScroller();
   const { input, isKnownPeriod, period, periodOptions } =
     useNexusMonitoringData(periodId);
@@ -266,7 +266,7 @@ export function NexusMonitoringLanding({
   };
   const selectPeriod = (nextPeriod: string) => {
     setPeriodId(nextPeriod);
-    setNotice("");
+    setNotice(null);
     replaceMonitoringUrl(domainId, domains, nextPeriod);
   };
   const activeDomain =
@@ -308,15 +308,29 @@ export function NexusMonitoringLanding({
     <NexusWorkspacePage
       actions={
         <NexusMonitoringHeaderActions
-          downloadLabel="Unduh laporan"
+          downloadLabel="Unduh Excel"
           manageLabel="Kelola target"
           onDownload={
             isKnownPeriod
-              ? () =>
-                  downloadNexusCsv(
-                    `monitoring-km-${periodId}.csv`,
-                    nexusMonitoringPeriodCsv(input),
-                  )
+              ? async () => {
+                  setExportError("");
+                  try {
+                    const {
+                      downloadNexusWorkbook,
+                      nexusMonitoringPeriodWorkbook,
+                    } = await import(
+                      "@/components/nexus-monitoring/nexus-monitoring-export"
+                    );
+                    await downloadNexusWorkbook(
+                      `monitoring-km-${periodId}.xlsx`,
+                      nexusMonitoringPeriodWorkbook(input),
+                    );
+                  } catch {
+                    setExportError(
+                      "Berkas Excel belum dapat dibuat. Silakan coba lagi.",
+                    );
+                  }
+                }
               : undefined
           }
           onManageTargets={
@@ -338,6 +352,13 @@ export function NexusMonitoringLanding({
       title="Ringkasan"
       titleId="monitoring-summary-title"
     >
+      {exportError ? (
+        <div className={styles.pageNotice}>
+          <NexusWorkspaceNotice tone="danger">
+            {exportError}
+          </NexusWorkspaceNotice>
+        </div>
+      ) : null}
       <div
         className={styles.domainBar}
         data-at-end={edges.atEnd}
@@ -396,9 +417,11 @@ export function NexusMonitoringLanding({
       </div>
 
       {notice ? (
-        <div className={styles.pageNotice}>
-          <NexusWorkspaceNotice tone="success">{notice}</NexusWorkspaceNotice>
-        </div>
+        <NexusMonitoringToast
+          key={notice.id}
+          message={notice.message}
+          onDismiss={() => setNotice(null)}
+        />
       ) : null}
 
       {isKnownPeriod ? null : (
@@ -502,7 +525,7 @@ export function NexusMonitoringLanding({
           onPeriodAdded={selectPeriod}
           onSaved={(message) => {
             setTargetDrawerOpen(false);
-            setNotice(message);
+            setNotice({ id: Date.now(), message });
           }}
           periodId={
             isKnownPeriod ? periodId : NEXUS_DEFAULT_MONITORING_PERIOD_ID
