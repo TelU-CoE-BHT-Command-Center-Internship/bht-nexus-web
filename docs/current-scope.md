@@ -71,6 +71,20 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Unduh Excel menghasilkan workbook XLSX per periode dengan kolom yang mengikuti worksheet `Evaluasi`: target, TW1–TW4, belum terpetakan, realisasi, capaian, status, dan keterangan. Pada rincian indikator, workbook berisi sheet ringkasan dan rekam pembentuk beserta alasan dihitung atau tidaknya dan metadata sumber. Sel angka dan tanggal bertipe sesuai nilainya; baris judul dibekukan, filter tersedia, tautan eviden aktif, dan teks masukan tidak dijalankan sebagai rumus.
 - Metadata evaluasi sudah tersedia untuk 28 indikator pada lima domain: Riset (KM-9–KM-18), Bisnis (KM-19–KM-21), Pengabdian Masyarakat (KM-22–KM-27), Akademik (KM-28–KM-33), dan Proposal (KM-37–KM-39). Domain lain menampilkan keadaan sedang disiapkan sampai target dan definisinya dimodelkan.
 
+### Broadcast / Newsletter
+
+- `Broadcast / Newsletter` menjadi butir navigasi pada kelompok Utama setelah Monitoring KM. Sesuai Meeting Minggu 12, penyusunnya adalah pengurus dan Ketua Klaster belum termasuk. Katalog izin kanonis mencatatnya sebagai modul `broadcast` dengan tindakan `view` (membuka halaman) dan `manage` (menyusun dan meninjau pengiriman); bawaannya hanya diberikan kepada Administrator dan peran lain dapat dinyalakan dari halaman peran. Akun yang hanya dapat melihat menerima ringkasan penerima dan riwayat tanpa penyusun.
+- Penyusun mengikuti pola menulis email: baris Dari, Kepada, dan Judul di atas, lalu editor isi pesan dengan perkakas bergrup seperti editor isi LMS—gaya teks (Teks biasa, Judul besar, Subjudul), tebal, miring, daftar berpoin dan bernomor, tautan, gambar, hapus format, urungkan, dan ulangi. Penulis tidak pernah melihat sintaks. Perkakas memakai satu urutan Tab dengan perpindahan panah, Home, dan End, serta pintasan Ctrl/⌘ + B, I, K, Z, dan Y.
+- Kertas tulis adalah kartu email itu sendiri: pita BHT Nexus, judul email, isi pesan, dan catatan kaki otomatis, dengan lebar 600 px, padding 32 px, dan huruf Arial 14 px seperti templat email server. Baris teks, ukuran gambar, dan posisi gambar di editor sama dengan email yang diterima.
+- Gambar dipilih atau diseret ke dialog maupun langsung ke editor. Formatnya JPG atau PNG, maksimal 1 MB, sesuai batas unggah server, dan deskripsinya wajib diisi sebelum disisipkan dari dialog. Gambar yang dilepas atau ditempel tanpa deskripsi diberi penanda **Tambahkan deskripsi**.
+- Gambar dapat diletakkan di kiri atau kanan dengan teks mengalir di sampingnya, atau di tengah. Ukurannya dipilih dari Kecil, Sedang, Besar, dan Penuh, atau ditarik lewat pegangan di sisinya. Gambar samping dibatasi 60% lebar isi agar kolom teksnya tetap terbaca; ukuran di atasnya memindahkan gambar ke tengah. Dua gambar kecil yang sama-sama di kiri berjajar. Pada layar selebar 600 px atau kurang gambar samping tampil selebar isi, dan editor menjelaskannya ketika kertasnya sempit.
+- Judul memulai bagian baru di bawah gambar samping, dan daftar di samping gambar menempati kolomnya sendiri agar tanda butirnya tidak tertutup gambar. Mengetik ketika gambar terpilih melanjutkan tulisan di bawah gambar, gambar baru disisipkan setelah gambar yang terpilih, dan gambar yang dilepas di tengah paragraf ditempatkan di batas paragraf terdekat, bukan memotong kalimat.
+- Tautan hanya menerima alamat web http atau https dengan nama host lengkap. Alamat tanpa skema dilengkapi `https://`, dan penulis melihat alamat yang akan dipakai sebelum menyimpan. Tempelan dari dokumen lain diselaraskan dengan dua gaya judul, sedangkan gambar dari tempelan halaman web tidak ikut masuk.
+- Penerima dihitung dari direktori Anggota kanonis melalui `NexusMemberSessionProvider`: anggota aktif dengan email institusi, atau email alternatif bila email institusi belum tercatat. Alamat yang sama hanya menerima satu email, sedangkan anggota cuti atau nonaktif tidak menerima. Data awal belum mencatat email anggota, sehingga halaman menyatakan 0 penerima dan menyediakan tautan **Lengkapi** ke profil anggota di halaman Anggota. Email yang dilengkapi di sana langsung mengubah jumlah penerima.
+- Checklist & Validasi memeriksa lima syarat: judul email, isi pesan, tautan, deskripsi gambar, dan ketersediaan penerima. Setiap syarat yang belum terpenuhi menyediakan tindakan langsung menuju bagian yang perlu diperbaiki. Tampilan email untuk Desktop dan Ponsel dirender dari model dokumen yang sama dengan Markdown yang akan dikirim. Tidak ada cuplikan email kedua di samping penyusun karena kertas tulis dan Tampilan email sudah memperlihatkan email yang sama.
+- Tinjau pengiriman membuka ringkasan judul, jumlah alamat penerima, pengirim, dan isi pesan. Layanan pengiriman email belum tersedia, sehingga tombol Kirim broadcast nonaktif dan halaman menyatakannya apa adanya; tidak ada pengiriman, status terkirim, maupun riwayat rekaan. Riwayat broadcast menampilkan keadaan kosong sampai layanan server mencatat pengiriman.
+- Draf hanya berada di memori halaman dan tidak disimpan ke penyimpanan browser. Meninggalkan halaman dengan draf memakai penjaga perubahan bersama, dan Kosongkan draf meminta konfirmasi.
+
 ### Pengumpulan
 
 - Menerima profil publik SINTA atau Google Scholar.
@@ -247,6 +261,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/monitoring` | Kategori indikator KM dan keadaan pemantauannya |
 | `/nexus/monitoring/[domain]` | Monitoring KM dengan satu domain aktif sejak awal |
 | `/nexus/monitoring/[domain]/[indikator]` | Rincian indikator, target dan realisasi, TW1–TW4, rumus, serta rekam dan eviden pembentuk |
+| `/nexus/broadcast` | Penyusunan broadcast email untuk anggota aktif, penerima, checklist, dan tampilan email |
 | `/nexus/pengumpulan` | Pengumpulan sumber publik |
 | `/nexus/tinjauan` | Tinjauan kandidat sebelum menjadi data resmi |
 | `/nexus/ajukan/[domain]` | Form pengajuan manual penuh untuk lima rumah Data Resmi |
@@ -281,6 +296,7 @@ Hal-hal berikut belum menjadi kemampuan produksi pada repository web:
 - indeks pencarian dokumen;
 - promosi kandidat menjadi data resmi;
 - agregasi, snapshot, dan penjadwalan perhitungan indikator di server;
+- pengiriman email broadcast, unggah gambarnya, dan riwayat pengiriman;
 - integrasi penuh dengan layanan server;
 - penggantian kata sandi dari dalam ruang kerja;
 - deployment produksi final.

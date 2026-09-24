@@ -127,6 +127,15 @@ const moduleBlueprints: readonly ModuleBlueprint[] = [
     resource: "monitoring",
   },
   {
+    actions: ["view", "manage"],
+    description:
+      "Penyusunan broadcast email untuk anggota CoE beserta riwayat pengirimannya.",
+    icon: "broadcast",
+    id: "broadcast",
+    label: "Broadcast / Newsletter",
+    resource: "broadcast",
+  },
+  {
     actions: ["view", "create"],
     description: "Pencarian sumber publik dan pekerjaan pengumpulan kandidat.",
     icon: "search",
@@ -252,6 +261,11 @@ function permissionIdsFor(
  * Peran Auditor memegang alur data operasional terluas, Pimpinan mengikuti
  * cakupan data yang sama, sedangkan Administrator memegang pengelolaan akun dan
  * hak akses dengan akses data yang bersifat pemantauan.
+ *
+ * Broadcast / Newsletter hanya diberikan kepada Administrator: Meeting Minggu
+ * 12 menetapkan penyusun broadcast adalah pengurus atau admin dan Ketua
+ * Klaster belum termasuk. Peran lain dapat dinyalakan administrator bila
+ * pengurus memutuskannya.
  */
 const operationalBaseline = permissionIdsFor({
   academic: ["view", "create", "update"],
@@ -283,6 +297,7 @@ const administratorBaseline = permissionIdsFor({
   academic: ["view"],
   activities: ["view"],
   administration: ["view", "create", "update", "manage"],
+  broadcast: ["view", "manage"],
   collection: ["view"],
   contracts: ["view"],
   dashboard: ["view"],

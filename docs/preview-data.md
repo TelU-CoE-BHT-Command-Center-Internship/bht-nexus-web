@@ -16,6 +16,7 @@ Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di rep
 | Monitoring KM | `useNexusMonitoringData` yang menggabungkan `useNexusOfficialRecords`, `nexusMonitoringRecordsFrom`, dan versi target periode, lalu `getNexusMonitoringLandingData`, `buildIndicatorView`, serta `nexusMonitoringPeriodWorkbook` | menghitung realisasi di klien dari rekam resmi sesi yang sama dengan rumah Data Resmi, sehingga persetujuan Tinjauan dan koreksi langsung ikut membentuk angka; periode dibawa `?periode=`; target per periode berversi; unduhan XLSX per periode dan per indikator |
 | Periode dan target | `NexusMonitoringSessionProvider`, `nexusWorkbookPeriods`, dan `nexusWorkbookTargetVersions` | periode 2026 dan target versi 1 dari workbook; periode baru dan versi target berikutnya ditambahkan pengelola selama layout workspace aktif |
 | Rekam resmi kanonis | `nexus-official-records` (`projectNexusOfficialRecordSet`, `useNexusOfficialRecords`, `useNexusOfficialHomeRecords`) | satu jalur proyeksi untuk kelima rumah data dan Monitoring: pelengkapan metadata, keputusan Tinjauan, lalu koreksi Monitoring |
+| Broadcast / Newsletter | `NexusBroadcastStudio`, `summarizeBroadcastRecipients`, `serializeBroadcastMarkdown`, dan `nexusBroadcastDelivery` | draf judul, isi, dan gambar lokal hanya di memori halaman; penerima dihitung dari `NexusMemberSessionProvider`; checklist dan tampilan email dibentuk dari model dokumen yang sama dengan Markdown; pengiriman berstatus `UNAVAILABLE` sehingga alur berhenti pada peninjauan |
 | Anggota | `getNexusMemberDirectory` dan `getNexusMembersContent` | direktori master–detail, tambah dan ubah profil, pencarian, filter status dan bidang, keanggotaan, identitas akademik, jalur data terkait, serta hubungan akun opsional |
 | Administrasi | `getNexusAdministrationContent` | daftar dan rincian akun, pencarian, filter status/role/hubungan anggota, satu alur undangan bertahap, editor hubungan, role tingkat tinggi, serta tindakan akses sesuai status |
 | Pengajuan manual Data Resmi | `manualSubmissionDefinitions`, `createManualSubmissionReviewRecord`, dan route `/nexus/ajukan/[domain]` | form penuh untuk lima domain, bidang subtype berdasarkan workbook, periode evaluasi yang terpisah dari tahun/tanggal entitas, validasi metadata/tanggal/angka/URL, saran KM berbasis aturan, pencocokan pengenal dan judul termasuk rekam yang telah disetujui, draft sesi browser otomatis, serta pengiriman kandidat manual ke Tinjauan |
@@ -81,7 +82,8 @@ Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan ke
 10. profil ekstraksi berversi dan kandidat per bidang;
 11. promosi kandidat melalui transaksi server setelah keputusan yang sah;
 12. ekspor dan audit sesuai izin;
-13. direktori peran, katalog izin, hak akses bawaan tiap peran, dan penyesuaian izin per akun beserta efek memberi atau membatasi.
+13. direktori peran, katalog izin, hak akses bawaan tiap peran, dan penyesuaian izin per akun beserta efek memberi atau membatasi;
+14. pengiriman broadcast email: unggah gambar ke penyimpanan publik, penentuan penerima di server menurut aturan penerima, pengiriman ke banyak penerima beserta hasil per penerima, serta riwayat broadcast dan auditnya.
 
 ### Kontrak integrasi Anggota
 
@@ -130,6 +132,38 @@ Audit terhadap `bht-nexus-server` branch `main` menemukan batas berikut untuk ke
 
 Sebelum adapter dihubungkan, kontrak server perlu menyepakati nama izin per modul, cara menyimpan penyesuaian per akun beserta efeknya, serta cara membaca akses efektif satu akun. Bentuk tabel akhirnya merupakan keputusan tim backend; frontend hanya mensyaratkan perilaku tersebut.
 
+### Kontrak integrasi Broadcast / Newsletter
+
+Meeting Minggu 12 menyepakati broadcast disusun pengurus melalui editor seperti LMS, dikirim ke seluruh anggota, berisi teks, tautan, judul, dan gambar opsional, disimpan sebagai Markdown, dan pemicunya ditambahkan pada server. Audit terhadap `bht-nexus-server` branch `dev` pada commit `6d93a20b35e352630211c46c308d3b85641a611d` (24 September 2026) menemukan batas berikut:
+
+- `EmailService` mengirim email transaksional ke satu penerima melalui Resend dengan alamat pengirim dari `SENDER_EMAIL`, paling banyak tiga percobaan dengan batas waktu 8 detik. Templatnya baru mencakup OTP, sambutan, status akun, dan keamanan;
+- belum ada modul, endpoint, antrean, atau tabel riwayat broadcast, dan belum ada pengiriman ke banyak penerima;
+- `baseEmailLayout` membungkus isi dengan pita BHT Nexus `#1e3a8a`, kartu 600 px, padding isi 32 px, Arial 14 px dengan tinggi baris 1,6, serta catatan kaki otomatis yang memakai `CONTACT_NAME`, `CONTACT_WHATSAPP`, dan `CONTACT_EMAIL`. Templat yang ada menaruh judul sebagai `<h1>` 20 px `#0f172a` dengan jarak bawah 16 px di awal isi;
+- aturan unggah `FILE_TYPE_LIMITS_MB` membatasi png, jpg, dan jpeg sampai 1 MB.
+
+Kertas tulis dan Tampilan email di halaman meniru tata letak tersebut. Nama kontak pada catatan kakinya ditulis umum karena nilainya berasal dari konfigurasi server.
+
+Permintaan kirim yang disiapkan frontend adalah `BroadcastSendRequest`:
+
+- `subject` berisi judul email yang sudah dipangkas; antarmuka membatasinya 150 karakter;
+- `body` berisi `{ format: "markdown", markdown }`;
+- `images` berisi gambar yang sudah diunggah, masing-masing dengan `imageId`, `alt`, dan `url` publik;
+- `recipients` berisi `{ mode: "ACTIVE_MEMBERS_WITH_EMAIL" }`. Frontend mengirim aturan, bukan daftar alamat, dan server menentukan penerimanya sendiri: anggota berstatus aktif, email institusi atau email alternatif bila email institusi kosong, serta satu email untuk setiap alamat yang sama.
+
+Gambar diunggah lebih dahulu melalui layanan penyimpanan server, lalu alamat publiknya dimasukkan ke Markdown. `nexusBroadcastDelivery` menjadi titik sambung `uploadImage` dan `send` ketika layanan tersedia; sampai saat itu statusnya `UNAVAILABLE` dan halaman tidak pernah menyatakan email terkirim.
+
+Markdown dihasilkan `serializeBroadcastMarkdown` dalam dialek CommonMark dengan batasan berikut: tebal dan miring ditulis sebagai `<strong>` dan `<em>`; tautan ditulis `[teks](<url>)` dan hanya untuk http atau https; Judul besar menjadi `##` dan Subjudul menjadi `###`; pindah baris di dalam paragraf memakai garis miring terbalik di akhir baris; tanda baca Markdown pada teks penulis di-escape; dan gambar ditulis sebagai `<img src alt width data-align>` dengan `width` dalam piksel email—persentase dari lebar isi 536 px—serta `data-align` bernilai `left`, `center`, atau `right`. Server perlu merender Markdown dengan renderer yang sesuai CommonMark dan meneruskan HTML mentah tersebut, misalnya commonmark.js. `marked` berbeda pada satu kasus tepi: paragraf setelah gambar di dalam butir daftar kehilangan pembungkus paragrafnya. Hasil render kemudian disaring sehingga hanya `p`, `h2`, `h3`, `strong`, `em`, `br`, `ul`, `ol` dengan `start`, `li`, `a` dengan `href` http atau https, dan `img` dengan `src`, `alt`, `width`, serta `data-align` yang tersisa.
+
+Aturan tampilan berikut dipakai kertas tulis dan Tampilan email, dan perlu diterapkan server agar hasil kirimnya sama:
+
+- judul email menjadi `<h1>` pertama pada isi, mengikuti templat lain;
+- `data-align="left"` atau `"right"` menjadi gambar mengapung dengan jarak `4px 16px 12px 0` atau `4px 0 12px 16px`. Atribut `align="left"` atau `"right"` sebaiknya ikut ditulis karena Outlook desktop tidak mengenal `float`; pada klien seperti itu gambar tampil di atas teks tanpa aliran di sampingnya dan isinya tetap terbaca;
+- `data-align="center"` menjadi gambar blok di tengah dengan jarak bawah 16 px;
+- `h2` dan `h3` memakai `clear: both`, sedangkan daftar memakai `overflow: hidden` agar tanda butirnya tidak menempel pada gambar;
+- media query untuk layar selebar 600 px atau kurang mengubah gambar kiri dan kanan menjadi selebar isi tanpa mengapung.
+
+Hasil pengiriman hanya ditampilkan bila berasal dari server: `SENDING`, `SENT`, `PARTIALLY_SENT`, atau `FAILED`, beserta jumlah penerima yang diminta, diterima, dan gagal, ringkasan kegagalan, serta instant ISO waktu kirim. Riwayat broadcast menampilkan judul, penyusun, jumlah penerima, waktu kirim, dan hasil dari data server yang sama.
+
 Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pemanggilan jaringan nantinya ditempatkan pada adapter server yang menggantikan fungsi konten tanpa mengubah kontrak visual utama.
 
 
@@ -143,6 +177,7 @@ Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pe
 - isi dokumen, data personal, catatan administratif, dan nilai sensitif tidak boleh dimasukkan sebagai data frontend publik;
 - identitas nyata hanya dipakai ketika baris sumbernya dapat diverifikasi; skenario sintetis wajib memakai identitas netral dan tidak memakai foto anggota;
 - karya nyata yang tautan buktinya tidak dapat diverifikasi tidak dipertahankan sebagai data pengembangan publik, dan tautan sumber yang terbukti menunjuk karya lain tidak dipakai sebagai bukti;
+- isi broadcast selalu disaring di server sebelum dikirim; frontend hanya menghasilkan kosakata Markdown yang tercantum pada kontrak Broadcast / Newsletter, dan kunci layanan email tetap berada di server;
 - audit permanen dibuat di server, bukan dipercaya dari state browser.
 
 ## Urutan migrasi
@@ -156,4 +191,5 @@ Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pe
 6. Hubungkan tanya jawab ke retriever yang mengembalikan kutipan terstruktur.
 7. Hubungkan ekstraksi ke profil berversi dan staging kandidat.
 8. Simpan keputusan, koreksi, dan audit melalui server.
+8b. Hubungkan Broadcast / Newsletter ke unggah gambar, pengiriman email, dan riwayat pengiriman server.
 9. Tambahkan pengujian kontrak serta pengujian end-to-end terhadap layanan nyata.

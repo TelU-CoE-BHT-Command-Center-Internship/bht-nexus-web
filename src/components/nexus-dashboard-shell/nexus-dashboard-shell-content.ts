@@ -28,6 +28,7 @@ export type DashboardShellIconName =
   | "academic"
   | "activities"
   | "administration"
+  | "broadcast"
   | "contracts"
   | "dashboard"
   | "documents"
@@ -168,6 +169,14 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "monitoring",
     id: "monitoring",
     label: { en: "KM Monitoring", id: "Monitoring KM" },
+  },
+  {
+    implemented: { en: false, id: true },
+    group: "main",
+    href: { en: "/en/nexus/broadcast", id: "/nexus/broadcast" },
+    icon: "broadcast",
+    id: "broadcast",
+    label: { en: "Broadcast / Newsletter", id: "Broadcast / Newsletter" },
   },
   {
     implemented: { en: false, id: true },
