@@ -6,7 +6,8 @@ Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di rep
 
 | Area | Adapter frontend | Perilaku lokal |
 |---|---|---|
-| Shell workspace | `getNexusDashboardShellPreviewContent` | navigasi, notifikasi, fallback identitas dari current Account, dan tautan bantuan dengan pesan awal tanpa identitas personal statis |
+| Shell workspace | `getNexusDashboardShellContent` dan `nexusDashboardViewerFromSession` | navigasi dan halaman awal dari akses efektif akun, identitas header dari sesi server, notifikasi contoh, serta tautan bantuan dengan pesan awal tanpa identitas personal statis |
+| Sesi dan akun | `resolveNexusSession`, `NexusSessionProvider`, `nexus-api-client`, dan `src/proxy.ts` | **terhubung ke server**: masuk, verifikasi email, aktivasi, pemulihan dan penggantian kata sandi, keluar, profil pengguna yang sedang masuk, serta izin efektif; permintaan `/api/*` diteruskan proxy ke `BHT_NEXUS_API_ORIGIN` |
 | Dashboard | folder `nexus-dashboard-*` | metrik, aktivitas, program, dan pengumuman |
 | Publikasi | `getNexusPublicationsContent` | daftar seluruh rekam resmi, filter indikator KM, kuartil, tahun terbit, kelengkapan, rincian, sitasi, dan pengajuan pelengkapan |
 | Kekayaan Intelektual | `getNexusIntellectualPropertyContent` | daftar rekam resmi, filter indikator KM, jenis perlindungan, kelengkapan, rincian, dan pengajuan pelengkapan |
@@ -18,7 +19,7 @@ Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di rep
 | Rekam resmi kanonis | `nexus-official-records` (`projectNexusOfficialRecordSet`, `useNexusOfficialRecords`, `useNexusOfficialHomeRecords`) | satu jalur proyeksi untuk kelima rumah data dan Monitoring: pelengkapan metadata, keputusan Tinjauan, lalu koreksi Monitoring |
 | Broadcast / Newsletter | `NexusBroadcastStudio`, `summarizeBroadcastRecipients`, `serializeBroadcastMarkdown`, dan `nexusBroadcastDelivery` | draf judul, isi, dan gambar lokal hanya di memori halaman; penerima dihitung dari `NexusMemberSessionProvider`; checklist dan tampilan email dibentuk dari model dokumen yang sama dengan Markdown; pengiriman berstatus `UNAVAILABLE` sehingga alur berhenti pada peninjauan |
 | Anggota | `getNexusMemberDirectory` dan `getNexusMembersContent` | direktori master–detail, tambah dan ubah profil, pencarian, filter status dan bidang, keanggotaan, identitas akademik, jalur data terkait, serta hubungan akun opsional |
-| Administrasi | `getNexusAdministrationContent` | daftar dan rincian akun, pencarian, filter status/role/hubungan anggota, satu alur undangan bertahap, editor hubungan, role tingkat tinggi, serta tindakan akses sesuai status |
+| Administrasi | `NexusAdministration` dengan `NexusAccountSessionProvider` | **terhubung ke server**: daftar akun, peran yang dapat ditetapkan, profil anggota yang dapat ditautkan, undangan, peran, status, dan hubungan anggota |
 | Pengajuan manual Data Resmi | `manualSubmissionDefinitions`, `createManualSubmissionReviewRecord`, dan route `/nexus/ajukan/[domain]` | form penuh untuk lima domain, bidang subtype berdasarkan workbook, periode evaluasi yang terpisah dari tahun/tanggal entitas, validasi metadata/tanggal/angka/URL, saran KM berbasis aturan, pencocokan pengenal dan judul termasuk rekam yang telah disetujui, draft sesi browser otomatis, serta pengiriman kandidat manual ke Tinjauan |
 | Pengumpulan | `getNexusScraperSearchContent` dan `nexus-collection-identity` | validasi host serta pengenal orang pada profil publik, binding anggota yang dilepas ketika identitas sumber berubah, status pekerjaan, daftar kandidat individual, serta pengiriman kandidat ke sesi Tinjauan Indonesia |
 | Tinjauan Indonesia | `getNexusAuditReviewContent` | satu antrean lintas-domain termasuk impor lembar kerja, filter sumber dan jenis data, metadata adaptif, pembanding, bukti, keputusan, status koreksi, versi, dan riwayat |
@@ -27,9 +28,9 @@ Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di rep
 | Pustaka dokumen | `getNexusRagLibraryContent` | validasi PDF/DOCX hingga 25 MB, antrean pemrosesan, dan perpindahan dengan identitas dokumen |
 | Tanya jawab | `getNexusRagQaContent` | jawaban menurut cakupan dokumen, kutipan yang sesuai, dan penolakan tanpa bukti |
 | Ekstraksi | `getNexusRagExtractionContent` | identitas dokumen, keputusan per bidang, pencegahan kandidat kosong, serta pengiriman kandidat unik ke Tinjauan Indonesia |
-| State Tinjauan lintas halaman | `NexusCurrentUserReviewSessionProvider`, `NexusReviewSessionProvider`, dan factory rekam di `nexus-review-session` | aktor pemeriksa dari current Account/Profile, kemampuan presentasi, serta kandidat dari Pengumpulan, Ekstraksi, dan pelengkapan seluruh rumah data resmi selama sesi frontend Indonesia |
+| State Tinjauan lintas halaman | `NexusCurrentUserReviewSessionProvider`, `NexusReviewSessionProvider`, dan factory rekam di `nexus-review-session` | aktor pemeriksa dari sesi server akun yang sedang masuk, kemampuan presentasi dari izin efektifnya, serta kandidat dari Pengumpulan, Ekstraksi, dan pelengkapan seluruh rumah data resmi selama sesi frontend Indonesia; riwayat contoh memakai pemeriksa contoh yang netral |
 | State anggota lintas halaman | `NexusMemberSessionProvider` | satu sumber profil anggota kanonis untuk Anggota serta pilihan hubungan pada Administrasi selama layout workspace aktif |
-| State akun lintas halaman | `NexusAccountSessionProvider` | satu sumber akun, role, status, hubungan anggota, current Account, dan proyeksi current Profile untuk seluruh layout workspace aktif |
+| State akun lintas halaman | `NexusAccountSessionProvider` dan `NexusAccountDirectoryPreviewProvider` | direktori akun Administrasi dimuat dari server dan dimuat ulang setelah setiap perubahan; halaman rancangan Peran dan Akses Khusus memakai direktori contoh terpisah yang menolak perubahan |
 | Proyeksi keputusan ke Data Resmi | `projectOfficialMetadataRecords` dan `nexus-manual-submission-projection` | menerapkan pelengkapan, data baru, pembaruan, atau penggabungan dari pengajuan manual, workbook, dokumen, SINTA, maupun Google Scholar ke rumah data tujuan selama sesi frontend; ID internal dibentuk dari domain, sumber, dan ID kandidat lengkap, relasi multi-orang memakai pemetaan person ID eksplisit, serta `undetermined` tidak menghapus kaitan KM existing |
 
 Transisi lokal sengaja deterministik agar loading, success, failure, empty, filter, dan keputusan dapat diperiksa tanpa layanan eksternal. State kandidat, keputusan, dan proyeksi Data Resmi memakai provider pada layout ruang kerja serta kembali ke keadaan awal ketika layout dimuat ulang penuh. Draft pengajuan manual merupakan pengecualian yang disengaja: nilainya disimpan pada `sessionStorage` per rumah data dan dipulihkan pada tab yang sama sampai pengajuan berhasil dikirim atau sesi browser berakhir. Pengajuan pekerjaan baru tidak mengarang hasil pengumpulan ketika scraper belum terhubung.
@@ -50,7 +51,7 @@ Model Kegiatan & Pengabdian memisahkan pembicara dan kunjungan internasional (KM
 
 Model Anggota mengikuti kebutuhan identitas pada SRS: profil, status aktif/cuti/nonaktif, visibilitas publik, unit, bidang keahlian, dan pengenal eksternal dipisahkan dari akun login serta role/permission. Adapter menggunakan kembali nama, foto, penugasan, serta deskripsi yang sudah dipublikasikan pada halaman institusional. Satu definisi identitas kanonis menulis ID awal secara eksplisit dan dipakai bersama oleh konten publik, direktori, serta alias fixture; nama tampilan dapat berubah tanpa mengubah ID. Tanggal bergabung, kontak personal, dan pengenal akademik yang belum tersedia dibiarkan kosong; alamat email umum CoE tidak disalin sebagai email personal setiap anggota, dan penugasan organisasi tidak diduplikasi sebagai bidang keahlian. Anggota baru dapat dicatat tanpa email atau foto; avatar inisial menjadi fallback dan visibilitas publik tidak aktif secara bawaan. Form tambah dan ubah memakai bentuk data serta validasi yang sama, termasuk normalisasi, format, dan keunikan lima pengenal akademik selama halaman aktif. Editor foto menyimpan sumber asli dan hasil crop sebagai dua nilai berbeda sehingga avatar dapat diatur ulang tanpa kehilangan komposisi awal. `NexusMemberSessionProvider` memiliki perubahan profil selama layout aktif tanpa mencampurkan data akun ke rekam anggota. Anggota boleh belum mempunyai akun; state akses `NONE`, `LINKED`, atau `CONFLICT` selalu diproyeksikan dari state akun workspace. Pemberian akses hanya tersedia pada `NONE`, akun sah dapat dibuka kembali di Administrasi, dan konflik diarahkan untuk ditinjau tanpa dipresentasikan sebagai tidak memiliki akses.
 
-Model Administrasi memisahkan identitas akun, hubungan anggota, role tingkat tinggi, dan status akses. `NexusAccountSessionProvider` menjadi satu pemilik mutasi akun selama layout workspace aktif; Administrasi mengelolanya dan Anggota hanya memproyeksikan hasilnya. Nama manusia, avatar, pencarian, dan kelengkapan memakai `resolveNexusProfile`, sedangkan `displayName` Account tetap menjadi alias/fallback dan tidak disinkronkan melalui salinan. Pilihan serta referensi anggota selalu diturunkan dari `NexusMemberSessionProvider` melalui ID, nama publik, dan penugasan kanonis. Relasi memakai union eksplisit `LINKED`, `NON_MEMBER`, `UNLINKED`, dan `CONFLICT`; hubungan ganda ke satu anggota dinormalisasi sebagai konflik dan kemiripan nama atau email tidak pernah menjadi keputusan identitas. Perubahan hubungan tidak menyalin atau menghapus data pribadi. Informasi pribadi Account tetap tersimpan tetapi tidak aktif selama `LINKED`, lalu dipakai kembali ketika Account menjadi non-anggota. Fixture akun operasional dan current Account memakai identitas netral dan tidak menautkan keadaan privat rekaan ke nama anggota publik. `ACTIVE`, `INVITED`, serta `SUSPENDED` merupakan nilai mesin dan memakai satu label Indonesia bersama. Konsep `accountKind` dihapus karena belum memiliki kontrak berwenang. Role hanya membawa label, deskripsi, dan ringkasan tinggi yang konservatif; resolusi `KNOWN`, `UNASSIGNED`, dan `UNKNOWN` mencegah role stale tampil sebagai belum ditetapkan atau bocor sebagai key mesin. Permission, data scope, email, token undangan, autentikasi, transaksi status, serta audit harus datang dari dan ditegakkan layanan server. Seluruh perubahan kembali ke fixture setelah muat ulang penuh dan tidak disimpan sebagai database browser.
+Model Administrasi memisahkan identitas akun, hubungan anggota, peran, dan status akses mengikuti kontrak `/admin/accounts` pada server `dev`. `NexusAccountSessionProvider` memetakan ringkasan akun server (`publicId`, nama, email, status, peran, dan anggota tertaut) ke model direktori yang sudah dipakai presentasi, mengirim setiap perubahan ke server lebih dahulu, lalu memuat ulang direktori sehingga antarmuka tidak pernah menampilkan hasil yang belum diterima server. Peran dirujuk dengan nama mesin dari server dan dikirim sebagai `rolePublicId`; hubungan anggota hanya memakai `LINKED` dan `NON_MEMBER` karena server belum menyimpan keadaan hubungan lain.
 
 Tautan Administrasi menuju Anggota membawa `?member=<memberId>`; parameter yang tidak dikenal menampilkan keadaan profil tidak ditemukan dan tidak pernah membuka orang lain secara diam-diam. Tautan Anggota menuju Administrasi membawa `?inviteMember=<memberId>` untuk alur undangan atau `?account=<accountId>` untuk akun yang sudah terhubung. `account` yang hadir memiliki prioritas: nilai sah membuka akun dan nilai tidak dikenal menampilkan keadaan akun tidak ditemukan; hanya ketika parameter itu tidak hadir barulah `inviteMember` dapat membuka undangan. Bila pengguna membatalkan undangan yang sedang dirujuk `account`, antarmuka membersihkan parameter itu dan kembali ke daftar akun alih-alih menandai tautannya tidak ditemukan. ID anggota undangan yang tidak dikenal juga gagal aman dan tidak membuka formulir generik. Loading dan error memakai file convention route Next.js, sedangkan no-access mengikuti kontrak kemampuan workspace. Dialog konfirmasi bersama menjaga fokus dan dipakai untuk draft yang belum disimpan, perubahan hubungan, serta tindakan status yang memerlukan konfirmasi.
 
@@ -66,7 +67,7 @@ Hasil pelengkapan metadata memakai empat state bersama: `available`, `not-availa
 
 ## Kemampuan server yang dibutuhkan
 
-Arah hubungannya satu jalur: halaman yang dibuka pengguna berada di `bht-nexus-web`, sedangkan login, aturan bisnis, pemrosesan, dan pengelolaan data berada di `bht-nexus-server` beserta basis data dan layanan pendukungnya. Pada tahap ini hubungan tersebut masih menjadi arah pengembangan—web belum mengirim satu pun permintaan ke server.
+Arah hubungannya satu jalur: halaman yang dibuka pengguna berada di `bht-nexus-web`, sedangkan login, aturan bisnis, pemrosesan, dan pengelolaan data berada di `bht-nexus-server` beserta basis data dan layanan pendukungnya. Sejak irisan autentikasi dan akun, web memanggil `bht-nexus-server` cabang `dev` untuk sesi, profil pengguna yang sedang masuk, dan pengelolaan akun (butir 1 di bawah); kemampuan lain masih menjadi arah pengembangan.
 
 Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan kemampuan berikut:
 
@@ -87,6 +88,8 @@ Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan ke
 
 ### Kontrak integrasi Anggota
 
+Pembaruan server `dev` (September 2026): `member.user_id` kini opsional sehingga anggota tanpa akun dapat disimpan, tersedia endpoint Anggota (`/api/members`), undangan akun administratif dapat langsung menautkan anggota melalui `memberPublicId`, dan klaster riset dimodelkan sebagai `division` pada anggota. Direktori Anggota di antarmuka belum dihubungkan; butir di bawah merupakan catatan audit awal terhadap branch `main`.
+
 Audit terhadap `bht-nexus-server` branch `main` pada commit `87e0f0fe1ec06ea1d0f2b5001d1293e05b63bc7f` menemukan batas berikut:
 
 - tabel `member` baru menyimpan `user_id`, status keanggotaan, visibilitas publik, dan tanggal bergabung;
@@ -100,25 +103,18 @@ Sebelum adapter frontend dihubungkan, kontrak server perlu memungkinkan profil a
 
 ### Kontrak integrasi Profil Saya
 
-Profil pribadi tidak memiliki sumber data tersendiri. `resolveNexusProfile` memproyeksikan satu akun menjadi tampilan profil dan menandai asal informasinya: `MEMBER` ketika akun terhubung ke anggota, dan `ACCOUNT` untuk akun non-anggota, akun yang hubungannya belum ditentukan, serta akun yang hubungannya perlu diperiksa. Penyimpanan mengikuti tanda yang sama, sehingga penyuntingan dari Profil Saya mendarat pada rekam anggota kanonis atau pada informasi pribadi milik akun, tidak pernah pada salinan kedua. Identitas header, aktor tindakan baru, serta seluruh presentasi manusia dan kelengkapan di Administrasi memakai penyelesai yang sama. Kelengkapan hanya mensyaratkan nama lengkap dan nomor HP; optional field tidak mengubah hasilnya.
+Profil Saya kini memakai kontrak server `dev`:
 
-Transisi hubungan memakai aturan lossless: data Account boleh tetap tersimpan ketika Member aktif sebagai sumber, tetapi tidak disalin ke Member, tidak digabung berdasarkan kemiripan, dan tidak dihapus. `LINKED` selalu membaca bidang pribadi yang beririsan dari Member. Bila hubungan kembali menjadi non-anggota, data Account yang sebelumnya tersimpan menjadi aktif kembali.
+- `GET /api/profile/me` mengembalikan akun yang sedang masuk (nama, email, status verifikasi email, nomor HP, ringkasan profil, gambar, status akun), peran, izin efektif (peran ditambah penyesuaian per akun), serta anggota tertaut beserta klaster (`division`) dan pengenal akademiknya. Respons ini menjadi satu-satunya sumber identitas header, halaman profil, akses ruang kerja, dan aktor tindakan baru.
+- `PATCH /api/profile/me` menyimpan nama, nomor HP, dan ringkasan profil milik akun. Frontend selalu mengirim ketiganya bersama gambar yang sudah ada karena server mengosongkan bidang opsional yang tidak dikirim.
+- `PATCH /api/profile/me/academic-identifiers` menyimpan SINTA ID, Scopus Author ID, dan Google Scholar ID pada rekam anggota tertaut.
+- `POST /api/auth/change-password` memverifikasi kata sandi saat ini dan mencabut sesi lain (`revokeOtherSessions`).
 
-Karena seluruh anggota pada direktori awal merupakan orang nyata, tidak ada satu pun fixture akun yang ditautkan ke mereka. Akibatnya keadaan `LINKED`—kartu keanggotaan pada Profil Saya dan tab akses akun pada Anggota—tidak dapat dilihat pada data awal, meskipun jalurnya tetap dijalankan dan diperiksa memakai data sintetis sementara yang tidak ikut disimpan. Contoh `LINKED` yang permanen baru layak ditambahkan bila layanan anggota sudah menyediakan hubungan akun yang sah, atau bila tersedia anggota fiktif yang memang disepakati untuk data contoh.
-
-Akun yang sedang diwakili ruang kerja ditentukan `NEXUS_CURRENT_ACCOUNT_ID` pada direktori akun. Nilai ini merupakan pemilihan sementara sampai sesi masuk yang sebenarnya tersedia; ia tidak boleh diganti dengan pemilihan implisit seperti baris pertama daftar akun.
-
-Audit terhadap `bht-nexus-server` branch `main` menemukan batas berikut untuk profil pribadi:
-
-- entitas `user` menyimpan nama, email, status verifikasi email, gambar, dan waktu penggantian kata sandi terakhir; nomor HP, nama panggilan, ringkasan profil, dan email alternatif belum mempunyai kontrak penyimpanan;
-- tabel `account` merupakan catatan kredensial penyedia autentikasi, bukan konsep Akun BHT Nexus pada antarmuka; keduanya tidak boleh disamakan ketika adapter dibuat;
-- `AuthController` menyediakan registrasi, masuk, verifikasi email dengan OTP, permintaan dan pelaksanaan reset kata sandi dengan OTP, keluar, serta pembacaan sesi aktif;
-- belum ada tindakan penggantian kata sandi untuk pengguna yang sudah masuk, belum ada endpoint pencabutan seluruh sesi, dan belum ada penghapusan akun mandiri. Karena itu kartu Keamanan hanya menyatakan bahwa penggantian kata sandi belum dapat dilakukan dari ruang kerja dan mengarahkan pengguna ke Dukungan BHT Nexus; antarmuka tidak menyimpan kata sandi dalam bentuk apa pun dan tidak menyatakan keberhasilan yang tidak dapat dipastikan;
-- MFA tidak dimodelkan pada server maupun antarmuka.
-
-Sebelum adapter dihubungkan, kontrak server perlu menyediakan pembacaan profil pengguna yang sedang masuk, penyimpanan bidang pribadi di atas beserta auditnya, dan—bila penggantian kata sandi mandiri memang diinginkan—satu tindakan terautentikasi yang memverifikasi kata sandi saat ini.
+Tabel `account` pada server tetap merupakan catatan kredensial penyedia autentikasi, bukan konsep Akun BHT Nexus pada antarmuka. Foto profil, nama panggilan, email alternatif, dan bidang keahlian belum mempunyai kontrak penyimpanan melalui Profil Saya, dan MFA belum dimodelkan di server `dev`.
 
 ### Kontrak integrasi Peran dan Hak Akses
+
+Pembaruan server `dev` (September 2026): penyesuaian izin per pengguna sudah dimodelkan pada tabel `user_permission_override` (`is_granted`), dan izin efektif satu akun dibaca melalui `GET /api/profile/me`. Kosakata izin server (`sumber_daya.tindakan`) belum sama dengan katalog izin modul-tindakan frontend, sehingga halaman Peran dan Akses Khusus tetap menjadi rancangan dengan data contoh sampai pemetaan katalognya disepakati. Butir di bawah merupakan catatan audit awal terhadap branch `main`.
 
 Audit terhadap `bht-nexus-server` branch `main` menemukan batas berikut untuk kebijakan akses:
 
@@ -170,6 +166,7 @@ Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pe
 ## Aturan keamanan
 
 - browser tidak menyimpan token rahasia di source code;
+- sesi memakai cookie HTTP-only milik layanan yang diteruskan proxy `/api/*` sebagai cookie first-party; token sesi, kata sandi, dan kode verifikasi tidak pernah disimpan di `localStorage`, `sessionStorage`, URL, atau log;
 - URL sumber eksternal harus HTTPS dan host-nya divalidasi;
 - worker tidak menerima kewenangan menulis data resmi;
 - kutipan hanya berasal dari dokumen yang diizinkan bagi pengguna;
@@ -182,7 +179,7 @@ Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pe
 
 ## Urutan migrasi
 
-1. Ganti sesi tampilan dengan sesi server dan halaman no-access yang nyata.
+1. ~~Ganti sesi tampilan dengan sesi server dan halaman no-access yang nyata.~~ Selesai pada irisan autentikasi dan akun: masuk, aktivasi, pemulihan, sesi, Profil Saya, akses efektif, dan pengelolaan akun Administrasi.
 2. Ganti daftar pekerjaan serta kandidat individual dengan query server.
 3. Pertahankan status dan bentuk keputusan yang sudah dipakai komponen.
 4. Ganti provider sesi lintas halaman dengan endpoint staging dan kemampuan server tanpa mengubah model presentasi.

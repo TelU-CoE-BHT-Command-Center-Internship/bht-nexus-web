@@ -6,7 +6,7 @@ Dokumen ini merangkum bagian BHT-Nexus Web yang sudah tersedia, batas implementa
 
 BHT-Nexus Web masih berada dalam pengembangan aktif. Landing page, halaman institusional, serta ruang kerja BHT Nexus sudah mempunyai fondasi visual dan interaksi yang dapat ditinjau, tetapi belum dianggap sebagai versi akhir.
 
-Data pada antarmuka ruang kerja masih disediakan oleh adapter frontend. Contoh publikasi dan buku hanya memakai identitas nyata ketika halaman penerbitnya tersedia secara publik. Skenario operasional seperti kontrak, bimbingan, proposal internal, HKI, dan paten memakai identitas netral sambil mempertahankan bentuk bidang dari workbook KM 2026. Autentikasi, hak akses, penyimpanan permanen, pekerjaan latar belakang, dan perubahan data resmi belum dihubungkan ke layanan server.
+Masuk, aktivasi akun, pemulihan kata sandi, sesi, Profil Saya, dan pengelolaan akun di Administrasi sudah memakai layanan `bht-nexus-server` (cabang `dev`). Data modul lain—Monitoring KM, Tinjauan, Data Resmi, Pengumpulan, Dokumen, Anggota, dan Broadcast—masih disediakan adapter frontend. Contoh publikasi dan buku hanya memakai identitas nyata ketika halaman penerbitnya tersedia secara publik. Skenario operasional seperti kontrak, bimbingan, proposal internal, HKI, dan paten memakai identitas netral sambil mempertahankan bentuk bidang dari workbook KM 2026. Penyimpanan permanen, pekerjaan latar belakang, dan perubahan data resmi untuk modul-modul tersebut belum dihubungkan ke layanan server.
 
 ## Landing page dan halaman institusional
 
@@ -29,9 +29,22 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 ### Shell dan dashboard
 
 - Navigasi desktop dan mobile memakai struktur yang sama di seluruh ruang kerja.
-- Identitas pengguna, notifikasi, bantuan, dan menu profil sudah tersedia sebagai antarmuka. Menu pengguna dan notifikasi saling menutup, berhenti saat route berubah, serta dapat ditutup melalui interaksi luar atau Escape dengan fokus kembali ke pemicunya. Pesan awal Dukungan tidak menyimpan nama atau peran statis. Pemindah bahasa tampil konsisten pada seluruh header workspace; pilihan Inggris menuju satu halaman status pembangunan sampai seluruh alur Indonesia selesai dan terjemahannya benar-benar setara.
-- Dashboard menampilkan metrik, pengumuman, aktivitas riset, program unggulan, serta proyek terkini.
+- Identitas pada header—nama, inisial, email, dan peran—berasal dari sesi server akun yang sedang masuk; tidak ada lagi akun contoh yang mewakili pengguna. Notifikasi dan bantuan masih berupa antarmuka. Menu pengguna dan notifikasi saling menutup, berhenti saat route berubah, serta dapat ditutup melalui interaksi luar atau Escape dengan fokus kembali ke pemicunya. Menu pengguna memuat Profil Saya dan Keluar. Pesan awal Dukungan tidak menyimpan nama atau peran statis. Pemindah bahasa tampil konsisten pada seluruh header workspace; pilihan Inggris menuju satu halaman status pembangunan sampai seluruh alur Indonesia selesai dan terjemahannya benar-benar setara.
+- Navigasi dan akses halaman diturunkan dari izin efektif akun yang dikirim layanan server (izin dari peran ditambah penyesuaian per akun). Butir yang tidak dapat dibuka tidak ditampilkan, alamat langsungnya menampilkan keadaan Akses dibatasi beserta jalan kembali ke halaman kerja pertama akun, dan penegakan akses tetap milik server.
+- Dashboard belum dianggap matang: butirnya disembunyikan dari navigasi dan bukan tujuan setelah masuk. Route `/nexus/dashboard` beserta kodenya tetap dipertahankan untuk pengembangan berikutnya.
 - Tabel dan kartu mempunyai perilaku responsif serta keadaan kosong dan loading yang konsisten.
+
+### Masuk, aktivasi, dan pemulihan akun
+
+- Seluruh alur akun memakai kontrak layanan server. Browser hanya memanggil `/api/*` pada alamat web yang sama; proxy Next.js meneruskannya ke `BHT_NEXUS_API_ORIGIN`, sehingga cookie sesi HTTP-only tetap first-party dan token tidak pernah disimpan di `localStorage` maupun `sessionStorage`.
+- `/nexus/masuk` menerima email dan kata sandi. Kesalahan kredensial selalu memakai satu kalimat yang sama untuk email yang terdaftar maupun tidak. Akun yang ditangguhkan, batas percobaan dari server (beserta perkiraan menit tunggunya), layanan yang tidak tersedia, dan koneksi terputus masing-masing mempunyai pesan sendiri. Bidang yang salah ditandai `aria-invalid` dan terhubung ke pesannya.
+- Akun yang emailnya belum terverifikasi langsung dibawa ke langkah verifikasi: kode 6 digit dikirim otomatis, dapat dikirim ulang setelah jeda 60 detik, dan kode yang salah, kedaluwarsa, atau terlalu sering salah mempunyai pesan sendiri. Setelah terverifikasi, server membuat sesi dan pengguna masuk ke ruang kerja.
+- Setelah masuk, pengguna kembali ke alamat yang tadi diminta (`?lanjut=`, hanya alamat ruang kerja internal) atau ke halaman kerja pertama yang diizinkan perannya. Akun tanpa halaman kerja diarahkan ke Profil Saya.
+- Akun dibuat oleh pengelola melalui undangan; tidak ada pendaftaran publik. Pemilik akun undangan mengaktifkan akunnya sendiri di `/nexus/aktivasi`: email → kode verifikasi → kata sandi baru → masuk. Sesi pertama mengubah status akun dari Menunggu aktivasi menjadi Aktif.
+- `/nexus/lupa-kata-sandi` memakai kontrak yang sama dengan kalimat pemulihan. Halaman tidak pernah menyatakan apakah sebuah email terdaftar. Kata sandi baru minimal 8 karakter dan harus diulang dengan benar sebelum dikirim. Pemulihan mengakhiri sesi lain akun tersebut.
+- Sesi dibaca di server pada setiap muat halaman ruang kerja. Tanpa sesi, alamat ruang kerja dialihkan ke halaman masuk sebelum isi halaman dikirim. Ketika layanan tidak dapat dihubungi, ruang kerja menampilkan halaman layanan belum dapat dihubungi dengan tombol Coba lagi, bukan isi kosong atau identitas contoh. Sesi yang berakhir atau dicabut—karena keluar dari perangkat lain, penggantian kata sandi, pemulihan, atau penangguhan akun—mengembalikan pengguna ke halaman masuk dengan pesan sesi berakhir.
+- Keluar mengakhiri sesi di server lebih dahulu. Bila server menolak atau tidak dapat dihubungi, menu pengguna menyatakan kegagalan itu dan pengguna tetap berada di halaman; perubahan yang belum disimpan tetap dijaga penjaga navigasi.
+- MFA/2FA belum tersedia di server `dev` dan belum menjadi keputusan rilis, sehingga tidak ada halaman MFA di antarmuka.
 
 ### Monitoring KM
 
@@ -210,36 +223,32 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Tombol Pengumpulan pada Identitas Akademik membawa ID anggota, nama, sumber, URL profil, dan pengenal orang eksternal ke halaman Pengumpulan. Binding pekerjaan hanya aktif selama seluruh identitas sumber tersebut masih sesuai. Kandidat multi-orang membawa relasi eksplisit ke satu person ID kandidat; correction yang mengubah daftar atau urutan orang membatalkan relasi lama dan mewajibkan pilihan ulang pada Tinjauan. Penulis, pencipta, serta pembimbing mempunyai ID rekam masing-masing dan `memberId` opsional; nama tidak dipakai sebagai keputusan identitas sistem.
 - Jalur Data Terkait membuka lima rumah data resmi dengan parameter ID anggota. Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian membaca parameter tersebut, menampilkan konteks anggota, dan memfilter relasi kanonis alih-alih membuka seluruh katalog.
 
+- Direktori Anggota masih memakai data contoh adapter frontend. Karena ID anggota contoh bukan ID layanan, tindakan pemberian dan pengelolaan akun dari halaman Anggota dimatikan sampai layanan Anggota dihubungkan; pengelolaan akun dilakukan dari Administrasi.
+
 ### Profil Saya
 
-- `/nexus/profil` merupakan satu-satunya permukaan profil pribadi dan berlaku untuk setiap akun BHT Nexus, baik yang terhubung ke anggota maupun tidak. Tidak ada halaman non-anggota terpisah dan tidak ada butir navigasi utama; Profil Saya dibuka dari menu pengguna di kanan atas sebagai tindakan personal.
-- Akun yang sedang diwakili ruang kerja ditentukan oleh satu pengenal akun eksplisit pada direktori akun kanonis. Identitas header, halaman Profil Saya, dan proyeksi profil di Administrasi memakai penyelesai profil yang sama sehingga tidak ada permukaan yang menebak penggunanya sendiri atau memakai baris pertama daftar akun. Akun yang tidak dapat dikenali berhenti pada keadaan profil tidak tersedia beserta jalan kembali, bukan membuka profil orang lain.
-- Kepemilikan data mengikuti hubungan akun. Ketika akun terhubung ke anggota, informasi pribadi yang beririsan—foto, nama lengkap, nama panggilan, nomor HP, email alternatif, ringkasan profil, dan email institusi personal—dibaca dan ditulis langsung pada rekam anggota kanonis, sehingga perubahan dari Profil Saya langsung terlihat pada direktori Anggota. Akun non-anggota, akun yang hubungannya belum ditentukan, dan akun yang hubungannya perlu diperiksa memakai informasi pribadi milik akun itu sendiri. Tidak pernah ada dua salinan profil yang dapat disunting untuk satu orang yang sama.
-- Kartu keanggotaan, bidang keahlian, dan identitas akademik hanya muncul ketika akun benar-benar terhubung ke anggota. Akun tanpa hubungan anggota tidak menerima bagian anggota kosong. Hubungan yang belum ditentukan maupun yang perlu diperiksa dijelaskan apa adanya tanpa menebak anggota mana pun.
-- Bidang milik organisasi tetap baca-saja: ID anggota, status keanggotaan, bergabung sejak, penugasan CoE, institusi, dan unit utama. Tanggal bergabung berasal dari keanggotaan, bukan dari waktu pembuatan akun. Email masuk, peran, status akun, dan hubungan anggota juga baca-saja; keempatnya dikelola melalui Administrasi. Peran memakai kosakata keadaan yang sama dengan Administrasi.
-- Penyuntingan profil memakai pop-up terpusat, bukan drawer rincian. Formulir informasi pribadi, profil anggota, bidang keahlian, dan identitas akademik memakai kerangka pop-up yang sama dengan isi yang menggulir di dalam panel dan baris aksi yang tetap terjangkau. Foto profil memakai kendali unggah dan editor potong yang sama dengan direktori Anggota, termasuk batas JPG/PNG/WebP 2 MB, pengaturan posisi, ganti, hapus, dan fallback inisial. Validasi identitas akademik memakai aturan Anggota yang sudah ada, termasuk pencegahan duplikasi lintas anggota.
-- Setiap formulir profil sendiri hanya menyerahkan bidang yang dimilikinya sebagai patch kecil: informasi pribadi, profil anggota, bidang keahlian, atau identitas akademik. Penugasan CoE, unit utama, status keanggotaan, dan tanggal bergabung tidak pernah menjadi bagian dari kontrak penyimpanan profil sendiri, sehingga pemilik akun tidak dapat menulisnya meskipun sedang menyunting kartu lain. Menyimpan satu kartu juga tidak menyentuh nilai kartu lain pada rekam anggota yang sama.
-- Pop-up menahan posisi gulir ruang kerja di belakangnya sementara isi modal bergerak mandiri. Editor foto menjadi lapisan teratas; Escape hanya menutup lapisan teratas, lalu fokus kembali ke kontrol sebelumnya.
-- Pengenal akademik ditampilkan sebagai tautan ke profil publiknya dan dibuka pada tab baru sehingga pekerjaan yang sedang berjalan tidak ditinggalkan. Alamat profil SINTA, ORCID, Google Scholar, Scopus, dan ResearcherID berasal dari satu definisi bersama, sehingga pengenal yang sama tidak pernah tampil sebagai tautan pada satu halaman dan sebagai teks biasa pada halaman lain.
-- Pada layar ponsel, tindakan ubah setiap kartu menjadi ikon di pojok kanan atas kartunya alih-alih tombol selebar kartu, sehingga isi kartu tidak terdorong ke bawah. Nama aksesibelnya tetap menyebut bagian yang disunting.
-- Kelengkapan profil mensyaratkan nama lengkap dan nomor HP. Ketika salah satunya kosong, halaman menampilkan pemberitahuan yang menyebut bidang yang belum diisi beserta tindakan untuk melengkapinya. Antarmuka tidak membuat pengalihan wajib setelah masuk karena aktivasi dan sesi nyata belum tersedia.
-- Perhitungan kelengkapan tersebut hanya berada pada penyelesai Profil. Administrasi memakai `isComplete`, `hasPersonalData`, dan daftar bidang wajib yang hilang dari proyeksi yang sama, sehingga profil kosong dan profil yang baru terisi sebagian tidak mendapat pesan yang sama.
-- Perubahan hubungan Account↔Member bersifat lossless. Informasi pribadi milik Account tetap tersimpan tetapi tidak aktif ketika hubungan `LINKED` memakai Member sebagai sumber bidang yang beririsan; perubahan hubungan tidak menyalin, menggabungkan, atau menghapus data pada entitas lain. Jika Account kembali menjadi non-anggota, informasi pribadi Account dipakai kembali.
-- Kartu Keamanan hanya menyatakan apa yang benar-benar diketahui antarmuka. Penggantian kata sandi belum dapat dilakukan dari ruang kerja, sehingga barisnya mengarahkan pengguna ke Dukungan BHT Nexus alih-alih menampilkan formulir yang tidak dapat diselesaikan. Halaman tidak menampilkan MFA, daftar perangkat, pencabutan sesi, maupun penghapusan akun sendiri.
-- Undangan akun tetap minimal. Administrator tidak mengisi foto, nomor HP, ringkasan profil, bidang keahlian, atau pengenal akademik pada saat mengundang; pemilik akun melengkapinya sendiri dari Profil Saya.
+- `/nexus/profil` menampilkan akun yang benar-benar sedang masuk, dibaca dari layanan server. Halaman ini tidak mempunyai butir navigasi utama dan dibuka dari menu pengguna di kanan atas.
+- Informasi pribadi—nama lengkap, nomor HP, dan ringkasan profil—milik akun dan disimpan ke layanan melalui pop-up Ubah informasi pribadi. Setelah tersimpan, header dan halaman memuat ulang identitas dari layanan.
+- Email masuk, peran, status akun, verifikasi email, dan hubungan anggota hanya dibaca; keempatnya dikelola melalui Administrasi. Akun tanpa peran, dan akun yang perannya belum membuka halaman kerja apa pun, mendapat pemberitahuan yang menjelaskan keadaannya beserta pihak yang dapat membantu.
+- Ketika akun terhubung ke anggota, halaman menampilkan kartu Keanggotaan & Klaster (nama anggota, status keanggotaan, klaster riset, bergabung sejak, dan visibilitas profil publik) serta Identitas Akademik. SINTA ID, Scopus Author ID, dan Google Scholar ID disimpan pada rekam anggota tersebut; SINTA dan Scopus hanya berisi angka, dan Google Scholar ID ditampilkan sebagai tautan profil publiknya. Akun tanpa anggota tidak menerima bagian anggota kosong.
+- Kartu Keamanan menyediakan Ubah kata sandi: kata sandi saat ini, kata sandi baru minimal 8 karakter, dan konfirmasinya. Penggantian yang berhasil mengakhiri sesi pada perangkat lain dan tetap mempertahankan sesi di perangkat yang sedang dipakai.
+- Kelengkapan profil mensyaratkan nama lengkap dan nomor HP; pemberitahuan menyebut bidang yang belum diisi beserta tindakan untuk melengkapinya.
+- Formulir menampilkan kesalahan tepat pada bidangnya, dan pop-up yang masih memuat perubahan belum tersimpan dijaga dari muat ulang atau perpindahan halaman. Batal atau Escape menutup pop-up tanpa menyimpan.
+- Foto profil, nama panggilan, email alternatif, dan bidang keahlian belum dapat diubah dari Profil Saya karena unggah media dan kontrak penyimpanan bidang tersebut belum tersedia. MFA, daftar perangkat, dan penghapusan akun sendiri juga belum tersedia.
 
 ### Administrasi — Accounts & Access
 
-- Halaman Administrasi menempatkan tiga metrik, pencarian nama atau email, filter status, role, dan hubungan anggota, daftar akun, kartu mobile, pagination, serta rincian akun pada satu route `/nexus/administrasi`. Teks pendukung ketiga metrik mengikuti status akun yang memang diketahui antarmuka dan tidak menyatakan hak akses penuh atau penerimaan undangan yang hanya dapat dipastikan layanan server.
-- Daftar dan detail mempertahankan perbedaan antara profil anggota, akun login, dan role. Hubungan akun memakai keadaan eksplisit: `LINKED` menunjuk ID anggota kanonis, `NON_MEMBER` menyatakan pengguna memang bukan anggota, `UNLINKED` menandai hubungan yang belum diputuskan, dan `CONFLICT` tetap dapat direpresentasikan ketika catatan hubungan bertentangan. Email akun bersifat baca-saja setelah dibuat.
-- Nama manusia pada daftar desktop, kartu mobile, pencarian, detail, editor akses, editor hubungan, pengumuman tindakan, halaman peran, dan halaman akses khusus mengikuti proyeksi Profil: nama panggilan, nama lengkap, alias Account, lalu email masuk. Alias Account tidak ditulis ulang ketika Profil berubah.
-- Status akun memakai tiga nilai kanonis `ACTIVE`, `INVITED`, dan `SUSPENDED`. Drawer hanya menampilkan tindakan yang relevan: akun aktif dapat mengubah role tingkat tinggi atau ditangguhkan, undangan dapat diperbarui atau dibatalkan, dan akun ditangguhkan dapat dipulihkan. Label status memakai satu kamus yang sama pada Administrasi dan Anggota.
-- Undangan akun memakai empat langkah: email dan nama tampilan opsional, pilihan eksplisit apakah akun terhubung ke anggota, role tingkat tinggi, serta tinjauan akhir. Pilihan anggota berasal dari `NexusMemberSessionProvider` yang dimulai dari direktori Anggota kanonis, hubungan tidak ditebak dari email, dan admin tidak menetapkan kata sandi pada langkah ini. Jalur dari profil Anggota menggunakan form yang sama dengan anggota sudah dipilih. Copy hanya menyatakan status `Menunggu aktivasi` dan tidak mengklaim tautan, token, masa berlaku, pengiriman email, atau urutan aktivasi yang belum dimiliki produk. Escape, backdrop, tombol tutup, dan Batal meminta konfirmasi hanya setelah draft bermakna berubah.
-- Administrasi menyediakan editor hubungan untuk menautkan akun ke satu anggota atau menetapkannya sebagai akun non-anggota. `UNLINKED` dan `CONFLICT` mempunyai penyelesaian nyata; hubungan ganda ke satu anggota dideteksi sebagai konflik dan ID akun lawannya tetap tersedia untuk pemeriksaan.
-- Peran dirujuk melalui ID yang stabil dan tidak diturunkan dari nama tampilan. Interpretasi peran membedakan `KNOWN`, `UNASSIGNED`, dan `UNKNOWN`; peran yang tidak lagi dikenali tidak ditampilkan sebagai belum ditetapkan, tidak membocorkan pengenal mesin sebagai label normal, dan harus diganti dengan peran valid melalui editor yang menangani kegagalan penyimpanan sebagai umpan balik formulir. Peran yang dinonaktifkan tidak lagi ditawarkan untuk penugasan baru. Akun yang masih memakainya tetap menampilkan nama peran tersebut pada daftar, kartu mobile, dan rincian akun, tetapi disertai penanda bahwa peran itu belum dapat menjadi dasar akses; ringkasan cakupan peran tidak ditampilkan supaya antarmuka tidak menjanjikan akses yang sedang gagal tertutup, dan tindakan pemulihannya tersedia bagi administrator yang memang berwenang mengubah peran akun. Halaman tidak membangun audit log, MFA, sesi, perangkat, password reset admin, atau pengaturan keamanan lain.
+- `/nexus/administrasi` membaca daftar akun, peran yang dapat ditetapkan, dan profil anggota yang dapat ditautkan dari layanan server. Tiga metrik—total akun, akun aktif, dan akun yang menunggu aktivasi—dihitung dari daftar tersebut. Pencarian nama atau email, filter status, peran, dan hubungan anggota, daftar desktop, kartu mobile, pagination, serta rincian akun tetap berada pada satu route.
+- Undangan akun memakai empat langkah: email dan nama tampilan opsional, pilihan eksplisit apakah akun terhubung ke anggota, peran, serta tinjauan akhir. Admin tidak menetapkan kata sandi. Layanan membuat akun berstatus Menunggu aktivasi dan mengirim email sambutan yang mengarahkan pemiliknya ke Aktifkan akun. Email yang sudah dipakai ditolak sebelum dikirim, dan penolakan dari server tetap ditampilkan pada langkah tinjauan tanpa menutup drawer.
+- Rincian akun memisahkan informasi akun (email baca-saja, waktu dibuat, status aktivasi), ringkasan profil yang dikelola pemiliknya, hubungan anggota, dan peran. Hubungan anggota dapat ditautkan ke satu profil anggota yang belum mempunyai akun atau ditetapkan sebagai akun non-anggota. Peran baru menggantikan peran sebelumnya.
+- Status akun memakai tiga nilai layanan: Aktif, Menunggu aktivasi, dan Ditangguhkan. Menangguhkan akses meminta konfirmasi dan langsung mengakhiri seluruh sesi akun tersebut; akun yang ditangguhkan tidak dapat masuk sampai dipulihkan.
+- Akun milik pengguna yang sedang masuk tidak menawarkan perubahan peran maupun status. Server juga menolak perubahan peran akun sendiri dan pencabutan peran dari akun terakhir yang masih dapat mengelola peran.
+- Setiap tindakan menunggu jawaban server sebelum daftar dimuat ulang. Konflik, ketiadaan izin, akun yang tidak ditemukan, data yang ditolak, batas percobaan, dan layanan yang tidak dapat dihubungi mempunyai pesan sendiri; halaman yang gagal dimuat menyediakan Coba lagi.
+- Pembatalan atau pembaruan undangan, keadaan hubungan yang belum diputuskan atau bertentangan, serta log audit belum tersedia karena layanan belum menyediakan kontraknya.
 
 ### Peran, hak akses, dan akses khusus
 
+- Halaman Peran (`/nexus/administrasi/peran`) dan Akses Khusus (`/nexus/administrasi/akses`) masih merupakan rancangan kebijakan akses dengan data contoh. Keduanya menampilkan pemberitahuan tersebut di bagian atas, tidak memuat akun nyata, dan tidak mengubah akses siapa pun. Akses efektif akun nyata dibaca dari layanan server.
 - Satu kebijakan akses kanonis berada di `nexus-access-policy`. Modul tersebut memiliki katalog izin, direktori peran, hak akses bawaan tiap peran, serta penyesuaian akses per akun; `NexusAccessPolicySessionProvider` membagikannya ke Administrasi, Anggota, halaman peran, dan halaman akses khusus sehingga tidak ada daftar peran atau daftar izin kedua.
 - Katalog izin disusun dari modul ruang kerja yang benar-benar ada dan dari kosakata izin pada REQ-FUNC-019: lihat, tambah, ubah, tinjau, setujui, dan kelola. Kombinasi modul dan tindakan yang tidak berlaku ditandai tidak tersedia, bukan izin nonaktif, supaya tidak ada kendali yang bisa dinyalakan tanpa fungsi yang mendasarinya. Izin ekspor belum dimasukkan karena ruang kerja belum mempunyai fungsi ekspor.
 - Hak akses bawaan tiap peran bersifat konservatif dan dapat disetel administrator. Peran bawaan BHT Nexus dapat dipulihkan ke bawaannya, tidak dapat dihapus, dan hanya nama tampilan, deskripsi, serta hak aksesnya yang dapat diubah. Peran kustom dapat dibuat, disalin, diubah, dinonaktifkan ketika tidak lagi dipakai akun mana pun, lalu diaktifkan kembali.
@@ -248,7 +257,7 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Mengubah peran akun tidak menghapus penyesuaian yang sudah ada; editor akses menyatakan bahwa penyesuaian tetap tersimpan dan dihitung ulang terhadap peran baru. Peran yang tidak dikenali, belum ditetapkan, atau sudah nonaktif tidak menjadi dasar izin efektif. Dalam keadaan tersebut penyesuaian tetap terlihat tetapi tidak dapat diubah, hasil akhir ditandai belum dapat dihitung, dan administrator diarahkan untuk menetapkan peran aktif lebih dahulu. Tindakan pada halaman ini mengikuti kewenangan yang benar-benar dimiliki: ajakan menetapkan peran hanya muncul bagi pengelola akun, dan tautan ke hak akses peran hanya muncul ketika halaman peran memang dapat dibuka. Ketika salah satunya tidak tersedia, identitas peran serta penjelasan keadaannya tetap ditampilkan dan diganti keterangan yang menyebut siapa yang dapat menindaklanjuti.
 - Matriks hak akses hanya menggambarkan peran dan tindakan. Izin terhadap data tertentu, penegakan otorisasi, penyimpanan, dan audit tetap menjadi tanggung jawab layanan server.
 
-- Fixture akun bersifat netral dan tidak menghubungkan Account, email masuk, peran, status, hubungan, atau riwayat akses privat rekaan ke identitas anggota publik. Account yang sedang diwakili juga netral dan dipilih melalui ID eksplisit. `NexusMemberSessionProvider` memiliki perubahan profil anggota, sedangkan `NexusAccountSessionProvider` memiliki undangan, hubungan anggota, role, status akun, dan proyeksi current Profile. Keduanya berada pada layout workspace agar Administrasi, Anggota, Header, dan aktor Tinjauan tetap sepakat selama satu sesi frontend serta perpindahan route, termasuk ketika anggota baru langsung diberi akses. Muat ulang penuh layout mengembalikan state ke fixture awal. Tautan `account` atau `inviteMember` yang tidak dikenal menampilkan keadaan tidak ditemukan; parameter `account` yang hadir selalu diproses lebih dahulu dan tidak pernah dialihkan menjadi undangan. Ketika pengguna sendiri membatalkan undangan yang sedang dirujuk parameter `account`, halaman membersihkan parameter yang menjadi usang dan kembali ke daftar akun dengan konfirmasi berhasil, bukan menandai tindakan yang berhasil sebagai tautan rusak. Tindakan menangguhkan akses, membatalkan undangan, mengubah hubungan, dan membuang draft memakai dialog konfirmasi produk bersama, bukan dialog bawaan browser. Perubahan yang belum disimpan pada matriks peran, akses khusus, form peran, editor peran akun, draf undangan, dan editor hubungan anggota memakai satu penjaga bersama: navigasi yang dikendalikan ruang kerja meminta konfirmasi produk, sedangkan muat ulang atau penutupan tab memakai mekanisme standar browser. Drawer tetap memakai dialog lokalnya sendiri untuk tombol tutup, Batal, backdrop, dan Escape sehingga tidak pernah muncul dua konfirmasi untuk satu tindakan, dan registrasi dilepas begitu perubahan disimpan atau dibuang. Route memiliki presentasi loading, error dengan tindakan coba lagi, dan no-access berbasis kontrak kemampuan. Pengiriman email, token aktivasi, autentikasi, permission, data scope, transaksi status, dan audit tetap menjadi tanggung jawab layanan server.
+- Direktori akun contoh untuk halaman rancangan tersebut bersifat netral dan tidak menghubungkan akun, email masuk, peran, status, hubungan, atau riwayat akses privat rekaan ke identitas anggota publik. Perubahan pada halaman rancangan ditolak dengan pesan bahwa rancangan tidak mengubah akun sebenarnya. Perubahan yang belum disimpan pada matriks peran, akses khusus, form peran, editor peran akun, draf undangan, dan editor hubungan anggota memakai satu penjaga bersama: navigasi yang dikendalikan ruang kerja meminta konfirmasi produk, sedangkan muat ulang atau penutupan tab memakai mekanisme standar browser. Drawer tetap memakai dialog lokalnya sendiri untuk tombol tutup, Batal, backdrop, dan Escape sehingga tidak pernah muncul dua konfirmasi untuk satu tindakan.
 
 ## Route utama
 
@@ -256,8 +265,10 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 |---|---|
 | `/` dan `/en` | Landing page Indonesia dan Inggris |
 | `/anggota` dan `/en/members` | Profil ketua dan tim pengurus |
-| `/nexus/masuk` dan `/en/nexus/sign-in` | Antarmuka masuk |
-| `/nexus/dashboard` | Dashboard ruang kerja |
+| `/nexus/masuk` dan `/en/nexus/sign-in` | Masuk dengan layanan server, termasuk verifikasi email |
+| `/nexus/aktivasi` dan `/en/nexus/activate` | Aktivasi akun undangan: kode verifikasi lalu kata sandi baru |
+| `/nexus/lupa-kata-sandi` dan `/en/nexus/forgot-password` | Pemulihan kata sandi dengan kode verifikasi |
+| `/nexus/dashboard` | Dashboard ruang kerja; tidak ditampilkan pada navigasi sampai isinya matang |
 | `/nexus/monitoring` | Kategori indikator KM dan keadaan pemantauannya |
 | `/nexus/monitoring/[domain]` | Monitoring KM dengan satu domain aktif sejak awal |
 | `/nexus/monitoring/[domain]/[indikator]` | Rincian indikator, target dan realisasi, TW1–TW4, rumus, serta rekam dan eviden pembentuk |
@@ -271,15 +282,15 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 | `/nexus/akademik` | Daftar dan rincian bimbingan serta magang mahasiswa resmi |
 | `/nexus/kegiatan` | Daftar dan rincian kegiatan, bisnis, serta pengabdian masyarakat resmi |
 | `/nexus/anggota` | Direktori dan rincian identitas anggota CoE BHT |
-| `/nexus/profil` | Profil pribadi akun yang sedang diwakili ruang kerja |
+| `/nexus/profil` | Profil pribadi akun yang sedang masuk |
 | `/nexus/administrasi` | Accounts & Access untuk akun, hubungan anggota opsional, peran, undangan, dan status akses |
-| `/nexus/administrasi/peran` | Peran, hak akses bawaan, akun pemakai peran, dan informasi peran |
-| `/nexus/administrasi/akses` | Akses khusus satu akun terhadap hak akses bawaan perannya |
+| `/nexus/administrasi/peran` | Rancangan peran, hak akses bawaan, akun pemakai peran, dan informasi peran (data contoh) |
+| `/nexus/administrasi/akses` | Rancangan akses khusus satu akun terhadap hak akses bawaan perannya (data contoh) |
 | `/nexus/dokumen` | Pustaka dokumen |
 | `/nexus/tanya-dokumen` | Tanya jawab bersitasi |
 | `/nexus/ekstraksi` | Ekstraksi kandidat dari dokumen |
 | `/en/nexus/coming-soon` | Status pembangunan seluruh ruang kerja Inggris |
-| `/nexus` dan `/en/nexus` | Pengarah menuju halaman masuk BHT Nexus |
+| `/nexus` dan `/en/nexus` | Pengarah ke halaman kerja pertama yang diizinkan akun, atau ke halaman masuk bila belum masuk |
 | `/nexus/pencarian` dan `/nexus/kandidat` | Alamat lama; diarahkan ke Pengumpulan atau Tinjauan yang sesuai |
 
 Route workspace Inggris yang pernah tersedia tetap dipertahankan sebagai pengarah ke halaman status tersebut agar tautan lama tidak buntu dan tidak menampilkan alur terjemahan yang baru selesai sebagian.
@@ -288,20 +299,19 @@ Route workspace Inggris yang pernah tersedia tetap dipertahankan sebagai pengara
 
 Hal-hal berikut belum menjadi kemampuan produksi pada repository web:
 
-- sesi dan autentikasi nyata;
-- otorisasi berdasarkan peran;
-- penyimpanan keputusan dan audit permanen;
-- unggahan permanen;
+- MFA/2FA;
+- penyimpanan keputusan dan audit permanen untuk modul selain akun;
+- unggahan permanen, termasuk foto profil;
 - pekerjaan pengumpulan dan pemrosesan dokumen di server;
 - indeks pencarian dokumen;
 - promosi kandidat menjadi data resmi;
 - agregasi, snapshot, dan penjadwalan perhitungan indikator di server;
 - pengiriman email broadcast, unggah gambarnya, dan riwayat pengiriman;
-- integrasi penuh dengan layanan server;
-- penggantian kata sandi dari dalam ruang kerja;
+- data klaster pada modul kerja (Monitoring, Tinjauan, Data Resmi) untuk Ketua Klaster;
+- integrasi layanan server untuk Anggota, Tinjauan, Data Resmi, Monitoring, Pengumpulan, Dokumen, dan Broadcast;
 - deployment produksi final.
 
-Adapter akses frontend menjadi satu sumber untuk navigasi, pencarian, direct-route state, dan kemampuan Tinjauan. Penanggung jawab koreksi memakai identitas pengguna manusia yang terpisah dari sistem sumber. Pemetaan permission final, penugasan lintas pengguna, dan penegakan keamanan tetap perlu dikonfirmasi melalui layanan server; pemeriksaan di browser hanya membentuk perilaku antarmuka dan bukan pengamanan otoritatif.
+Adapter akses frontend menjadi satu sumber untuk navigasi, pencarian, direct-route state, dan kemampuan Tinjauan, dan kini diisi izin efektif akun dari layanan server. Pemeriksaan di browser hanya membentuk perilaku antarmuka; penegakan keamanan tetap milik server. Aktor keputusan baru di Tinjauan adalah akun yang sedang masuk, sedangkan riwayat contoh pada antrean memakai pemeriksa contoh yang netral.
 
 Memuat ulang penuh layout ruang kerja akan mengembalikan kandidat, keputusan, dan proyeksi Data Resmi lokal ke kondisi awal. Draft pengajuan manual tetap dipulihkan dari penyimpanan sesi pada tab yang sama sampai berhasil dikirim atau sesi browser berakhir. Bentuk data dan komponen sudah dipisahkan agar integrasi server dapat dilakukan melalui adapter tanpa membongkar presentasi utama.
 
@@ -309,7 +319,7 @@ Memuat ulang penuh layout ruang kerja akan mengembalikan kandidat, keputusan, da
 
 - melengkapi dan mengonfirmasi daftar mitra;
 - menyempurnakan berita, kegiatan, tautan, dan bagian landing page lanjutan;
-- menghubungkan sesi, peran, dan sumber data server;
+- menghubungkan sumber data server untuk modul berikutnya secara bertahap, dimulai dari Anggota;
 - menyimpan pekerjaan, keputusan, koreksi, versi, dan audit secara permanen;
 - menjaga pemeriksaan aksesibilitas, responsivitas, kontras, dan regresi pada setiap pengembangan fitur.
 

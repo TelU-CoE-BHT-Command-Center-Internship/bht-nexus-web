@@ -17,16 +17,16 @@
 
 BHT-Nexus Web adalah antarmuka publik CoE Biomedical & Healthcare Technology: pintu masuk menuju informasi organisasi, kegiatan, riset, kolaborasi, dan ruang kerja BHT Nexus.
 
-Web dan server dikelola terpisah. Repository ini berisi halaman dan interaksi pengguna, sedangkan autentikasi, aturan bisnis, dan pengelolaan data berada di [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server). Web belum mengirim permintaan ke server; seluruh data pada antarmuka masih disediakan adapter frontend.
+Web dan server dikelola terpisah. Repository ini berisi halaman dan interaksi pengguna, sedangkan autentikasi, aturan bisnis, dan pengelolaan data berada di [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server). Masuk, sesi, Profil Saya, dan pengelolaan akun sudah memakai server; data modul lain masih disediakan adapter frontend.
 
 ## Status singkat
 
 - Landing page dan halaman anggota sudah tersedia dalam bahasa Indonesia dan Inggris serta nyaman dibuka di berbagai ukuran layar, tetapi isinya masih terus berkembang. Beberapa bagian—terutama daftar mitra—masih menunggu data dan konfirmasi tim.
-- Ruang kerja BHT Nexus sudah mempunyai Dashboard, Monitoring KM, Broadcast / Newsletter, Pengumpulan, Tinjauan, lima rumah Data Resmi, Dokumen, Anggota, Profil Saya, serta Administrasi beserta peran dan hak aksesnya.
+- Ruang kerja BHT Nexus sudah mempunyai Dashboard, Monitoring KM, Broadcast / Newsletter, Pengumpulan, Tinjauan, lima rumah Data Resmi, Dokumen, Anggota, Profil Saya, serta Administrasi beserta peran dan hak aksesnya. Dashboard disembunyikan dari navigasi sampai isinya matang.
 - Monitoring KM menghitung realisasi hanya dari rekam resmi yang memenuhi ketentuan indikatornya. Rekam yang tertaut tetapi belum memenuhi ketentuan, atau yang bidang penentunya belum tercatat, tetap ditampilkan beserta alasannya sehingga selisihnya dapat ditelusuri.
 - Target Monitoring KM dapat dikelola per periode dengan riwayat versi, rekam pembentuk dapat dikoreksi langsung dari rinciannya, dan laporan periode maupun rekam indikator dapat diunduh sebagai berkas Excel (.xlsx).
 - Broadcast / Newsletter dipakai pengurus untuk menyusun email pengumuman bagi anggota aktif. Editornya visual seperti editor LMS: gambar bisa diletakkan di kiri, tengah, atau kanan dan diubah ukurannya, penerima dihitung dari direktori Anggota, dan hasil emailnya bisa dicek untuk desktop maupun ponsel. Pengirimannya masih menunggu layanan email di server, jadi untuk sekarang alurnya berhenti di tahap peninjauan.
-- Autentikasi, penyimpanan permanen, worker, dan audit belum ada di repository ini; keempatnya milik server.
+- Masuk, aktivasi akun, pemulihan dan penggantian kata sandi, sesi, Profil Saya, serta pengelolaan akun di Administrasi memakai `bht-nexus-server` cabang `dev`. Penyimpanan permanen modul lain, worker, dan audit tetap milik server dan belum dihubungkan.
 
 Inventaris per halaman, daftar route, batas implementasi, dan prioritas berikutnya ada di [cakupan produk saat ini](docs/current-scope.md).
 
@@ -42,6 +42,15 @@ npm run dev
 ```
 
 Buka `http://localhost:3000`, dan tekan `Ctrl+C` untuk menghentikannya. `npm ci` memasang versi paket yang tercatat di `package-lock.json` supaya seluruh anggota memakai susunan dependency yang sama.
+
+Landing page dapat dibuka tanpa server. Ruang kerja `/nexus` membutuhkan [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server) yang sedang berjalan beserta alamatnya:
+
+```powershell
+Copy-Item .env.example .env.local
+npm run dev
+```
+
+`BHT_NEXUS_API_ORIGIN` pada `.env.local` berisi alamat server, misalnya `http://localhost:3001`. Browser tidak memanggil alamat itu secara langsung: permintaan `/api/*` diteruskan proxy Next.js sehingga cookie sesi tetap milik alamat web. Server perlu mencantumkan alamat web, misalnya `http://localhost:3000`, pada `TRUSTED_ORIGINS`. Tanpa variabel ini ruang kerja menampilkan halaman layanan belum dapat dihubungi. Akun dibuat melalui undangan dari Administrasi; pemiliknya mengaktifkan akun sendiri lewat Aktifkan akun di halaman masuk.
 
 Sebelum mengusulkan perubahan, jalankan pemeriksaan lengkapnya:
 

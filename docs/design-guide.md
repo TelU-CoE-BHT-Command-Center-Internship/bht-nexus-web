@@ -19,7 +19,7 @@ Worker pengumpulan, pemrosesan dokumen, dan ekstraksi tidak boleh menulis langsu
 
 Navigasi Indonesia dikelompokkan mengikuti perjalanan datanya:
 
-- **Utama** — Dashboard, Monitoring KM, dan Broadcast / Newsletter.
+- **Utama** — Monitoring KM dan Broadcast / Newsletter. Dashboard sementara disembunyikan dari navigasi sampai isinya matang; route-nya tetap ada.
 - **Alur Data** — Pengumpulan, Dokumen, dan Tinjauan. Ketiganya adalah jalur kandidat sebelum menjadi data resmi.
 - **Data Resmi** — Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, serta Kegiatan & Pengabdian sebagai rumah data resmi yang sudah tersedia.
 - **Administrasi** — Anggota untuk identitas organisasi dan Administrasi untuk Accounts & Access. Keduanya tersedia pada ruang kerja Indonesia dan tetap dipisahkan agar profil anggota tidak berubah menjadi akun login atau role.
@@ -158,7 +158,7 @@ Kandidat dengan beberapa pembanding harus menyediakan pilihan eksplisit. Menggan
 
 Publikasi dan Tinjauan pada `main` adalah acuan visual. Fitur hasil integrasi tidak boleh membawa sistem panel, tabel, dropdown, pagination, token warna, atau loading indicator alternatif. Perbedaan domain boleh mengubah isi dan tindakan, tetapi tidak membuat bahasa visual kedua.
 
-Administrasi Accounts & Access memakai pola daftar desktop, kartu mobile, tiga metrik, filter, pagination, dan drawer yang sama. Drawer detail hanya merangkum informasi akun, hubungan anggota, peran, ringkasan akses khusus, serta tindakan sesuai status. Undangan memakai empat langkah—identitas, hubungan anggota eksplisit, peran, dan tinjauan—tanpa password atau penyimpanan keamanan di browser. Audit log, MFA, sesi, perangkat, dan policy enforcement tidak dipresentasikan sebagai kemampuan frontend.
+Administrasi Accounts & Access memakai pola daftar desktop, kartu mobile, tiga metrik, filter, pagination, dan drawer yang sama. Drawer detail merangkum informasi akun, hubungan anggota, peran, serta tindakan sesuai status akun. Undangan memakai empat langkah—identitas, hubungan anggota eksplisit, peran, dan tinjauan—tanpa kata sandi; pemilik akun membuat kata sandinya sendiri saat aktivasi. Audit log, MFA, sesi, perangkat, dan policy enforcement tidak dipresentasikan sebagai kemampuan frontend.
 
 Peran dan hak akses memakai dua halaman penuh di bawah Administrasi, bukan drawer sempit. `/nexus/administrasi/peran` memakai ruang kerja dua kolom: daftar peran yang dapat dicari di kiri, rincian peran dengan tab matriks, pengguna, dan informasi di kanan, lalu satu baris aksi di bawahnya. Keduanya memakai `NexusWorkspaceBreadcrumb` untuk jejak lokasi dan mengembalikan konteks melalui ID, bukan label.
 
