@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { NexusAccessPolicyPreviewNotice } from "@/components/nexus-access-policy/nexus-access-policy-preview-notice";
 import { NexusRoleManagement } from "@/components/nexus-access-policy/nexus-role-management";
+import { NexusAccountDirectoryPreviewProvider } from "@/components/nexus-account-session/nexus-account-session";
 import {
   nexusCanOpenRoleManagement,
-  nexusPreviewWorkspaceAccess,
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-session/nexus-workspace-access-server";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -27,7 +29,7 @@ const PAGE_DESCRIPTION =
 export default async function NexusRolePage({
   searchParams,
 }: NexusRolePageProps) {
-  const access = nexusPreviewWorkspaceAccess;
+  const access = await getNexusWorkspaceAccess();
   const params = await searchParams;
   const role = Array.isArray(params.role) ? params.role[0] : params.role;
 
@@ -53,10 +55,13 @@ export default async function NexusRolePage({
   }
 
   return (
-    <NexusRoleManagement
-      capabilities={access.administrationCapabilities}
-      hasInitialRoleContext={Object.hasOwn(params, "role")}
-      initialRoleId={role}
-    />
+    <NexusAccountDirectoryPreviewProvider>
+      <NexusAccessPolicyPreviewNotice />
+      <NexusRoleManagement
+        capabilities={access.administrationCapabilities}
+        hasInitialRoleContext={Object.hasOwn(params, "role")}
+        initialRoleId={role}
+      />
+    </NexusAccountDirectoryPreviewProvider>
   );
 }

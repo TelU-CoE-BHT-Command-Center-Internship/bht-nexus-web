@@ -4,9 +4,10 @@ import { type FormEvent, useMemo, useState } from "react";
 import { nexusRoleAccessSummary } from "@/components/nexus-access-policy/nexus-access-policy";
 import type { NexusAccountInvitationInput } from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
-import type {
-  NexusAdministrationMemberOption,
-  NexusAdministrationRole,
+import {
+  type NexusAdministrationMemberOption,
+  type NexusAdministrationRole,
+  nexusAdministrationErrorMessage,
 } from "@/components/nexus-administration/nexus-administration-content";
 import { NexusAdministrationIcon } from "@/components/nexus-administration/nexus-administration-icons";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
@@ -23,7 +24,7 @@ type NexusAdministrationInviteDrawerProps = {
   availableMembers: readonly NexusAdministrationMemberOption[];
   initialMemberId?: string;
   onClose: () => void;
-  onInvite: (input: NexusAccountInvitationInput) => string;
+  onInvite: (input: NexusAccountInvitationInput) => Promise<string>;
   onViewAccount: (accountId: string) => void;
   roles: readonly NexusAdministrationRole[];
 };
@@ -85,6 +86,7 @@ export function NexusAdministrationInviteDrawer({
   const [errors, setErrors] = useState<InviteErrors>({});
   const [step, setStep] = useState(1);
   const [createdAccountId, setCreatedAccountId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
   const [createdSummary, setCreatedSummary] =
     useState<CreatedInvitationSummary | null>(null);
@@ -177,8 +179,9 @@ export function NexusAdministrationInviteDrawer({
     setStep((current) => Math.min(current + 1, 4));
   }
 
-  function submitInvitation(event: FormEvent<HTMLFormElement>) {
+  async function submitInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
     if (step < 4) {
       advance();
       return;
@@ -191,8 +194,9 @@ export function NexusAdministrationInviteDrawer({
     }
 
     let accountId = "";
+    setIsSubmitting(true);
     try {
-      accountId = onInvite({
+      accountId = await onInvite({
         displayName: draft.displayName.trim(),
         email: normalizedEmail(draft.email),
         relationship:
@@ -203,13 +207,12 @@ export function NexusAdministrationInviteDrawer({
       });
     } catch (caughtError) {
       setErrors({
-        submit:
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Undangan tidak dapat dibuat.",
+        submit: nexusAdministrationErrorMessage(caughtError, "invite"),
       });
+      setIsSubmitting(false);
       return;
     }
+    setIsSubmitting(false);
     setCreatedSummary({
       member: draft.memberChoice === "yes" ? selectedMember : undefined,
       role: selectedRole,
@@ -247,7 +250,7 @@ export function NexusAdministrationInviteDrawer({
                 <small>Hubungan anggota</small>
                 <strong>
                   {createdSummary?.member
-                    ? `${createdSummary.member.name} · ${createdSummary.member.id}`
+                    ? createdSummary.member.name
                     : "Tidak dihubungkan ke anggota"}
                 </strong>
               </span>
@@ -257,7 +260,9 @@ export function NexusAdministrationInviteDrawer({
               </span>
             </div>
             <NexusWorkspaceNotice tone="success">
-              Akun menunggu proses aktivasi sebelum dapat digunakan.
+              Pemilik akun mengaktifkan akunnya sendiri melalui Aktifkan akun di
+              halaman masuk BHT Nexus, lalu membuat kata sandi dengan kode yang
+              dikirim ke email ini.
             </NexusWorkspaceNotice>
             <footer className={styles.drawerFooter}>
               <NexusWorkspaceButton onClick={requestClose} type="button">
@@ -368,9 +373,10 @@ export function NexusAdministrationInviteDrawer({
                       value="no"
                     />
                     <span>
-                      <strong>Tidak, ini akun non-anggota</strong>
+                      <strong>Tidak, jangan hubungkan ke anggota</strong>
                       <small>
-                        Valid untuk operator, reviewer, admin, atau intern.
+                        Untuk operator, pengelola, atau pengguna di luar
+                        keanggotaan CoE BHT.
                       </small>
                     </span>
                   </label>
@@ -392,7 +398,9 @@ export function NexusAdministrationInviteDrawer({
                       updateDraft("memberId", event.currentTarget.value)
                     }
                     options={availableMembers.map((member) => ({
-                      label: `${member.name} — ${member.id}`,
+                      label: member.assignment
+                        ? `${member.name} — ${member.assignment}`
+                        : member.name,
                       value: member.id,
                     }))}
                     required
@@ -437,11 +445,13 @@ export function NexusAdministrationInviteDrawer({
                     <span>Cakupan peran</span>
                     <h3>{selectedRole.label}</h3>
                     <p>{selectedRole.description}</p>
-                    <ul>
-                      {nexusRoleAccessSummary(selectedRole).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
+                    {selectedRole.permissions.length > 0 ? (
+                      <ul>
+                        {nexusRoleAccessSummary(selectedRole).map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </section>
                 ) : null}
               </section>
@@ -472,7 +482,7 @@ export function NexusAdministrationInviteDrawer({
                     <dt>Hubungan anggota</dt>
                     <dd>
                       {selectedMember
-                        ? `${selectedMember.id} · ${selectedMember.name}`
+                        ? selectedMember.name
                         : "Tidak dihubungkan ke anggota"}
                     </dd>
                   </div>
@@ -482,7 +492,8 @@ export function NexusAdministrationInviteDrawer({
                   </div>
                 </dl>
                 <NexusWorkspaceNotice>
-                  Admin tidak menetapkan kata sandi pada langkah ini.
+                  Admin tidak menetapkan kata sandi. Pemilik akun membuat kata
+                  sandinya sendiri saat mengaktifkan akun.
                 </NexusWorkspaceNotice>
                 {errors.submit ? (
                   <NexusWorkspaceNotice tone="danger">
@@ -501,8 +512,17 @@ export function NexusAdministrationInviteDrawer({
               >
                 {step === 1 ? "Batal" : "Kembali"}
               </NexusWorkspaceButton>
-              <NexusWorkspaceButton tone="primary" type="submit">
-                {step === 4 ? "Buat undangan" : "Lanjutkan"}
+              <NexusWorkspaceButton
+                aria-busy={isSubmitting || undefined}
+                disabled={isSubmitting}
+                tone="primary"
+                type="submit"
+              >
+                {step === 4
+                  ? isSubmitting
+                    ? "Membuat undangan…"
+                    : "Buat undangan"
+                  : "Lanjutkan"}
               </NexusWorkspaceButton>
             </footer>
           </form>

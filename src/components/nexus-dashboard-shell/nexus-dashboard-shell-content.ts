@@ -1,26 +1,17 @@
 import type { ImageProps } from "next/image";
 import {
-  getNexusRoleDirectory,
-  nexusRoleHealth,
-} from "@/components/nexus-access-policy/nexus-access-policy";
-import {
-  getNexusAccountDirectory,
-  NEXUS_CURRENT_ACCOUNT_ID,
-} from "@/components/nexus-accounts/nexus-account-directory";
-import {
   type NexusWorkspaceAccess,
   type NexusWorkspaceNavigationId,
-  nexusPreviewWorkspaceAccess,
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
-import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
 import { nexusMonitoringRoutes } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import {
-  type NexusProfileView,
-  resolveNexusProfile,
-} from "@/components/nexus-profile/nexus-profile-model";
 import type { NexusReviewCapabilities } from "@/components/nexus-review-session/nexus-review-session";
+import {
+  type NexusSession,
+  nexusSessionInitials,
+  nexusSessionRoleLabel,
+} from "@/components/nexus-session/nexus-session-model";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
 import type { Locale } from "@/i18n/locales";
 
@@ -93,6 +84,8 @@ export type NexusDashboardShellContent = {
   helpHref: string;
   helpLabel: string;
   homeHref: string;
+  /** Tujuan pemindah bahasa; bahasa aktif tetap pada halaman yang sama. */
+  languageHomeHrefs: Record<Locale, string>;
   languageLabel: string;
   locale: Locale;
   mainNavigationLabel: string;
@@ -119,8 +112,9 @@ export type NexusDashboardShellContent = {
   searchItems: DashboardSearchItem[];
   searchLabel: string;
   searchPlaceholder: string;
-  signOutHref: string;
+  signOutErrorLabel: string;
   signOutLabel: string;
+  signingOutLabel: string;
   supportDescription: string;
   supportHref: string;
   supportTitle: string;
@@ -137,6 +131,12 @@ type NavigationDefinition = {
   icon: DashboardShellIconName;
   id: NexusWorkspaceNavigationId;
   label: Record<Locale, string>;
+  /**
+   * Halaman yang dibangun tetapi sengaja tidak ditawarkan di navigasi. Alamatnya
+   * tetap dapat dibuka langsung oleh akun bersesi dan tidak pernah menjadi
+   * tujuan bawaan setelah masuk.
+   */
+  listed: boolean;
 };
 
 /**
@@ -157,6 +157,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "dashboard",
     id: "dashboard",
     label: { en: "Dashboard", id: "Dashboard" },
+    listed: false,
   },
   {
     activeHrefs: {
@@ -169,6 +170,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "monitoring",
     id: "monitoring",
     label: { en: "KM Monitoring", id: "Monitoring KM" },
+    listed: true,
   },
   {
     implemented: { en: false, id: true },
@@ -177,6 +179,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "broadcast",
     id: "broadcast",
     label: { en: "Broadcast / Newsletter", id: "Broadcast / Newsletter" },
+    listed: true,
   },
   {
     implemented: { en: false, id: true },
@@ -185,6 +188,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "search",
     id: "collection",
     label: { en: "Collection", id: "Pengumpulan" },
+    listed: true,
   },
   {
     activeHrefs: {
@@ -201,6 +205,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "documents",
     id: "documents",
     label: { en: "Documents", id: "Dokumen" },
+    listed: true,
   },
   {
     implemented: { en: false, id: true },
@@ -209,6 +214,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "reviews",
     id: "reviews",
     label: { en: "Reviews", id: "Tinjauan" },
+    listed: true,
   },
   {
     activeHrefs: {
@@ -221,6 +227,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "publications",
     id: "publications",
     label: { en: "Publications", id: "Publikasi" },
+    listed: true,
   },
   {
     activeHrefs: {
@@ -239,6 +246,7 @@ const navigationDefinitions: NavigationDefinition[] = [
       en: "Intellectual Property",
       id: "Kekayaan Intelektual",
     },
+    listed: true,
   },
   {
     activeHrefs: {
@@ -251,6 +259,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "contracts",
     id: "contracts",
     label: { en: "Contracts & Proposals", id: "Kontrak & Proposal" },
+    listed: true,
   },
   {
     activeHrefs: {
@@ -263,6 +272,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "academic",
     id: "academic",
     label: { en: "Academic", id: "Akademik" },
+    listed: true,
   },
   {
     activeHrefs: {
@@ -275,6 +285,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "activities",
     id: "activities",
     label: { en: "Activities & Outreach", id: "Kegiatan & Pengabdian" },
+    listed: true,
   },
   {
     implemented: { en: false, id: true },
@@ -283,6 +294,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "members",
     id: "members",
     label: { en: "Members", id: "Anggota" },
+    listed: true,
   },
   {
     activeHrefs: {
@@ -299,6 +311,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "administration",
     id: "administration",
     label: { en: "Administration", id: "Administrasi" },
+    listed: true,
   },
 ];
 
@@ -318,63 +331,64 @@ const groupLabels = {
 } satisfies Record<Locale, Record<NavigationGroupId, string>>;
 
 /**
- * Identitas pengguna pada header berasal dari profil akun yang sedang diwakili,
- * bukan dari nilai tersendiri. Halaman Profil Saya dan proyeksi Administrasi
- * memakai penyelesai yang sama sehingga ketiganya tidak pernah berbeda.
+ * Identitas pengguna pada header berasal dari sesi layanan yang sama dengan
+ * Profil Saya dan aktor tindakan, bukan dari nilai tersendiri. Foto akun belum
+ * ditampilkan karena alamat gambarnya berasal dari penyimpanan di luar asal
+ * ruang kerja; inisial dipakai sampai unggah foto akun tersedia.
  */
-export function nexusDashboardViewerFromProfile(
-  profile: NexusProfileView,
+export function nexusDashboardViewerFromSession(
+  session: NexusSession,
 ): DashboardViewer {
   return {
-    avatarPosition: profile.avatarPosition,
-    avatarSrc: profile.avatarSrc,
-    email: profile.account.email,
-    fullName: profile.fullName || profile.account.displayName,
-    id: profile.account.id,
-    initials: profile.initials,
-    name: profile.displayName,
-    roleLabel: nexusRoleHealth(profile.role).label,
+    email: session.account.email,
+    fullName: session.account.name || session.account.email,
+    id: session.account.id,
+    initials: nexusSessionInitials(session),
+    name: session.account.name || session.account.email,
+    roleLabel: nexusSessionRoleLabel(session),
   };
 }
 
-function nexusPreviewViewer(): DashboardViewer {
-  const accounts = getNexusAccountDirectory();
-  const account = accounts.find(
-    (candidate) => candidate.id === NEXUS_CURRENT_ACCOUNT_ID,
-  );
-
-  if (!account) {
-    return {
-      email: "",
-      fullName: "Pengguna BHT Nexus",
-      id: NEXUS_CURRENT_ACCOUNT_ID,
-      initials: "—",
-      name: "Pengguna BHT Nexus",
-      roleLabel: "Belum ditetapkan",
-    };
-  }
-
-  return nexusDashboardViewerFromProfile(
-    resolveNexusProfile({
-      account,
-      accounts,
-      members: getNexusMemberDirectory(),
-      roles: getNexusRoleDirectory(),
-    }),
+function firstListedPage(access: NexusWorkspaceAccess, locale: Locale) {
+  return navigationDefinitions.find(
+    (item) =>
+      item.listed &&
+      item.implemented[locale] &&
+      nexusWorkspaceCanOpen(access, item.id),
   );
 }
 
-export const nexusDashboardPreviewViewer: DashboardViewer =
-  nexusPreviewViewer();
-
-export function getNexusDashboardShellPreviewContent(
+/** Apakah akses membuka setidaknya satu halaman kerja pada navigasi. */
+export function nexusWorkspaceHasListedPage(
+  access: NexusWorkspaceAccess,
   locale: Locale = "id",
-  access: NexusWorkspaceAccess = nexusPreviewWorkspaceAccess,
-): NexusDashboardShellContent {
+) {
+  return Boolean(firstListedPage(access, locale));
+}
+
+/** Tujuan bawaan ruang kerja: halaman pertama yang dibangun dan diizinkan. */
+export function nexusWorkspaceHomeHref(
+  access: NexusWorkspaceAccess,
+  locale: Locale = "id",
+) {
+  const firstAllowed = firstListedPage(access, locale)?.href[locale];
+  if (firstAllowed) return firstAllowed;
+  return locale === "id" ? "/nexus/profil" : "/en/nexus/coming-soon";
+}
+
+export function getNexusDashboardShellContent({
+  access,
+  locale = "id",
+  viewer,
+}: {
+  access: NexusWorkspaceAccess;
+  locale?: Locale;
+  viewer: DashboardViewer;
+}): NexusDashboardShellContent {
   const isId = locale === "id";
   const routeAccess = navigationDefinitions.map((item) => ({
     activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
-    allowed: nexusWorkspaceCanOpen(access, item.id),
+    allowed: !item.listed || nexusWorkspaceCanOpen(access, item.id),
     implemented: item.implemented[locale],
     label: item.label[locale],
   }));
@@ -389,10 +403,7 @@ export function getNexusDashboardShellPreviewContent(
       label: "Profil Saya",
     });
   }
-  const firstAllowedHref = navigationDefinitions.find(
-    (item) =>
-      item.implemented[locale] && nexusWorkspaceCanOpen(access, item.id),
-  )?.href[locale];
+  const homeHref = nexusWorkspaceHomeHref(access, locale);
   const navigationGroups = (
     ["main", "pipeline", "official", "administration"] as const
   )
@@ -401,7 +412,9 @@ export function getNexusDashboardShellPreviewContent(
       items: navigationDefinitions
         .filter(
           (item) =>
-            item.group === group && nexusWorkspaceCanOpen(access, item.id),
+            item.listed &&
+            item.group === group &&
+            nexusWorkspaceCanOpen(access, item.id),
         )
         .map((item) => ({
           activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
@@ -456,8 +469,11 @@ export function getNexusDashboardShellPreviewContent(
     expandMenuLabel: isId ? "Perluas navigasi" : "Expand navigation",
     helpHref: `${COE_BHT_LINKS.email}?subject=${isId ? "Bantuan%20BHT%20Nexus" : "BHT%20Nexus%20help"}`,
     helpLabel: isId ? "Bantuan BHT Nexus" : "BHT Nexus help",
-    homeHref:
-      firstAllowedHref ?? (isId ? "/nexus/dashboard" : "/en/nexus/coming-soon"),
+    homeHref,
+    languageHomeHrefs: {
+      en: "/en/nexus/coming-soon",
+      id: isId ? homeHref : nexusWorkspaceHomeHref(access, "id"),
+    },
     languageLabel: isId
       ? "Pilih bahasa ruang kerja"
       : "Choose workspace language",
@@ -500,13 +516,16 @@ export function getNexusDashboardShellPreviewContent(
     searchPlaceholder: isId
       ? "Cari anggota, pengumpulan, tinjauan, data resmi, atau dokumen"
       : "Search collection, reviews, publications, or documents",
-    signOutHref: isId ? "/nexus/masuk" : "/en/nexus/sign-in",
+    signOutErrorLabel: isId
+      ? "Belum berhasil keluar. Sesi Anda mungkin masih aktif; periksa koneksi lalu coba lagi."
+      : "Sign-out did not complete. Your session may still be active; check your connection and try again.",
     signOutLabel: isId ? "Keluar" : "Sign out",
+    signingOutLabel: isId ? "Mengakhiri sesi…" : "Signing out…",
     supportDescription: isId
       ? "Hubungi Dukungan BHT Nexus"
       : "Contact BHT Nexus Support",
     supportHref: `${COE_BHT_LINKS.whatsapp}?text=${encodeURIComponent(supportMessage)}`,
     supportTitle: isId ? "Butuh bantuan?" : "Need help?",
-    viewer: nexusDashboardPreviewViewer,
+    viewer,
   };
 }

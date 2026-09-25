@@ -286,6 +286,125 @@
   transform: translateY(1px);
 }
 
+.submitButton:disabled {
+  cursor: progress;
+  opacity: 0.78;
+  transform: none;
+}
+
+.notice {
+  display: block;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #c9d8ee;
+  border-radius: 0.5rem;
+  background: #f3f7fd;
+  color: #1f3f6e;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.notice[data-tone="danger"] {
+  border-color: #f2c8ce;
+  background: #fff5f6;
+  color: #9b1c31;
+}
+
+.notice[data-tone="success"] {
+  border-color: #bfe3cf;
+  background: #f1fbf5;
+  color: #0b5d36;
+}
+
+.fieldHint,
+.fieldError {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.fieldHint {
+  color: #667181;
+}
+
+.fieldError {
+  color: #9b1c31;
+  font-weight: 600;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: #c92f43;
+}
+
+.otpInput {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.35em;
+}
+
+.stepIntro {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.stepIntro h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1.125rem;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.stepIntro p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.stepActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  justify-content: space-between;
+}
+
+.textButton {
+  min-height: 2.5rem;
+  padding: 0.25rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-brand-navy);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 640;
+  text-align: left;
+}
+
+.textButton:hover:not(:disabled),
+.textButton:focus-visible {
+  color: var(--color-brand-navy-dark);
+  text-decoration: underline;
+}
+
+.textButton:disabled {
+  color: #7a8594;
+  cursor: default;
+}
+
+.passwordRequirements {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #667181;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.passwordRequirements li[data-met="true"] {
+  color: #0b5d36;
+}
+
 .supportLinks {
   display: grid;
   gap: 0.55rem;
@@ -559,4 +678,11 @@
   .supportLinks a {
     transition: none;
   }
+}
+
+.submitButton[data-link] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }

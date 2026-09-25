@@ -11,6 +11,7 @@ import { NexusDashboardHeader } from "@/components/nexus-dashboard-shell/nexus-d
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
 import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { NexusDashboardSidebar } from "@/components/nexus-dashboard-shell/nexus-dashboard-sidebar";
+import pageStyles from "@/components/nexus-workspace-ui/nexus-workspace-page.module.css";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
 type NexusDashboardShellProps = {
@@ -117,13 +118,15 @@ export function NexusDashboardShell({
 
       <main className={styles.main} id="main-content" tabIndex={-1}>
         {accessDenied ? (
-          <NexusWorkspaceNoAccess
-            description={content.accessDeniedDescription}
-            eyebrow={content.accessDeniedEyebrow}
-            returnHref={content.homeHref}
-            returnLabel={content.accessDeniedReturnLabel}
-            title={content.accessDeniedTitle}
-          />
+          <div className={pageStyles.page}>
+            <NexusWorkspaceNoAccess
+              description={content.accessDeniedDescription}
+              eyebrow={content.accessDeniedEyebrow}
+              returnHref={content.homeHref}
+              returnLabel={content.accessDeniedReturnLabel}
+              title={content.accessDeniedTitle}
+            />
+          </div>
         ) : (
           children
         )}

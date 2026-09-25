@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NexusAuditReview } from "@/components/nexus-audit-review/nexus-audit-review";
 import { getNexusAuditReviewContent } from "@/components/nexus-audit-review/nexus-audit-review-content";
-import { getNexusDashboardShellPreviewContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import { nexusReviewActorIds } from "@/components/nexus-review-session/nexus-review-actors";
 
 export const metadata: Metadata = {
   title: "Tinjauan Data",
@@ -17,10 +17,11 @@ export default async function NexusReviewPage({
 }: {
   searchParams: Promise<{ record?: string | string[] }>;
 }) {
-  const viewer = getNexusDashboardShellPreviewContent().viewer;
+  /* Keputusan pada riwayat contoh tidak pernah diatasnamakan akun yang
+     sedang masuk; tindakan baru tetap memakai akun sesi. */
   const content = getNexusAuditReviewContent({
-    actorId: viewer.id,
-    label: `${viewer.name} · ${viewer.roleLabel}`,
+    actorId: nexusReviewActorIds.sampleReviewer,
+    label: "Pemeriksa data contoh",
   });
   const requestedRecord = (await searchParams).record;
   const initialRecordId = Array.isArray(requestedRecord)

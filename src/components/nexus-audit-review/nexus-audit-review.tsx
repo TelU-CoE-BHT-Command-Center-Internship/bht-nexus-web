@@ -881,8 +881,8 @@ export function NexusAuditReview({
         titleId="audit-review-title"
       >
         <NexusWorkspaceNoAccess
-          returnHref="/nexus/dashboard"
-          returnLabel="Kembali ke dashboard"
+          returnHref="/nexus"
+          returnLabel="Kembali ke ruang kerja"
         />
       </NexusWorkspacePage>
     );

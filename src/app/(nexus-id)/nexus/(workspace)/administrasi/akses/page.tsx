@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import { NexusAccessPolicyPreviewNotice } from "@/components/nexus-access-policy/nexus-access-policy-preview-notice";
 import { NexusUserAccess } from "@/components/nexus-access-policy/nexus-user-access";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { NexusAccountDirectoryPreviewProvider } from "@/components/nexus-account-session/nexus-account-session";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-session/nexus-workspace-access-server";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -27,7 +27,7 @@ const PAGE_DESCRIPTION =
 export default async function NexusUserAccessPage({
   searchParams,
 }: NexusUserAccessPageProps) {
-  const access = nexusPreviewWorkspaceAccess;
+  const access = await getNexusWorkspaceAccess();
   const params = await searchParams;
   const account = Array.isArray(params.account)
     ? params.account[0]
@@ -55,9 +55,12 @@ export default async function NexusUserAccessPage({
   }
 
   return (
-    <NexusUserAccess
-      capabilities={access.administrationCapabilities}
-      initialAccountId={account}
-    />
+    <NexusAccountDirectoryPreviewProvider>
+      <NexusAccessPolicyPreviewNotice />
+      <NexusUserAccess
+        capabilities={access.administrationCapabilities}
+        initialAccountId={account}
+      />
+    </NexusAccountDirectoryPreviewProvider>
   );
 }

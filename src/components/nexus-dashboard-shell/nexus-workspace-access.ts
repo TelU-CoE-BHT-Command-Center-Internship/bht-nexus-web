@@ -64,48 +64,85 @@ export type NexusMemberCapabilities = {
   canGrantAccess: boolean;
 };
 
-export const nexusPreviewWorkspaceAccess = {
-  administrationCapabilities: {
-    canInviteAccount: true,
-    canManageAccess: true,
-    canManageAccountStatus: true,
-    canManageRolePermissions: true,
-    canManageRoles: true,
-    canManageUserOverrides: true,
-  },
-  allowedNavigationIds: [
-    "dashboard",
-    "monitoring",
-    "broadcast",
-    "collection",
-    "documents",
-    "reviews",
-    "publications",
-    "intellectual-property",
-    "contracts",
-    "academic",
-    "activities",
-    "members",
-    "administration",
-  ],
-  broadcastCapabilities: {
-    canCompose: true,
-  },
-  memberCapabilities: {
-    canCreateMember: true,
-    canDeactivateMember: true,
-    canEditMember: true,
-    canGrantAccess: true,
-  },
-  monitoringCapabilities: {
-    canCorrectRecords: true,
-    canManageTargets: true,
-  },
-  reviewCapabilities: {
-    canReview: true,
-    canSubmitCorrection: true,
-  },
-} satisfies NexusWorkspaceAccess;
+/**
+ * Kunci izin efektif dari layanan BHT Nexus yang dipakai antarmuka. Setiap
+ * modul memakai izin yang dituntut endpoint layanan untuk data modul itu,
+ * sehingga navigasi tidak menjanjikan halaman yang datanya kelak ditolak.
+ */
+export const nexusServerPermissions = {
+  activityRead: "activity.read",
+  iamManage: "iam.manage",
+  jobRead: "job.read",
+  memberRead: "member.read",
+  publicationRead: "publication.read",
+  reviewDecide: "review.decide",
+  reviewEdit: "review.edit",
+  reviewRead: "review.read",
+  roleManage: "role.manage",
+  rolePermissionManage: "role_permission.manage",
+  userRead: "user.read",
+} as const;
+
+/**
+ * Modul yang belum mempunyai izin sendiri di layanan dipetakan sementara:
+ * Monitoring KM dihitung dari rekam Publikasi dan Kegiatan sehingga menuntut
+ * izin membaca keduanya, sedangkan Broadcast mengikuti bawaan yang disepakati
+ * (hanya pengelola akun) sampai layanan pengirimannya tersedia. Dashboard
+ * sengaja tidak dibuka dari navigasi selama isinya belum matang.
+ */
+export function nexusWorkspaceAccessFromPermissions(
+  permissions: readonly string[],
+): NexusWorkspaceAccess {
+  const granted = new Set(permissions);
+  const has = (permission: string) => granted.has(permission);
+  const p = nexusServerPermissions;
+
+  const navigation: Array<[NexusWorkspaceNavigationId, boolean]> = [
+    ["monitoring", has(p.publicationRead) && has(p.activityRead)],
+    ["broadcast", has(p.iamManage)],
+    ["collection", has(p.jobRead)],
+    ["documents", has(p.jobRead)],
+    ["reviews", has(p.reviewRead)],
+    ["publications", has(p.publicationRead)],
+    ["intellectual-property", has(p.activityRead)],
+    ["contracts", has(p.activityRead)],
+    ["academic", has(p.activityRead)],
+    ["activities", has(p.activityRead)],
+    ["members", has(p.memberRead)],
+    ["administration", has(p.userRead)],
+  ];
+
+  return {
+    administrationCapabilities: {
+      canInviteAccount: has(p.iamManage),
+      canManageAccess: has(p.iamManage),
+      canManageAccountStatus: has(p.iamManage),
+      canManageRolePermissions: has(p.rolePermissionManage),
+      canManageRoles: has(p.roleManage),
+      canManageUserOverrides: has(p.iamManage),
+    },
+    allowedNavigationIds: navigation
+      .filter(([, allowed]) => allowed)
+      .map(([id]) => id),
+    broadcastCapabilities: {
+      canCompose: has(p.iamManage),
+    },
+    memberCapabilities: {
+      canCreateMember: has(p.iamManage),
+      canDeactivateMember: has(p.iamManage),
+      canEditMember: has(p.iamManage),
+      canGrantAccess: has(p.iamManage),
+    },
+    monitoringCapabilities: {
+      canCorrectRecords: has(p.reviewEdit),
+      canManageTargets: has(p.reviewDecide),
+    },
+    reviewCapabilities: {
+      canReview: has(p.reviewDecide),
+      canSubmitCorrection: has(p.reviewEdit),
+    },
+  };
+}
 
 export function nexusWorkspaceCanOpen(
   access: NexusWorkspaceAccess,

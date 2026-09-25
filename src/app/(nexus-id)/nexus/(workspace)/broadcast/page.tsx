@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { NexusBroadcast } from "@/components/nexus-broadcast/nexus-broadcast";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { nexusWorkspaceHomeHref } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-session/nexus-workspace-access-server";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -17,8 +16,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function NexusBroadcastPage() {
-  const access = nexusPreviewWorkspaceAccess;
+export default async function NexusBroadcastPage() {
+  const access = await getNexusWorkspaceAccess();
 
   if (!nexusWorkspaceCanOpen(access, "broadcast")) {
     return (
@@ -30,8 +29,8 @@ export default function NexusBroadcastPage() {
       >
         <NexusWorkspaceNoAccess
           description="Akun Anda belum memiliki izin untuk membuka Broadcast / Newsletter. Silakan kembali ke Dashboard atau hubungi pengelola jika akses tersebut diperlukan."
-          returnHref="/nexus/dashboard"
-          returnLabel="Kembali ke Dashboard"
+          returnHref={nexusWorkspaceHomeHref(access)}
+          returnLabel="Kembali ke ruang kerja"
           title="Broadcast / Newsletter tidak tersedia untuk akun Anda"
         />
       </NexusWorkspacePage>

@@ -9,7 +9,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { nexusRoleHealth } from "@/components/nexus-access-policy/nexus-access-policy";
 import type {
   AuditFixRequest,
   AuditMatchingStatus,
@@ -27,13 +26,14 @@ import type {
   OfficialRecordCorrection,
   OfficialRecordCorrectionMap,
 } from "@/components/nexus-official-records/nexus-official-record-corrections";
-import { useNexusCurrentProfile } from "@/components/nexus-profile/nexus-current-profile";
 import type {
   OfficialMetadataProjection,
   OfficialMetadataProjectionMap,
   OfficialRecordDecisionProjection,
   OfficialRecordDecisionProjectionMap,
 } from "@/components/nexus-review-session/nexus-official-record-projection";
+import { nexusSessionRoleLabel } from "@/components/nexus-session/nexus-session-model";
+import { useNexusSessionIfAvailable } from "@/components/nexus-session/nexus-session-provider";
 
 export type NexusReviewActor = {
   id: string;
@@ -405,9 +405,9 @@ export function NexusReviewSessionProvider({
 }
 
 /**
- * Mengikat Tinjauan ke Account/Profile sesi yang sama dengan header dan
- * Administrasi. Perubahan nama berikutnya memengaruhi event baru, sedangkan
- * snapshot label pada event yang sudah dibuat tetap tidak ditulis ulang.
+ * Mengikat Tinjauan ke akun sesi layanan yang sama dengan header dan Profil
+ * Saya. Perubahan nama berikutnya memengaruhi event baru, sedangkan snapshot
+ * label pada event yang sudah dibuat tetap tidak ditulis ulang.
  */
 export function NexusCurrentUserReviewSessionProvider({
   capabilities,
@@ -416,23 +416,21 @@ export function NexusCurrentUserReviewSessionProvider({
   capabilities: NexusReviewCapabilities;
   children: ReactNode;
 }) {
-  const { profile } = useNexusCurrentProfile();
+  const session = useNexusSessionIfAvailable()?.session;
   const actor = useMemo<NexusReviewActor>(
     () => ({
-      id: profile?.account.id ?? "CURRENT-ACCOUNT-UNAVAILABLE",
-      name: profile?.displayName ?? "Pengguna BHT Nexus",
-      roleLabel: profile
-        ? nexusRoleHealth(profile.role).label
-        : "Belum ditetapkan",
+      id: session?.account.id ?? "CURRENT-ACCOUNT-UNAVAILABLE",
+      name: session?.account.name || "Pengguna BHT Nexus",
+      roleLabel: session ? nexusSessionRoleLabel(session) : "Belum ditetapkan",
     }),
-    [profile],
+    [session],
   );
 
   return (
     <NexusReviewSessionProvider
       actor={actor}
       capabilities={
-        profile
+        session
           ? capabilities
           : { canReview: false, canSubmitCorrection: false }
       }

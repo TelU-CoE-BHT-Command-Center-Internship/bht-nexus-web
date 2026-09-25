@@ -24,15 +24,27 @@ type UnsavedChangesRegistration = UnsavedChangesCopy & {
 };
 
 type PendingNavigation = UnsavedChangesCopy & {
-  href: string;
+  href?: string;
   onProceed?: () => void;
 };
 
 type NexusWorkspaceUnsavedChangesContextValue = {
+  guard: (action: () => void) => void;
   navigate: (href: string, onProceed?: () => void) => void;
   register: (registration: UnsavedChangesRegistration) => void;
   unregister: (id: string) => void;
 };
+
+let workspaceExitApproved = false;
+
+/**
+ * Menandai bahwa pengguna sudah menyetujui keluar dari ruang kerja, misalnya
+ * saat keluar dari sesi, sehingga peringatan bawaan browser tidak muncul
+ * untuk kedua kalinya.
+ */
+export function approveNexusWorkspaceExit() {
+  workspaceExitApproved = true;
+}
 
 const NexusWorkspaceUnsavedChangesContext =
   createContext<NexusWorkspaceUnsavedChangesContextValue | null>(null);
@@ -83,10 +95,29 @@ export function NexusWorkspaceUnsavedChangesProvider({
     [registrations, router],
   );
 
+  const guard = useCallback(
+    (action: () => void) => {
+      const registration = registrations.at(-1);
+      if (registration) {
+        setPendingNavigation({
+          confirmLabel: registration.confirmLabel,
+          description: registration.description,
+          onProceed: action,
+          title: registration.title,
+        });
+        return;
+      }
+
+      action();
+    },
+    [registrations],
+  );
+
   useEffect(() => {
     if (!activeRegistration) return;
 
     const protectBrowserExit = (event: BeforeUnloadEvent) => {
+      if (workspaceExitApproved) return;
       event.preventDefault();
       event.returnValue = "";
     };
@@ -96,8 +127,8 @@ export function NexusWorkspaceUnsavedChangesProvider({
   }, [activeRegistration]);
 
   const value = useMemo(
-    () => ({ navigate, register, unregister }),
-    [navigate, register, unregister],
+    () => ({ guard, navigate, register, unregister }),
+    [guard, navigate, register, unregister],
   );
 
   return (
@@ -113,7 +144,7 @@ export function NexusWorkspaceUnsavedChangesProvider({
             const target = pendingNavigation;
             setPendingNavigation(null);
             target.onProceed?.();
-            router.push(target.href);
+            if (target.href) router.push(target.href);
           }}
           title={pendingNavigation.title}
           tone="warning"
@@ -135,6 +166,11 @@ function useNexusWorkspaceUnsavedChangesContext() {
 
 export function useNexusWorkspaceNavigation() {
   return useNexusWorkspaceUnsavedChangesContext().navigate;
+}
+
+/** Menjalankan tindakan setelah perubahan yang belum disimpan dikonfirmasi. */
+export function useNexusWorkspaceGuard() {
+  return useNexusWorkspaceUnsavedChangesContext().guard;
 }
 
 export function useNexusWorkspaceUnsavedChanges({

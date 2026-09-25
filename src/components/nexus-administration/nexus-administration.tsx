@@ -4,12 +4,10 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
-  nexusAccountOverrides,
   nexusAssignableRoles,
   nexusRoleHealth,
   resolveNexusRole,
 } from "@/components/nexus-access-policy/nexus-access-policy";
-import { useNexusAccessPolicySession } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
 import type {
   NexusAccountInvitationInput,
@@ -20,6 +18,7 @@ import {
   accountStatusLabels,
   type NexusAdministrationAccount,
   type NexusAdministrationContent,
+  nexusAdministrationErrorMessage,
 } from "@/components/nexus-administration/nexus-administration-content";
 import { NexusAdministrationIcon } from "@/components/nexus-administration/nexus-administration-icons";
 import {
@@ -31,9 +30,9 @@ import {
   type NexusAdministrationCapabilities,
   nexusCanOpenRoleManagement,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
-import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
 import { useNexusProfileDirectory } from "@/components/nexus-profile/nexus-current-profile";
 import type { NexusProfileView } from "@/components/nexus-profile/nexus-profile-model";
+import { useNexusSession } from "@/components/nexus-session/nexus-session-provider";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import {
@@ -44,12 +43,14 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
   NexusWorkspaceLinkButton,
+  NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
   normalizeWorkspaceSearch,
   personInitials,
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { NexusWorkspaceLoading } from "@/components/nexus-workspace-ui/nexus-workspace-loading";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -108,7 +109,7 @@ type FilterId = "member" | "role" | "status";
 
 type PendingAccountAction = {
   accountId: string;
-  kind: "cancel-invitation" | "suspend";
+  kind: "suspend";
 };
 
 const PAGE_SIZE = 6;
@@ -189,16 +190,14 @@ function AccountRelationshipCell({
     return (
       <span className={styles.memberCell} data-relationship="LINKED">
         <strong>{relationship.member.name}</strong>
-        <small>
-          {relationship.member.id} · {relationship.member.assignment}
-        </small>
+        <small>{relationship.member.assignment || "Anggota CoE BHT"}</small>
       </span>
     );
   }
 
   const copy = {
     CONFLICT: ["Perlu diperiksa", "Hubungan akun tidak konsisten"],
-    NON_MEMBER: ["Akun non-anggota", "Tidak memerlukan profil anggota"],
+    NON_MEMBER: ["Tidak terhubung", "Belum ditautkan ke profil anggota"],
     UNLINKED: ["Belum dihubungkan", "Hubungan belum ditentukan"],
   }[relationship.kind];
 
@@ -210,7 +209,54 @@ function AccountRelationshipCell({
   );
 }
 
-export function NexusAdministration({
+/**
+ * Administrasi selalu bekerja pada direktori akun layanan. Halaman menunggu
+ * direktori termuat lebih dahulu sehingga tautan `?account=` tidak pernah
+ * dinilai tidak ditemukan hanya karena data belum tiba.
+ */
+export function NexusAdministration(props: NexusAdministrationProps) {
+  const { directoryError, directoryStatus, ensureDirectory, reloadDirectory } =
+    useNexusAccountSession();
+
+  useEffect(() => {
+    ensureDirectory();
+  }, [ensureDirectory]);
+
+  if (directoryStatus === "ready") {
+    return <NexusAdministrationWorkspace {...props} />;
+  }
+
+  if (directoryStatus !== "error") {
+    return <NexusWorkspaceLoading label="Memuat daftar akun…" />;
+  }
+
+  return (
+    <NexusWorkspacePage
+      description={props.content.description}
+      descriptionId="administration-load-error-description"
+      title={props.content.title}
+      titleId="administration-load-error-title"
+    >
+      <NexusWorkspaceState
+        actions={
+          <NexusWorkspaceButton
+            onClick={() => void reloadDirectory()}
+            tone="primary"
+            type="button"
+          >
+            Coba lagi
+          </NexusWorkspaceButton>
+        }
+        description={nexusAdministrationErrorMessage(directoryError, "load")}
+        eyebrow="Akun & Akses"
+        title="Daftar akun belum dapat dimuat"
+        tone="danger"
+      />
+    </NexusWorkspacePage>
+  );
+}
+
+function NexusAdministrationWorkspace({
   capabilities,
   content,
   hasInitialAccountContext,
@@ -221,28 +267,19 @@ export function NexusAdministration({
   const router = useRouter();
   const {
     accounts,
-    cancelInvitation: cancelAccountInvitation,
     createInvitation: createAccountInvitation,
-    refreshInvitation: refreshAccountInvitation,
+    memberOptions: memberDirectory,
     restoreAccount: restoreSessionAccount,
+    roles,
     suspendAccount: suspendSessionAccount,
     updateRelationship: setAccountRelationship,
     updateRole: setAccountRole,
   } = useNexusAccountSession();
-  const { overrides, roles } = useNexusAccessPolicySession();
+  const currentAccountId = useNexusSession().session.account.id;
   const profilesByAccountId = useNexusProfileDirectory();
   const canOpenRoleManagement = nexusCanOpenRoleManagement(capabilities);
   const assignableRoles = useMemo(() => nexusAssignableRoles(roles), [roles]);
-  const { records: memberRecords } = useNexusMemberSession();
-  const memberDirectory = useMemo(
-    () =>
-      memberRecords.map((member) => ({
-        assignment: member.coeAssignment,
-        id: member.id,
-        name: member.name,
-      })),
-    [memberRecords],
-  );
+  const [actionError, setActionError] = useState("");
   const initialAccountExists = accounts.some(
     (account) => account.id === initialAccountId,
   );
@@ -499,46 +536,40 @@ export function NexusAdministration({
     setOpenFilterId(null);
   }
 
-  function createInvitation(input: NexusAccountInvitationInput) {
-    const account = createAccountInvitation(input);
+  async function createInvitation(input: NexusAccountInvitationInput) {
+    const account = await createAccountInvitation(input);
+    setActionError("");
     setAnnouncement(`Undangan akun untuk ${input.email} berhasil dibuat.`);
     resetFilters();
     return account.id;
   }
 
-  function suspendAccount(account: NexusAdministrationAccount) {
-    suspendSessionAccount(account.id);
-    setAnnouncement(
-      `Akses ${profilesByAccountId.get(account.id)?.displayName ?? account.displayName} ditangguhkan.`,
+  function accountName(account: NexusAdministrationAccount) {
+    return (
+      profilesByAccountId.get(account.id)?.displayName ?? account.displayName
     );
   }
 
-  function restoreAccount(account: NexusAdministrationAccount) {
-    restoreSessionAccount(account.id);
-    setAnnouncement(
-      `Akses ${profilesByAccountId.get(account.id)?.displayName ?? account.displayName} dipulihkan.`,
-    );
-  }
-
-  function refreshInvitation(account: NexusAdministrationAccount) {
-    refreshAccountInvitation(account.id);
-    setAnnouncement(`Undangan untuk ${account.email} diperbarui.`);
-  }
-
-  function cancelInvitation(account: NexusAdministrationAccount) {
-    cancelAccountInvitation(account.id);
-    setSelectedAccountId(null);
-    if (hasInitialAccountContext && account.id === initialAccountId) {
-      // Undangan yang dibatalkan adalah akun yang dirujuk tautan ?account=.
-      // Tandai konteks tautan sebagai selesai lalu bersihkan parameter yang kini
-      // usang, supaya tindakan yang berhasil tidak terbaca sebagai tautan rusak
-      // pada render berikutnya.
-      setDismissedInvalidContextKey(`account:${account.id}`);
-      router.replace("/nexus/administrasi", { scroll: false });
+  async function suspendAccount(account: NexusAdministrationAccount) {
+    try {
+      await suspendSessionAccount(account.id);
+      setActionError("");
+      setAnnouncement(
+        `Akses ${accountName(account)} ditangguhkan. Sesi aktif akun ini sudah diakhiri.`,
+      );
+    } catch (error) {
+      setActionError(nexusAdministrationErrorMessage(error, "status"));
     }
-    setAnnouncement(
-      `Undangan untuk ${account.email} dibatalkan. Tidak ada akun aktif yang dihapus.`,
-    );
+  }
+
+  async function restoreAccount(account: NexusAdministrationAccount) {
+    try {
+      await restoreSessionAccount(account.id);
+      setActionError("");
+      setAnnouncement(`Akses ${accountName(account)} dipulihkan.`);
+    } catch (error) {
+      setActionError(nexusAdministrationErrorMessage(error, "status"));
+    }
   }
 
   const rows = visibleAccounts.map((account) => {
@@ -706,6 +737,10 @@ export function NexusAdministration({
         ]}
       />
 
+      {actionError ? (
+        <NexusWorkspaceNotice tone="danger">{actionError}</NexusWorkspaceNotice>
+      ) : null}
+
       <NexusWorkspaceCatalog className={styles.catalog}>
         <NexusWorkspaceToolbar>
           <NexusWorkspaceSearch
@@ -811,12 +846,7 @@ export function NexusAdministration({
         <NexusAdministrationDetail
           account={selectedAccount}
           capabilities={capabilities}
-          onCancelInvitation={() =>
-            setPendingAccountAction({
-              accountId: selectedAccount.id,
-              kind: "cancel-invitation",
-            })
-          }
+          isCurrentAccount={selectedAccount.id === currentAccountId}
           onClose={() => setSelectedAccountId(null)}
           onEditAccess={() => {
             setSelectedAccountId(null);
@@ -826,12 +856,6 @@ export function NexusAdministration({
             setSelectedAccountId(null);
             setRelationshipEditorAccountId(selectedAccount.id);
           }}
-          onManageSpecialAccess={() =>
-            router.push(
-              `/nexus/administrasi/akses?account=${encodeURIComponent(selectedAccount.id)}`,
-            )
-          }
-          onRefreshInvitation={() => refreshInvitation(selectedAccount)}
           onRestore={() => restoreAccount(selectedAccount)}
           onSuspend={() =>
             setPendingAccountAction({
@@ -849,9 +873,6 @@ export function NexusAdministration({
             rolesByAccountId.get(selectedAccount.id) ?? {
               kind: "UNASSIGNED",
             }
-          }
-          specialAccessCount={
-            nexusAccountOverrides(overrides, selectedAccount.id).length
           }
         />
       ) : null}
@@ -880,18 +901,16 @@ export function NexusAdministration({
             accessEditorAccount.displayName
           }
           onClose={() => setAccessEditorAccountId(null)}
-          onSave={(roleId) => {
-            setAccountRole(accessEditorAccount.id, roleId);
+          onSave={async (roleId) => {
+            await setAccountRole(accessEditorAccount.id, roleId);
             setAccessEditorAccountId(null);
             setSelectedAccountId(accessEditorAccount.id);
+            setActionError("");
             setAnnouncement(
-              `Peran ${profilesByAccountId.get(accessEditorAccount.id)?.displayName ?? accessEditorAccount.displayName} diperbarui.`,
+              `Peran ${accountName(accessEditorAccount)} diperbarui.`,
             );
           }}
           roles={assignableRoles}
-          specialAccessCount={
-            nexusAccountOverrides(overrides, accessEditorAccount.id).length
-          }
         />
       ) : null}
 
@@ -903,12 +922,16 @@ export function NexusAdministration({
               ?.displayName ?? relationshipEditorAccount.displayName
           }
           onClose={() => setRelationshipEditorAccountId(null)}
-          onSave={(relationship: NexusAccountMemberRelationship) => {
-            setAccountRelationship(relationshipEditorAccount.id, relationship);
+          onSave={async (relationship: NexusAccountMemberRelationship) => {
+            await setAccountRelationship(
+              relationshipEditorAccount.id,
+              relationship,
+            );
             setRelationshipEditorAccountId(null);
             setSelectedAccountId(relationshipEditorAccount.id);
+            setActionError("");
             setAnnouncement(
-              `Hubungan anggota ${profilesByAccountId.get(relationshipEditorAccount.id)?.displayName ?? relationshipEditorAccount.displayName} diperbarui.`,
+              `Hubungan anggota ${accountName(relationshipEditorAccount)} diperbarui.`,
             );
           }}
           relationship={relationshipEditorResolved}
@@ -918,30 +941,14 @@ export function NexusAdministration({
       {pendingAccountAction && pendingActionAccount ? (
         <NexusWorkspaceConfirmDialog
           cancelLabel="Kembali"
-          confirmLabel={
-            pendingAccountAction.kind === "suspend"
-              ? "Tangguhkan akses"
-              : "Batalkan undangan"
-          }
-          description={
-            pendingAccountAction.kind === "suspend"
-              ? `${profilesByAccountId.get(pendingActionAccount.id)?.displayName ?? pendingActionAccount.displayName} tidak dapat masuk sampai akses dipulihkan.`
-              : `Undangan untuk ${pendingActionAccount.email} akan dibatalkan dan akun yang belum aktif dihapus dari daftar.`
-          }
+          confirmLabel="Tangguhkan akses"
+          description={`${accountName(pendingActionAccount)} tidak dapat masuk sampai akses dipulihkan, dan sesi yang sedang aktif diakhiri.`}
           onCancel={() => setPendingAccountAction(null)}
           onConfirm={() => {
-            if (pendingAccountAction.kind === "suspend") {
-              suspendAccount(pendingActionAccount);
-            } else {
-              cancelInvitation(pendingActionAccount);
-            }
             setPendingAccountAction(null);
+            void suspendAccount(pendingActionAccount);
           }}
-          title={
-            pendingAccountAction.kind === "suspend"
-              ? "Tangguhkan akses akun?"
-              : "Batalkan undangan akun?"
-          }
+          title="Tangguhkan akses akun?"
           tone="danger"
         />
       ) : null}

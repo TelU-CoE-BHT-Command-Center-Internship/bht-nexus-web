@@ -10,11 +10,14 @@ import { resetDismissedAnnouncementsForSession } from "@/components/nexus-dashbo
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
 import {
   type NexusDashboardShellContent,
-  nexusDashboardViewerFromProfile,
+  nexusDashboardViewerFromSession,
 } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
-import { useNexusCurrentProfile } from "@/components/nexus-profile/nexus-current-profile";
-import { useNexusWorkspaceNavigation } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
+import { useNexusSessionIfAvailable } from "@/components/nexus-session/nexus-session-provider";
+import {
+  useNexusWorkspaceGuard,
+  useNexusWorkspaceNavigation,
+} from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import type { Locale } from "@/i18n/locales";
 
 export type DashboardHeaderPanel = "notifications" | "profile";
@@ -41,12 +44,12 @@ const workspaceLanguageOptions: WorkspaceLanguageOption[] = [
 ];
 
 function getWorkspaceLanguageHref(
-  currentLocale: Locale,
+  content: NexusDashboardShellContent,
   pathname: string,
   targetLocale: Locale,
 ) {
-  if (targetLocale === currentLocale) return pathname;
-  return targetLocale === "en" ? "/en/nexus/coming-soon" : "/nexus/dashboard";
+  if (targetLocale === content.locale) return pathname;
+  return content.languageHomeHrefs[targetLocale];
 }
 
 export function NexusDashboardHeader({
@@ -59,14 +62,18 @@ export function NexusDashboardHeader({
   pageTitle,
 }: NexusDashboardHeaderProps) {
   const navigate = useNexusWorkspaceNavigation();
+  const guard = useNexusWorkspaceGuard();
   const pathname = usePathname();
-  /* Identitas mengikuti profil akun yang sedang diwakili, sehingga perubahan
-     nama atau foto pada Profil Saya langsung terlihat di header. */
-  const { profile } = useNexusCurrentProfile();
-  const viewer = profile
-    ? nexusDashboardViewerFromProfile(profile)
+  /* Identitas mengikuti sesi layanan yang sama dengan Profil Saya, sehingga
+     perubahan nama pada Profil Saya langsung terlihat di header. */
+  const sessionContext = useNexusSessionIfAvailable();
+  const viewer = sessionContext
+    ? nexusDashboardViewerFromSession(sessionContext.session)
     : content.viewer;
   const profileHref = content.profileHref;
+  const [signOutState, setSignOutState] = useState<
+    "error" | "idle" | "pending"
+  >("idle");
   const notificationMenuRef = useRef<HTMLDivElement>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -111,6 +118,15 @@ export function NexusDashboardHeader({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [onClosePanel, openPanel]);
+
+  function signOut() {
+    if (!sessionContext || signOutState === "pending") return;
+    guard(() => {
+      setSignOutState("pending");
+      resetDismissedAnnouncementsForSession();
+      sessionContext.signOut().catch(() => setSignOutState("error"));
+    });
+  }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -214,7 +230,7 @@ export function NexusDashboardHeader({
             const isActive = content.locale === option.locale;
 
             const href = getWorkspaceLanguageHref(
-              content.locale,
+              content,
               pathname,
               option.locale,
             );
@@ -372,21 +388,23 @@ export function NexusDashboardHeader({
                   </li>
                 </ul>
               ) : null}
-              <Link
+              <button
+                aria-busy={signOutState === "pending" || undefined}
                 className={styles.profilePanelSignOut}
-                href={content.signOutHref}
-                onNavigate={(event) => {
-                  event.preventDefault();
-                  navigate(
-                    content.signOutHref,
-                    resetDismissedAnnouncementsForSession,
-                  );
-                }}
-                prefetch={false}
+                disabled={!sessionContext || signOutState === "pending"}
+                onClick={signOut}
+                type="button"
               >
                 <DashboardShellIcon name="sign-out" />
-                {content.signOutLabel}
-              </Link>
+                {signOutState === "pending"
+                  ? content.signingOutLabel
+                  : content.signOutLabel}
+              </button>
+              {signOutState === "error" ? (
+                <p className={styles.profilePanelError} role="alert">
+                  {content.signOutErrorLabel}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>

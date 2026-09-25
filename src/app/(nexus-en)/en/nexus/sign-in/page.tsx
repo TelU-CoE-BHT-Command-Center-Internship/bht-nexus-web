@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { NexusLogin } from "@/components/nexus-login/nexus-login";
+import {
+  NexusSignInPage,
+  type NexusSignInSearchParams,
+} from "@/components/nexus-login/nexus-login-page";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -10,6 +13,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function EnglishNexusLoginPage() {
-  return <NexusLogin locale="en" />;
+export default function EnglishNexusLoginPage({
+  searchParams,
+}: {
+  searchParams: NexusSignInSearchParams;
+}) {
+  return <NexusSignInPage locale="en" searchParams={searchParams} />;
 }

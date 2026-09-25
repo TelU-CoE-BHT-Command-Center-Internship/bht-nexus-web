@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { NexusLogin } from "@/components/nexus-login/nexus-login";
+import {
+  NexusSignInPage,
+  type NexusSignInSearchParams,
+} from "@/components/nexus-login/nexus-login-page";
 
 export const metadata: Metadata = {
   title: "Masuk",
@@ -10,6 +13,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function IndonesianNexusLoginPage() {
-  return <NexusLogin locale="id" />;
+export default function IndonesianNexusLoginPage({
+  searchParams,
+}: {
+  searchParams: NexusSignInSearchParams;
+}) {
+  return <NexusSignInPage locale="id" searchParams={searchParams} />;
 }

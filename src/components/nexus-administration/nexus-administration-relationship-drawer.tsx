@@ -2,9 +2,10 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
-import type {
-  NexusAccountMemberRelationship,
-  NexusAdministrationMemberOption,
+import {
+  type NexusAccountMemberRelationship,
+  type NexusAdministrationMemberOption,
+  nexusAdministrationErrorMessage,
 } from "@/components/nexus-administration/nexus-administration-content";
 import type { NexusResolvedAdministrationRelationship } from "@/components/nexus-administration/nexus-administration-relationship";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
@@ -21,7 +22,7 @@ type RelationshipChoice = "" | "linked" | "non-member";
 type NexusAdministrationRelationshipDrawerProps = {
   availableMembers: readonly NexusAdministrationMemberOption[];
   onClose: () => void;
-  onSave: (relationship: NexusAccountMemberRelationship) => void;
+  onSave: (relationship: NexusAccountMemberRelationship) => Promise<void>;
   personName: string;
   relationship: NexusResolvedAdministrationRelationship;
 };
@@ -51,6 +52,7 @@ export function NexusAdministrationRelationshipDrawer({
   const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
   const [pendingRelationship, setPendingRelationship] =
     useState<NexusAccountMemberRelationship | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const draftIsDirty =
     choice !== initialDraft.choice || memberId !== initialDraft.memberId;
   const selectedMember = availableMembers.find(
@@ -95,7 +97,7 @@ export function NexusAdministrationRelationshipDrawer({
     <>
       <NexusWorkspaceDrawer
         closeLabel="Tutup perubahan hubungan anggota"
-        description="Tentukan apakah akun ditautkan ke satu profil anggota atau memang digunakan sebagai akun non-anggota."
+        description="Tautkan akun ke satu profil anggota, atau lepaskan tautannya bila akun ini bukan milik anggota."
         eyebrow="Hubungan Anggota"
         onClose={requestClose}
         title={`Kelola hubungan · ${personName}`}
@@ -119,10 +121,9 @@ export function NexusAdministrationRelationshipDrawer({
           )}
 
           <NexusWorkspaceNotice>
-            Informasi pribadi milik akun tetap tersimpan tanpa disalin atau
-            dihapus. Saat akun terhubung, bidang yang beririsan mengikuti profil
-            anggota; data akun dipakai kembali bila hubungan non-anggota
-            ditetapkan.
+            Informasi pribadi akun dan profil anggota tetap tersimpan terpisah.
+            Menautkan atau melepas tautan tidak menyalin maupun menghapus data
+            mana pun.
           </NexusWorkspaceNotice>
 
           <fieldset className={styles.relationshipChoices}>
@@ -158,10 +159,10 @@ export function NexusAdministrationRelationshipDrawer({
                 value="non-member"
               />
               <span>
-                <strong>Tetapkan sebagai akun non-anggota</strong>
+                <strong>Tidak dihubungkan ke anggota</strong>
                 <small>
-                  Gunakan hanya ketika pemilik akun memang bukan anggota CoE
-                  BHT.
+                  Untuk akun operator, pengelola, atau pengguna di luar
+                  keanggotaan CoE BHT.
                 </small>
               </span>
             </label>
@@ -179,7 +180,9 @@ export function NexusAdministrationRelationshipDrawer({
                 setError("");
               }}
               options={availableMembers.map((member) => ({
-                label: `${member.name} — ${member.id}`,
+                label: member.assignment
+                  ? `${member.name} — ${member.assignment}`
+                  : member.name,
                 value: member.id,
               }))}
               required
@@ -209,20 +212,21 @@ export function NexusAdministrationRelationshipDrawer({
           description={
             pendingRelationship.kind === "LINKED" && selectedMember
               ? `${personName} akan ditautkan ke ${selectedMember.name}.`
-              : `${personName} akan ditetapkan sebagai akun non-anggota.`
+              : `Tautan anggota pada akun ${personName} akan dilepas.`
           }
-          onCancel={() => setPendingRelationship(null)}
+          onCancel={() => {
+            if (!isSaving) setPendingRelationship(null);
+          }}
           onConfirm={() => {
-            try {
-              onSave(pendingRelationship);
-            } catch (caughtError) {
+            if (isSaving) return;
+            setIsSaving(true);
+            onSave(pendingRelationship).catch((caughtError: unknown) => {
+              setIsSaving(false);
               setPendingRelationship(null);
               setError(
-                caughtError instanceof Error
-                  ? caughtError.message
-                  : "Hubungan akun tidak dapat disimpan.",
+                nexusAdministrationErrorMessage(caughtError, "relationship"),
               );
-            }
+            });
           }}
           title="Simpan perubahan hubungan?"
           tone="warning"

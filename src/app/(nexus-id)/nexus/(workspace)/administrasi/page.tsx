@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { NexusAdministration } from "@/components/nexus-administration/nexus-administration";
 import { getNexusAdministrationContent } from "@/components/nexus-administration/nexus-administration-content";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { nexusWorkspaceHomeHref } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-session/nexus-workspace-access-server";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -32,7 +31,7 @@ export default async function NexusAdministrationPage({
   searchParams,
 }: NexusAdministrationPageProps) {
   const content = getNexusAdministrationContent();
-  const access = nexusPreviewWorkspaceAccess;
+  const access = await getNexusWorkspaceAccess();
   const params = await searchParams;
 
   if (!nexusWorkspaceCanOpen(access, "administration")) {
@@ -45,8 +44,8 @@ export default async function NexusAdministrationPage({
       >
         <NexusWorkspaceNoAccess
           description="Akun Anda belum memiliki kewenangan untuk meninjau atau mengelola akun pengguna."
-          returnHref="/nexus/dashboard"
-          returnLabel="Kembali ke Dashboard"
+          returnHref={nexusWorkspaceHomeHref(access)}
+          returnLabel="Kembali ke ruang kerja"
           title="Administrasi tidak tersedia untuk akun Anda"
         />
       </NexusWorkspacePage>

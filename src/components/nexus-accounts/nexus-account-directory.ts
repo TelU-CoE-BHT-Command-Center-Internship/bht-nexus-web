@@ -95,13 +95,10 @@ export function resolveNexusAccountRelationship(
 }
 
 /**
- * Akun yang sedang diwakili ruang kerja. Satu pengenal akun yang stabil dipakai
- * bersama oleh identitas pada header, halaman Profil Saya, dan proyeksi profil
- * di Administrasi, sehingga tidak ada permukaan yang menebak penggunanya
- * sendiri. Sesi masuk yang sebenarnya akan menggantikan pemilihan ini.
+ * Direktori akun contoh untuk halaman rancangan kebijakan akses. Identitas
+ * pengguna yang sedang masuk selalu berasal dari sesi layanan, bukan dari
+ * daftar ini.
  */
-export const NEXUS_CURRENT_ACCOUNT_ID = "ACC-BHT-0024";
-
 const accounts: readonly NexusAccountDirectoryRecord[] = [
   {
     createdAt: "12 Mei 2026, 09.18 WIB",

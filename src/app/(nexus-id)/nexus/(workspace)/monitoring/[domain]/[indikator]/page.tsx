@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { nexusWorkspaceHomeHref } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import {
   NEXUS_MONITORING_HREF,
   nexusCategoryFromDomainSlug,
@@ -14,6 +12,7 @@ import {
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import { NexusMonitoringIndicatorScreen } from "@/components/nexus-monitoring/nexus-monitoring-indicator-screen";
 import { nexusMonitoringPeriodParam } from "@/components/nexus-monitoring/nexus-monitoring-period";
+import { getNexusWorkspaceAccess } from "@/components/nexus-session/nexus-workspace-access-server";
 import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
@@ -82,7 +81,7 @@ export default async function NexusMonitoringIndicatorPage({
   params,
   searchParams,
 }: NexusMonitoringIndicatorPageProps) {
-  const access = nexusPreviewWorkspaceAccess;
+  const access = await getNexusWorkspaceAccess();
   const { domain, indikator } = await params;
   const { periode } = await searchParams;
 
@@ -96,8 +95,8 @@ export default async function NexusMonitoringIndicatorPage({
       >
         <NexusWorkspaceNoAccess
           description="Akun Anda belum memiliki izin untuk membuka pemantauan indikator KM. Silakan kembali ke ruang kerja atau hubungi pengelola jika akses tersebut diperlukan."
-          returnHref="/nexus/dashboard"
-          returnLabel="Kembali ke Dashboard"
+          returnHref={nexusWorkspaceHomeHref(access)}
+          returnLabel="Kembali ke ruang kerja"
           title="Monitoring KM tidak tersedia untuk akun Anda"
         />
       </NexusWorkspacePage>

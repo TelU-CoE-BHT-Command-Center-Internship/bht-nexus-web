@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { nexusPreviewWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import {
   memberIdFromSearchParams,
   type NexusMemberFilteredPageProps,
 } from "@/components/nexus-members/nexus-member-route";
 import { NexusMembers } from "@/components/nexus-members/nexus-members";
 import { getNexusMembersContent } from "@/components/nexus-members/nexus-members-content";
+import { getNexusWorkspaceAccess } from "@/components/nexus-session/nexus-workspace-access-server";
 
 export const metadata: Metadata = {
   title: "Anggota",
@@ -24,7 +24,12 @@ export default async function NexusMembersPage({
 
   return (
     <NexusMembers
-      capabilities={nexusPreviewWorkspaceAccess.memberCapabilities}
+      capabilities={{
+        ...(await getNexusWorkspaceAccess()).memberCapabilities,
+        /* Direktori Anggota masih memakai data contoh sehingga ID-nya belum
+           dikenali Administrasi; penautan akun dilakukan dari daftar akun. */
+        canGrantAccess: false,
+      }}
       content={content}
       initialMemberId={requestedMemberId}
     />

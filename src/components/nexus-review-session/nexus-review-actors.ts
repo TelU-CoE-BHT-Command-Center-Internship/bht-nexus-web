@@ -7,5 +7,7 @@ export const nexusReviewActorIds = {
   dataSteward: "USR-DATA-STEWARD-001",
   documentPipeline: "SYS-DOCUMENT-PIPELINE",
   matchingService: "SYS-MATCHING-SERVICE",
+  /** Pemeriksa pada riwayat contoh; bukan akun yang sedang masuk. */
+  sampleReviewer: "USR-SAMPLE-REVIEWER",
   workbookImport: "SYS-WORKBOOK-KM-2026",
 } as const;
