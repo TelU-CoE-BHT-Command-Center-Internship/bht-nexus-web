@@ -4,6 +4,7 @@ export type NexusWorkspaceNavigationId =
   | "academic"
   | "activities"
   | "administration"
+  | "broadcast"
   | "collection"
   | "contracts"
   | "dashboard"
@@ -21,8 +22,30 @@ export type NexusWorkspaceNavigationId =
 export type NexusWorkspaceAccess = {
   administrationCapabilities: NexusAdministrationCapabilities;
   allowedNavigationIds: readonly NexusWorkspaceNavigationId[];
+  broadcastCapabilities: NexusBroadcastCapabilities;
   memberCapabilities: NexusMemberCapabilities;
+  monitoringCapabilities: NexusMonitoringCapabilities;
   reviewCapabilities: NexusReviewCapabilities;
+};
+
+/**
+ * Kemampuan pada Broadcast / Newsletter. Membuka halaman mengikuti izin
+ * melihat (`broadcast.view`), sedangkan menyusun dan meninjau pengiriman
+ * mengikuti izin mengelola (`broadcast.manage`) yang pada Meeting Minggu 12
+ * ditetapkan hanya untuk pengurus.
+ */
+export type NexusBroadcastCapabilities = {
+  canCompose: boolean;
+};
+
+/**
+ * Kemampuan pada Monitoring KM. Mengelola periode dan target (`monitoring.manage`)
+ * terpisah dari mengoreksi rekam pembentuk realisasi (`monitoring.update`).
+ * Mengunduh laporan mengikuti izin melihat Monitoring.
+ */
+export type NexusMonitoringCapabilities = {
+  canCorrectRecords: boolean;
+  canManageTargets: boolean;
 };
 
 export type NexusAdministrationCapabilities = {
@@ -53,6 +76,7 @@ export const nexusPreviewWorkspaceAccess = {
   allowedNavigationIds: [
     "dashboard",
     "monitoring",
+    "broadcast",
     "collection",
     "documents",
     "reviews",
@@ -64,11 +88,18 @@ export const nexusPreviewWorkspaceAccess = {
     "members",
     "administration",
   ],
+  broadcastCapabilities: {
+    canCompose: true,
+  },
   memberCapabilities: {
     canCreateMember: true,
     canDeactivateMember: true,
     canEditMember: true,
     canGrantAccess: true,
+  },
+  monitoringCapabilities: {
+    canCorrectRecords: true,
+    canManageTargets: true,
   },
   reviewCapabilities: {
     canReview: true,

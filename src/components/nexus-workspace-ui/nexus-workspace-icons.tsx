@@ -16,6 +16,7 @@ export type NexusWorkspaceIconName =
   | "globe"
   | "graduation"
   | "heart"
+  | "mail"
   | "money"
   | "pencil"
   | "people"
@@ -152,6 +153,13 @@ export function NexusWorkspaceIconPaths({
     case "heart":
       return (
         <path d="M12 19.9 5.2 13a4.6 4.6 0 0 1 6.2-6.7l.6.5.6-.5A4.6 4.6 0 0 1 18.8 13Z" />
+      );
+    case "mail":
+      return (
+        <>
+          <rect height="13" rx="2.2" width="17" x="3.5" y="5.5" />
+          <path d="m4.4 7.4 7.6 5.7 7.6-5.7" />
+        </>
       );
     case "money":
       return (

@@ -85,6 +85,8 @@ export type AuditReviewHistory = {
   note?: string;
   /** Instant mesin untuk integrasi dan pengurutan audit. */
   occurredAt: string;
+  /** Pemeriksa memutuskan kiriman yang ia ajukan sendiri. */
+  selfReview?: true;
   targetRecordId?: string;
   version?: number;
 };
@@ -100,6 +102,8 @@ export type AuditReviewDecision = {
   note: string;
   /** Instant mesin; format WIB hanya dibuat ketika dirender. */
   occurredAt: string;
+  /** Pemeriksa memutuskan kiriman yang ia ajukan sendiri. */
+  selfReview?: true;
   /** Rekam resmi yang dipilih reviewer untuk merge, update, atau pelengkapan. */
   targetRecordId?: string;
   targetPersonId?: string;
@@ -732,7 +736,41 @@ const records: AuditReviewRecord[] = [
         indicator: kmIndicator("KM-15"),
       },
     ],
-    matches: [],
+    matches: [
+      {
+        comparisons: [
+          {
+            candidateValue: "Karya Edukasi Kesehatan A",
+            fieldId: "title",
+            label: "Judul",
+            officialValue: "Karya Edukasi Kesehatan A",
+            status: "same",
+            statusLabel: "Sama",
+          },
+          {
+            candidateValue: "Dosen A",
+            fieldId: "creator",
+            label: "Pencipta",
+            officialValue: "Dosen A",
+            status: "same",
+            statusLabel: "Sama",
+          },
+          {
+            candidateValue: "Hak Cipta",
+            fieldId: "ip_type",
+            label: "Jenis HKI",
+            officialValue: "Hak Cipta",
+            status: "same",
+            statusLabel: "Sama",
+          },
+        ],
+        id: "KI-2026-0001",
+        score: 96,
+        title: "Karya Edukasi Kesehatan A",
+        verdict: "strong",
+        verdictLabel: "Rekam resmi yang sama sudah tercatat",
+      },
+    ],
     owner: "CoE BHT",
     evaluationPeriodLabel: "2026",
     primaryPerson: "Dosen A",
@@ -783,7 +821,41 @@ const records: AuditReviewRecord[] = [
         indicator: kmIndicator("KM-16"),
       },
     ],
-    matches: [],
+    matches: [
+      {
+        comparisons: [
+          {
+            candidateValue: "Paten Perangkat Kesehatan A",
+            fieldId: "title",
+            label: "Nama paten",
+            officialValue: "Paten Perangkat Kesehatan A",
+            status: "same",
+            statusLabel: "Sama",
+          },
+          {
+            candidateValue: "Inventor A; Inventor B",
+            fieldId: "inventors",
+            label: "Inventor",
+            officialValue: "Inventor A; Inventor B; Inventor C",
+            status: "similar",
+            statusLabel: "Serupa",
+          },
+          {
+            candidateValue: "",
+            fieldId: "patent_number",
+            label: "Nomor paten",
+            officialValue: "REG-PAT-2026-A",
+            status: "missing",
+            statusLabel: "Belum tersedia",
+          },
+        ],
+        id: "KI-2026-0003",
+        score: 93,
+        title: "Paten Perangkat Kesehatan A",
+        verdict: "strong",
+        verdictLabel: "Rekam resmi yang sama sudah tercatat",
+      },
+    ],
     owner: "CoE BHT",
     evaluationPeriodLabel: "2026",
     primaryPerson: "Inventor A",
@@ -884,7 +956,33 @@ const records: AuditReviewRecord[] = [
         indicator: kmIndicator("KM-19"),
       },
     ],
-    matches: [],
+    matches: [
+      {
+        comparisons: [
+          {
+            candidateValue: "Mitra Industri A",
+            fieldId: "partner",
+            label: "Mitra kontrak",
+            officialValue: "Mitra Industri A",
+            status: "same",
+            statusLabel: "Sama",
+          },
+          {
+            candidateValue: "2026",
+            fieldId: "start_date",
+            label: "Tanggal mulai",
+            officialValue: "2026-02-01",
+            status: "similar",
+            statusLabel: "Serupa",
+          },
+        ],
+        id: "KPR-2026-0003",
+        score: 90,
+        title: "Kontrak Komersialisasi A",
+        verdict: "strong",
+        verdictLabel: "Rekam resmi yang sama sudah tercatat",
+      },
+    ],
     owner: "CoE BHT",
     evaluationPeriodLabel: "2026",
     primaryPerson: "Mitra Industri A",
@@ -1074,7 +1172,41 @@ const records: AuditReviewRecord[] = [
         indicator: kmIndicator("KM-38"),
       },
     ],
-    matches: [],
+    matches: [
+      {
+        comparisons: [
+          {
+            candidateValue: "Proposal Riset Internasional A",
+            fieldId: "title",
+            label: "Judul proposal",
+            officialValue: "Proposal Riset Internasional A",
+            status: "same",
+            statusLabel: "Sama",
+          },
+          {
+            candidateValue: "Skema Hibah Internasional A",
+            fieldId: "scheme",
+            label: "Skema",
+            officialValue: "Program Hibah Internasional A",
+            status: "similar",
+            statusLabel: "Serupa",
+          },
+          {
+            candidateValue: "Pemberi Hibah A",
+            fieldId: "grantor",
+            label: "Pemberi hibah",
+            officialValue: "Pemberi Hibah Internasional A",
+            status: "similar",
+            statusLabel: "Serupa",
+          },
+        ],
+        id: "PPL-2026-0002",
+        score: 92,
+        title: "Proposal Riset Internasional A",
+        verdict: "strong",
+        verdictLabel: "Rekam resmi yang sama sudah tercatat",
+      },
+    ],
     owner: "CoE BHT",
     evaluationPeriodLabel: "2026",
     primaryPerson: "Tim Pengusul A",

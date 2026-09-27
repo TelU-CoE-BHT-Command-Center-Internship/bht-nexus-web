@@ -1,17 +1,17 @@
 import { NEXUS_EVALUATION_PERIOD } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
+import type { NexusMonitoringPeriodRecord } from "@/components/nexus-monitoring/nexus-monitoring-targets";
 
 /**
  * Pilihan periode evaluasi pada Monitoring KM.
  *
- * Workbook KM 2026 menetapkan satu target per indikator untuk satu tahun
- * evaluasi; kolom `TW 1` sampai `TW 4` berisi catatan realisasi triwulan, bukan
- * target triwulan. Karena itu tidak ada aturan resmi untuk menilai status
- * sebuah indikator pada satu triwulan, dan kendali ini hanya menawarkan periode
- * yang benar-benar dimodelkan supaya angka pada kartu, grafik, dan tabel tidak
- * pernah diberi label periode yang tidak menghitungnya.
+ * Satu periode adalah satu tahun evaluasi dengan satu target per indikator.
+ * Kolom `TW 1` sampai `TW 4` pada workbook berisi catatan realisasi triwulan,
+ * bukan target triwulan, sehingga status indikator hanya dinilai per tahun.
+ * Dimensi triwulan tetap dibaca pada rincian indikator melalui sebaran
+ * triwulan rekam resmi.
  *
- * Dimensi triwulan tetap dapat dibaca pada rincian indikator melalui sebaran
- * triwulan yang dihitung dari tanggal bisnis rekam resmi.
+ * Daftar periode berasal dari periode yang terdaftar pada sesi Monitoring:
+ * periode awal workbook dan periode yang ditambahkan pengelola.
  */
 export type NexusMonitoringScope = "year";
 
@@ -25,27 +25,48 @@ export type NexusMonitoringPeriod = {
   year: string;
 };
 
-const modeledYears: readonly string[] = [NEXUS_EVALUATION_PERIOD];
-
-function yearPeriod(year: string): NexusMonitoringPeriod {
-  return {
-    id: year,
-    label: `Tahun ${year}`,
-    rangeLabel: "Januari–Desember",
-    scope: "year",
-    year,
-  };
-}
-
-export const nexusMonitoringPeriods: readonly NexusMonitoringPeriod[] =
-  modeledYears.map(yearPeriod);
-
 export const NEXUS_DEFAULT_MONITORING_PERIOD_ID: string =
   NEXUS_EVALUATION_PERIOD;
 
-export function nexusMonitoringPeriod(id: string): NexusMonitoringPeriod {
-  return (
-    nexusMonitoringPeriods.find((period) => period.id === id) ??
-    nexusMonitoringPeriods[0]
-  );
+/** Nama parameter alamat yang membawa periode antarhalaman Monitoring. */
+export const NEXUS_MONITORING_PERIOD_PARAM = "periode";
+
+export function nexusMonitoringPeriodFromRecord(
+  record: Pick<NexusMonitoringPeriodRecord, "id" | "year">,
+): NexusMonitoringPeriod {
+  return {
+    id: record.id,
+    label: `Tahun ${record.year}`,
+    rangeLabel: "Januari–Desember",
+    scope: "year",
+    year: String(record.year),
+  };
+}
+
+/** Periode terdaftar, terbaru lebih dahulu. */
+export function nexusMonitoringPeriodOptions(
+  records: readonly NexusMonitoringPeriodRecord[],
+): readonly NexusMonitoringPeriod[] {
+  return [...records]
+    .sort((first, second) => second.year - first.year)
+    .map(nexusMonitoringPeriodFromRecord);
+}
+
+/**
+ * Membaca parameter periode dari alamat. Nilai kosong berarti periode bawaan;
+ * nilai yang tidak terdaftar tetap diteruskan supaya halaman dapat menyatakan
+ * periode itu belum terdaftar, bukan diam-diam membuka periode lain.
+ */
+export function nexusMonitoringPeriodParam(
+  value: string | string[] | undefined,
+): string | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+/** Menambahkan periode pada tautan Monitoring bila bukan periode bawaan. */
+export function nexusMonitoringPeriodHref(href: string, periodId: string) {
+  if (periodId === NEXUS_DEFAULT_MONITORING_PERIOD_ID) return href;
+  return `${href}?${NEXUS_MONITORING_PERIOD_PARAM}=${encodeURIComponent(periodId)}`;
 }

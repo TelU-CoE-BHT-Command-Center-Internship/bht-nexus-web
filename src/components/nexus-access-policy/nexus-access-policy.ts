@@ -6,9 +6,9 @@ import type { NexusWorkspaceNavigationId } from "@/components/nexus-dashboard-sh
  *
  * Modul memakai identitas navigasi yang sudah ada, sedangkan tindakan mengikuti
  * kosakata izin pada kebutuhan REQ-FUNC-019: baca, buat, ubah, periksa,
- * setujui, dan kelola. Izin ekspor belum dimasukkan karena belum ada fungsi
- * ekspor pada ruang kerja; menampilkannya akan menjanjikan kendali atas fungsi
- * yang tidak dimiliki produk.
+ * setujui, dan kelola. Unduhan laporan Monitoring KM mengikuti izin melihat
+ * Monitoring, sehingga belum ada tindakan ekspor tersendiri; bila kelak
+ * diperlukan pembatasan ekspor terpisah, tindakannya ditambahkan di sini.
  *
  * Penegakan otorisasi, penyimpanan, dan audit tetap milik layanan server.
  * Modul ini hanya menyusun kebijakan yang dilihat dan disetel administrator.
@@ -116,6 +116,24 @@ const moduleBlueprints: readonly ModuleBlueprint[] = [
     id: "dashboard",
     label: "Dashboard",
     resource: "dashboard",
+  },
+  {
+    actions: ["view", "update", "manage"],
+    description:
+      "Capaian indikator KM, koreksi rekam pembentuk, serta periode dan target evaluasi.",
+    icon: "monitoring",
+    id: "monitoring",
+    label: "Monitoring KM",
+    resource: "monitoring",
+  },
+  {
+    actions: ["view", "manage"],
+    description:
+      "Penyusunan broadcast email untuk anggota CoE beserta riwayat pengirimannya.",
+    icon: "broadcast",
+    id: "broadcast",
+    label: "Broadcast / Newsletter",
+    resource: "broadcast",
   },
   {
     actions: ["view", "create"],
@@ -243,6 +261,11 @@ function permissionIdsFor(
  * Peran Auditor memegang alur data operasional terluas, Pimpinan mengikuti
  * cakupan data yang sama, sedangkan Administrator memegang pengelolaan akun dan
  * hak akses dengan akses data yang bersifat pemantauan.
+ *
+ * Broadcast / Newsletter hanya diberikan kepada Administrator: Meeting Minggu
+ * 12 menetapkan penyusun broadcast adalah pengurus atau admin dan Ketua
+ * Klaster belum termasuk. Peran lain dapat dinyalakan administrator bila
+ * pengurus memutuskannya.
  */
 const operationalBaseline = permissionIdsFor({
   academic: ["view", "create", "update"],
@@ -253,6 +276,7 @@ const operationalBaseline = permissionIdsFor({
   documents: ["view", "create"],
   "intellectual-property": ["view", "create", "update"],
   members: ["view"],
+  monitoring: ["view", "update", "manage"],
   publications: ["view", "create", "update"],
   reviews: ["view", "update", "review", "approve"],
 });
@@ -265,6 +289,7 @@ const memberBaseline = permissionIdsFor({
   documents: ["view", "create"],
   "intellectual-property": ["view", "create"],
   members: ["view"],
+  monitoring: ["view"],
   publications: ["view", "create"],
 });
 
@@ -272,12 +297,14 @@ const administratorBaseline = permissionIdsFor({
   academic: ["view"],
   activities: ["view"],
   administration: ["view", "create", "update", "manage"],
+  broadcast: ["view", "manage"],
   collection: ["view"],
   contracts: ["view"],
   dashboard: ["view"],
   documents: ["view"],
   "intellectual-property": ["view"],
   members: ["view"],
+  monitoring: ["view"],
   publications: ["view"],
   reviews: ["view"],
 });

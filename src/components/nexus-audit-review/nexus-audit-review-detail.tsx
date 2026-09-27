@@ -728,6 +728,7 @@ function SourceEvidenceSection({
                 <strong>{entry.label}</strong>
                 <span>
                   {entry.actor} · {formatAuditTimestamp(entry.occurredAt)}
+                  {entry.selfReview ? " · persetujuan mandiri" : ""}
                 </span>
                 {entry.note ? <p>{entry.note}</p> : null}
                 {entry.changes?.length ? (

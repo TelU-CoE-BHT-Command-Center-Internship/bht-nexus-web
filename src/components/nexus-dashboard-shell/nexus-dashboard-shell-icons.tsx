@@ -1,4 +1,5 @@
 import type { DashboardShellIconName } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import { NexusWorkspaceIconPaths } from "@/components/nexus-workspace-ui/nexus-workspace-icons";
 
 type IconName =
   | DashboardShellIconName
@@ -36,6 +37,8 @@ function IconPaths({ name }: DashboardShellIconProps) {
           <circle cx="12" cy="15.5" r="1.4" />
         </>
       );
+    case "broadcast":
+      return <NexusWorkspaceIconPaths name="mail" />;
     case "members":
       return (
         <>

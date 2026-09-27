@@ -39,10 +39,20 @@ const monthNames = [
   "desember",
 ];
 
+/**
+ * Seberapa rinci sumber mencatat tanggal peristiwanya. Sebagian sumber hanya
+ * mencatat bulan—kolomnya memang berformat bulan-tahun—sehingga harinya tidak
+ * pernah diketahui. Perbedaan ini disimpan supaya label tidak menyebut tanggal
+ * yang tidak dicatat sumbernya, sedangkan triwulan tetap dapat ditentukan
+ * karena TW hanya membutuhkan bulan.
+ */
+export type NexusBusinessDatePrecision = "bulan" | "tanggal";
+
 export type NexusParsedBusinessDate = {
   iso: string;
   label: string;
   month: number;
+  precision: NexusBusinessDatePrecision;
   quarter: NexusEvaluationQuarter;
   year: number;
 };
@@ -63,6 +73,14 @@ function formatDate(year: number, month: number, day: number) {
   }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
+function formatMonth(year: number, month: number) {
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
 function isRealDate(year: number, month: number, day: number) {
   if (month < 1 || month > 12 || day < 1 || day > 31) return false;
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -74,10 +92,11 @@ function isRealDate(year: number, month: number, day: number) {
 }
 
 /**
- * Membaca tanggal bisnis sebuah rekam resmi. Format ISO dipakai rekam yang
- * berasal dari formulir, sedangkan tanggal panjang berbahasa Indonesia dipakai
- * sumber yang mencatatnya sebagai teks. Nilai yang tidak dapat dibaca dengan
- * pasti mengembalikan `undefined` supaya triwulan tidak pernah ditebak.
+ * Membaca tanggal bisnis sebuah rekam resmi. Format ISO lengkap dipakai rekam
+ * yang berasal dari formulir, tanggal panjang berbahasa Indonesia dipakai
+ * sumber yang mencatatnya sebagai teks, dan bentuk `YYYY-MM` dipakai sumber
+ * yang memang hanya mencatat bulan terbitnya. Nilai yang tidak dapat dibaca
+ * dengan pasti mengembalikan `undefined` supaya triwulan tidak pernah ditebak.
  */
 export function parseBusinessDate(
   value: string | undefined,
@@ -96,6 +115,23 @@ export function parseBusinessDate(
       iso: trimmed,
       label: formatDate(year, month, day),
       month,
+      precision: "tanggal",
+      quarter: quarterOfMonth(month),
+      year,
+    };
+  }
+
+  const monthMatch = /^(\d{4})-(\d{2})$/.exec(trimmed);
+  if (monthMatch) {
+    const year = Number(monthMatch[1]);
+    const month = Number(monthMatch[2]);
+    if (month < 1 || month > 12) return undefined;
+
+    return {
+      iso: trimmed,
+      label: formatMonth(year, month),
+      month,
+      precision: "bulan",
       quarter: quarterOfMonth(month),
       year,
     };
@@ -118,6 +154,7 @@ export function parseBusinessDate(
     iso: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
     label: formatDate(year, month, day),
     month,
+    precision: "tanggal",
     quarter: quarterOfMonth(month),
     year,
   };

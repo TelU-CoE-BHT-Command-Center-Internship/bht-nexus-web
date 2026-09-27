@@ -2,10 +2,7 @@ import {
   nexusCategoryIsMonitored,
   nexusDomainHref,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import {
-  getNexusMonitoringRecords,
-  type NexusMonitoringRecord,
-} from "@/components/nexus-monitoring/nexus-monitoring-sources";
+import type { NexusMonitoringRecord } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import {
   type NexusKmIndicatorCategory,
   nexusKmIndicators,
@@ -64,7 +61,7 @@ function categoryDetail(
  * sumber dihitung dari rumah data resmi yang sama dengan halaman Data Resmi.
  */
 export function getNexusMonitoringCategories(
-  records: readonly NexusMonitoringRecord[] = getNexusMonitoringRecords(),
+  records: readonly NexusMonitoringRecord[],
 ): readonly NexusMonitoringCategory[] {
   const categories = new Map<
     NexusKmIndicatorCategory,

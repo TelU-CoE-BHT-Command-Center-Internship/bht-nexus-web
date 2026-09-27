@@ -4,19 +4,16 @@ import {
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import {
-  NEXUS_EVALUATION_PERIOD,
   NEXUS_MONITORING_HREF,
   nexusCategoryFromDomainSlug,
-  nexusDomainHref,
   nexusDomainSlug,
   nexusEvaluations,
   nexusIndicatorEvaluation,
   nexusIndicatorIdFromSlug,
   nexusIndicatorSlug,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import { monitoringStyles } from "@/components/nexus-monitoring/nexus-monitoring-ui";
-import { MonitoringConstructionState } from "@/components/nexus-monitoring/nexus-monitoring-under-construction";
-import { NexusWorkspaceBreadcrumb } from "@/components/nexus-workspace-ui/nexus-workspace-breadcrumb";
+import { NexusMonitoringIndicatorScreen } from "@/components/nexus-monitoring/nexus-monitoring-indicator-screen";
+import { nexusMonitoringPeriodParam } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
@@ -26,6 +23,7 @@ import {
 
 type NexusMonitoringIndicatorPageProps = {
   params: Promise<{ domain: string; indikator: string }>;
+  searchParams: Promise<{ periode?: string | string[] }>;
 };
 
 export function generateStaticParams() {
@@ -66,7 +64,7 @@ export async function generateMetadata({
       ? `${evaluation.indicator.id} · Monitoring KM`
       : "Indikator tidak ditemukan · Monitoring KM",
     description: evaluation
-      ? `Rincian indikator ${evaluation.indicator.id} pada pemantauan ${evaluation.indicator.category} sedang disiapkan.`
+      ? `Target, realisasi, sebaran triwulan, dan rekam resmi pembentuk ${evaluation.indicator.id} pada pemantauan ${evaluation.indicator.category}.`
       : "Indikator KM yang diminta tidak tersedia pada Monitoring KM.",
     robots: {
       follow: false,
@@ -76,15 +74,17 @@ export async function generateMetadata({
 }
 
 /**
- * Alamat satu indikator KM. Identitas indikator tetap kanonis dan setiap
- * alamat indikator terpantau tetap sah, sedangkan penyajian rinciannya
- * disiapkan pada paket kerja tersendiri.
+ * Rincian satu indikator KM: target periode, realisasi dari rekam resmi,
+ * selisihnya, sebaran triwulan, aturan pengukuran, catatan workbook, dan
+ * daftar rekam yang membentuk angkanya.
  */
 export default async function NexusMonitoringIndicatorPage({
   params,
+  searchParams,
 }: NexusMonitoringIndicatorPageProps) {
   const access = nexusPreviewWorkspaceAccess;
   const { domain, indikator } = await params;
+  const { periode } = await searchParams;
 
   if (!nexusWorkspaceCanOpen(access, "monitoring")) {
     return (
@@ -128,38 +128,12 @@ export default async function NexusMonitoringIndicatorPage({
     );
   }
 
-  const { category, id, label } = evaluation.indicator;
-  const domainHref = nexusDomainHref(category);
-
   return (
-    <NexusWorkspacePage
-      description={evaluation.definition}
-      descriptionId="monitoring-indicator-description"
-      meta={`Periode evaluasi ${NEXUS_EVALUATION_PERIOD}`}
-      title={`${id} · ${label}`}
-      titleId="monitoring-indicator-title"
-    >
-      <div className={monitoringStyles.indicatorTrail}>
-        <NexusWorkspaceBreadcrumb
-          current={id}
-          trail={[
-            { href: NEXUS_MONITORING_HREF, label: "Monitoring KM" },
-            { href: domainHref, label: category },
-          ]}
-        />
-      </div>
-
-      <MonitoringConstructionState
-        actions={
-          <NexusWorkspaceLinkButton href={domainHref} tone="primary">
-            {`Kembali ke ${category}`}
-          </NexusWorkspaceLinkButton>
-        }
-        compact
-        description={`Kami sedang menyiapkan halaman rincian ${id}. Target, realisasi, dan statusnya sudah dapat dibaca pada pemantauan ${category}.`}
-        title={`Rincian ${id} sedang disiapkan`}
-        titleId="monitoring-indicator-construction-title"
-      />
-    </NexusWorkspacePage>
+    <NexusMonitoringIndicatorScreen
+      capabilities={access.monitoringCapabilities}
+      indicatorId={evaluation.indicator.id}
+      key={evaluation.indicator.id}
+      requestedPeriodId={nexusMonitoringPeriodParam(periode)}
+    />
   );
 }

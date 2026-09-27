@@ -79,6 +79,13 @@ export type OfficialAcademicRecord = {
   programStudy?: string;
   provenance: AcademicProvenance[];
   publicId: string;
+  /**
+   * Triwulan realisasi menurut pelapor atau auditor (1–4). Dipakai hanya bila
+   * tanggal bisnis rekam belum tercatat; tanggal selalu lebih menentukan.
+   */
+  reportedQuarter?: 1 | 2 | 3 | 4;
+  /** Asal nilai triwulan dilaporkan, misalnya sel workbook atau koreksi. */
+  reportedQuarterSource?: string;
   quality: AcademicQuality;
   /** Nilai atau pengecualian pelengkapan yang sudah disetujui. */
   resolvedMetadata?: MetadataCompletionResolutions;

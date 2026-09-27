@@ -40,13 +40,23 @@ export function MonitoringComposition({
   chartLabel,
   items,
   unitLabel,
+  variant = "default",
 }: {
   centerLabel: string;
   chartLabel: string;
   items: readonly MonitoringCompositionItem[];
   unitLabel: string;
+  /**
+   * `centered` memusatkan cincin beserta legendanya pada kartu selebar penuh
+   * dan menghilangkan kolom nilai di tepi kanan. Kolom itu hanya berguna saat
+   * legendanya melebar mengikuti kartu; pada bentuk terpusat, nilainya sudah
+   * disebut pada keterangan tiap baris sehingga menuliskannya dua kali justru
+   * mengulang informasi yang sama.
+   */
+  variant?: "centered" | "default";
 }) {
   const router = useRouter();
+  const showValueColumn = variant === "default";
 
   const slices = useMemo(
     () =>
@@ -69,7 +79,7 @@ export function MonitoringComposition({
   );
 
   return (
-    <div className={styles.composition}>
+    <div className={styles.composition} data-variant={variant}>
       <div className={styles.compositionChart} data-clickable={hasLinks}>
         <MonitoringChartFrame fluid label={chartLabel}>
           <MonitoringCompositionChart
@@ -111,10 +121,12 @@ export function MonitoringComposition({
               </strong>
               <span>{item.detail}</span>
             </span>
-            <span className={styles.compositionValue}>
-              <strong>{item.value}</strong>
-              <span>{percentLabel(item.share)}</span>
-            </span>
+            {showValueColumn ? (
+              <span className={styles.compositionValue}>
+                <strong>{item.value}</strong>
+                <span>{percentLabel(item.share)}</span>
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>

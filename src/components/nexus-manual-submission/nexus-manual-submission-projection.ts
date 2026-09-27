@@ -343,6 +343,9 @@ function updateProjectedRecord<T extends ProjectableOfficialRecord>(
   addWhenPresent("evidenceNote", "evidenceUrl");
   addWhenPresent("evidenceStatus", "evidenceUrl");
   addWhenPresent("filedOn", "submissionDate");
+  addWhenPresent("publishedOn", "publicationDate");
+  addWhenPresent("reportedQuarter", "reportedQuarter");
+  addWhenPresent("reportedQuarterSource", "reportedQuarter");
   addWhenPresent("funder", "funder");
   addWhenPresent("funding", "funding");
   addWhenPresent("identifier", "identifier");
@@ -678,6 +681,15 @@ function officialSourceLabel(
   return "Manual" as const;
 }
 
+function projectionReportedQuarter(value: string | undefined) {
+  const quarter = Number(value);
+  if (![1, 2, 3, 4].includes(quarter)) return {};
+  return {
+    reportedQuarter: quarter as 1 | 2 | 3 | 4,
+    reportedQuarterSource: "Dilaporkan pengaju",
+  };
+}
+
 function commonProjection(projection: OfficialRecordDecisionProjection) {
   const submission = structuredSubmission(projection);
   const evidenceUrl = submission?.values.evidenceUrl?.startsWith("https://")
@@ -698,6 +710,7 @@ function commonProjection(projection: OfficialRecordDecisionProjection) {
     ],
     kpiResolutionStatus: projectionKpiStatus(projection),
     publicId,
+    ...projectionReportedQuarter(submission?.values.reportedQuarter),
     review: {
       candidateId: projection.candidate.id,
       decision:
@@ -806,6 +819,7 @@ function createPublication(
     identifier: identifier || undefined,
     kmLinks: projectionLinks(projection),
     missingFields: [...missingFields],
+    publishedOn: values.publicationDate || undefined,
     publisherUrl: values.evidenceUrl,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     quartile,

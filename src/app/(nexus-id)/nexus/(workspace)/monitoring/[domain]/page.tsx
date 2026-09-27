@@ -9,7 +9,7 @@ import {
   nexusDomainSlug,
 } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
 import { NexusMonitoringLanding } from "@/components/nexus-monitoring/nexus-monitoring-landing";
-import { getNexusMonitoringLandingData } from "@/components/nexus-monitoring/nexus-monitoring-landing-data";
+import { nexusMonitoringPeriodParam } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import {
@@ -20,6 +20,7 @@ import { nexusKmIndicatorCategories } from "@/content/nexus-km-indicators";
 
 type NexusMonitoringDomainPageProps = {
   params: Promise<{ domain: string }>;
+  searchParams: Promise<{ periode?: string | string[] }>;
 };
 
 export function generateStaticParams() {
@@ -55,9 +56,11 @@ export async function generateMetadata({
  */
 export default async function NexusMonitoringDomainPage({
   params,
+  searchParams,
 }: NexusMonitoringDomainPageProps) {
   const access = nexusPreviewWorkspaceAccess;
   const { domain } = await params;
+  const { periode } = await searchParams;
 
   if (!nexusWorkspaceCanOpen(access, "monitoring")) {
     return (
@@ -103,8 +106,9 @@ export default async function NexusMonitoringDomainPage({
 
   return (
     <NexusMonitoringLanding
-      {...getNexusMonitoringLandingData()}
+      capabilities={access.monitoringCapabilities}
       initialDomain={category}
+      requestedPeriodId={nexusMonitoringPeriodParam(periode)}
     />
   );
 }

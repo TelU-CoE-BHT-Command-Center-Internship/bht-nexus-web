@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/status-pengembangan_aktif-d7193f)](docs/current-scope.md)
 [![CI](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/actions/workflows/ci.yml/badge.svg)](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web/actions/workflows/ci.yml)
-[![Next.js](https://img.shields.io/badge/Next.js-16.3.0-111827)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.3.5-111827)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933)](https://nodejs.org/)
 
 [Situs](https://bht-nexus-web.vercel.app) · [Menjalankan proyek](#menjalankan-proyek) · [Dokumentasi](#dokumentasi) · [Kontribusi](CONTRIBUTING.md) · [Keamanan](SECURITY.md)
@@ -21,8 +21,11 @@ Web dan server dikelola terpisah. Repository ini berisi halaman dan interaksi pe
 
 ## Status singkat
 
-- Landing page dan halaman anggota tersedia dalam bahasa Indonesia dan Inggris, responsif, dan masih akan dilengkapi—terutama bagian mitra dan informasi yang menunggu konfirmasi tim.
-- Ruang kerja BHT Nexus sudah mempunyai Dashboard, Monitoring KM, Pengumpulan, Tinjauan, lima rumah Data Resmi, Dokumen, Anggota, Profil Saya, serta Administrasi beserta peran dan hak aksesnya.
+- Landing page dan halaman anggota sudah tersedia dalam bahasa Indonesia dan Inggris serta nyaman dibuka di berbagai ukuran layar, tetapi isinya masih terus berkembang. Beberapa bagian—terutama daftar mitra—masih menunggu data dan konfirmasi tim.
+- Ruang kerja BHT Nexus sudah mempunyai Dashboard, Monitoring KM, Broadcast / Newsletter, Pengumpulan, Tinjauan, lima rumah Data Resmi, Dokumen, Anggota, Profil Saya, serta Administrasi beserta peran dan hak aksesnya.
+- Monitoring KM menghitung realisasi hanya dari rekam resmi yang memenuhi ketentuan indikatornya. Rekam yang tertaut tetapi belum memenuhi ketentuan, atau yang bidang penentunya belum tercatat, tetap ditampilkan beserta alasannya sehingga selisihnya dapat ditelusuri.
+- Target Monitoring KM dapat dikelola per periode dengan riwayat versi, rekam pembentuk dapat dikoreksi langsung dari rinciannya, dan laporan periode maupun rekam indikator dapat diunduh sebagai berkas Excel (.xlsx).
+- Broadcast / Newsletter dipakai pengurus untuk menyusun email pengumuman bagi anggota aktif. Editornya visual seperti editor LMS: gambar bisa diletakkan di kiri, tengah, atau kanan dan diubah ukurannya, penerima dihitung dari direktori Anggota, dan hasil emailnya bisa dicek untuk desktop maupun ponsel. Pengirimannya masih menunggu layanan email di server, jadi untuk sekarang alurnya berhenti di tahap peninjauan.
 - Autentikasi, penyimpanan permanen, worker, dan audit belum ada di repository ini; keempatnya milik server.
 
 Inventaris per halaman, daftar route, batas implementasi, dan prioritas berikutnya ada di [cakupan produk saat ini](docs/current-scope.md).
@@ -68,11 +71,12 @@ npm run audit:deps
 
 | Bagian | Teknologi |
 |---|---|
-| Kerangka web | Next.js 16.3.0 |
+| Kerangka web | Next.js 16.3.5 |
 | Pustaka antarmuka | React 19.2.4 |
 | Bahasa | TypeScript 5.9.3 |
 | Gaya tampilan | CSS Modules dan token CSS |
 | Grafik | ApexCharts |
+| Editor isi broadcast | Tiptap 3.31.3 (ProseMirror) |
 | Peta interaktif | MapLibre GL JS dan OpenFreeMap |
 | Pemeriksaan kode | Biome 2.2.0 |
 | Runtime | Node.js 24.18.0 |
@@ -84,7 +88,7 @@ npm run audit:deps
 .
 ├── .github/            # template kontribusi dan pemeriksaan otomatis
 ├── docs/               # cakupan produk, panduan desain, dan batas data frontend
-├── scripts/            # pemeriksaan konfigurasi, kontras, dan kerentanan dependency
+├── scripts/            # penyiapan worker peta dan pemeriksaan kualitas
 ├── src/
 │   ├── app/             # route, layout, metadata, font, dan gaya global
 │   ├── assets/          # logo serta gambar landing page dan ruang kerja
@@ -98,6 +102,8 @@ npm run audit:deps
 ```
 
 Komponen dipisahkan menurut bagian tampilan supaya isi, presentasi, dan interaksi dapat diperbarui tanpa membuat satu halaman menjadi sulit dirawat. Palet dasar ruang kerja—permukaan, teks, garis, aksen, dan warna status—didefinisikan sebagai token CSS di `src/app/globals.css`.
+
+MapLibre 6 membutuhkan worker ESM beserta modul shared di alamat yang sama. `npm run dev` dan `npm run build` otomatis menyalin kedua berkas dari versi dependency yang terpasang ke `public/maplibre/`. Folder hasil salinan ini diabaikan Git; jangan mengedit atau menyalinnya secara manual. Gunakan perintah npm tersebut agar penyiapan worker ikut berjalan. Jika peta belum selesai dimuat dalam 30 detik, halaman menampilkan petunjuk menggunakan tautan arah; peta tetap dapat tampil bila pemuatan kemudian berhasil.
 
 ## Dokumentasi
 

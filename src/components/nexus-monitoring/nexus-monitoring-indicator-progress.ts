@@ -1,6 +1,7 @@
-import { NEXUS_EVALUATION_PERIOD } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import { measureMonitoredIndicators } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
-import type { NexusMonitoringRecord } from "@/components/nexus-monitoring/nexus-monitoring-sources";
+import {
+  measureMonitoredIndicators,
+  type NexusMonitoringInput,
+} from "@/components/nexus-monitoring/nexus-monitoring-measurement";
 import {
   type NexusKmIndicatorCategory,
   type NexusKmIndicatorId,
@@ -28,12 +29,13 @@ export type NexusMonitoringIndicatorProgress = {
  * sebagai belum dihitung, bukan sebagai capaian nol.
  */
 export function nexusMonitoringIndicatorProgress(
-  records: readonly NexusMonitoringRecord[],
+  input: NexusMonitoringInput,
 ): readonly NexusMonitoringIndicatorProgress[] {
   const measurements = new Map(
-    measureMonitoredIndicators(NEXUS_EVALUATION_PERIOD, records).map(
-      (measurement) => [measurement.evaluation.indicator.id, measurement],
-    ),
+    measureMonitoredIndicators(input).map((measurement) => [
+      measurement.evaluation.indicator.id,
+      measurement,
+    ]),
   );
 
   return nexusKmIndicators.map((indicator) => {
@@ -46,7 +48,7 @@ export function nexusMonitoringIndicatorProgress(
         progressPercent: null,
         realization: measurement?.realization ?? null,
         status: "unavailable",
-        target: measurement?.evaluation.target.value ?? null,
+        target: measurement?.target.value ?? null,
       };
     }
 
@@ -57,7 +59,7 @@ export function nexusMonitoringIndicatorProgress(
       progressPercent: Math.round(measurement.progress * 100),
       realization: measurement.realization,
       status: measurement.status === "tercapai" ? "reached" : "not-reached",
-      target: measurement.evaluation.target.value,
+      target: measurement.target.value,
     };
   });
 }

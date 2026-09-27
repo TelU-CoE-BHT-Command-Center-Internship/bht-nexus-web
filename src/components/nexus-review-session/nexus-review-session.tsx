@@ -23,6 +23,10 @@ import type {
   MetadataCompletionProposal,
   MetadataCompletionResolutions,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import type {
+  OfficialRecordCorrection,
+  OfficialRecordCorrectionMap,
+} from "@/components/nexus-official-records/nexus-official-record-corrections";
 import { useNexusCurrentProfile } from "@/components/nexus-profile/nexus-current-profile";
 import type {
   OfficialMetadataProjection,
@@ -47,7 +51,21 @@ export type NexusRecordCapabilities = NexusReviewCapabilities & {
   canReject: boolean;
   canRequestChanges: boolean;
   reviewBlockReason?: "not_authorized" | "self_submitted" | "unknown_submitter";
+  /** Pemeriksa sedang memutuskan kiriman yang ia ajukan sendiri. */
+  selfReview: boolean;
 };
+
+/**
+ * Kebijakan pemisahan tugas Tinjauan. SRS REQ-FUNC-024 hanya melarang pembuat
+ * menyetujui sendiri perubahan yang ditetapkan sensitif oleh kebijakan. Tim
+ * CoE BHT saat ini dijalankan oleh satu sampai dua auditor, sehingga pengaju
+ * boleh memutuskan kirimannya sendiri dan keputusan itu dicatat sebagai
+ * persetujuan mandiri. Ubah menjadi `false` ketika tim sudah memakai dua
+ * pemeriksa berbeda.
+ */
+export const NEXUS_REVIEW_POLICY = {
+  allowSelfReview: true,
+} as const;
 
 export type AuditCorrection = {
   after: Record<string, string>;
@@ -87,6 +105,13 @@ type NexusReviewSessionValue = {
   applyOfficialRecordDecision: (
     projection: OfficialRecordDecisionProjection,
   ) => void;
+  /** Menerapkan koreksi Monitoring KM langsung pada rekam resmi. */
+  applyOfficialRecordCorrection: (
+    correction: Omit<
+      OfficialRecordCorrection,
+      "actorId" | "actorName" | "actorRoleLabel" | "appliedAt" | "id"
+    >,
+  ) => OfficialRecordCorrection;
   clearCompletionProposal: (recordId: string) => void;
   completionProposals: Record<string, MetadataCompletionProposal>;
   createCompletionProposal: (
@@ -98,6 +123,7 @@ type NexusReviewSessionValue = {
   createSessionRecordId: (idPrefix: string) => string;
   records: AuditReviewRecord[];
   officialMetadataByRecordId: OfficialMetadataProjectionMap;
+  officialRecordCorrections: OfficialRecordCorrectionMap;
   officialRecordDecisions: OfficialRecordDecisionProjectionMap;
   runtimeByRecordId: Record<string, AuditRuntimeState>;
   submitRecord: (record: AuditReviewRecord) => void;
@@ -168,6 +194,8 @@ export function NexusReviewSessionProvider({
     useState<OfficialMetadataProjectionMap>({});
   const [officialRecordDecisions, setOfficialRecordDecisions] =
     useState<OfficialRecordDecisionProjectionMap>({});
+  const [officialRecordCorrections, setOfficialRecordCorrections] =
+    useState<OfficialRecordCorrectionMap>({});
   const [runtimeByRecordId, setRuntimeByRecordId] = useState<
     Record<string, AuditRuntimeState>
   >({});
@@ -224,12 +252,46 @@ export function NexusReviewSessionProvider({
   }, []);
   const applyOfficialMetadataCompletion = useCallback(
     (recordId: string, projection: OfficialMetadataProjection) => {
+      // Pelengkapan berikutnya pada rekam yang sama menambah resolusinya,
+      // tidak menghapus bidang yang sudah disetujui sebelumnya.
       setOfficialMetadataByRecordId((current) => ({
         ...current,
-        [recordId]: projection,
+        [recordId]: {
+          ...projection,
+          resolutions: {
+            ...current[recordId]?.resolutions,
+            ...projection.resolutions,
+          },
+        },
       }));
     },
     [],
+  );
+  const applyOfficialRecordCorrection = useCallback(
+    (
+      input: Omit<
+        OfficialRecordCorrection,
+        "actorId" | "actorName" | "actorRoleLabel" | "appliedAt" | "id"
+      >,
+    ) => {
+      const correction: OfficialRecordCorrection = {
+        ...input,
+        actorId: actor.id,
+        actorName: actor.name,
+        actorRoleLabel: actor.roleLabel,
+        appliedAt: new Date().toISOString(),
+        id: createSessionRecordId("KOR"),
+      };
+      setOfficialRecordCorrections((current) => ({
+        ...current,
+        [input.recordPublicId]: [
+          ...(current[input.recordPublicId] ?? []),
+          correction,
+        ],
+      }));
+      return correction;
+    },
+    [actor.id, actor.name, actor.roleLabel, createSessionRecordId],
   );
   const applyOfficialRecordDecision = useCallback(
     (projection: OfficialRecordDecisionProjection) => {
@@ -248,11 +310,13 @@ export function NexusReviewSessionProvider({
       const hasKnownSubmitter = Boolean(state.latestSubmittedByActorId);
       const submittedByCurrentActor =
         state.latestSubmittedByActorId === actor.id;
+      const selfReviewBlocked =
+        submittedByCurrentActor && !NEXUS_REVIEW_POLICY.allowSelfReview;
       const canReview =
         capabilities.canReview &&
         state.status === "waiting" &&
         hasKnownSubmitter &&
-        !submittedByCurrentActor;
+        !selfReviewBlocked;
 
       return {
         canApprove: canReview,
@@ -266,11 +330,12 @@ export function NexusReviewSessionProvider({
           state.fixRequest?.assigneeActorId === actor.id,
         reviewBlockReason: !hasKnownSubmitter
           ? "unknown_submitter"
-          : submittedByCurrentActor
+          : selfReviewBlocked
             ? "self_submitted"
             : !capabilities.canReview
               ? "not_authorized"
               : undefined,
+        selfReview: canReview && submittedByCurrentActor,
       };
     },
     [actor.id, capabilities.canReview, capabilities.canSubmitCorrection],
@@ -293,6 +358,7 @@ export function NexusReviewSessionProvider({
     () => ({
       actor,
       applyOfficialMetadataCompletion,
+      applyOfficialRecordCorrection,
       applyOfficialRecordDecision,
       capabilities,
       capabilitiesFor,
@@ -302,6 +368,7 @@ export function NexusReviewSessionProvider({
       createSessionRecordId,
       records,
       officialMetadataByRecordId,
+      officialRecordCorrections,
       officialRecordDecisions,
       runtimeByRecordId,
       submitRecord,
@@ -311,6 +378,7 @@ export function NexusReviewSessionProvider({
     [
       actor,
       applyOfficialMetadataCompletion,
+      applyOfficialRecordCorrection,
       applyOfficialRecordDecision,
       capabilities,
       capabilitiesFor,
@@ -320,6 +388,7 @@ export function NexusReviewSessionProvider({
       createSessionRecordId,
       records,
       officialMetadataByRecordId,
+      officialRecordCorrections,
       officialRecordDecisions,
       runtimeByRecordId,
       submitRecord,

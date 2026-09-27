@@ -15,10 +15,10 @@ import {
 } from "@/components/nexus-academic/nexus-academic-content";
 import { NexusAcademicIcon } from "@/components/nexus-academic/nexus-academic-icons";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
-import { projectOfficialAcademics } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
+import { projectNexusAcademics } from "@/components/nexus-official-records/nexus-official-records";
+import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
 import { createAcademicCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -212,20 +212,10 @@ export function NexusAcademic({
   initialMemberId,
 }: NexusAcademicProps) {
   const reviewSession = useNexusReviewSession();
+  const officialRecordSession = useNexusOfficialRecordSession();
   const records = useMemo(
-    () =>
-      projectOfficialAcademics(
-        projectOfficialMetadataRecords(
-          content.records,
-          reviewSession.officialMetadataByRecordId,
-        ),
-        reviewSession.officialRecordDecisions,
-      ),
-    [
-      content.records,
-      reviewSession.officialMetadataByRecordId,
-      reviewSession.officialRecordDecisions,
-    ],
+    () => projectNexusAcademics(content.records, officialRecordSession),
+    [content.records, officialRecordSession],
   );
   const [currentPage, setCurrentPage] = useState(1);
   const proposals = reviewSession.completionProposals;

@@ -82,6 +82,13 @@ export type OfficialActivityRecord = {
   primaryParty: string;
   provenance: ActivityProvenance[];
   publicId: string;
+  /**
+   * Triwulan realisasi menurut pelapor atau auditor (1–4). Dipakai hanya bila
+   * tanggal bisnis rekam belum tercatat; tanggal selalu lebih menentukan.
+   */
+  reportedQuarter?: 1 | 2 | 3 | 4;
+  /** Asal nilai triwulan dilaporkan, misalnya sel workbook atau koreksi. */
+  reportedQuarterSource?: string;
   publicationFrequency?: string;
   quality: ActivityQuality;
   relatedMemberIds: string[];

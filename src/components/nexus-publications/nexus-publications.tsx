@@ -3,12 +3,12 @@
 import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
-import { projectOfficialPublications } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
+import { projectNexusPublications } from "@/components/nexus-official-records/nexus-official-records";
+import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
 import {
   type NexusPublicationsContent,
-  normalizeProjectedPublication,
   type OfficialPublication,
   type PublicationCompletionResolutions,
   type PublicationIndicatorId,
@@ -26,7 +26,6 @@ import {
   type PublicationSourceId,
   publicationHasSource,
 } from "@/components/nexus-publications/nexus-publications-utils";
-import { projectOfficialMetadataRecords } from "@/components/nexus-review-session/nexus-official-record-projection";
 import { createMetadataCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
@@ -345,21 +344,10 @@ export function NexusPublications({
   initialMemberId,
 }: NexusPublicationsProps) {
   const reviewSession = useNexusReviewSession();
+  const officialRecordSession = useNexusOfficialRecordSession();
   const records = useMemo(
-    () =>
-      projectOfficialPublications(
-        projectOfficialMetadataRecords(
-          content.records,
-          reviewSession.officialMetadataByRecordId,
-          normalizeProjectedPublication,
-        ),
-        reviewSession.officialRecordDecisions,
-      ),
-    [
-      content.records,
-      reviewSession.officialMetadataByRecordId,
-      reviewSession.officialRecordDecisions,
-    ],
+    () => projectNexusPublications(content.records, officialRecordSession),
+    [content.records, officialRecordSession],
   );
   const [activeSourceId, setActiveSourceId] =
     useState<PublicationSourceId>("all");

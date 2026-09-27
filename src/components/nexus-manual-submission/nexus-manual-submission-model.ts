@@ -237,6 +237,13 @@ const researchContractFields = [
     "Nama institusi mitra bila tercantum",
     { required: false },
   ),
+  {
+    hint: "Menentukan triwulan realisasi. Boleh dikosongkan bila belum tercatat.",
+    key: "startDate",
+    label: "Tanggal mulai kontrak (opsional)",
+    required: false,
+    type: "date",
+  },
   textField(
     "referenceNumber",
     "Nomor kontrak (opsional)",
@@ -1077,9 +1084,31 @@ export function createEmptyManualSubmissionValues(): ManualSubmissionValues {
     evidenceUrl: "",
     note: "",
     recordType: "",
+    reportedQuarter: "",
     title: "",
   };
 }
+
+/**
+ * Triwulan realisasi menurut pengaju. Bidang ini opsional dan hanya dipakai
+ * Monitoring ketika tanggal bisnis rekam belum tercatat; tanggal yang terisi
+ * selalu lebih menentukan. Worksheet KM tanpa kolom tanggal (misalnya kontrak
+ * riset, proposal, dan bimbingan) memerlukannya supaya realisasi dapat
+ * dipetakan ke TW1–TW4.
+ */
+export const manualReportedQuarterField: ManualFieldDefinition = {
+  choices: [
+    { label: "TW1 · Januari–Maret", value: "1" },
+    { label: "TW2 · April–Juni", value: "2" },
+    { label: "TW3 · Juli–September", value: "3" },
+    { label: "TW4 · Oktober–Desember", value: "4" },
+  ],
+  hint: "Opsional. Dipakai bila tanggal kegiatan, terbit, atau pengajuan belum diketahui.",
+  key: "reportedQuarter",
+  label: "Triwulan dilaporkan",
+  required: false,
+  type: "select",
+};
 
 export function manualSubtype(
   domain: ManualSubmissionDomain,
@@ -1213,6 +1242,15 @@ export function validateManualSubmissionFields(
         errors[key] =
           `${label ?? "Tanggal"} harus berada pada periode evaluasi ${selectedYear}.`;
       }
+    }
+
+    if (
+      values.startDate &&
+      !values.endDate &&
+      Number.isInteger(selectedYear) &&
+      Number(values.startDate.slice(0, 4)) !== selectedYear
+    ) {
+      errors.startDate = `Tanggal mulai kontrak harus berada pada periode evaluasi ${selectedYear}.`;
     }
 
     if (values.startDate && values.endDate && Number.isInteger(selectedYear)) {
@@ -1474,6 +1512,24 @@ function reviewFields(
       value: values.evaluationPeriod,
     },
   );
+  if (values.reportedQuarter) {
+    fields.push({
+      id: "reportedQuarter",
+      input: {
+        choices: manualReportedQuarterField.choices
+          ? [...manualReportedQuarterField.choices]
+          : undefined,
+        required: false,
+        type: "select",
+      },
+      label: manualReportedQuarterField.label,
+      rawValue: values.reportedQuarter,
+      value:
+        manualReportedQuarterField.choices?.find(
+          (choice) => choice.value === values.reportedQuarter,
+        )?.label ?? values.reportedQuarter,
+    });
+  }
 
   for (const field of subtype.fields) {
     const value = values[field.key]?.trim();
