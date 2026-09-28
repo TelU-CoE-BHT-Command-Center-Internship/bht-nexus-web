@@ -27,14 +27,16 @@ export async function getServerSession(): Promise<{
     return null;
   }
 
+  // /auth/me is a better-auth-mounted route - it returns {session, user}
+  // directly, not wrapped in this app's {success, data} envelope.
   const body = (await response.json().catch(() => null)) as {
-    data?: { session: ApiSession; user: ApiSessionUser };
-    success?: boolean;
+    session?: ApiSession;
+    user?: ApiSessionUser;
   } | null;
 
-  if (body === null || body.success !== true || body.data === undefined) {
+  if (body === null || body.session === undefined || body.user === undefined) {
     return null;
   }
 
-  return body.data;
+  return { session: body.session, user: body.user };
 }

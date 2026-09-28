@@ -90,6 +90,32 @@ async function requestEnvelope<T>(
   });
 
   const parsed: unknown = await response.json().catch(() => null);
+
+  // better-auth's own mounted routes (/auth/*) return their native response
+  // shape directly, not wrapped in this app's {success, data} envelope - see
+  // nexus-server's CLAUDE.md, dual-ID §2's accepted exception for these routes.
+  if (path.startsWith("/auth/")) {
+    if (!response.ok) {
+      const errorBody =
+        typeof parsed === "object" && parsed !== null
+          ? (parsed as { message?: unknown; code?: unknown })
+          : {};
+      throw new ApiRequestError(
+        response.status,
+        typeof errorBody.code === "string" ? errorBody.code : "AUTH_ERROR",
+        typeof errorBody.message === "string"
+          ? errorBody.message
+          : response.statusText,
+      );
+    }
+    return {
+      success: true,
+      statusCode: response.status,
+      message: "",
+      data: parsed as T,
+    };
+  }
+
   const body =
     typeof parsed === "object" &&
     parsed !== null &&
