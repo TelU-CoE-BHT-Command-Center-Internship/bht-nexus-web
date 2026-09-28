@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import type { ApiSession, ApiSessionUser } from "@/lib/api-auth";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001/api/v1";
+  process.env.API_INTERNAL_BASE_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "http://localhost:3001/api/v1";
 
 export async function getServerSession(): Promise<{
   session: ApiSession;
