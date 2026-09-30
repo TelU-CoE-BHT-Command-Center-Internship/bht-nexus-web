@@ -1,0 +1,4 @@
+pre-commit:
+  commands:
+    no-leaks:
+      run: node scripts/check-no-leaks.mjs

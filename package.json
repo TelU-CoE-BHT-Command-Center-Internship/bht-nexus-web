@@ -17,10 +17,12 @@
     "validate:config": "node scripts/validate-github-config.mjs",
     "validate:contrast": "node scripts/validate-contrast.mjs",
     "audit:deps": "node scripts/audit-dependencies.mjs",
+    "check:leaks": "node scripts/check-no-leaks.mjs",
+    "hooks:install": "lefthook install",
     "lint": "biome check",
     "format": "biome format --write",
     "typecheck": "next typegen && tsc --noEmit",
-    "check": "npm run validate:config && npm run validate:contrast && npm run lint && npm run typecheck && npm run build"
+    "check": "npm run validate:config && npm run validate:contrast && npm run check:leaks && npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",
@@ -41,6 +43,7 @@
     "@types/node": "24.13.3",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "lefthook": "1.8.5",
     "typescript": "5.9.3",
     "yaml": "2.9.0"
   },
