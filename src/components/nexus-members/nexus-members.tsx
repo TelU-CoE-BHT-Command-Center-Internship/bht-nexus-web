@@ -8,22 +8,24 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useNexusAccessPolicySession } from "@/components/nexus-access-policy/nexus-access-policy-session";
-import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
 import type { NexusMemberCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
-import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
 import {
   type MemberDetailTab,
+  type MemberRelatedCatalogId,
   NexusMemberDetail,
 } from "@/components/nexus-members/nexus-member-detail";
 import { NexusMemberDirectory } from "@/components/nexus-members/nexus-member-directory";
 import { NexusMemberProfileDrawer } from "@/components/nexus-members/nexus-member-profile-drawer";
+import {
+  useNexusMemberDetail,
+  useNexusMemberDirectory,
+} from "@/components/nexus-members/nexus-member-server";
 import { MemberIcon } from "@/components/nexus-members/nexus-member-ui";
 import styles from "@/components/nexus-members/nexus-members.module.css";
-import {
-  type NexusMemberRecord,
-  type NexusMembersContent,
-  projectNexusMemberAccounts,
+import type {
+  NexusMemberRecord,
+  NexusMembersContent,
+  NexusMemberViewRecord,
 } from "@/components/nexus-members/nexus-members-content";
 import {
   createEditDraft,
@@ -45,8 +47,16 @@ type StatusFilter = (typeof statusDefinitions)[number]["id"];
 
 type NexusMembersProps = {
   capabilities: NexusMemberCapabilities;
+  /** Pengumpulan data dapat dimulai dari identitas akademik anggota. */
+  canStartCollection: boolean;
   content: NexusMembersContent;
   initialMemberId?: string;
+  /**
+   * Penyimpanan profil anggota. Selama belum tersedia, tindakan tambah dan
+   * ubah tetap tampil sebagai tindakan yang segera tersedia.
+   */
+  onSaveMember?: (member: NexusMemberRecord) => void;
+  relatedCatalogIds?: readonly MemberRelatedCatalogId[];
 };
 
 function memberMatchesQuery(member: NexusMemberRecord, query: string) {
@@ -70,26 +80,22 @@ function memberMatchesQuery(member: NexusMemberRecord, query: string) {
 
 export function NexusMembers({
   capabilities,
+  canStartCollection,
   content,
   initialMemberId,
+  onSaveMember,
+  relatedCatalogIds,
 }: NexusMembersProps) {
   const router = useRouter();
-  const { accounts } = useNexusAccountSession();
-  const { roles } = useNexusAccessPolicySession();
-  const { records: memberRecords, saveMember } = useNexusMemberSession();
-  const records = useMemo(
-    () => projectNexusMemberAccounts(memberRecords, accounts, roles),
-    [accounts, memberRecords, roles],
-  );
+  const directory = useNexusMemberDirectory();
+  const records: readonly NexusMemberViewRecord[] = directory.records;
+  const isDirectoryReady = directory.state === "ready";
   const initialMemberIsKnown =
     !initialMemberId ||
-    memberRecords.some((member) => member.id === initialMemberId);
+    !isDirectoryReady ||
+    records.some((member) => member.id === initialMemberId);
   const [selectedMemberId, setSelectedMemberId] = useState(
-    initialMemberId
-      ? initialMemberIsKnown
-        ? initialMemberId
-        : ""
-      : (memberRecords[0]?.id ?? ""),
+    initialMemberId ?? "",
   );
   const [invalidMemberContextDismissed, setInvalidMemberContextDismissed] =
     useState(false);
@@ -119,14 +125,14 @@ export function NexusMembers({
   useEffect(() => {
     setInvalidMemberContextDismissed(false);
     if (!initialMemberId) return;
-    setSelectedMemberId(initialMemberIsKnown ? initialMemberId : "");
-  }, [initialMemberId, initialMemberIsKnown]);
+    setSelectedMemberId(initialMemberId);
+  }, [initialMemberId]);
 
   const fieldOptions = useMemo(
     () =>
-      Array.from(new Set(records.map((member) => member.coeAssignment))).sort(
-        (first, second) => first.localeCompare(second, "id-ID"),
-      ),
+      Array.from(
+        new Set(records.map((member) => member.coeAssignment).filter(Boolean)),
+      ).sort((first, second) => first.localeCompare(second, "id-ID")),
     [records],
   );
 
@@ -152,11 +158,15 @@ export function NexusMembers({
     (safePage - 1) * PAGE_SIZE,
     safePage * PAGE_SIZE,
   );
-  const selectedMember =
-    initialMemberId && !initialMemberIsKnown && !invalidMemberContextDismissed
-      ? undefined
-      : (filteredMembers.find((member) => member.id === selectedMemberId) ??
-        filteredMembers[0]);
+  const showsInvalidContext =
+    Boolean(initialMemberId) &&
+    !initialMemberIsKnown &&
+    !invalidMemberContextDismissed;
+  const selectedMember = showsInvalidContext
+    ? undefined
+    : (filteredMembers.find((member) => member.id === selectedMemberId) ??
+      filteredMembers[0]);
+  const detail = useNexusMemberDetail(selectedMember?.id);
 
   function selectFirstResult() {
     setSelectedMemberId("");
@@ -186,8 +196,8 @@ export function NexusMembers({
   }
 
   function openMemberEditor() {
-    if (!selectedMember) return;
-    const value = createEditDraft(selectedMember);
+    if (!detail.record) return;
+    const value = createEditDraft(detail.record);
     setProfileErrors({});
     setProfileEditor({ initialValue: value, mode: "edit", value });
   }
@@ -223,11 +233,9 @@ export function NexusMembers({
 
   function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!profileEditor) return;
+    if (!profileEditor || !onSaveMember) return;
     const currentMember =
-      profileEditor.mode === "edit"
-        ? memberRecords.find((member) => member.id === selectedMember?.id)
-        : undefined;
+      profileEditor.mode === "edit" ? detail.record : undefined;
     const errors = validateMemberProfile(
       profileEditor.value,
       records,
@@ -246,13 +254,12 @@ export function NexusMembers({
       profileEditor.value,
       currentMember,
     );
-    saveMember(savedMember);
-    if (profileEditor.mode === "create") {
-      setAnnouncement("Anggota baru berhasil ditambahkan.");
-    } else {
-      setAnnouncement("Perubahan profil anggota berhasil disimpan.");
-    }
-
+    onSaveMember(savedMember);
+    setAnnouncement(
+      profileEditor.mode === "create"
+        ? "Anggota baru berhasil ditambahkan."
+        : "Perubahan profil anggota berhasil disimpan.",
+    );
     setSelectedMemberId(savedMember.id);
     setActiveStatus("all");
     setFieldFilter("all");
@@ -261,6 +268,141 @@ export function NexusMembers({
     setMobileView("detail");
     setProfileErrors({});
     setProfileEditor(null);
+  }
+
+  function renderDetail() {
+    if (directory.state === "loading") {
+      return (
+        <article
+          aria-busy="true"
+          className={`${styles.detail} ${styles.detailEmpty}`}
+        >
+          <div className={styles.detailEmptyContent}>
+            <h2>Memuat direktori anggota…</h2>
+          </div>
+        </article>
+      );
+    }
+
+    if (directory.state === "error") {
+      return (
+        <article className={`${styles.detail} ${styles.detailEmpty}`}>
+          <div className={styles.detailEmptyContent} role="alert">
+            <h2>Direktori anggota belum dapat dimuat</h2>
+            <p>{directory.errorMessage}</p>
+            <NexusWorkspaceButton onClick={directory.retry} type="button">
+              Coba lagi
+            </NexusWorkspaceButton>
+          </div>
+        </article>
+      );
+    }
+
+    if (selectedMember && detail.state === "ready" && detail.record) {
+      return (
+        <NexusMemberDetail
+          activeTab={activeDetailTab}
+          canStartCollection={canStartCollection}
+          capabilities={capabilities}
+          editingAvailable={onSaveMember !== undefined}
+          member={detail.record}
+          onBack={() => setMobileView("list")}
+          onEdit={openMemberEditor}
+          onOpenAcademicEditor={openMemberEditor}
+          onTabChange={setActiveDetailTab}
+          relatedCatalogIds={relatedCatalogIds}
+        />
+      );
+    }
+
+    if (selectedMember && detail.state === "error") {
+      return (
+        <article className={`${styles.detail} ${styles.detailEmpty}`}>
+          <div className={styles.detailEmptyContent} role="alert">
+            <h2>
+              {detail.notFound
+                ? "Profil anggota tidak ditemukan"
+                : "Rincian anggota belum dapat dimuat"}
+            </h2>
+            <p>
+              {detail.notFound
+                ? "Profil ini sudah tidak tersedia. Pilih anggota lain dari direktori."
+                : detail.errorMessage}
+            </p>
+            <NexusWorkspaceButton
+              onClick={detail.notFound ? directory.retry : detail.retry}
+              type="button"
+            >
+              {detail.notFound ? "Muat ulang direktori" : "Coba lagi"}
+            </NexusWorkspaceButton>
+          </div>
+        </article>
+      );
+    }
+
+    if (selectedMember) {
+      return (
+        <article
+          aria-busy="true"
+          className={`${styles.detail} ${styles.detailEmpty}`}
+        >
+          <div className={styles.detailEmptyContent}>
+            <h2>Memuat profil anggota…</h2>
+          </div>
+        </article>
+      );
+    }
+
+    return (
+      <article className={`${styles.detail} ${styles.detailEmpty}`}>
+        <div className={styles.detailEmptyContent}>
+          <span aria-hidden="true">
+            <MemberIcon name="plus" />
+          </span>
+          <h2>
+            {showsInvalidContext
+              ? "Profil anggota tidak ditemukan"
+              : records.length === 0
+                ? "Direktori anggota belum dimulai"
+                : "Tidak ada anggota pada hasil ini"}
+          </h2>
+          <p>
+            {showsInvalidContext
+              ? "ID anggota pada tautan ini tidak tersedia. Kembali ke direktori untuk memilih profil yang benar."
+              : records.length === 0
+                ? "Catat identitas anggota terlebih dahulu. Akses akun dapat diberikan kemudian."
+                : "Ubah pencarian atau filter di daftar anggota untuk memilih profil lain."}
+          </p>
+          {showsInvalidContext ? (
+            <NexusWorkspaceButton
+              onClick={() => {
+                setInvalidMemberContextDismissed(true);
+                setSelectedMemberId(records[0]?.id ?? "");
+                router.replace("/nexus/anggota");
+              }}
+              type="button"
+            >
+              Kembali ke direktori
+            </NexusWorkspaceButton>
+          ) : records.length === 0 &&
+            capabilities.canCreateMember &&
+            onSaveMember ? (
+            <NexusWorkspaceButton
+              onClick={openNewMemberEditor}
+              tone="primary"
+              type="button"
+            >
+              <MemberIcon name="plus" />
+              Tambah anggota pertama
+            </NexusWorkspaceButton>
+          ) : records.length > 0 ? (
+            <NexusWorkspaceButton onClick={resetFilters} type="button">
+              Tampilkan semua anggota
+            </NexusWorkspaceButton>
+          ) : null}
+        </div>
+      </article>
+    );
   }
 
   return (
@@ -272,12 +414,17 @@ export function NexusMembers({
       <NexusMemberDirectory
         activeStatus={activeStatus}
         canCreateMember={capabilities.canCreateMember}
+        creationAvailable={onSaveMember !== undefined}
         currentPage={safePage}
         description={content.description}
         fieldFilter={fieldFilter}
         fieldOptions={fieldOptions}
         filterOpen={filterOpen}
         filteredCount={filteredMembers.length}
+        isLoading={directory.state === "loading"}
+        loadError={
+          directory.state === "error" ? directory.errorMessage : undefined
+        }
         onCreate={openNewMemberEditor}
         onFieldFilterChange={(value) => {
           setFieldFilter(value);
@@ -290,6 +437,7 @@ export function NexusMembers({
           selectFirstResult();
         }}
         onResetFilters={resetFilters}
+        onRetry={directory.retry}
         onSelect={selectMember}
         onStatusChange={(status) => {
           setActiveStatus(status);
@@ -303,77 +451,14 @@ export function NexusMembers({
         visibleMembers={visibleMembers}
       />
 
-      {selectedMember ? (
-        <NexusMemberDetail
-          activeTab={activeDetailTab}
-          capabilities={capabilities}
-          member={selectedMember}
-          onBack={() => setMobileView("list")}
-          onEdit={openMemberEditor}
-          onOpenAcademicEditor={openMemberEditor}
-          onTabChange={setActiveDetailTab}
-        />
-      ) : (
-        <article className={`${styles.detail} ${styles.detailEmpty}`}>
-          <div className={styles.detailEmptyContent}>
-            <span aria-hidden="true">
-              <MemberIcon name="plus" />
-            </span>
-            <h2>
-              {initialMemberId &&
-              !initialMemberIsKnown &&
-              !invalidMemberContextDismissed
-                ? "Profil anggota tidak ditemukan"
-                : records.length === 0
-                  ? "Direktori anggota belum dimulai"
-                  : "Tidak ada anggota pada hasil ini"}
-            </h2>
-            <p>
-              {initialMemberId &&
-              !initialMemberIsKnown &&
-              !invalidMemberContextDismissed
-                ? "ID anggota pada tautan ini tidak tersedia. Kembali ke direktori untuk memilih profil yang benar."
-                : records.length === 0
-                  ? "Catat identitas anggota terlebih dahulu. Akses akun dapat diberikan kemudian."
-                  : "Ubah pencarian atau filter di daftar anggota untuk memilih profil lain."}
-            </p>
-            {initialMemberId &&
-            !initialMemberIsKnown &&
-            !invalidMemberContextDismissed ? (
-              <NexusWorkspaceButton
-                onClick={() => {
-                  setInvalidMemberContextDismissed(true);
-                  setSelectedMemberId(records[0]?.id ?? "");
-                  router.replace("/nexus/anggota");
-                }}
-                type="button"
-              >
-                Kembali ke direktori
-              </NexusWorkspaceButton>
-            ) : records.length === 0 && capabilities.canCreateMember ? (
-              <NexusWorkspaceButton
-                onClick={openNewMemberEditor}
-                tone="primary"
-                type="button"
-              >
-                <MemberIcon name="plus" />
-                Tambah anggota pertama
-              </NexusWorkspaceButton>
-            ) : records.length > 0 ? (
-              <NexusWorkspaceButton onClick={resetFilters} type="button">
-                Tampilkan semua anggota
-              </NexusWorkspaceButton>
-            ) : null}
-          </div>
-        </article>
-      )}
+      {renderDetail()}
 
       {profileEditor ? (
         <NexusMemberProfileDrawer
           canDeactivateMember={capabilities.canDeactivateMember}
           editor={profileEditor}
           errors={profileErrors}
-          memberName={selectedMember?.identity.preferredName}
+          memberName={detail.record?.identity.preferredName}
           onChange={changeProfileDraft}
           onClose={requestCloseProfileEditor}
           onEditorChange={(editor) => {

@@ -23,6 +23,7 @@ export type NexusWorkspaceAccess = {
   administrationCapabilities: NexusAdministrationCapabilities;
   allowedNavigationIds: readonly NexusWorkspaceNavigationId[];
   broadcastCapabilities: NexusBroadcastCapabilities;
+  collectionCapabilities: NexusCollectionCapabilities;
   memberCapabilities: NexusMemberCapabilities;
   monitoringCapabilities: NexusMonitoringCapabilities;
   reviewCapabilities: NexusReviewCapabilities;
@@ -36,6 +37,11 @@ export type NexusWorkspaceAccess = {
  */
 export type NexusBroadcastCapabilities = {
   canCompose: boolean;
+};
+
+/** Kemampuan pada Pengumpulan: melihat riwayat terpisah dari mengajukan pekerjaan baru. */
+export type NexusCollectionCapabilities = {
+  canCreateJob: boolean;
 };
 
 /**
@@ -90,6 +96,9 @@ export const nexusPreviewWorkspaceAccess = {
   ],
   broadcastCapabilities: {
     canCompose: true,
+  },
+  collectionCapabilities: {
+    canCreateJob: true,
   },
   memberCapabilities: {
     canCreateMember: true,
@@ -289,6 +298,7 @@ export function nexusWorkspaceAccessFromRoles(
         navigation.has(id),
       ),
     broadcastCapabilities: { canCompose: canBroadcast },
+    collectionCapabilities: { canCreateJob: has("job.create") },
     memberCapabilities: {
       canCreateMember: has("iam.manage"),
       canDeactivateMember: has("iam.manage"),

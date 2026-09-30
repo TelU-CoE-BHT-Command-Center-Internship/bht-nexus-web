@@ -21,6 +21,7 @@ import { statusLabels } from "@/components/nexus-members/nexus-members-model";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceLinkButton,
+  NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 
 export type MemberDetailTab =
@@ -42,78 +43,96 @@ const relatedCatalogs = [
   {
     description: "Karya ilmiah resmi yang mencantumkan anggota ini.",
     href: "/nexus/publikasi",
+    id: "publications",
     label: "Publikasi",
   },
   {
     description: "Hak cipta dan paten yang mencantumkan anggota ini.",
     href: "/nexus/kekayaan-intelektual",
+    id: "intellectual-property",
     label: "Kekayaan Intelektual",
   },
   {
     description: "Kontrak dan proposal yang melibatkan anggota ini.",
     href: "/nexus/kontrak-proposal",
+    id: "contracts",
     label: "Kontrak & Proposal",
   },
   {
     description: "Bimbingan dan rekam akademik anggota ini.",
     href: "/nexus/akademik",
+    id: "academic",
     label: "Akademik",
   },
   {
     description: "Kegiatan dan pengabdian yang melibatkan anggota ini.",
     href: "/nexus/kegiatan",
+    id: "activities",
     label: "Kegiatan & Pengabdian",
   },
 ] as const;
 
+export type MemberRelatedCatalogId = (typeof relatedCatalogs)[number]["id"];
+
+const SINTA_PROFILE_URL =
+  "https://sinta.kemdiktisaintek.go.id/authors/profile/";
+
 type MemberDetailProps = {
+  /** Pengelolaan akun dari halaman Anggota; bila belum tersedia tombolnya tampil sebagai "Segera". */
+  accountManagementAvailable?: boolean;
   activeTab: MemberDetailTab;
+  canStartCollection: boolean;
   capabilities: NexusMemberCapabilities;
+  /** Penyuntingan profil; bila belum tersedia tombolnya tampil sebagai "Segera". */
+  editingAvailable: boolean;
   member: NexusMemberViewRecord;
   onBack: () => void;
   onEdit: () => void;
   onOpenAcademicEditor: () => void;
   onTabChange: (tab: MemberDetailTab) => void;
+  /** Katalog data resmi yang dapat dibuka dengan filter anggota ini. */
+  relatedCatalogIds?: readonly MemberRelatedCatalogId[];
 };
 
 export function NexusMemberDetail({
+  accountManagementAvailable = false,
   activeTab,
+  canStartCollection,
   capabilities,
+  editingAvailable,
   member,
   onBack,
   onEdit,
   onOpenAcademicEditor,
   onTabChange,
+  relatedCatalogIds,
 }: MemberDetailProps) {
   const linkedAccount =
     member.accountAccess.kind === "LINKED"
       ? member.accountAccess.account
       : undefined;
   const accountRoleLabel = linkedAccount
-    ? linkedAccount.role.kind === "KNOWN"
-      ? linkedAccount.role.role.label
-      : linkedAccount.role.kind === "UNKNOWN"
-        ? "Peran perlu ditinjau"
-        : "Belum ditetapkan"
+    ? (linkedAccount.roleLabel ?? "Belum ditetapkan")
     : undefined;
-  const collectionRequests: { href: string; label: string; source: string }[] =
-    [];
-
+  const visibleCatalogs = relatedCatalogs.filter(
+    (catalog) => !relatedCatalogIds || relatedCatalogIds.includes(catalog.id),
+  );
+  const collectionParams = new URLSearchParams({
+    member: member.id,
+    name: member.name,
+  });
   if (member.academic.sintaId) {
-    collectionRequests.push({
-      href: `/nexus/pengumpulan?member=${encodeURIComponent(member.id)}&name=${encodeURIComponent(member.name)}&source=sinta&profile=${encodeURIComponent(`https://sinta.kemdiktisaintek.go.id/authors/profile/${member.academic.sintaId}`)}`,
-      label: "Mulai dari SINTA",
-      source: "sinta",
-    });
+    collectionParams.set(
+      "sinta",
+      `${SINTA_PROFILE_URL}${member.academic.sintaId}`,
+    );
   }
-
   if (member.academic.googleScholar) {
-    collectionRequests.push({
-      href: `/nexus/pengumpulan?member=${encodeURIComponent(member.id)}&name=${encodeURIComponent(member.name)}&source=scholar&profile=${encodeURIComponent(member.academic.googleScholar)}`,
-      label: "Mulai dari Google Scholar",
-      source: "scholar",
-    });
+    collectionParams.set("scholar", member.academic.googleScholar);
   }
+  const hasAcademicSource = Boolean(
+    member.academic.sintaId || member.academic.googleScholar,
+  );
 
   function moveTab(
     event: KeyboardEvent<HTMLButtonElement>,
@@ -148,25 +167,44 @@ export function NexusMemberDetail({
         </button>
         <div className={styles.detailActions}>
           {capabilities.canEditMember ? (
-            <NexusWorkspaceButton
-              className={styles.detailActionButton}
-              onClick={onEdit}
-              type="button"
-            >
-              <MemberIcon name="edit" />
-              Ubah profil
-            </NexusWorkspaceButton>
+            editingAvailable ? (
+              <NexusWorkspaceButton
+                className={styles.detailActionButton}
+                onClick={onEdit}
+                type="button"
+              >
+                <MemberIcon name="edit" />
+                Ubah profil
+              </NexusWorkspaceButton>
+            ) : (
+              <NexusWorkspacePlannedButton
+                className={styles.detailActionButton}
+              >
+                <MemberIcon name="edit" />
+                Ubah profil
+              </NexusWorkspacePlannedButton>
+            )
           ) : null}
           {capabilities.canGrantAccess &&
           member.accountAccess.kind === "NONE" ? (
-            <NexusWorkspaceLinkButton
-              className={styles.detailActionButton}
-              href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
-              tone="primary"
-            >
-              <MemberIcon name="lock" />
-              Beri akses BHT Nexus
-            </NexusWorkspaceLinkButton>
+            accountManagementAvailable ? (
+              <NexusWorkspaceLinkButton
+                className={styles.detailActionButton}
+                href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
+                tone="primary"
+              >
+                <MemberIcon name="lock" />
+                Beri akses BHT Nexus
+              </NexusWorkspaceLinkButton>
+            ) : (
+              <NexusWorkspacePlannedButton
+                className={styles.detailActionButton}
+                tone="primary"
+              >
+                <MemberIcon name="lock" />
+                Beri akses BHT Nexus
+              </NexusWorkspacePlannedButton>
+            )
           ) : null}
         </div>
       </div>
@@ -396,31 +434,32 @@ export function NexusMemberDetail({
             />
             <MemberGuidanceCard
               action={
-                collectionRequests.length > 0 ? (
-                  collectionRequests.map((request) => (
-                    <NexusWorkspaceLinkButton
-                      href={request.href}
-                      key={request.source}
-                      tone={
-                        request.source === "sinta" ? "primary" : "secondary"
-                      }
-                    >
-                      {request.label}
-                      <MemberIcon name="chevron" />
-                    </NexusWorkspaceLinkButton>
-                  ))
-                ) : capabilities.canEditMember ? (
-                  <NexusWorkspaceButton
-                    onClick={onOpenAcademicEditor}
-                    type="button"
+                hasAcademicSource && canStartCollection ? (
+                  <NexusWorkspaceLinkButton
+                    href={`/nexus/pengumpulan?${collectionParams.toString()}`}
+                    tone="primary"
                   >
-                    Lengkapi identitas akademik
-                  </NexusWorkspaceButton>
-                ) : (
+                    Mulai pengumpulan
+                    <MemberIcon name="chevron" />
+                  </NexusWorkspaceLinkButton>
+                ) : !hasAcademicSource && capabilities.canEditMember ? (
+                  editingAvailable ? (
+                    <NexusWorkspaceButton
+                      onClick={onOpenAcademicEditor}
+                      type="button"
+                    >
+                      Lengkapi identitas akademik
+                    </NexusWorkspaceButton>
+                  ) : (
+                    <NexusWorkspacePlannedButton>
+                      Lengkapi identitas akademik
+                    </NexusWorkspacePlannedButton>
+                  )
+                ) : !hasAcademicSource ? (
                   <small>Identitas akademik belum tersedia.</small>
-                )
+                ) : undefined
               }
-              description="Pilih SINTA atau Google Scholar yang sudah tercatat untuk mencari karya ilmiah anggota ini."
+              description="Gunakan SINTA dan Google Scholar yang sudah tercatat untuk mengumpulkan karya ilmiah anggota ini."
               icon="download"
               title="Kumpulkan data akademik"
             />
@@ -437,7 +476,7 @@ export function NexusMemberDetail({
               </p>
             </div>
             <div className={styles.relatedGrid}>
-              {relatedCatalogs.map((catalog) => (
+              {visibleCatalogs.map((catalog) => (
                 <Link
                   href={relatedDataHref(catalog.href, member.id)}
                   key={catalog.href}
@@ -463,7 +502,9 @@ export function NexusMemberDetail({
                       { label: "Email akun", value: linkedAccount.email },
                       {
                         label: "Status akun",
-                        value: accountStatusLabels[linkedAccount.status],
+                        value: linkedAccount.status
+                          ? accountStatusLabels[linkedAccount.status]
+                          : undefined,
                       },
                       {
                         label: "Hubungan profil",
@@ -489,13 +530,19 @@ export function NexusMemberDetail({
                 <MemberGuidanceCard
                   action={
                     capabilities.canGrantAccess ? (
-                      <NexusWorkspaceLinkButton
-                        href={`/nexus/administrasi?account=${encodeURIComponent(linkedAccount.id)}`}
-                        tone="primary"
-                      >
-                        Kelola akun
-                        <MemberIcon name="chevron" />
-                      </NexusWorkspaceLinkButton>
+                      accountManagementAvailable ? (
+                        <NexusWorkspaceLinkButton
+                          href={`/nexus/administrasi?account=${encodeURIComponent(linkedAccount.id)}`}
+                          tone="primary"
+                        >
+                          Kelola akun
+                          <MemberIcon name="chevron" />
+                        </NexusWorkspaceLinkButton>
+                      ) : (
+                        <NexusWorkspacePlannedButton tone="primary">
+                          Kelola akun
+                        </NexusWorkspacePlannedButton>
+                      )
                     ) : undefined
                   }
                   description="Menangguhkan akun tidak menghapus profil atau riwayat keanggotaan orang ini."
@@ -514,16 +561,22 @@ export function NexusMemberDetail({
                   ini.
                 </p>
                 {capabilities.canGrantAccess ? (
-                  <NexusWorkspaceLinkButton
-                    href={
-                      member.accountAccess.accountIds[0]
-                        ? `/nexus/administrasi?account=${encodeURIComponent(member.accountAccess.accountIds[0])}`
-                        : "/nexus/administrasi"
-                    }
-                    tone="primary"
-                  >
-                    Tinjau di Administrasi
-                  </NexusWorkspaceLinkButton>
+                  accountManagementAvailable ? (
+                    <NexusWorkspaceLinkButton
+                      href={
+                        member.accountAccess.accountIds[0]
+                          ? `/nexus/administrasi?account=${encodeURIComponent(member.accountAccess.accountIds[0])}`
+                          : "/nexus/administrasi"
+                      }
+                      tone="primary"
+                    >
+                      Tinjau di Administrasi
+                    </NexusWorkspaceLinkButton>
+                  ) : (
+                    <NexusWorkspacePlannedButton tone="primary">
+                      Tinjau di Administrasi
+                    </NexusWorkspacePlannedButton>
+                  )
                 ) : null}
                 <small>
                   Periksa hubungan yang benar sebelum mengubah akses anggota.
@@ -540,16 +593,25 @@ export function NexusMemberDetail({
                   jika orang ini memang perlu masuk ke sistem.
                 </p>
                 {capabilities.canGrantAccess ? (
-                  <NexusWorkspaceLinkButton
-                    href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
-                    tone="primary"
-                  >
-                    Beri akses BHT Nexus
-                  </NexusWorkspaceLinkButton>
+                  accountManagementAvailable ? (
+                    <>
+                      <NexusWorkspaceLinkButton
+                        href={`/nexus/administrasi?inviteMember=${encodeURIComponent(member.id)}`}
+                        tone="primary"
+                      >
+                        Beri akses BHT Nexus
+                      </NexusWorkspaceLinkButton>
+                      <small>
+                        Alur undangan akan dibuka dengan anggota ini sudah
+                        terpilih.
+                      </small>
+                    </>
+                  ) : (
+                    <NexusWorkspacePlannedButton tone="primary">
+                      Beri akses BHT Nexus
+                    </NexusWorkspacePlannedButton>
+                  )
                 ) : null}
-                <small>
-                  Alur undangan akan dibuka dengan anggota ini sudah terpilih.
-                </small>
               </div>
             )}
           </section>

@@ -13,7 +13,10 @@ import {
 } from "@/components/nexus-members/nexus-members-model";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
-import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import {
+  NexusWorkspaceButton,
+  NexusWorkspacePlannedButton,
+} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
 
 type StatusFilter = (typeof statusDefinitions)[number]["id"];
@@ -21,18 +24,23 @@ type StatusFilter = (typeof statusDefinitions)[number]["id"];
 type MemberDirectoryProps = {
   activeStatus: StatusFilter;
   canCreateMember: boolean;
+  /** Penambahan anggota sudah dapat dipakai; bila belum, tombol tampil sebagai "Segera". */
+  creationAvailable: boolean;
   currentPage: number;
   description: string;
   fieldFilter: string;
   fieldOptions: readonly string[];
   filterOpen: boolean;
   filteredCount: number;
+  isLoading: boolean;
+  loadError?: string;
   onCreate: () => void;
   onFieldFilterChange: (value: string) => void;
   onFilterOpenChange: (open: boolean) => void;
   onPageChange: (page: number) => void;
   onQueryChange: (value: string) => void;
   onResetFilters: () => void;
+  onRetry: () => void;
   onSelect: (id: string) => void;
   onStatusChange: (status: StatusFilter) => void;
   pageSize: number;
@@ -46,18 +54,22 @@ type MemberDirectoryProps = {
 export function NexusMemberDirectory({
   activeStatus,
   canCreateMember,
+  creationAvailable,
   currentPage,
   description,
   fieldFilter,
   fieldOptions,
   filterOpen,
   filteredCount,
+  isLoading,
+  loadError,
   onCreate,
   onFieldFilterChange,
   onFilterOpenChange,
   onPageChange,
   onQueryChange,
   onResetFilters,
+  onRetry,
   onSelect,
   onStatusChange,
   pageSize,
@@ -85,15 +97,25 @@ export function NexusMemberDirectory({
             <p>{description}</p>
           </div>
           {canCreateMember ? (
-            <NexusWorkspaceButton
-              className={styles.addMemberButton}
-              onClick={onCreate}
-              tone="primary"
-              type="button"
-            >
-              <MemberIcon name="plus" />
-              Tambah anggota
-            </NexusWorkspaceButton>
+            creationAvailable ? (
+              <NexusWorkspaceButton
+                className={styles.addMemberButton}
+                onClick={onCreate}
+                tone="primary"
+                type="button"
+              >
+                <MemberIcon name="plus" />
+                Tambah anggota
+              </NexusWorkspaceButton>
+            ) : (
+              <NexusWorkspacePlannedButton
+                className={styles.addMemberButton}
+                tone="primary"
+              >
+                <MemberIcon name="plus" />
+                Tambah anggota
+              </NexusWorkspacePlannedButton>
+            )
           ) : null}
         </div>
       </header>
@@ -157,13 +179,33 @@ export function NexusMemberDirectory({
             role="tab"
             type="button"
           >
-            {tab.label} <span>{tab.count}</span>
+            {tab.label} <span>{isLoading ? "–" : tab.count}</span>
           </button>
         ))}
       </div>
 
-      <div className={styles.memberList} role="tabpanel">
-        {visibleMembers.length > 0 ? (
+      <div
+        aria-busy={isLoading || undefined}
+        className={styles.memberList}
+        role="tabpanel"
+      >
+        {isLoading ? (
+          <div className={styles.emptyList}>
+            <strong>Memuat direktori anggota…</strong>
+          </div>
+        ) : loadError ? (
+          <div className={styles.emptyList} role="alert">
+            <strong>Direktori anggota belum dapat dimuat</strong>
+            <p>{loadError}</p>
+            <NexusWorkspaceButton
+              className={styles.emptyListAction}
+              onClick={onRetry}
+              type="button"
+            >
+              Coba lagi
+            </NexusWorkspaceButton>
+          </div>
+        ) : visibleMembers.length > 0 ? (
           visibleMembers.map((member) => (
             <button
               aria-current={member.id === selectedMemberId || undefined}
@@ -200,7 +242,7 @@ export function NexusMemberDirectory({
                 ? "Tambahkan profil anggota pertama untuk memulai direktori CoE BHT."
                 : "Ubah kata kunci atau filter untuk melihat anggota lainnya."}
             </p>
-            {records.length > 0 || canCreateMember ? (
+            {records.length > 0 || (canCreateMember && creationAvailable) ? (
               <NexusWorkspaceButton
                 className={styles.emptyListAction}
                 onClick={records.length === 0 ? onCreate : onResetFilters}

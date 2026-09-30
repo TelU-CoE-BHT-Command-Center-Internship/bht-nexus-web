@@ -8,17 +8,7 @@ import muhammadAmmarAsyrafPhoto from "@/assets/members/muhammad-ammar-asyraf.web
 import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
 import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
 import { getMembersContent } from "@/components/members/members-content";
-import {
-  type NexusRoleRecord,
-  type NexusRoleResolution,
-  resolveNexusRole,
-} from "@/components/nexus-access-policy/nexus-access-policy";
-import {
-  type NexusAccountDirectoryRecord,
-  type NexusAccountStatus,
-  nexusAccountRelationshipMemberId,
-  resolveNexusAccountRelationship,
-} from "@/components/nexus-accounts/nexus-account-directory";
+import type { NexusAccountStatus } from "@/components/nexus-accounts/nexus-account-directory";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
 import { getKnownMemberIdentity } from "@/components/nexus-members/nexus-member-identity";
 import { COE_BHT_RESEARCH_SPACE } from "@/content/coe-bht";
@@ -27,11 +17,12 @@ export type NexusMemberStatus = "active" | "inactive" | "on_leave";
 
 export type NexusMemberAccountStatus = NexusAccountStatus;
 
+/** Akun BHT Nexus yang terhubung ke anggota, sebagaimana dijawab server. */
 export type NexusMemberAccount = {
   email: string;
   id: string;
-  role: NexusRoleResolution;
-  status: NexusMemberAccountStatus;
+  roleLabel?: string;
+  status?: NexusMemberAccountStatus;
 };
 
 export type NexusMemberAccountAccess =
@@ -173,54 +164,4 @@ export function getNexusMembersContent(): NexusMembersContent {
 
 export function getNexusMemberDirectory(): NexusMemberRecord[] {
   return [chair, ...managementProfiles];
-}
-
-/**
- * Proyeksi akses anggota selalu dibentuk dari state akun sesi yang sama dengan
- * Administrasi. Hubungan ganda atau konflik tidak dipresentasikan sebagai akun
- * anggota yang sah.
- */
-export function projectNexusMemberAccounts(
-  records: readonly NexusMemberRecord[],
-  accounts: readonly NexusAccountDirectoryRecord[],
-  roles: readonly NexusRoleRecord[],
-) {
-  return records.map((member): NexusMemberViewRecord => {
-    const claimingAccounts = accounts.filter(
-      (account) =>
-        nexusAccountRelationshipMemberId(account.relationship) === member.id,
-    );
-
-    if (claimingAccounts.length === 0) {
-      return { ...member, accountAccess: { kind: "NONE" } };
-    }
-
-    const account = claimingAccounts[0];
-    if (
-      claimingAccounts.length === 1 &&
-      account &&
-      resolveNexusAccountRelationship(account, accounts).kind === "LINKED"
-    ) {
-      return {
-        ...member,
-        accountAccess: {
-          account: {
-            email: account.email,
-            id: account.id,
-            role: resolveNexusRole(account.roleId, roles),
-            status: account.status,
-          },
-          kind: "LINKED",
-        },
-      };
-    }
-
-    return {
-      ...member,
-      accountAccess: {
-        accountIds: claimingAccounts.map((candidate) => candidate.id),
-        kind: "CONFLICT",
-      },
-    };
-  });
 }
