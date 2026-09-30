@@ -203,6 +203,7 @@ function actionLabel(status: AuditReviewStatus) {
 function searchableText(record: AuditReviewRecord, state: AuditRuntimeState) {
   return [
     record.id,
+    record.provenance.sourceKey ?? "",
     auditEffectiveTitle(record, state),
     auditEffectiveSubtitle(record, state),
     record.typeLabel,

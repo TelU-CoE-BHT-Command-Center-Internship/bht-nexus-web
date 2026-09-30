@@ -15,6 +15,11 @@ import type {
   AuditReviewStatus,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import {
+  type ManualSubmissionDomain,
+  manualSubmissionDefinitions,
+  manualSubtype,
+} from "@/components/nexus-manual-submission/nexus-manual-submission-model";
+import {
   type AuditCorrection,
   type AuditRuntimeState,
   initialAuditRuntimeState,
@@ -261,7 +266,71 @@ function sourceOf(summary: ReviewCaseRecord, payload?: Payload) {
   return "sinta" as const;
 }
 
+/**
+ * Jenis rekam pengajuan manual. Formulir pengajuan dan antrean memakai
+ * definisi yang sama, sehingga nama jenis, kelompok evaluasi, dan label isian
+ * yang dilihat pemeriksa sama dengan yang diisi pengaju.
+ */
+function manualRecordType(payload?: Payload) {
+  const domain = text(payload?.domain);
+  if (!Object.hasOwn(manualSubmissionDefinitions, domain)) return undefined;
+  const definition =
+    manualSubmissionDefinitions[domain as ManualSubmissionDomain];
+  const subtype = manualSubtype(
+    domain as ManualSubmissionDomain,
+    text(payload?.record_type ?? payload?.work_type),
+  );
+  return subtype ? { definition, subtype } : undefined;
+}
+
+/** Isian pengajuan yang sudah tampil lewat bidang kandidat bersama. */
+const manualFieldAliases: Record<string, string> = {
+  activityYear: "year",
+  creators: "authors",
+  identifier: "doi",
+  publicationYear: "year",
+  registrationYear: "year",
+};
+
+/** Isian khusus jenis rekam yang tidak punya bidang kandidat bersama. */
+function manualDetailFields(
+  payload: Payload,
+  shownFieldIds: ReadonlySet<string>,
+): AuditReviewField[] {
+  const manual = manualRecordType(payload);
+  if (!manual) return [];
+  return manual.subtype.fields.flatMap((field) => {
+    const value = text(payload[field.key]);
+    if (
+      !value ||
+      shownFieldIds.has(field.key) ||
+      shownFieldIds.has(manualFieldAliases[field.key] ?? "")
+    ) {
+      return [];
+    }
+    return [
+      {
+        id: field.key,
+        label: field.label,
+        value:
+          field.choices?.find((choice) => choice.value === value)?.label ??
+          value,
+      },
+    ];
+  });
+}
+
+/** Pihak utama pengajuan manual, mengikuti isian utama jenis rekamnya. */
+function manualPrimaryPerson(payload: Payload) {
+  const manual = manualRecordType(payload);
+  const key =
+    manual?.subtype.primaryFieldKey ?? manual?.definition.primaryFieldKey;
+  return key && key !== "title" ? people(payload[key])[0] : undefined;
+}
+
 function categoryOf(target: string, payload?: Payload): AuditReviewCategory {
+  const manual = manualRecordType(payload);
+  if (manual) return manual.subtype.category ?? manual.definition.category;
   if (target === "publication") return "publication_conference";
   const domain = text(payload?.domain);
   const workType = text(payload?.work_type ?? payload?.record_type);
@@ -281,6 +350,7 @@ function categoryOf(target: string, payload?: Payload): AuditReviewCategory {
 function typeLabelOf(target: string, payload?: Payload) {
   const workType = text(payload?.record_type ?? payload?.work_type);
   return (
+    manualRecordType(payload)?.subtype.typeLabel ??
     workTypeLabels[workType] ??
     (target === "publication" ? "Publikasi" : "Kegiatan")
   );
@@ -467,18 +537,29 @@ export function reviewRecordFromServer(
   const sourceLabel = sourceLabels[source];
   const category = categoryOf(target, detail?.payload);
   const specs = target === "publication" ? publicationFields : activityFields;
-  const fields: AuditReviewField[] = specs.map((spec) => ({
+  const sharedFields: AuditReviewField[] = specs.map((spec) => ({
     ...spec,
     value: text(
       spec.id === "title" ? (payload.title ?? payload.name) : payload[spec.id],
     ),
   }));
+  const fields = [
+    ...sharedFields,
+    ...manualDetailFields(
+      payload,
+      new Set(sharedFields.map((field) => field.id)),
+    ),
+  ];
   const status = statusFromServer[detail?.status ?? summary.status];
   const title =
     fields.find((field) => field.id === "title")?.value ||
     (detail ? "Kandidat tanpa judul" : "Memuat rincian kandidat");
   const authors = people(payload.authors);
-  const owner = text(payload.owner_name) || authors[0] || "Belum tercatat";
+  const owner =
+    text(payload.owner_name) ||
+    authors[0] ||
+    manualPrimaryPerson(payload) ||
+    "Belum tercatat";
   const evidence = evidenceOf(payload, sourceLabel);
   const edits = sortedByTime(detail?.edits ?? [], (edit) => edit.editedAt);
   const decisions = sortedByTime(
@@ -589,7 +670,10 @@ export function reviewRecordFromServer(
     matchingVersion: version,
     owner,
     primaryPerson: owner,
-    provenance: { sourceKey: text(payload.external_id) || undefined },
+    provenance: {
+      sourceKey:
+        text(payload.external_id) || text(payload.receipt_number) || undefined,
+    },
     signal: signalOf(detail, evidence),
     source,
     sourceLabel,
