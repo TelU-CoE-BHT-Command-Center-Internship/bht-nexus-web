@@ -4,15 +4,16 @@ import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
-import { projectNexusPublications } from "@/components/nexus-official-records/nexus-official-records";
-import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
+import {
+  useNexusMemberName,
+  useNexusPublicationCatalog,
+  useNexusPublicationDetail,
+} from "@/components/nexus-publications/nexus-publication-server";
 import styles from "@/components/nexus-publications/nexus-publications.module.css";
 import {
   type NexusPublicationsContent,
-  type OfficialPublication,
-  type PublicationCompletionResolutions,
+  type NexusPublicationView,
   type PublicationIndicatorId,
-  type PublicationMetadataProposal,
   publicationAuthorNames,
   publicationDisplayTitle,
   publicationIndicatorShortLabels,
@@ -26,8 +27,6 @@ import {
   type PublicationSourceId,
   publicationHasSource,
 } from "@/components/nexus-publications/nexus-publications-utils";
-import { createMetadataCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
-import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
@@ -36,6 +35,7 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
+  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -62,6 +62,7 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 
 const NexusPublicationDetail = dynamic(() =>
@@ -71,7 +72,14 @@ const NexusPublicationDetail = dynamic(() =>
 );
 
 type NexusPublicationsProps = {
-  content: NexusPublicationsContent;
+  /** Antrean Tinjauan dapat dibuka oleh akun ini. */
+  canOpenReviews: boolean;
+  /** Direktori anggota dapat dibaca, sehingga filter anggota menampilkan nama. */
+  canReadMembers: boolean;
+  content: Pick<
+    NexusPublicationsContent,
+    "description" | "officialNote" | "title"
+  >;
   initialMemberId?: string;
 };
 
@@ -165,12 +173,12 @@ function sourceTone(source: string) {
   return "neutral" as const;
 }
 
-function isTopQuartile(publication: OfficialPublication) {
+function isTopQuartile(publication: NexusPublicationView) {
   return publication.quartile === "Q1" || publication.quartile === "Q2";
 }
 
 function matchesIndicatorFilter(
-  publication: OfficialPublication,
+  publication: NexusPublicationView,
   value: string,
 ) {
   if (value === "all") return true;
@@ -179,7 +187,7 @@ function matchesIndicatorFilter(
 }
 
 function matchesQuartileFilter(
-  publication: OfficialPublication,
+  publication: NexusPublicationView,
   value: string,
 ) {
   const state = publicationQuartileState(publication);
@@ -192,13 +200,13 @@ function matchesQuartileFilter(
   return publication.quartile === value;
 }
 
-function matchesYearFilter(publication: OfficialPublication, value: string) {
+function matchesYearFilter(publication: NexusPublicationView, value: string) {
   if (value === "all") return true;
   if (value === unknownYearValue) return publication.year === undefined;
   return publication.year === Number(value);
 }
 
-function searchableText(publication: OfficialPublication) {
+function searchableText(publication: NexusPublicationView) {
   return normalizeWorkspaceSearch(
     [
       publicationDisplayTitle(publication),
@@ -220,7 +228,7 @@ function searchableText(publication: OfficialPublication) {
 }
 
 function createIndicatorConfig(
-  publications: readonly OfficialPublication[],
+  publications: readonly NexusPublicationView[],
 ): NexusSelectConfig {
   const indicators = publications
     .flatMap((publication) => publication.kmLinks)
@@ -257,7 +265,7 @@ function createIndicatorConfig(
 }
 
 function createYearConfig(
-  publications: readonly OfficialPublication[],
+  publications: readonly NexusPublicationView[],
 ): NexusSelectConfig {
   const years = Array.from(
     new Set(
@@ -296,7 +304,7 @@ function createYearConfig(
  * hanyalah klasifikasi pelaporan sehingga tidak boleh tampil lebih berat
  * daripada identitas karyanya sendiri.
  */
-function KmLinkCell({ publication }: { publication: OfficialPublication }) {
+function KmLinkCell({ publication }: { publication: NexusPublicationView }) {
   const [firstLink, ...otherLinks] = publication.kmLinks;
 
   return (
@@ -313,7 +321,7 @@ function KmLinkCell({ publication }: { publication: OfficialPublication }) {
   );
 }
 
-function QuartileCell({ publication }: { publication: OfficialPublication }) {
+function QuartileCell({ publication }: { publication: NexusPublicationView }) {
   const state = publicationQuartileState(publication);
   if (state !== "available" && state !== "unresolved") {
     return (
@@ -340,19 +348,18 @@ function QuartileCell({ publication }: { publication: OfficialPublication }) {
 }
 
 export function NexusPublications({
+  canOpenReviews,
+  canReadMembers,
   content,
   initialMemberId,
 }: NexusPublicationsProps) {
-  const reviewSession = useNexusReviewSession();
-  const officialRecordSession = useNexusOfficialRecordSession();
-  const records = useMemo(
-    () => projectNexusPublications(content.records, officialRecordSession),
-    [content.records, officialRecordSession],
-  );
+  const catalog = useNexusPublicationCatalog(initialMemberId);
+  const records = catalog.records;
+  const isCatalogLoading = catalog.state === "loading";
+  const memberName = useNexusMemberName(initialMemberId, canReadMembers);
   const [activeSourceId, setActiveSourceId] =
     useState<PublicationSourceId>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const completionProposals = reviewSession.completionProposals;
   const [filterValues, setFilterValues] =
     useState<PublicationFilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
@@ -363,17 +370,8 @@ export function NexusPublications({
   >(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-  const contextRecords = useMemo(
-    () =>
-      initialMemberId
-        ? records.filter((publication) =>
-            publication.authors.some(
-              (author) => author.memberId === initialMemberId,
-            ),
-          )
-        : records,
-    [initialMemberId, records],
-  );
+  /* Filter anggota sudah diterapkan server lewat `memberPublicId`. */
+  const contextRecords = records;
 
   const sourceTabs = useMemo(
     () => getPublicationSourceTabs(contextRecords),
@@ -455,9 +453,11 @@ export function NexusPublications({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selectedPublication = contextRecords.find(
+  const publicationDetail = useNexusPublicationDetail(selectedPublicationId);
+  const selectedSummary = contextRecords.find(
     (publication) => publication.id === selectedPublicationId,
   );
+  const selectedPublication = publicationDetail.record ?? selectedSummary;
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as PublicationFilterId] !== defaultValue,
@@ -466,7 +466,7 @@ export function NexusPublications({
   // harus terbaca pada hasil, bukan hanya pada kontrolnya.
   const resultSummary = [
     `Sumber ${activeSource.label}`,
-    `periode evaluasi ${evaluationPeriods}`,
+    ...(evaluationPeriods ? [`periode evaluasi ${evaluationPeriods}`] : []),
     `${filteredPublications.length} dari ${activeSource.count} publikasi sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
@@ -496,40 +496,21 @@ export function NexusPublications({
     setCurrentPage(1);
   };
 
-  const submitCompletionProposal = (
-    publicationId: string,
-    resolutions: PublicationCompletionResolutions,
-    note: string,
-  ) => {
-    const publication = records.find((record) => record.id === publicationId);
-    if (!publication) return;
-
-    const proposal: PublicationMetadataProposal =
-      reviewSession.createCompletionProposal(
-        "PLG-2026",
-        publicationId,
-        resolutions,
-        note,
-      );
-    reviewSession.submitRecord(
-      createMetadataCompletionReviewRecord(publication, proposal),
-    );
-  };
-
   const rows = visiblePublications.map((publication) => {
     const title = publicationDisplayTitle(publication);
     const primarySource =
       publication.provenance.find(
         (item) => getPublicationSourceId(item.source) === activeSource.id,
-      )?.source ??
-      publication.provenance[0]?.source ??
-      "Manual";
+      )?.source ?? publication.provenance[0]?.source;
+    const subtitle = [publicationAuthorNames(publication), publication.venue]
+      .filter(Boolean)
+      .join(" · ");
     // Glaukoma punya dua baris workbook dari SATU sistem sumber. Badge +N
     // harus menghitung sistem sumber yang berbeda, bukan jumlah jejaknya.
     const extraSourceCount =
       new Set(publication.provenance.map((item) => item.source)).size - 1;
     const open = () => setSelectedPublicationId(publication.id);
-    const sourceBadge = (
+    const sourceBadge = primarySource ? (
       <NexusWorkspaceTableBadge
         key={`${publication.id}-source`}
         tone={sourceTone(primarySource)}
@@ -537,6 +518,10 @@ export function NexusPublications({
         {primarySource}
         {extraSourceCount > 0 ? ` +${extraSourceCount}` : ""}
       </NexusWorkspaceTableBadge>
+    ) : (
+      <NexusWorkspaceTableText key={`${publication.id}-source`}>
+        Sumber belum tercatat
+      </NexusWorkspaceTableText>
     );
     const qualityBadge = (
       <NexusWorkspaceTableBadge
@@ -563,7 +548,9 @@ export function NexusPublications({
             secondary={
               publication.citations === null
                 ? "belum tersinkron"
-                : `${publication.citationProvider} · berkala`
+                : publication.citationProvider
+                  ? `${publication.citationProvider} · berkala`
+                  : "diperbarui berkala"
             }
             tone={publication.citations === null ? "neutral" : "info"}
           />
@@ -571,7 +558,7 @@ export function NexusPublications({
         primary: (
           <NexusWorkspaceTablePrimary
             onClick={open}
-            subtitle={`${publicationAuthorNames(publication)} · ${publication.venue}`}
+            subtitle={subtitle || undefined}
             title={title}
           />
         ),
@@ -629,16 +616,20 @@ export function NexusPublications({
                 <dd>
                   {publication.citations === null
                     ? "Belum tersinkron"
-                    : `${publication.citations} · ${publication.citationProvider}`}
+                    : publication.citationProvider
+                      ? `${publication.citations} · ${publication.citationProvider}`
+                      : publication.citations}
                 </dd>
               </div>
             </dl>
           }
           title={title}
         >
-          <NexusWorkspaceMobileSubtitle>
-            {publicationAuthorNames(publication)} · {publication.venue}
-          </NexusWorkspaceMobileSubtitle>
+          {subtitle ? (
+            <NexusWorkspaceMobileSubtitle>
+              {subtitle}
+            </NexusWorkspaceMobileSubtitle>
+          ) : null}
         </NexusWorkspaceMobileCard>
       ),
     };
@@ -648,19 +639,20 @@ export function NexusPublications({
     <NexusWorkspacePage
       actions={
         <NexusManualSubmissionLink
+          available={false}
           domain="publication"
           label="Ajukan publikasi"
         />
       }
       description={content.description}
       descriptionId="publications-description"
-      meta={content.updatedAt}
       title={content.title}
       titleId="publications-title"
     >
       <NexusMemberContextFilter
         clearHref="/nexus/publikasi"
         memberId={initialMemberId}
+        memberName={memberName}
       />
       <NexusWorkspaceMetrics
         metrics={[
@@ -670,7 +662,7 @@ export function NexusPublications({
             label: "Publikasi Resmi",
             tone: "completed",
             unit: "data",
-            value: contextRecords.length,
+            value: isCatalogLoading ? null : contextRecords.length,
           },
           {
             icon: <NexusPublicationsIcon name="quartile" />,
@@ -678,7 +670,7 @@ export function NexusPublications({
             label: "Setara Q1/Q2",
             tone: "waiting",
             unit: "data",
-            value: topQuartileCount,
+            value: isCatalogLoading ? null : topQuartileCount,
           },
           {
             icon: <NexusPublicationsIcon name="alert" />,
@@ -686,7 +678,7 @@ export function NexusPublications({
             label: "Perlu Dilengkapi",
             tone: "needs-fix",
             unit: "data",
-            value: needsCompletionCount,
+            value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
       />
@@ -755,6 +747,21 @@ export function NexusPublications({
           title="Daftar publikasi resmi"
           titleId="official-publications-title"
         >
+          {catalog.state === "error" ? (
+            <NexusWorkspaceState
+              actions={
+                <NexusWorkspaceButton onClick={catalog.retry} type="button">
+                  Coba lagi
+                </NexusWorkspaceButton>
+              }
+              description={
+                catalog.errorMessage ?? "Publikasi resmi belum dapat dimuat."
+              }
+              eyebrow="Gagal memuat"
+              title="Publikasi resmi belum dapat dimuat"
+              tone="danger"
+            />
+          ) : null}
           <NexusWorkspaceRecordTable
             caption="Publikasi resmi CoE BHT beserta metadata karya, kuartil, dan keterkaitan indikator KM"
             columns={columns}
@@ -773,7 +780,7 @@ export function NexusPublications({
                 }
               />
             }
-            isLoading={isSearchUpdating}
+            isLoading={isSearchUpdating || isCatalogLoading}
             pagination={
               <NexusTablePagination
                 currentPage={safePage}
@@ -800,9 +807,16 @@ export function NexusPublications({
 
       {selectedPublication ? (
         <NexusPublicationDetail
+          authorsState={
+            publicationDetail.state === "error"
+              ? "error"
+              : publicationDetail.record
+                ? "ready"
+                : "loading"
+          }
+          canOpenReviews={canOpenReviews}
           onClose={() => setSelectedPublicationId(null)}
-          onSubmitCompletionProposal={submitCompletionProposal}
-          proposal={completionProposals[selectedPublication.id]}
+          onRetryAuthors={publicationDetail.retry}
           publication={selectedPublication}
         />
       ) : null}

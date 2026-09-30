@@ -16,7 +16,7 @@ import { parseBusinessDate } from "@/components/nexus-monitoring/nexus-monitorin
 import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
 import {
-  type OfficialPublication,
+  type NexusPublicationView,
   type PublicationCompletionFieldKey,
   type PublicationCompletionResolutions,
   type PublicationMetadataProposal,
@@ -31,16 +31,29 @@ import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-offi
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
+import {
+  NexusWorkspaceButton,
+  NexusWorkspacePlannedButton,
+} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 
 type NexusPublicationDetailProps = {
+  /** Keadaan pemuatan daftar penulis dari rincian rekam. */
+  authorsState?: "error" | "loading" | "ready";
+  /** Antrean Tinjauan dapat dibuka oleh akun ini. */
+  canOpenReviews?: boolean;
   onClose: () => void;
-  onSubmitCompletionProposal: (
+  onRetryAuthors?: () => void;
+  /**
+   * Pengajuan pelengkapan metadata. Selama belum tersedia, bagian pengajuan
+   * tampil sebagai tindakan yang segera tersedia.
+   */
+  onSubmitCompletionProposal?: (
     publicationId: string,
     resolutions: PublicationCompletionResolutions,
     note: string,
   ) => void;
   proposal?: PublicationMetadataProposal;
-  publication: OfficialPublication;
+  publication: NexusPublicationView;
 };
 
 type PublicationMetadataItem = NexusMetadataCompletenessItem & {
@@ -69,7 +82,7 @@ function MetaItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function kmLinkLabel(publication: OfficialPublication) {
+function kmLinkLabel(publication: NexusPublicationView) {
   if (publication.kmLinks.length === 0)
     return officialKpiEmptyCopy(publication.kpiResolutionStatus).label;
   return publication.kmLinks.map((link) => link.indicator.id).join(", ");
@@ -86,7 +99,7 @@ const optionalFieldOrder: readonly PublicationCompletionFieldKey[] = [
 ];
 
 function getMetadataItems(
-  publication: OfficialPublication,
+  publication: NexusPublicationView,
 ): PublicationMetadataItem[] {
   const isMissing = (key: PublicationCompletionFieldKey) =>
     publication.missingFields.includes(key);
@@ -135,13 +148,13 @@ function getMetadataItems(
     {
       key: "authors",
       label: "Penulis",
-      value: publicationAuthorNames(publication),
+      value: publicationAuthorNames(publication) || "Belum tercatat",
       wide: true,
     },
     {
       key: "venue",
       label: "Nama jurnal / prosiding",
-      value: publication.venue,
+      value: publication.venue || "Belum tercatat",
       wide: true,
     },
     {
@@ -186,7 +199,7 @@ function getMetadataItems(
     {
       key: "evaluationPeriod",
       label: "Periode evaluasi KM",
-      value: publication.evaluationPeriod,
+      value: publication.evaluationPeriod || "Belum tercatat",
     },
     {
       href: publication.publisherUrl,
@@ -222,7 +235,10 @@ function getMetadataItems(
 }
 
 export function NexusPublicationDetail({
+  authorsState = "ready",
+  canOpenReviews = true,
   onClose,
+  onRetryAuthors,
   onSubmitCompletionProposal,
   proposal,
   publication,
@@ -262,7 +278,11 @@ export function NexusPublicationDetail({
               {publication.quality}
             </span>
           </div>
-          <time>Diperbarui {publication.updatedAt}</time>
+          {publication.updatedAt ? (
+            <time>Diperbarui {publication.updatedAt}</time>
+          ) : publication.recordedAt ? (
+            <time>Tercatat {publication.recordedAt}</time>
+          ) : null}
         </div>
         <h3 id="publication-overview-title">{displayTitle}</h3>
         <p>{publicationAuthorNames(publication)}</p>
@@ -391,7 +411,9 @@ export function NexusPublicationDetail({
                   {link.indicator.id} · {link.indicator.label}
                 </strong>
                 <small>
-                  {link.indicator.category} — {link.note}
+                  {link.note
+                    ? `${link.indicator.category} — ${link.note}`
+                    : link.indicator.category}
                 </small>
               </li>
             ))
@@ -473,7 +495,12 @@ export function NexusPublicationDetail({
             </div>
             <div>
               <dt>Diperbarui</dt>
-              <dd>{publication.citationUpdatedAt ?? "Belum ada pembaruan"}</dd>
+              <dd>
+                {publication.citationUpdatedAt ??
+                  (publication.citations === null
+                    ? "Belum ada pembaruan"
+                    : "Tidak tercatat")}
+              </dd>
             </div>
           </dl>
           <p>
@@ -522,7 +549,11 @@ export function NexusPublicationDetail({
             <span className={detail.sectionIndex}>04</span>
             <h3 id="publication-members-title">Penulis</h3>
           </div>
-          <p>{publication.authors.length} penulis tercatat</p>
+          <p>
+            {authorsState === "loading"
+              ? "Memuat penulis…"
+              : `${publication.authors.length} penulis tercatat`}
+          </p>
         </div>
         <p className={detail.explanation}>
           Urutan penulis mengikuti pencatatan sumber. Kepemilikan data dan hak
@@ -530,6 +561,16 @@ export function NexusPublicationDetail({
           urutan penulis. Nama kolom penulis pada sumbernya dicatat di bagian
           Sumber dan jejak data.
         </p>
+        {authorsState === "error" ? (
+          <p className={detail.explanation} role="alert">
+            Daftar penulis belum dapat dimuat.{" "}
+            {onRetryAuthors ? (
+              <NexusWorkspaceButton onClick={onRetryAuthors} type="button">
+                Coba lagi
+              </NexusWorkspaceButton>
+            ) : null}
+          </p>
+        ) : null}
         <div className={styles.memberGrid}>
           {publication.authors.map((author, index) => (
             <article className={styles.memberCard} key={author.id}>
@@ -566,6 +607,11 @@ export function NexusPublicationDetail({
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
+        {publication.provenance.length === 0 ? (
+          <p className={detail.explanation}>
+            Jejak sumber pembentuk rekam ini belum tersedia di halaman ini.
+          </p>
+        ) : null}
         <div className={detail.provenanceGrid}>
           {publication.provenance.map((source) => (
             <article
@@ -635,37 +681,65 @@ export function NexusPublicationDetail({
           </div>
           <p>Riwayat keputusan tersimpan</p>
         </div>
-        <div className={detail.reviewDecision}>
-          <span className={detail.reviewCheck}>
-            <NexusPublicationsIcon name="check" />
-          </span>
-          <div>
-            <strong>{publication.review.decision}</strong>
-            <p>{publication.review.note}</p>
-            <small>
-              {publication.review.reviewer} · {publication.review.reviewedAt} ·{" "}
-              {publication.review.candidateId}
-            </small>
+        {publication.review ? (
+          <div className={detail.reviewDecision}>
+            <span className={detail.reviewCheck}>
+              <NexusPublicationsIcon name="check" />
+            </span>
+            <div>
+              <strong>{publication.review.decision}</strong>
+              <p>{publication.review.note}</p>
+              <small>
+                {publication.review.reviewer} · {publication.review.reviewedAt}{" "}
+                · {publication.review.candidateId}
+              </small>
+            </div>
           </div>
-        </div>
-        <Link
-          className={detail.reviewLink}
-          href="/nexus/tinjauan"
-          prefetch={false}
-        >
-          Buka antrean Tinjauan <ArrowIcon />
-        </Link>
+        ) : (
+          <p className={detail.explanation}>
+            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+          </p>
+        )}
+        {canOpenReviews ? (
+          <Link
+            className={detail.reviewLink}
+            href="/nexus/tinjauan"
+            prefetch={false}
+          >
+            Buka antrean Tinjauan <ArrowIcon />
+          </Link>
+        ) : null}
       </section>
 
       {publication.missingFields.length > 0 ? (
-        <NexusMetadataCompletionForm
-          missingFields={publication.missingFields}
-          onClose={onClose}
-          onSubmitProposal={onSubmitCompletionProposal}
-          proposal={proposal}
-          recordId={publication.id}
-          sectionIndex="07"
-        />
+        onSubmitCompletionProposal ? (
+          <NexusMetadataCompletionForm
+            missingFields={publication.missingFields}
+            onClose={onClose}
+            onSubmitProposal={onSubmitCompletionProposal}
+            proposal={proposal}
+            recordId={publication.id}
+            sectionIndex="07"
+          />
+        ) : (
+          <section
+            aria-labelledby="publication-completion-title"
+            className={detail.detailSection}
+          >
+            <div className={detail.sectionHeading}>
+              <div>
+                <span className={detail.sectionIndex}>07</span>
+                <h3 id="publication-completion-title">
+                  Ajukan pelengkapan metadata
+                </h3>
+              </div>
+              <p>Usulan pelengkapan diperiksa melalui Tinjauan</p>
+            </div>
+            <NexusWorkspacePlannedButton tone="primary">
+              Ajukan pelengkapan
+            </NexusWorkspacePlannedButton>
+          </section>
+        )
       ) : null}
     </NexusWorkspaceDrawer>
   );

@@ -182,10 +182,21 @@ export type OfficialPublication = {
   /** Kosong ketika sumber belum mencatat judul karyanya. */
   title: string;
   type: PublicationType;
+  /** Waktu rekam resmi dicatat, dipakai bila waktu pembaruan belum tercatat. */
+  recordedAt?: string;
   updatedAt: string;
   venue: string;
   /** `undefined` ketika sumber belum mencatat tahun terbit karyanya. */
   year?: number;
+};
+
+/**
+ * Rekam publikasi sebagaimana ditampilkan halaman Publikasi. Rekam yang dibaca
+ * dari server belum membawa keputusan tinjauannya, sehingga bagian itu boleh
+ * kosong dan ditampilkan apa adanya.
+ */
+export type NexusPublicationView = Omit<OfficialPublication, "review"> & {
+  review?: OfficialPublication["review"];
 };
 
 export type NexusPublicationsContent = {
@@ -1111,7 +1122,7 @@ function createPublication(seed: PublicationSeed): OfficialPublication {
 const records: OfficialPublication[] = seeds.map(createPublication);
 
 /** Judul tampilan untuk rekam yang judulnya belum tercatat di sumber. */
-export function publicationDisplayTitle(publication: OfficialPublication) {
+export function publicationDisplayTitle(publication: NexusPublicationView) {
   return publication.title || `Judul belum tercatat · ${publication.venue}`;
 }
 
@@ -1127,7 +1138,7 @@ export type PublicationQuartileState =
   | "unresolved";
 
 export function publicationQuartileState(
-  publication: OfficialPublication,
+  publication: NexusPublicationView,
 ): PublicationQuartileState {
   if (publication.type === "Belum diklasifikasikan") return "pending_type";
   if (!publication.quartileApplies) return "not_applicable";
@@ -1141,7 +1152,7 @@ export function publicationQuartileState(
   return state === "not-available" ? "not_available" : "unresolved";
 }
 
-export function publicationQuartileLabel(publication: OfficialPublication) {
+export function publicationQuartileLabel(publication: NexusPublicationView) {
   const state = publicationQuartileState(publication);
   if (state === "available")
     return publication.quartile ?? "Belum diverifikasi";
@@ -1186,7 +1197,7 @@ export function normalizeProjectedPublication(
   };
 }
 
-export function publicationAuthorNames(publication: OfficialPublication) {
+export function publicationAuthorNames(publication: NexusPublicationView) {
   return publication.authors.map((author) => author.name).join("; ");
 }
 
