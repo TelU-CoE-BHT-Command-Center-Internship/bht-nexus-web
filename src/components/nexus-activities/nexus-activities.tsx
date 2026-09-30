@@ -20,6 +20,7 @@ import {
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import { useNexusMemberName } from "@/components/nexus-publications/nexus-publication-server";
+import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceSearch,
@@ -30,7 +31,10 @@ import {
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatPageUpdatedLabel,
+  normalizeWorkspaceSearch,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -360,9 +364,11 @@ export function NexusActivities({
         ),
         signal: (
           <NexusWorkspaceTableSignal
-            primary={activityKmLabel(record)}
+            {...officialKpiTableSignal(
+              record.kmLinks,
+              record.kpiResolutionStatus,
+            )}
             secondary={record.group}
-            tone="info"
           />
         ),
         status: qualityBadge,
@@ -423,6 +429,9 @@ export function NexusActivities({
       }
       description={content.description}
       descriptionId="activities-description"
+      meta={
+        catalog.loadedAt ? formatPageUpdatedLabel(catalog.loadedAt) : undefined
+      }
       title={content.title}
       titleId="activities-title"
     >

@@ -39,7 +39,10 @@ import {
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatPageUpdatedLabel,
+  normalizeWorkspaceSearch,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -307,14 +310,23 @@ function createYearConfig(
 function KmLinkCell({ publication }: { publication: NexusPublicationView }) {
   const [firstLink, ...otherLinks] = publication.kmLinks;
 
+  if (!firstLink) {
+    /* Kolom ini sempit: penanda ringkas di tabel, kalimat lengkap di rincian. */
+    const emptyCopy = officialKpiEmptyCopy(publication.kpiResolutionStatus);
+    return (
+      <span className={styles.kmCell} title={emptyCopy.label}>
+        <strong data-empty="true">{emptyCopy.shortLabel}</strong>
+        <small>{publication.type}</small>
+      </span>
+    );
+  }
+
   return (
     <span className={styles.kmCell}>
       <strong>
-        {firstLink
-          ? otherLinks.length > 0
-            ? `${firstLink.indicator.id} +${otherLinks.length}`
-            : firstLink.indicator.id
-          : officialKpiEmptyCopy(publication.kpiResolutionStatus).label}
+        {otherLinks.length > 0
+          ? `${firstLink.indicator.id} +${otherLinks.length}`
+          : firstLink.indicator.id}
       </strong>
       <small>{publication.type}</small>
     </span>
@@ -519,9 +531,9 @@ export function NexusPublications({
         {extraSourceCount > 0 ? ` +${extraSourceCount}` : ""}
       </NexusWorkspaceTableBadge>
     ) : (
-      <NexusWorkspaceTableText key={`${publication.id}-source`}>
-        Sumber belum tercatat
-      </NexusWorkspaceTableText>
+      <NexusWorkspaceTableBadge key={`${publication.id}-source`}>
+        Belum tercatat
+      </NexusWorkspaceTableBadge>
     );
     const qualityBadge = (
       <NexusWorkspaceTableBadge
@@ -550,7 +562,7 @@ export function NexusPublications({
                 ? "belum tersinkron"
                 : publication.citationProvider
                   ? `${publication.citationProvider} · berkala`
-                  : "diperbarui berkala"
+                  : "sitasi tercatat"
             }
             tone={publication.citations === null ? "neutral" : "info"}
           />
@@ -585,7 +597,8 @@ export function NexusPublications({
           }
           eyebrow={
             <>
-              {sourceBadge}
+              {/* Tanpa judul kolom, penanda "Belum tercatat" tidak menjelaskan apa pun. */}
+              {primarySource ? sourceBadge : null}
               {qualityBadge}
             </>
           }
@@ -646,6 +659,9 @@ export function NexusPublications({
       }
       description={content.description}
       descriptionId="publications-description"
+      meta={
+        catalog.loadedAt ? formatPageUpdatedLabel(catalog.loadedAt) : undefined
+      }
       title={content.title}
       titleId="publications-title"
     >

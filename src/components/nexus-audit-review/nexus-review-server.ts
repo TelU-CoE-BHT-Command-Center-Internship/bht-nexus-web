@@ -727,6 +727,7 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
   const [summaries, setSummaries] = useState<ReviewCaseRecord[]>([]);
   const [queueState, setQueueState] = useState<LoadState>("loading");
   const [queueError, setQueueError] = useState<string>();
+  const [loadedAt, setLoadedAt] = useState<Date>();
   const [details, setDetails] = useState<Record<string, DetailEntry>>({});
   const [comparisons, setComparisons] = useState<
     Record<string, ComparisonEntry>
@@ -817,6 +818,7 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
           current,
         );
         if (current !== generation.current) return;
+        setLoadedAt(new Date());
         setQueueState("ready");
       })
       .catch((error: unknown) => {
@@ -989,6 +991,7 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
     ensureDetails,
     errorMessage: queueError,
     loadComparison,
+    loadedAt,
     records,
     retry: load,
     runtime,

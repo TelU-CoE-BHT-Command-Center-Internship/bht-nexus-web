@@ -51,6 +51,12 @@
   white-space: nowrap;
 }
 
+/* Penanda tanpa indikator berupa kalimat, jadi boleh turun baris. */
+.kmCell strong[data-empty="true"] {
+  font-weight: 600;
+  white-space: normal;
+}
+
 .kmCell small {
   color: #8a91a1;
   font-size: 0.58rem;

@@ -103,6 +103,7 @@ export function useNexusPublicationCatalog(memberPublicId?: string) {
   const [records, setRecords] = useState<NexusPublicationView[]>([]);
   const [state, setState] = useState<NexusLoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>();
+  const [loadedAt, setLoadedAt] = useState<Date>();
   const latestRequest = useRef(0);
 
   const load = useCallback(() => {
@@ -116,6 +117,7 @@ export function useNexusPublicationCatalog(memberPublicId?: string) {
             nexusPublicationFromServer(publication),
           ),
         );
+        setLoadedAt(new Date());
         setState("ready");
       })
       .catch((error: unknown) => {
@@ -134,7 +136,7 @@ export function useNexusPublicationCatalog(memberPublicId?: string) {
     };
   }, [load]);
 
-  return { errorMessage, records, retry: load, state };
+  return { errorMessage, loadedAt, records, retry: load, state };
 }
 
 /** Rincian satu publikasi (termasuk penulis), disimpan selama halaman terbuka. */

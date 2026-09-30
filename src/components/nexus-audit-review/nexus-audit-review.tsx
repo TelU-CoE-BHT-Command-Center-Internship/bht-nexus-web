@@ -38,7 +38,10 @@ import {
   NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { compareTimestamps } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  compareTimestamps,
+  formatAuditTimestamp,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -594,6 +597,11 @@ export function NexusAuditReview({
     <NexusWorkspacePage
       description="Verifikasi kandidat lintas-domain sebelum menjadi data resmi dan masuk ke perhitungan evaluasi CoE."
       descriptionId="audit-review-description"
+      meta={
+        queue.loadedAt
+          ? `Diperbarui ${formatAuditTimestamp(queue.loadedAt)}`
+          : undefined
+      }
       title="Tinjauan Data"
       titleId="audit-review-title"
     >

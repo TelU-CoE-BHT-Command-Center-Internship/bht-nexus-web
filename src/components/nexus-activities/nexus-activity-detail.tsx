@@ -28,6 +28,7 @@ import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 import { NexusWorkspacePlannedButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusActivityDetailProps = {
   /** Antrean Tinjauan dapat dibuka oleh akun ini. */
@@ -219,7 +220,7 @@ export function NexusActivityDetail({
     <NexusWorkspaceDrawer
       closeLabel="Tutup rincian kegiatan dan pengabdian"
       description="Telusuri bentuk kegiatan, pihak terkait, klasifikasi KM, kelengkapan bukti, sumber pembentuk, dan keputusan tinjauannya."
-      eyebrow={record.publicId}
+      eyebrow={displayRecordId(record.publicId)}
       onClose={onClose}
       steps={[
         { active: true, complete: true, label: "Metadata", number: 1 },

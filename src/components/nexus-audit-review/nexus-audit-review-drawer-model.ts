@@ -12,6 +12,7 @@ import type {
   AuditRuntimeState,
   NexusRecordCapabilities,
 } from "@/components/nexus-review-session/nexus-review-session";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 export type { AuditRuntimeState };
 
@@ -67,13 +68,8 @@ export type ReviewSectionIndexes = {
   source: string;
 };
 
-const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** ID rekam untuk tampilan; UUID dipendekkan menjadi delapan karakter awal. */
-export function auditRecordLabel(id: string) {
-  return uuidPattern.test(id) ? id.slice(0, 8) : id;
-}
+export const auditRecordLabel = displayRecordId;
 
 export function auditStatusLabel(status: AuditReviewStatus) {
   if (status === "completed") return "Selesai ditinjau";

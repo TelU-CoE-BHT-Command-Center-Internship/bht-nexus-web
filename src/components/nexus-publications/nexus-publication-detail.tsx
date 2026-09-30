@@ -35,6 +35,7 @@ import {
   NexusWorkspaceButton,
   NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusPublicationDetailProps = {
   /** Keadaan pemuatan daftar penulis dari rincian rekam. */
@@ -252,7 +253,7 @@ export function NexusPublicationDetail({
     <NexusWorkspaceDrawer
       closeLabel="Tutup rincian publikasi"
       description="Telusuri metadata karya, klasifikasi KM, sumber pembentuk, dan keputusan tinjauannya."
-      eyebrow={publication.publicId}
+      eyebrow={displayRecordId(publication.publicId)}
       onClose={onClose}
       steps={[
         { active: true, complete: true, label: "Metadata", number: 1 },

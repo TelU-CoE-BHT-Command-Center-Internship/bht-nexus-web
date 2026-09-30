@@ -140,6 +140,7 @@ export function useNexusActivityCatalog() {
   const [records, setRecords] = useState<NexusActivityView[]>([]);
   const [state, setState] = useState<NexusLoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>();
+  const [loadedAt, setLoadedAt] = useState<Date>();
   const latestRequest = useRef(0);
 
   const load = useCallback(() => {
@@ -151,6 +152,7 @@ export function useNexusActivityCatalog() {
         setRecords(
           activities.map((activity) => nexusActivityFromServer(activity)),
         );
+        setLoadedAt(new Date());
         setState("ready");
       })
       .catch((error: unknown) => {
@@ -169,7 +171,7 @@ export function useNexusActivityCatalog() {
     };
   }, [load]);
 
-  return { errorMessage, records, retry: load, state };
+  return { errorMessage, loadedAt, records, retry: load, state };
 }
 
 /** Rincian satu kegiatan (termasuk peserta), disimpan selama halaman terbuka. */
