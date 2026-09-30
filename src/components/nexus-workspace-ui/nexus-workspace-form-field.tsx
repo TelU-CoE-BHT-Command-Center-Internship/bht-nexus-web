@@ -11,6 +11,8 @@ export type NexusWorkspaceFormOption = {
 };
 
 type NexusWorkspaceFormFieldProps = {
+  /** Bidang tampil sebagai informasi tetapi tidak dapat diubah. */
+  disabled?: boolean;
   error?: string;
   hint?: string;
   id: string;
@@ -37,6 +39,7 @@ function ChevronDownIcon() {
 }
 
 export function NexusWorkspaceFormField({
+  disabled = false,
   error,
   hint,
   id,
@@ -59,6 +62,7 @@ export function NexusWorkspaceFormField({
   const controlProps = {
     "aria-describedby": describedBy || undefined,
     "aria-invalid": Boolean(error),
+    disabled,
     id,
     name,
     onChange,
