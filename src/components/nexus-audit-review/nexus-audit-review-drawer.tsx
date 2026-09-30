@@ -5,12 +5,13 @@ import { AuditReviewDecisionSection } from "@/components/nexus-audit-review/nexu
 import { AuditCandidateDetails } from "@/components/nexus-audit-review/nexus-audit-review-detail";
 import {
   type AuditReviewDrawerProps,
+  auditRecordLabel,
   auditSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 
 export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
-  const { onClose, record, state } = props;
+  const { matching, onClose, record, state } = props;
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(
     state.reviewTargetRecordId &&
       state.matches.some((match) => match.id === state.reviewTargetRecordId)
@@ -32,6 +33,9 @@ export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
       setSelectedMatchId(
         state.matches.length === 1 ? state.matches[0].id : null,
       );
+    } else if (!selectedMatchId && state.matches.length === 1) {
+      // Pembanding dapat tiba setelah rincian dibuka.
+      setSelectedMatchId(state.matches[0].id);
     }
   }, [selectedMatchId, state.matches]);
   const selectedMatch = state.matches.find(
@@ -43,7 +47,7 @@ export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
     <NexusWorkspaceDrawer
       closeLabel="Tutup rincian kandidat"
       description="Periksa kandidat, rekam terkait, bukti, dan dampaknya sebelum menetapkan keputusan."
-      eyebrow={`${record.id} · V${state.version}`}
+      eyebrow={`${auditRecordLabel(record.id)} · V${state.version}`}
       onClose={onClose}
       steps={[
         { active: true, complete: true, label: "Kandidat", number: 1 },
@@ -64,6 +68,7 @@ export function NexusAuditReviewDrawer(props: AuditReviewDrawerProps) {
     >
       <AuditCandidateDetails
         indexes={sectionIndexes}
+        matching={matching}
         onSelectMatch={setSelectedMatchId}
         record={record}
         selectedMatch={selectedMatch}

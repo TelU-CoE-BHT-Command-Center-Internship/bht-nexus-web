@@ -401,6 +401,23 @@
   gap: 0.55rem;
 }
 
+.reviewMatchError {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+}
+
+.reviewPlannedLabel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.reviewActionError {
+  margin-top: 0.75rem;
+}
+
 .reviewMatchCard:not([data-selected="true"]) {
   border-color: #dfe4ec;
   box-shadow: none;

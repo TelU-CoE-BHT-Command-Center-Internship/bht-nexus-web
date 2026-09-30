@@ -13,6 +13,7 @@ import {
   type AuditReviewDrawerProps,
   auditCurrentValue,
   auditDecisionConsequence,
+  auditRecordLabel,
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import { manualDomainForReviewRecord } from "@/components/nexus-manual-submission/nexus-manual-submission-comparison";
@@ -48,6 +49,7 @@ import { auditMatchingIsCurrent } from "@/components/nexus-review-session/nexus-
 import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
+  NexusWorkspacePlannedBadge,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
@@ -102,9 +104,11 @@ const newOfficialPersonValue = "__new_person__";
 export function AuditReviewDecisionSection({
   capabilities,
   decisionIndex,
+  matching,
   onClose,
   onDecide,
   onResubmit,
+  planned,
   record,
   selectedMatch,
   state,
@@ -112,7 +116,18 @@ export function AuditReviewDecisionSection({
   const exactIdentifier = state.matches.some(
     (match) => match.verdict === "same_identifier",
   );
-  const matchingIsStale = !auditMatchingIsCurrent(state);
+  const matchingIsPending =
+    matching !== undefined && matching.state !== "ready";
+  const matchingIsStale = matchingIsPending || !auditMatchingIsCurrent(state);
+  const mergeIsPlanned = Boolean(
+    planned?.mergeRequiresSameIdentifier &&
+      selectedMatch?.verdict !== "same_identifier",
+  );
+  const kpiResolutionIsPlanned = Boolean(planned?.kpiResolution);
+  const evidenceNoteIsPlanned = Boolean(planned?.correctionEvidenceNote);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string>();
+  const [actionNotice, setActionNotice] = useState<string>();
   const [decisionChoice, setDecisionChoice] =
     useState<AuditDecisionKind | null>(null);
   const [note, setNote] = useState("");
@@ -539,22 +554,24 @@ export function AuditReviewDecisionSection({
   const kpiChoices = kpiChoicesFor(kpiFamily);
   const kpiResolutionReady =
     !resolvesKpi ||
+    kpiResolutionIsPlanned ||
     !approvalChoice ||
     kpiResolutionStatus === "removed" ||
     kpiResolutionStatus === "undetermined" ||
     (kpiResolutionStatus === "confirmed" && record.kpiLinks.length > 0) ||
     (kpiResolutionStatus === "changed" && selectedKpiIds.length > 0);
-  const kpiResolution: AuditKpiResolution | undefined = resolvesKpi
-    ? {
-        indicatorIds:
-          kpiResolutionStatus === "confirmed"
-            ? record.kpiLinks.map((link) => link.indicator.id)
-            : kpiResolutionStatus === "changed"
-              ? selectedKpiIds
-              : [],
-        status: kpiResolutionStatus || "undetermined",
-      }
-    : undefined;
+  const kpiResolution: AuditKpiResolution | undefined =
+    resolvesKpi && !kpiResolutionIsPlanned
+      ? {
+          indicatorIds:
+            kpiResolutionStatus === "confirmed"
+              ? record.kpiLinks.map((link) => link.indicator.id)
+              : kpiResolutionStatus === "changed"
+                ? selectedKpiIds
+                : [],
+          status: kpiResolutionStatus || "undetermined",
+        }
+      : undefined;
   const decisionReady = Boolean(
     decisionChoice &&
       selectedActionAllowed &&
@@ -565,6 +582,7 @@ export function AuditReviewDecisionSection({
       targetPersonBindingReady &&
       personMappingsReady &&
       kpiResolutionReady &&
+      !(decisionChoice === "merged" && mergeIsPlanned) &&
       !(
         matchingIsStale &&
         ["approved_new", "approved_update", "merged"].includes(decisionChoice)
@@ -574,6 +592,7 @@ export function AuditReviewDecisionSection({
   const selectDecision = (choice: AuditDecisionKind) => {
     setDecisionChoice(choice);
     setShowConfirmation(false);
+    setActionError(undefined);
   };
 
   const toggleField = (fieldId: string) => {
@@ -585,9 +604,11 @@ export function AuditReviewDecisionSection({
     setShowConfirmation(false);
   };
 
-  const confirmDecision = () => {
-    if (!decisionChoice || !decisionReady) return;
-    onDecide(
+  const confirmDecision = async () => {
+    if (!decisionChoice || !decisionReady || isSubmitting) return;
+    setIsSubmitting(true);
+    setActionError(undefined);
+    const error = await onDecide(
       decisionChoice,
       note.trim(),
       decisionChoice === "changes_requested" ? selectedFieldIds : [],
@@ -604,6 +625,32 @@ export function AuditReviewDecisionSection({
       decisionChoice === "merged" ? effectiveTargetPersonId : undefined,
       decisionChoice === "approved_update" ? resolvedPersonMappings : undefined,
     );
+    setIsSubmitting(false);
+    if (error) {
+      setActionError(error);
+      return;
+    }
+    // Keputusan yang belum menutup kasus (mis. menunggu persetujuan kedua)
+    // tidak mengubah status, sehingga formulir dikosongkan di sini.
+    setShowConfirmation(false);
+    setDecisionChoice(null);
+    setNote("");
+    setSelectedFieldIds([]);
+    setActionNotice(
+      "Keputusan tersimpan. Kandidat masih menunggu keputusan pemeriksa lain.",
+    );
+  };
+
+  const submitCorrection = async (
+    values: Record<string, string>,
+    resolutions?: MetadataCompletionResolutions,
+  ) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setActionError(undefined);
+    const error = await onResubmit(values, evidenceNote.trim(), resolutions);
+    setIsSubmitting(false);
+    if (error) setActionError(error);
   };
 
   if (state.status === "needs_fix" && state.fixRequest) {
@@ -894,18 +941,39 @@ export function AuditReviewDecisionSection({
             );
           })}
         </div>
-        <label className={drawerStyles.reviewTextField}>
-          <span>
-            Catatan bukti perbaikan <b>WAJIB</b>
-          </span>
-          <textarea
-            maxLength={600}
-            onChange={(event) => setEvidenceNote(event.currentTarget.value)}
-            placeholder="Jelaskan dokumen atau sumber yang menjadi dasar perubahan"
-            rows={4}
-            value={evidenceNote}
-          />
-        </label>
+        {evidenceNoteIsPlanned ? (
+          <label className={drawerStyles.reviewTextField}>
+            <span className={drawerStyles.reviewPlannedLabel}>
+              Catatan bukti perbaikan <NexusWorkspacePlannedBadge />
+            </span>
+            <textarea
+              disabled
+              placeholder="Catatan dasar perbaikan akan disimpan bersama perubahan setelah layanan tersedia"
+              rows={3}
+              value=""
+            />
+          </label>
+        ) : (
+          <label className={drawerStyles.reviewTextField}>
+            <span>
+              Catatan bukti perbaikan <b>WAJIB</b>
+            </span>
+            <textarea
+              maxLength={600}
+              onChange={(event) => setEvidenceNote(event.currentTarget.value)}
+              placeholder="Jelaskan dokumen atau sumber yang menjadi dasar perubahan"
+              rows={4}
+              value={evidenceNote}
+            />
+          </label>
+        )}
+        {actionError ? (
+          <div className={drawerStyles.reviewActionError} role="alert">
+            <NexusWorkspaceNotice tone="danger">
+              {actionError}
+            </NexusWorkspaceNotice>
+          </div>
+        ) : null}
         <div className={drawerStyles.reviewDecisionActions}>
           <NexusWorkspaceButton onClick={onClose} type="button">
             Tutup tanpa mengirim
@@ -913,9 +981,10 @@ export function AuditReviewDecisionSection({
           <NexusWorkspaceButton
             className={drawerStyles.reviewPrimaryAction}
             disabled={
+              isSubmitting ||
               !correctionChanged ||
               !correctionComplete ||
-              evidenceNote.trim().length === 0
+              (!evidenceNoteIsPlanned && evidenceNote.trim().length === 0)
             }
             onClick={() => {
               if (isCompletionCorrection) {
@@ -934,19 +1003,17 @@ export function AuditReviewDecisionSection({
                     ];
                   }),
                 );
-                onResubmit(
-                  values,
-                  evidenceNote.trim(),
-                  effectiveCorrectionResolutions,
-                );
+                void submitCorrection(values, effectiveCorrectionResolutions);
                 return;
               }
-              onResubmit(draft, evidenceNote.trim());
+              void submitCorrection(draft);
             }}
             tone="primary"
             type="button"
           >
-            Kirim ulang untuk ditinjau
+            {isSubmitting
+              ? "Mengirim perbaikan…"
+              : "Kirim ulang untuk ditinjau"}
           </NexusWorkspaceButton>
         </div>
       </section>
@@ -972,8 +1039,12 @@ export function AuditReviewDecisionSection({
           <strong>{state.decision.label}</strong>
           <p>{state.decision.note}</p>
         </div>
-        {record.candidateKind === "metadata_completion" &&
-        state.decision.kind === "approved_completion" ? (
+        {state.decision.appliedNote ? (
+          <NexusWorkspaceNotice>
+            {state.decision.appliedNote}
+          </NexusWorkspaceNotice>
+        ) : record.candidateKind === "metadata_completion" &&
+          state.decision.kind === "approved_completion" ? (
           <NexusWorkspaceNotice>
             Pelengkapan yang disetujui sudah tercermin pada Data Resmi dan
             tercatat bersama jejak tinjauannya.
@@ -1003,7 +1074,7 @@ export function AuditReviewDecisionSection({
           {state.decision.targetRecordId ? (
             <div>
               <dt>Rekam tujuan</dt>
-              <dd>{state.decision.targetRecordId}</dd>
+              <dd>{auditRecordLabel(state.decision.targetRecordId)}</dd>
             </div>
           ) : null}
         </dl>
@@ -1063,7 +1134,17 @@ export function AuditReviewDecisionSection({
         </NexusWorkspaceNotice>
       ) : null}
 
-      {matchingIsStale ? (
+      {matching?.state === "loading" ? (
+        <NexusWorkspaceNotice>
+          Menunggu hasil pencocokan dengan Data Resmi. Pilihan menerima aktif
+          setelah pembanding tersedia.
+        </NexusWorkspaceNotice>
+      ) : matching?.state === "error" ? (
+        <NexusWorkspaceNotice tone="danger">
+          Pencocokan dengan Data Resmi belum dapat dimuat. Muat ulang pembanding
+          sebelum menerima atau menghubungkan data.
+        </NexusWorkspaceNotice>
+      ) : matchingIsStale ? (
         <NexusWorkspaceNotice tone="danger">
           Pencocokan versi sebelumnya sudah kedaluwarsa setelah kandidat
           diperbaiki. Perbarui hasil pencocokan sebelum menerima, memperbarui,
@@ -1071,7 +1152,31 @@ export function AuditReviewDecisionSection({
         </NexusWorkspaceNotice>
       ) : null}
 
-      {resolvesKpi ? (
+      {actionNotice ? (
+        <NexusWorkspaceNotice tone="success">
+          {actionNotice}
+        </NexusWorkspaceNotice>
+      ) : null}
+
+      {resolvesKpi && kpiResolutionIsPlanned ? (
+        <div className={drawerStyles.reviewTextField}>
+          <span className={drawerStyles.reviewPlannedLabel}>
+            Keputusan keterkaitan indikator KM <NexusWorkspacePlannedBadge />
+          </span>
+          <select
+            aria-label="Keputusan keterkaitan indikator KM"
+            disabled
+            value=""
+          >
+            <option value="">Pilih hasil verifikasi indikator</option>
+          </select>
+          <small>
+            Verifikasi indikator KM akan disimpan bersama keputusan setelah
+            layanan tersedia. Untuk sementara keputusan tidak mengubah
+            keterkaitan indikator.
+          </small>
+        </div>
+      ) : resolvesKpi ? (
         <div className={drawerStyles.reviewTextField}>
           <span>Keputusan keterkaitan indikator KM · wajib saat menerima</span>
           <select
@@ -1309,22 +1414,32 @@ export function AuditReviewDecisionSection({
         {record.candidateKind === "new_record" && selectedMatch ? (
           <label
             data-disabled={
-              matchingIsStale || !capabilities.canApprove || undefined
+              matchingIsStale ||
+              mergeIsPlanned ||
+              !capabilities.canApprove ||
+              undefined
             }
             data-selected={decisionChoice === "merged" || undefined}
           >
             <input
               checked={decisionChoice === "merged"}
-              disabled={matchingIsStale || !capabilities.canApprove}
+              disabled={
+                matchingIsStale || mergeIsPlanned || !capabilities.canApprove
+              }
               name={`decision-${record.id}`}
               onChange={() => selectDecision("merged")}
               type="radio"
             />
             <span className={drawerStyles.reviewRadio} />
             <span>
-              <strong>Hubungkan ke {selectedMatch.id}</strong>
+              <strong className={drawerStyles.reviewPlannedLabel}>
+                Hubungkan ke {auditRecordLabel(selectedMatch.id)}
+                {mergeIsPlanned ? <NexusWorkspacePlannedBadge /> : null}
+              </strong>
               <small>
-                Pilih jika bukti menunjukkan karya atau entitas yang sama.
+                {mergeIsPlanned
+                  ? "Menghubungkan ke rekam pilihan segera tersedia. Saat ini hanya rekam dengan DOI yang sama yang dapat dihubungkan."
+                  : "Pilih jika bukti menunjukkan karya atau entitas yang sama."}
               </small>
             </span>
           </label>
@@ -1383,7 +1498,10 @@ export function AuditReviewDecisionSection({
             <span className={drawerStyles.reviewRadio} />
             <span>
               <strong>
-                Terapkan pembaruan ke {selectedMatch?.id ?? "rekam terpilih"}
+                Terapkan pembaruan ke{" "}
+                {selectedMatch
+                  ? auditRecordLabel(selectedMatch.id)
+                  : "rekam terpilih"}
               </strong>
               <small>
                 Perbarui rekam tujuan dengan menyimpan nilai sebelumnya dan
@@ -1503,6 +1621,14 @@ export function AuditReviewDecisionSection({
         <small>{note.length} / 600 karakter</small>
       </label>
 
+      {actionError ? (
+        <div className={drawerStyles.reviewActionError} role="alert">
+          <NexusWorkspaceNotice tone="danger">
+            {actionError}
+          </NexusWorkspaceNotice>
+        </div>
+      ) : null}
+
       {showConfirmation && decisionChoice ? (
         <output className={drawerStyles.reviewConfirmation}>
           <div>
@@ -1515,6 +1641,7 @@ export function AuditReviewDecisionSection({
           </div>
           <div>
             <NexusWorkspaceButton
+              disabled={isSubmitting}
               onClick={() => setShowConfirmation(false)}
               type="button"
             >
@@ -1522,11 +1649,12 @@ export function AuditReviewDecisionSection({
             </NexusWorkspaceButton>
             <NexusWorkspaceButton
               className={drawerStyles.reviewPrimaryAction}
-              onClick={confirmDecision}
+              disabled={isSubmitting}
+              onClick={() => void confirmDecision()}
               tone="primary"
               type="button"
             >
-              Konfirmasi dan simpan
+              {isSubmitting ? "Menyimpan keputusan…" : "Konfirmasi dan simpan"}
             </NexusWorkspaceButton>
           </div>
         </output>

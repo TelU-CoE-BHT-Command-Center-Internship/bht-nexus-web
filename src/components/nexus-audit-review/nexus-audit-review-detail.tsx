@@ -5,19 +5,24 @@ import type {
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import drawerStyles from "@/components/nexus-audit-review/nexus-audit-review-drawer.module.css";
 import {
+  type AuditReviewMatching,
   type AuditRuntimeState,
   auditCurrentValue,
   auditDisplayValue,
   auditEffectiveSubtitle,
   auditEffectiveTitle,
   auditEvaluationPeriodLabel,
+  auditRecordLabel,
   auditSourceTone,
   auditStatusLabel,
   auditStatusTone,
   type ReviewSectionIndexes,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import { auditMatchingIsCurrent } from "@/components/nexus-review-session/nexus-review-session";
-import { NexusWorkspaceNotice } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import {
+  NexusWorkspaceButton,
+  NexusWorkspaceNotice,
+} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
   formatAuditTimestamp,
   personInitials,
@@ -27,6 +32,7 @@ import { kmIndicator } from "@/content/nexus-km-indicators";
 
 type AuditCandidateDetailsProps = {
   indexes: ReviewSectionIndexes;
+  matching?: AuditReviewMatching;
   onSelectMatch: (matchId: string) => void;
   record: AuditReviewRecord;
   selectedMatch?: AuditOfficialMatch;
@@ -291,13 +297,19 @@ function MatchAssessment({ state }: Pick<AuditCandidateDetailsProps, "state">) {
 
 function OfficialMatchSection({
   indexes,
+  matching,
   onSelectMatch,
   record,
   selectedMatch,
   state,
 }: Pick<
   AuditCandidateDetailsProps,
-  "indexes" | "onSelectMatch" | "record" | "selectedMatch" | "state"
+  | "indexes"
+  | "matching"
+  | "onSelectMatch"
+  | "record"
+  | "selectedMatch"
+  | "state"
 >) {
   return (
     <section
@@ -308,13 +320,33 @@ function OfficialMatchSection({
         id="audit-official-match-title"
         index={indexes.match}
         meta={
-          state.matches.length > 0
-            ? `${state.matches.length} rekam untuk diperiksa`
-            : "Belum ada pembanding"
+          matching?.state === "loading"
+            ? "Mencocokkan dengan Data Resmi"
+            : matching?.state === "error"
+              ? "Pembanding belum dimuat"
+              : state.matches.length > 0
+                ? `${state.matches.length} rekam untuk diperiksa`
+                : "Belum ada pembanding"
         }
         title="Rekam resmi terkait"
       />
-      {state.matches.length > 0 ? (
+      {matching?.state === "loading" ? (
+        <NexusWorkspaceNotice>
+          Mencocokkan kandidat dengan Data Resmi berdasarkan DOI dan judul.
+        </NexusWorkspaceNotice>
+      ) : matching?.state === "error" ? (
+        <div className={drawerStyles.reviewMatchError}>
+          <NexusWorkspaceNotice tone="danger">
+            {matching.errorMessage ??
+              "Pembanding Data Resmi belum dapat dimuat."}
+          </NexusWorkspaceNotice>
+          {matching.onRetry ? (
+            <NexusWorkspaceButton onClick={matching.onRetry} type="button">
+              Muat ulang pembanding
+            </NexusWorkspaceButton>
+          ) : null}
+        </div>
+      ) : state.matches.length > 0 ? (
         <div className={drawerStyles.reviewMatchList}>
           {state.matches.map((match, index) => {
             const isSelected = selectedMatch?.id === match.id;
@@ -339,8 +371,8 @@ function OfficialMatchSection({
                 <span className={drawerStyles.reviewMatchCopy}>
                   <strong>{match.title}</strong>
                   <small>
-                    {match.id} · {auditEvaluationPeriodLabel(record)} · rekam
-                    resmi
+                    {auditRecordLabel(match.id)} ·{" "}
+                    {auditEvaluationPeriodLabel(record)} · rekam resmi
                   </small>
                   <em>
                     {exactIdentifier
@@ -450,7 +482,7 @@ function ComparisonSection({
       <AuditReviewSectionHeading
         id="audit-comparison-title"
         index={indexes.comparison}
-        meta={`Kandidat masuk vs ${selectedMatch.id}`}
+        meta={`Kandidat masuk vs ${auditRecordLabel(selectedMatch.id)}`}
         title="Bandingkan setiap bidang"
       />
       <div className={drawerStyles.reviewComparisonSummary}>
@@ -525,7 +557,8 @@ function RevisionSection({
         })}
         <p className={drawerStyles.reviewDiffNote}>
           <strong>Dasar perubahan</strong>
-          {state.correction.evidenceNote}
+          {state.correction.evidenceNote ||
+            "Catatan dasar perubahan belum dicatat untuk versi ini."}
         </p>
       </div>
     </section>
@@ -595,7 +628,11 @@ function SourceEvidenceSection({
           <dl>
             <div>
               <dt>Kunci rekam</dt>
-              <dd>{selectedMatch?.id ?? "Belum ada"}</dd>
+              <dd>
+                {selectedMatch
+                  ? auditRecordLabel(selectedMatch.id)
+                  : "Belum ada"}
+              </dd>
             </div>
             <div>
               <dt>Status</dt>
@@ -759,6 +796,7 @@ function SourceEvidenceSection({
 
 export function AuditCandidateDetails({
   indexes,
+  matching,
   onSelectMatch,
   record,
   selectedMatch,
@@ -767,7 +805,7 @@ export function AuditCandidateDetails({
   return (
     <>
       <CandidateOverview record={record} state={state} />
-      {state.correction ? (
+      {state.correction && state.status !== "completed" ? (
         <section className={drawerStyles.reviewRevisionBanner}>
           <span aria-hidden="true">✓</span>
           <div>
@@ -789,6 +827,7 @@ export function AuditCandidateDetails({
       <MatchAssessment state={state} />
       <OfficialMatchSection
         indexes={indexes}
+        matching={matching}
         onSelectMatch={onSelectMatch}
         record={record}
         selectedMatch={selectedMatch}

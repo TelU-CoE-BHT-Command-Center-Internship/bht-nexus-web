@@ -94,6 +94,8 @@ export type AuditReviewHistory = {
 export type AuditReviewDecision = {
   actor: string;
   actorId?: string;
+  /** Akibat keputusan pada Data Resmi sebagaimana dijawab server. */
+  appliedNote?: string;
   kind: AuditDecisionKind;
   kpiResolution?: AuditKpiResolution;
   memberPersonBinding?: AuditMemberPersonBinding;

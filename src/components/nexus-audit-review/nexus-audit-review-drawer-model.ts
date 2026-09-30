@@ -15,9 +15,29 @@ import type {
 
 export type { AuditRuntimeState };
 
+/** Keadaan pencocokan kandidat terhadap Data Resmi yang dibaca dari server. */
+export type AuditReviewMatching = {
+  errorMessage?: string;
+  onRetry?: () => void;
+  state: "error" | "loading" | "ready";
+};
+
+/**
+ * Bagian keputusan yang belum dicatat layanan. Bagian tersebut tetap tampil
+ * sebagai tindakan yang segera tersedia dan tidak menjadi syarat keputusan.
+ */
+export type AuditReviewPlannedParts = {
+  correctionEvidenceNote?: boolean;
+  kpiResolution?: boolean;
+  /** Menghubungkan kandidat hanya tersedia ke rekam resmi ber-DOI sama. */
+  mergeRequiresSameIdentifier?: boolean;
+};
+
 export type AuditReviewDrawerProps = {
   capabilities: NexusRecordCapabilities;
+  matching?: AuditReviewMatching;
   onClose: () => void;
+  /** Menyimpan keputusan; mengembalikan pesan bila server menolaknya. */
   onDecide: (
     kind: AuditDecisionKind,
     note: string,
@@ -27,12 +47,14 @@ export type AuditReviewDrawerProps = {
     memberPersonBinding?: AuditMemberPersonBinding,
     targetPersonId?: string,
     personMappings?: AuditPersonMapping[],
-  ) => void;
+  ) => Promise<string | undefined>;
+  /** Mengirim perbaikan; mengembalikan pesan bila server menolaknya. */
   onResubmit: (
     values: Record<string, string>,
     evidenceNote: string,
     resolutions?: MetadataCompletionResolutions,
-  ) => void;
+  ) => Promise<string | undefined>;
+  planned?: AuditReviewPlannedParts;
   record: AuditReviewRecord;
   state: AuditRuntimeState;
 };
@@ -44,6 +66,14 @@ export type ReviewSectionIndexes = {
   metadata: string;
   source: string;
 };
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** ID rekam untuk tampilan; UUID dipendekkan menjadi delapan karakter awal. */
+export function auditRecordLabel(id: string) {
+  return uuidPattern.test(id) ? id.slice(0, 8) : id;
+}
 
 export function auditStatusLabel(status: AuditReviewStatus) {
   if (status === "completed") return "Selesai ditinjau";
@@ -145,19 +175,19 @@ export function auditDecisionConsequence(
 ) {
   if (choice === "merged") {
     return {
-      body: `Kandidat akan dihubungkan ke ${selectedMatch?.id ?? "rekam terpilih"}. Sumber dan perbedaannya dipertahankan pada rekam resmi yang sama.`,
+      body: `Kandidat akan dihubungkan ke ${selectedMatch ? auditRecordLabel(selectedMatch.id) : "rekam terpilih"}. Sumber dan perbedaannya dipertahankan pada rekam resmi yang sama.`,
       title: "Kandidat dihubungkan tanpa membuat duplikat",
     };
   }
   if (choice === "approved_update") {
     return {
-      body: `Perubahan yang diperiksa akan diterapkan ke ${selectedMatch?.id ?? "rekam resmi terpilih"}. Nilai sebelumnya, sumber, reviewer, waktu, dan versi tetap tercatat.`,
+      body: `Perubahan yang diperiksa akan diterapkan ke ${selectedMatch ? auditRecordLabel(selectedMatch.id) : "rekam resmi terpilih"}. Nilai sebelumnya, sumber, reviewer, waktu, dan versi tetap tercatat.`,
       title: "Rekam resmi diperbarui dengan jejak versi",
     };
   }
   if (choice === "approved_completion") {
     return {
-      body: `Nilai atau pengecualian yang diajukan diterapkan pada ${selectedMatch?.id ?? "rekam resmi tujuan"}. Status kelengkapan dihitung ulang tanpa membuat rekam baru.`,
+      body: `Nilai atau pengecualian yang diajukan diterapkan pada ${selectedMatch ? auditRecordLabel(selectedMatch.id) : "rekam resmi tujuan"}. Status kelengkapan dihitung ulang tanpa membuat rekam baru.`,
       title: "Pelengkapan metadata diterapkan",
     };
   }
