@@ -1,8 +1,33 @@
 # Batas Data Frontend BHT Nexus
 
-Dokumen ini mencatat sumber data antarmuka dan kontrak penggantinya. Data di repository ini dipakai untuk mengembangkan presentasi serta perilaku frontend; data tersebut bukan laporan resmi CoE BHT.
+Dokumen ini mencatat dari mana setiap bagian antarmuka mengambil datanya: sebagian besar ruang kerja kini membaca dan menulis ke `bht-nexus-server`, sedangkan sisanya masih memakai data pratinjau di frontend. Data pratinjau dipakai untuk mengembangkan presentasi serta perilaku antarmuka; data tersebut bukan laporan resmi CoE BHT.
 
-## Adapter data saat ini
+## Adapter server yang sudah terpasang
+
+Setiap adapter menerjemahkan jawaban API ke bentuk data yang sudah dipakai komponen, sehingga tampilan tidak berubah ketika sumber datanya berpindah. Klien API berada di `src/lib/api-*.ts`; seluruh permintaan memakai cookie sesi HTTP-only dan token CSRF dari server, tanpa menyimpan token di browser.
+
+| Area | Adapter | Endpoint server |
+|---|---|---|
+| Sesi dan identitas | `src/lib/api-server.ts`, `nexus-workspace-session.ts` | `GET /profile/me` (identitas, peran, izin efektif), cadangan `GET /auth/me` bila profil belum boleh dibaca |
+| Masuk dan keluar | `src/lib/api-auth.ts` | `POST /auth/sign-in/email`, `POST /auth/sign-in/email-otp`, `POST /auth/two-factor/verify-totp/challenge`, `POST /auth/sign-out` |
+| Menu dan kemampuan | `nexus-workspace-access.ts` | izin efektif dari `GET /profile/me`. Bila izin belum dijawab, web memakai cermin izin bawaan tiap peran; bila peran pun belum terbaca, seluruh menu tampil dan setiap halaman mengikuti jawaban server |
+| Anggota | `nexus-member-server.ts` | `GET /members`, `GET /members/:id` |
+| Publikasi | `nexus-publication-server.ts` | `GET /publications`, `GET /publications/:id` |
+| Kegiatan & Pengabdian | `nexus-activity-server.ts` | `GET /activities`, `GET /activities/:id` |
+| Pengumpulan | `nexus-scraper-search.tsx` | `GET /jobs`, `POST /jobs`, `GET /jobs/:id`, `GET /jobs/:id/attempts`, `POST /jobs/:id/retry`, `POST /reviews/cases/sync-from-job/:id` |
+| Tinjauan | `nexus-review-server.ts` | `GET /reviews/cases`, rincian, pembanding, `PATCH` kandidat, keputusan, dan pemulihan pada `/reviews/cases/:id` |
+| Pengajuan manual | `nexus-manual-submission-server.ts` | `POST /submissions/manual` (saat ini Publikasi) |
+| Administrasi | `nexus-administration-server.tsx`, `nexus-account-server.ts` | `GET /admin/accounts`, `POST /admin/accounts/invite`, `PATCH /admin/accounts/:id/role`, `DELETE /users/:id/roles/:roleId`, `PATCH /admin/accounts/:id/status`, `PATCH /admin/accounts/:id/link-member` |
+| Akses khusus | `nexus-user-access-server.tsx`, `nexus-account-special-access.ts` | `GET /admin/accounts/:id/permissions`, `PUT /admin/accounts/:id/permissions/override` |
+| Peran & Hak Akses | `nexus-role-server.ts` | `GET/POST /roles`, `PATCH/DELETE /roles/:id`, `GET/POST /roles/:id/permissions`, `DELETE /roles/:id/permissions/:permissionId`, `POST /roles/:id/reset`, `GET /permissions` |
+| Penolakan Akses | `nexus-audit-denials.tsx` | `GET /audit/permission-denials` |
+| Profil Saya | `nexus-profile-server.ts` | `GET /profile/me`, `PATCH /profile/me`, `PATCH /profile/me/academic-identifiers` |
+
+Bacaan pelengkap yang boleh ditolak server, misalnya direktori Anggota bagi akun yang tidak berwenang membacanya, diperlakukan sebagai tidak tersedia alih-alih kosong: nama anggota diambil dari akun yang tertaut dan jumlah yang tidak dapat dibaca tidak ditampilkan sebagai nol.
+
+## Adapter data pratinjau
+
+Bagian yang sudah tersambung ke server tidak lagi mengambil datanya dari adapter di bawah ini. Bentuk data dan komponennya tetap dipakai bersama, sedangkan Monitoring KM, Broadcast / Newsletter, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Dokumen, dan Dashboard masih berjalan sepenuhnya di atas adapter ini.
 
 | Area | Adapter frontend | Perilaku lokal |
 |---|---|---|
@@ -66,7 +91,7 @@ Hasil pelengkapan metadata memakai empat state bersama: `available`, `not-availa
 
 ## Kemampuan server yang dibutuhkan
 
-Arah hubungannya satu jalur: halaman yang dibuka pengguna berada di `bht-nexus-web`, sedangkan login, aturan bisnis, pemrosesan, dan pengelolaan data berada di `bht-nexus-server` beserta basis data dan layanan pendukungnya. Pada tahap ini hubungan tersebut masih menjadi arah pengembangan—web belum mengirim satu pun permintaan ke server.
+Arah hubungannya satu jalur: halaman yang dibuka pengguna berada di `bht-nexus-web`, sedangkan login, aturan bisnis, pemrosesan, dan pengelolaan data berada di `bht-nexus-server` beserta basis data dan layanan pendukungnya.
 
 Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan kemampuan berikut:
 
@@ -85,52 +110,34 @@ Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan ke
 13. direktori peran, katalog izin, hak akses bawaan tiap peran, dan penyesuaian izin per akun beserta efek memberi atau membatasi;
 14. pengiriman broadcast email: unggah gambar ke penyimpanan publik, penentuan penerima di server menurut aturan penerima, pengiriman ke banyak penerima beserta hasil per penerima, serta riwayat broadcast dan auditnya.
 
+Per 1 Oktober 2026 web sudah memakai butir 1 sampai 7, 11, dan 13, ditambah catatan penolakan akses dari butir 12. Butir 8 sampai 10 sudah tersedia di server tetapi halaman Dokumen belum disambungkan. Butir 14 belum tersedia di server.
+
 ### Kontrak integrasi Anggota
 
-Audit terhadap `bht-nexus-server` branch `main` pada commit `87e0f0fe1ec06ea1d0f2b5001d1293e05b63bc7f` menemukan batas berikut:
+Kontrak yang dipakai web pada `bht-nexus-server` branch `dev` (commit `2905b59`, 30 September 2026):
 
-- tabel `member` baru menyimpan `user_id`, status keanggotaan, visibilitas publik, dan tanggal bergabung;
-- `user_id` wajib, unik, dan terhubung ke `user`, sehingga anggota tanpa akun belum dapat disimpan, sedangkan akun tanpa anggota sudah dimungkinkan;
-- nama, email, dan foto masih berada pada entitas `user`; unit, bidang keahlian, penugasan CoE, serta pengenal SINTA, ORCID, Google Scholar, Scopus, dan ResearcherID belum mempunyai kontrak penyimpanan anggota;
-- `AppModule` belum memasang modul atau endpoint CRUD Anggota;
-- autentikasi menyediakan registrasi email mandiri, tetapi belum menyediakan undangan admin yang membuat akun lalu menautkannya secara eksplisit ke ID anggota;
-- role, permission, dan penugasan role sudah dimodelkan terpisah dari `member`, sejalan dengan batas halaman ini bahwa profil anggota tidak menjadi tempat mengubah hak akses.
-
-Sebelum adapter frontend dihubungkan, kontrak server perlu memungkinkan profil anggota dibuat tanpa akun, menyediakan hubungan akun-ke-anggota yang eksplisit dan opsional, menyediakan CRUD/pencarian/filter/nonaktif sesuai izin beserta audit, menerapkan keunikan pengenal eksternal, dan menyediakan alur undangan akun administratif. Bentuk tabel akhirnya merupakan keputusan tim backend; frontend hanya mensyaratkan perilaku tersebut dan tidak menebak hubungan identitas dari email.
+- rekam `member` menyimpan nama, nama panggilan, kontak, unit, penugasan CoE, bidang keahlian, pengenal akademik (SINTA, Scopus, Google Scholar, ORCID, ResearcherID), foto, status keanggotaan, dan visibilitas publik. Anggota boleh belum mempunyai akun;
+- membaca direktori dan rinciannya membutuhkan izin `member.read`. Menambah, mengubah, mengubah status, dan mengunggah foto anggota membutuhkan `iam.manage`, sehingga tindakan kelola anggota di web masih bertanda **Segera** sampai alurnya disepakati;
+- hubungan akun ke anggota diatur dari Administrasi lewat `PATCH /admin/accounts/:id/link-member` dan bersifat satu akun untuk satu anggota. Kemiripan nama atau email tidak pernah dipakai untuk menebak hubungan.
 
 ### Kontrak integrasi Profil Saya
 
-Profil pribadi tidak memiliki sumber data tersendiri. `resolveNexusProfile` memproyeksikan satu akun menjadi tampilan profil dan menandai asal informasinya: `MEMBER` ketika akun terhubung ke anggota, dan `ACCOUNT` untuk akun non-anggota, akun yang hubungannya belum ditentukan, serta akun yang hubungannya perlu diperiksa. Penyimpanan mengikuti tanda yang sama, sehingga penyuntingan dari Profil Saya mendarat pada rekam anggota kanonis atau pada informasi pribadi milik akun, tidak pernah pada salinan kedua. Identitas header, aktor tindakan baru, serta seluruh presentasi manusia dan kelengkapan di Administrasi memakai penyelesai yang sama. Kelengkapan hanya mensyaratkan nama lengkap dan nomor HP; optional field tidak mengubah hasilnya.
+Profil pribadi tidak mempunyai sumber data tersendiri di web; halaman membaca `GET /profile/me` untuk akun yang sedang masuk. Jawabannya memuat identitas akun, peran, izin efektif, serta ringkasan anggota yang tertaut beserta pengenal akademiknya. Endpoint ini perlu dapat dibaca setiap pengguna yang masuk; pembukaan akses dan penambahan izin efektif diajukan sebagai perbaikan server yang menyertai integrasi ini.
 
-Transisi hubungan memakai aturan lossless: data Account boleh tetap tersimpan ketika Member aktif sebagai sumber, tetapi tidak disalin ke Member, tidak digabung berdasarkan kemiripan, dan tidak dihapus. `LINKED` selalu membaca bidang pribadi yang beririsan dari Member. Bila hubungan kembali menjadi non-anggota, data Account yang sebelumnya tersimpan menjadi aktif kembali.
+- `PATCH /profile/me` menyimpan nama, nomor HP, ringkasan, dan gambar pada akun. Server menulis ulang keempat bidang sekaligus dan mengosongkan bidang yang tidak dikirim, sehingga web selalu mengirim ulang nilai yang tidak disunting.
+- `PATCH /profile/me/academic-identifiers` menyimpan SINTA, Scopus, dan Google Scholar pada anggota yang tertaut, dengan aturan tulis ulang yang sama. Google Scholar disimpan sebagai pengenalnya saja, bukan tautan profil.
+- Informasi pribadi pada rekam anggota, profil anggota, bidang keahlian, foto, ORCID, dan ResearcherID belum mempunyai jalur simpan mandiri. Bagian itu tetap tampil dengan penanda **Segera** atau sebagai bidang nonaktif beserta keterangannya.
+- Penggantian kata sandi dari dalam ruang kerja, pencabutan sesi, dan penghapusan akun mandiri belum tersedia; kartu Keamanan mengarahkan pengguna ke Dukungan BHT Nexus.
 
-Karena seluruh anggota pada direktori awal merupakan orang nyata, tidak ada satu pun fixture akun yang ditautkan ke mereka. Akibatnya keadaan `LINKED`—kartu keanggotaan pada Profil Saya dan tab akses akun pada Anggota—tidak dapat dilihat pada data awal, meskipun jalurnya tetap dijalankan dan diperiksa memakai data sintetis sementara yang tidak ikut disimpan. Contoh `LINKED` yang permanen baru layak ditambahkan bila layanan anggota sudah menyediakan hubungan akun yang sah, atau bila tersedia anggota fiktif yang memang disepakati untuk data contoh.
-
-Akun yang sedang diwakili ruang kerja ditentukan `NEXUS_CURRENT_ACCOUNT_ID` pada direktori akun. Nilai ini merupakan pemilihan sementara sampai sesi masuk yang sebenarnya tersedia; ia tidak boleh diganti dengan pemilihan implisit seperti baris pertama daftar akun.
-
-Audit terhadap `bht-nexus-server` branch `main` menemukan batas berikut untuk profil pribadi:
-
-- entitas `user` menyimpan nama, email, status verifikasi email, gambar, dan waktu penggantian kata sandi terakhir; nomor HP, nama panggilan, ringkasan profil, dan email alternatif belum mempunyai kontrak penyimpanan;
-- tabel `account` merupakan catatan kredensial penyedia autentikasi, bukan konsep Akun BHT Nexus pada antarmuka; keduanya tidak boleh disamakan ketika adapter dibuat;
-- `AuthController` menyediakan registrasi, masuk, verifikasi email dengan OTP, permintaan dan pelaksanaan reset kata sandi dengan OTP, keluar, serta pembacaan sesi aktif;
-- belum ada tindakan penggantian kata sandi untuk pengguna yang sudah masuk, belum ada endpoint pencabutan seluruh sesi, dan belum ada penghapusan akun mandiri. Karena itu kartu Keamanan hanya menyatakan bahwa penggantian kata sandi belum dapat dilakukan dari ruang kerja dan mengarahkan pengguna ke Dukungan BHT Nexus; antarmuka tidak menyimpan kata sandi dalam bentuk apa pun dan tidak menyatakan keberhasilan yang tidak dapat dipastikan;
-- MFA tidak dimodelkan pada server maupun antarmuka.
-
-Sebelum adapter dihubungkan, kontrak server perlu menyediakan pembacaan profil pengguna yang sedang masuk, penyimpanan bidang pribadi di atas beserta auditnya, dan—bila penggantian kata sandi mandiri memang diinginkan—satu tindakan terautentikasi yang memverifikasi kata sandi saat ini.
+Kelengkapan profil hanya mensyaratkan nama lengkap dan nomor HP. Hubungan akun dan anggota bersifat lossless: menautkan atau melepas tautan tidak menyalin, menggabungkan, atau menghapus data pada entitas lain.
 
 ### Kontrak integrasi Peran dan Hak Akses
 
-Audit terhadap `bht-nexus-server` branch `main` menemukan batas berikut untuk kebijakan akses:
-
-- entitas `role` menyimpan `public_id`, nama mesin dengan pola `^[a-z][a-z0-9_.]*$`, nama tampilan serta deskripsi dwibahasa, tipe `system` atau `custom`, kategori, dan prioritas; nama mesin terpisah dari nama tampilan, sejalan dengan pengenal peran frontend yang tidak diturunkan dari label;
-- peran sistem tidak dapat dihapus dan hanya dapat mengubah nama tampilan serta deskripsi, sedangkan peran lain dinonaktifkan melalui penghapusan lunak yang ditolak ketika peran masih dipakai; kedua aturan tersebut sudah tercermin pada tindakan halaman peran;
-- entitas `permission` memakai nama datar `sumber_daya.tindakan`, dan `role_permission` hanya mencatat pemberian izin; belum ada kolom efek, sehingga larangan eksplisit belum mempunyai kontrak penyimpanan;
-- belum ada tabel penyesuaian izin per pengguna. Akses khusus akun karena itu merupakan konsep produk yang masih menunggu kontrak server, termasuk penyimpanan, penegakan, dan auditnya;
-- `user_role` memungkinkan satu pengguna memegang beberapa peran dengan masa berlaku opsional, sedangkan antarmuka saat ini masih menetapkan satu peran utama per akun;
-- katalog izin server saat ini baru mencakup area IAM, pekerjaan, dan tinjauan; nama izin untuk modul data resmi, dokumen, pengumpulan, anggota, dan administrasi belum disepakati, begitu pula izin ekspor yang belum dipakai antarmuka;
-- izin terhadap data tertentu pada REQ-FUNC-019 berada di luar matriks modul dan tindakan ini dan tetap perlu kontrak tersendiri.
-
-Sebelum adapter dihubungkan, kontrak server perlu menyepakati nama izin per modul, cara menyimpan penyesuaian per akun beserta efeknya, serta cara membaca akses efektif satu akun. Bentuk tabel akhirnya merupakan keputusan tim backend; frontend hanya mensyaratkan perilaku tersebut.
+- Izin server bernama `sumber_daya.tindakan`. Izin efektif satu akun adalah gabungan izin dari seluruh perannya, lalu disesuaikan penyesuaian khusus akun: tambahan, pembatasan, atau mengikuti peran.
+- Pada izin bawaan server, peran Auditor memegang pengelolaan akun, peran, izin, dan penetapan peran, sedangkan Admin memegang data operasional serta pembacaan log. Rancangan antarmuka lama menempatkan pengelolaan akun pada Admin; pembagian ini masih menunggu keputusan tim.
+- `PATCH /admin/accounts/:id/role` menambahkan peran, tidak mengganti. Web mengganti peran dengan menambah peran baru lebih dahulu, lalu mencabut peran lama lewat `DELETE /users/:id/roles/:roleId`. Server tidak menerima perubahan peran dan status untuk akun sendiri, dan menolak mencabut pemegang terakhir izin kelola peran akun.
+- `DELETE /roles/:id` hanya berhasil untuk peran kustom yang tidak dipakai akun dan tidak lagi memegang izin; tidak ada pemulihan peran yang sudah dikeluarkan. `POST /roles/:id/reset` memulihkan hak akses peran bawaan dan membutuhkan `iam.manage`.
+- Nama dan deskripsi peran disimpan dwibahasa. Deskripsi yang sudah tersimpan tidak dapat dikosongkan kembali, sehingga web meminta deskripsi pengganti.
 
 ### Kontrak integrasi Broadcast / Newsletter
 
@@ -182,14 +189,17 @@ Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pe
 
 ## Urutan migrasi
 
-1. Ganti sesi tampilan dengan sesi server dan halaman no-access yang nyata.
-2. Ganti daftar pekerjaan serta kandidat individual dengan query server.
-3. Pertahankan status dan bentuk keputusan yang sudah dipakai komponen.
-4. Ganti provider sesi lintas halaman dengan endpoint staging dan kemampuan server tanpa mengubah model presentasi.
-4b. Ganti kebijakan akses tampilan dengan direktori peran, katalog izin, dan penyesuaian akun dari server.
+Langkah yang sudah selesai ditandai ✓.
+
+1. ✓ Ganti sesi tampilan dengan sesi server dan halaman no-access yang nyata.
+2. ✓ Ganti daftar pekerjaan serta kandidat individual dengan query server.
+3. ✓ Pertahankan status dan bentuk keputusan yang sudah dipakai komponen.
+4. ✓ Ganti provider sesi lintas halaman dengan endpoint staging dan kemampuan server tanpa mengubah model presentasi, untuk Anggota, Publikasi, Kegiatan & Pengabdian, Tinjauan, dan Administrasi.
+4b. ✓ Ganti kebijakan akses tampilan dengan direktori peran, katalog izin, dan penyesuaian akun dari server.
+4c. Sambungkan Kekayaan Intelektual, Kontrak & Proposal, Akademik, beserta pengajuannya ketika rumah datanya tersedia di server.
 5. Hubungkan unggahan dan polling status dokumen.
 6. Hubungkan tanya jawab ke retriever yang mengembalikan kutipan terstruktur.
 7. Hubungkan ekstraksi ke profil berversi dan staging kandidat.
-8. Simpan keputusan, koreksi, dan audit melalui server.
+8. ✓ Simpan keputusan Tinjauan melalui server; koreksi Monitoring KM menyusul bersama data Monitoring dari server.
 8b. Hubungkan Broadcast / Newsletter ke unggah gambar, pengiriman email, dan riwayat pengiriman server.
 9. Tambahkan pengujian kontrak serta pengujian end-to-end terhadap layanan nyata.
