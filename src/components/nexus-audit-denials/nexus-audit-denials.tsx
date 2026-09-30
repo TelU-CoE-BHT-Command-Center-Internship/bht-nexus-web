@@ -163,6 +163,9 @@ export function NexusAuditDenials({
   }, [deferredSearchQuery, denials]);
 
   const isLoading = state === "loading";
+  /* Angka hanya tampil dari catatan yang benar-benar terbaca; saat memuat
+     atau gagal, ringkasan menunggu alih-alih menampilkan nol. */
+  const isReady = state === "ready";
   const totalDenials = denials.reduce((sum, denial) => sum + denial.count, 0);
   const highestCount = denials[0]?.count ?? 0;
   const windowLabel =
@@ -242,7 +245,7 @@ export function NexusAuditDenials({
             label: "Total Penolakan",
             tone: "needs-fix",
             unit: "kali",
-            value: isLoading ? null : totalDenials,
+            value: isReady ? totalDenials : null,
           },
           {
             icon: <NexusAdministrationIcon name="key" />,
@@ -250,7 +253,7 @@ export function NexusAuditDenials({
             label: "Hak Akses Terdampak",
             tone: "waiting",
             unit: "hak akses",
-            value: isLoading ? null : denials.length,
+            value: isReady ? denials.length : null,
           },
           {
             icon: <NexusAdministrationIcon name="clock" />,
@@ -258,7 +261,7 @@ export function NexusAuditDenials({
             label: "Penolakan Tertinggi",
             tone: "completed",
             unit: "kali pada satu hak akses",
-            value: isLoading ? null : highestCount,
+            value: isReady ? highestCount : null,
           },
         ]}
       />
@@ -289,13 +292,21 @@ export function NexusAuditDenials({
         <NexusWorkspaceResultMeta
           isUpdating={isSearchUpdating}
           onResetFilters={hasActiveFilters ? resetFilters : undefined}
-          resultLabel={`${filtered.length} hak akses ditemukan`}
+          resultLabel={
+            state === "error"
+              ? "Catatan penolakan belum terbaca"
+              : `${filtered.length} hak akses ditemukan`
+          }
           updatingLabel="Memperbarui hasil pencarian"
         />
 
         <NexusWorkspaceTableSection
           guidance={content.guidance}
-          summary={`${windowLabel} · ${filtered.length} dari ${denials.length} hak akses sesuai filter`}
+          summary={
+            state === "error"
+              ? windowLabel
+              : `${windowLabel} · ${filtered.length} dari ${denials.length} hak akses sesuai filter`
+          }
           title={content.tableTitle}
           titleId="audit-denials-table-title"
         >
@@ -314,29 +325,30 @@ export function NexusAuditDenials({
               title="Catatan penolakan akses belum dapat dimuat"
               tone="danger"
             />
-          ) : null}
-          <NexusWorkspaceRecordTable
-            caption={content.tableCaption}
-            columns={columns}
-            empty={
-              <NexusWorkspaceEmptyState
-                description={
-                  denials.length === 0
-                    ? "Tidak ada tindakan yang ditolak pada rentang waktu ini."
-                    : "Ubah kata kunci atau rentang waktu untuk melihat penolakan lain."
-                }
-                onResetFilters={hasActiveFilters ? resetFilters : undefined}
-                title={
-                  denials.length === 0
-                    ? "Tidak ada penolakan akses"
-                    : "Tidak ada hak akses yang cocok"
-                }
-              />
-            }
-            isLoading={isSearchUpdating || isLoading}
-            pagination={null}
-            rows={state === "error" ? [] : rows}
-          />
+          ) : (
+            <NexusWorkspaceRecordTable
+              caption={content.tableCaption}
+              columns={columns}
+              empty={
+                <NexusWorkspaceEmptyState
+                  description={
+                    denials.length === 0
+                      ? "Tidak ada tindakan yang ditolak pada rentang waktu ini."
+                      : "Ubah kata kunci atau rentang waktu untuk melihat penolakan lain."
+                  }
+                  onResetFilters={hasActiveFilters ? resetFilters : undefined}
+                  title={
+                    denials.length === 0
+                      ? "Tidak ada penolakan akses"
+                      : "Tidak ada hak akses yang cocok"
+                  }
+                />
+              }
+              isLoading={isSearchUpdating || isLoading}
+              pagination={null}
+              rows={rows}
+            />
+          )}
         </NexusWorkspaceTableSection>
       </NexusWorkspaceCatalog>
     </NexusWorkspacePage>
