@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { NexusAdministration } from "@/components/nexus-administration/nexus-administration";
 import { getNexusAdministrationContent } from "@/components/nexus-administration/nexus-administration-content";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -32,7 +30,7 @@ export default async function NexusAdministrationPage({
   searchParams,
 }: NexusAdministrationPageProps) {
   const content = getNexusAdministrationContent();
-  const access = nexusPreviewWorkspaceAccess;
+  const access = await getNexusWorkspaceAccess();
   const params = await searchParams;
 
   if (!nexusWorkspaceCanOpen(access, "administration")) {

@@ -99,9 +99,12 @@ function updateAccountWithStatus(
 }
 
 export function NexusAccountSessionProvider({
+  actor,
   children,
   initialAccounts,
 }: {
+  /** Akun yang sedang masuk; dicatat sebagai pelaku perubahan pada direktori ini. */
+  actor?: { id: string; name: string };
   children: ReactNode;
   initialAccounts: NexusAccountDirectoryRecord[];
 }) {
@@ -127,9 +130,11 @@ export function NexusAccountSessionProvider({
     [accounts, currentAccount, members, roles],
   );
   const currentActorName =
+    actor?.name ??
     currentProfile?.displayName ??
     currentAccount?.displayName ??
     "Pengguna BHT Nexus";
+  const currentActorId = actor?.id ?? currentAccount?.id;
 
   const createInvitation = useCallback(
     (input: NexusAccountInvitationInput) => {
@@ -160,7 +165,7 @@ export function NexusAccountSessionProvider({
       const account: NexusAccountDirectoryRecord = {
         createdAt,
         createdBy: currentActorName,
-        createdByActorId: currentAccount?.id,
+        createdByActorId: currentActorId,
         displayName: displayNameFromInvitation(input),
         email: normalizedEmail,
         id: `ACC-BHT-${String(sequence.current).padStart(4, "0")}`,
@@ -174,7 +179,7 @@ export function NexusAccountSessionProvider({
       setAccounts((current) => [account, ...current]);
       return account;
     },
-    [accounts, currentAccount?.id, currentActorName, roles],
+    [accounts, currentActorId, currentActorName, roles],
   );
 
   const updateRole = useCallback(

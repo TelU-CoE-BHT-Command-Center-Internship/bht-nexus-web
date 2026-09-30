@@ -107,6 +107,205 @@ export const nexusPreviewWorkspaceAccess = {
   },
 } satisfies NexusWorkspaceAccess;
 
+/** Nama peran sistem pada server BHT Nexus. */
+export type NexusServerRoleName =
+  | "admin"
+  | "auditor"
+  | "cluster_head"
+  | "director"
+  | "external_partner"
+  | "intern"
+  | "member"
+  | "officer";
+
+type NexusServerPermission =
+  | "activity.read"
+  | "audit.read"
+  | "dashboard.read"
+  | "iam.manage"
+  | "job.create"
+  | "job.read"
+  | "kpi.read"
+  | "member.read"
+  | "permission.manage"
+  | "permission.read"
+  | "publication.read"
+  | "review.decide"
+  | "review.edit"
+  | "review.read"
+  | "role.manage"
+  | "role.read"
+  | "role_permission.manage"
+  | "role_permission.read"
+  | "user.read"
+  | "user_role.manage"
+  | "user_role.read";
+
+/**
+ * Cermin izin bawaan setiap peran sistem pada server. Peta ini hanya membentuk
+ * navigasi dan tindakan yang ditampilkan; server tetap menolak setiap
+ * permintaan yang tidak diizinkan, dan halaman menampilkan keadaan tanpa akses
+ * bila izin peran di server berbeda dari bawaan ini.
+ */
+const serverRolePermissions: Record<
+  NexusServerRoleName,
+  readonly NexusServerPermission[]
+> = {
+  admin: [
+    "job.create",
+    "job.read",
+    "review.read",
+    "review.edit",
+    "review.decide",
+    "publication.read",
+    "member.read",
+    "activity.read",
+    "audit.read",
+    "kpi.read",
+    "dashboard.read",
+  ],
+  auditor: [
+    "iam.manage",
+    "user.read",
+    "user_role.read",
+    "user_role.manage",
+    "role.read",
+    "role.manage",
+    "permission.read",
+    "permission.manage",
+    "role_permission.read",
+    "role_permission.manage",
+    "audit.read",
+  ],
+  cluster_head: [
+    "job.read",
+    "review.read",
+    "review.edit",
+    "publication.read",
+    "member.read",
+    "activity.read",
+  ],
+  director: [
+    "review.read",
+    "review.decide",
+    "job.read",
+    "publication.read",
+    "member.read",
+    "activity.read",
+    "audit.read",
+  ],
+  external_partner: ["publication.read"],
+  intern: ["publication.read"],
+  member: ["member.read", "publication.read", "activity.read"],
+  officer: [
+    "job.create",
+    "job.read",
+    "review.read",
+    "review.edit",
+    "publication.read",
+    "member.read",
+    "activity.read",
+  ],
+};
+
+const serverRoleLabels: Record<NexusServerRoleName, string> = {
+  admin: "Admin",
+  auditor: "Auditor",
+  cluster_head: "Ketua Klaster",
+  director: "Pimpinan",
+  external_partner: "Mitra Eksternal",
+  intern: "Magang",
+  member: "Anggota",
+  officer: "Pengurus",
+};
+
+/** Broadcast / Newsletter belum punya izin server; Meeting Minggu 12 membatasinya untuk pengurus dan admin. */
+const broadcastRoles: readonly NexusServerRoleName[] = ["admin", "officer"];
+
+function isServerRoleName(value: string): value is NexusServerRoleName {
+  return Object.hasOwn(serverRolePermissions, value);
+}
+
+/** Label peran untuk identitas pengguna; peran di luar katalog sistem ditampilkan apa adanya. */
+export function nexusServerRoleLabel(roleName: string): string {
+  return isServerRoleName(roleName) ? serverRoleLabels[roleName] : roleName;
+}
+
+/**
+ * Akses ruang kerja dari peran akun yang sedang masuk. Bila peran belum dapat
+ * dibaca dari server, navigasi tetap lengkap dan setiap halaman mengikuti
+ * jawaban server (termasuk keadaan tanpa akses).
+ */
+export function nexusWorkspaceAccessFromRoles(
+  roles: readonly string[] | null,
+): NexusWorkspaceAccess {
+  if (roles === null) return nexusPreviewWorkspaceAccess;
+
+  const knownRoles = roles.filter(isServerRoleName);
+  const permissions = new Set(
+    knownRoles.flatMap((role) => serverRolePermissions[role]),
+  );
+  const has = (permission: NexusServerPermission) =>
+    permissions.has(permission);
+  const canBroadcast = knownRoles.some((role) => broadcastRoles.includes(role));
+  const navigation = new Set<NexusWorkspaceNavigationId>();
+
+  if (has("dashboard.read")) navigation.add("dashboard");
+  if (has("kpi.read")) navigation.add("monitoring");
+  if (canBroadcast) navigation.add("broadcast");
+  if (has("job.read")) {
+    navigation.add("collection");
+    navigation.add("documents");
+  }
+  if (has("review.read")) navigation.add("reviews");
+  if (has("publication.read")) navigation.add("publications");
+  if (has("activity.read")) {
+    navigation.add("intellectual-property");
+    navigation.add("contracts");
+    navigation.add("academic");
+    navigation.add("activities");
+  }
+  if (has("member.read")) navigation.add("members");
+  if (
+    has("user.read") ||
+    has("iam.manage") ||
+    has("role.read") ||
+    has("audit.read")
+  ) {
+    navigation.add("administration");
+  }
+
+  return {
+    administrationCapabilities: {
+      canInviteAccount: has("iam.manage"),
+      canManageAccess: has("iam.manage"),
+      canManageAccountStatus: has("iam.manage"),
+      canManageRolePermissions: has("role_permission.manage"),
+      canManageRoles: has("role.manage"),
+      canManageUserOverrides: has("iam.manage"),
+    },
+    allowedNavigationIds:
+      nexusPreviewWorkspaceAccess.allowedNavigationIds.filter((id) =>
+        navigation.has(id),
+      ),
+    broadcastCapabilities: { canCompose: canBroadcast },
+    memberCapabilities: {
+      canCreateMember: has("iam.manage"),
+      canDeactivateMember: has("iam.manage"),
+      canEditMember: has("iam.manage"),
+      canGrantAccess: has("iam.manage"),
+    },
+    monitoringCapabilities: {
+      canCorrectRecords: has("kpi.read"),
+      canManageTargets: has("kpi.read"),
+    },
+    reviewCapabilities: {
+      canReview: has("review.decide"),
+      canSubmitCorrection: has("review.edit"),
+    },
+  };
+}
+
 export function nexusWorkspaceCanOpen(
   access: NexusWorkspaceAccess,
   navigationId: NexusWorkspaceNavigationId,

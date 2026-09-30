@@ -1,5 +1,7 @@
+export const DEFAULT_API_BASE_URL = "http://localhost:3000/api";
+
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
 
 const CSRF_COOKIE_NAME = "csrf_token";
 const CSRF_HEADER_NAME = "x-csrf-token";
@@ -35,14 +37,93 @@ export class ApiRequestError extends Error {
   code: string;
   status: number;
   errors?: unknown;
+  retryAfterSeconds?: number;
 
-  constructor(status: number, code: string, message: string, errors?: unknown) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    errors?: unknown,
+    retryAfterSeconds?: number,
+  ) {
     super(message);
     this.name = "ApiRequestError";
     this.status = status;
     this.code = code;
     this.errors = errors;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
+}
+
+/**
+ * Keadaan produk yang dapat dibaca dari kegagalan permintaan. Status 0 berarti
+ * permintaan tidak pernah sampai ke server (jaringan terputus atau layanan mati).
+ */
+export type ApiErrorKind =
+  | "conflict"
+  | "forbidden"
+  | "not-found"
+  | "rate-limited"
+  | "unauthenticated"
+  | "unavailable"
+  | "unknown"
+  | "validation";
+
+export function apiErrorKind(error: unknown): ApiErrorKind {
+  if (!(error instanceof ApiRequestError)) return "unknown";
+  if (error.status === 0 || error.status >= 500) return "unavailable";
+  if (error.status === 401) return "unauthenticated";
+  if (error.status === 403) return "forbidden";
+  if (error.status === 404) return "not-found";
+  if (error.status === 409) return "conflict";
+  if (error.status === 429) return "rate-limited";
+  if (error.status === 400 || error.status === 422) return "validation";
+  return "unknown";
+}
+
+const apiErrorCopy = {
+  en: {
+    conflict:
+      "This data changed or conflicts with another record. Reload and try again.",
+    forbidden: "Your account is not allowed to perform this action.",
+    "not-found": "The data was not found or is no longer available.",
+    "rate-limited": "Too many attempts. Please try again in a moment.",
+    unauthenticated: "Your session has ended. Please sign in again.",
+    unavailable: "The service cannot be reached right now. Please try again.",
+    validation: "Please check your input.",
+  },
+  id: {
+    conflict:
+      "Data sudah berubah atau bentrok dengan data lain. Muat ulang lalu coba lagi.",
+    forbidden: "Akun Anda tidak memiliki izin untuk tindakan ini.",
+    "not-found": "Data tidak ditemukan atau sudah tidak tersedia.",
+    "rate-limited": "Terlalu banyak percobaan. Coba lagi dalam beberapa saat.",
+    unauthenticated: "Sesi Anda telah berakhir. Silakan masuk kembali.",
+    unavailable: "Layanan belum dapat dihubungi. Coba lagi beberapa saat lagi.",
+    validation: "Periksa kembali isian Anda.",
+  },
+} as const;
+
+/**
+ * Pesan produk untuk kegagalan permintaan. Pesan validasi dari server dipakai
+ * apa adanya karena menjelaskan isian yang perlu diperbaiki; keadaan lain
+ * memakai kalimat produk supaya detail teknis tidak tampil ke pengguna.
+ */
+export function apiErrorMessage(
+  error: unknown,
+  fallback: string,
+  locale: "en" | "id" = "id",
+): string {
+  const kind = apiErrorKind(error);
+  if (kind === "unknown") return fallback;
+  if (
+    kind === "validation" &&
+    error instanceof ApiRequestError &&
+    error.message.trim() !== ""
+  ) {
+    return error.message;
+  }
+  return apiErrorCopy[locale][kind];
 }
 
 function readCookie(name: string): string | undefined {
@@ -66,6 +147,30 @@ async function ensureCsrfToken(): Promise<string | undefined> {
   return readCookie(CSRF_COOKIE_NAME);
 }
 
+export function nexusSignInHref(returnPath?: string): string {
+  const isEnglish = returnPath?.startsWith("/en/") ?? false;
+  const signInPath = isEnglish ? "/en/nexus/sign-in" : "/nexus/masuk";
+  return returnPath
+    ? `${signInPath}?next=${encodeURIComponent(returnPath)}`
+    : signInPath;
+}
+
+/**
+ * Sesi yang berakhir saat halaman sedang dipakai diarahkan ke halaman masuk,
+ * lalu kembali ke halaman yang sama setelah pengguna masuk lagi.
+ */
+function redirectToSignIn() {
+  if (typeof window === "undefined") return;
+  const { pathname, search } = window.location;
+  if (pathname === "/nexus/masuk" || pathname === "/en/nexus/sign-in") return;
+  window.location.assign(nexusSignInHref(`${pathname}${search}`));
+}
+
+function retryAfterSeconds(response: Response): number | undefined {
+  const value = Number(response.headers.get("Retry-After"));
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 async function requestEnvelope<T>(
   path: string,
   init: RequestInit,
@@ -83,11 +188,16 @@ async function requestEnvelope<T>(
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiRequestError(0, "NETWORK_ERROR", "Network request failed");
+  }
 
   const parsed: unknown = await response.json().catch(() => null);
 
@@ -106,6 +216,8 @@ async function requestEnvelope<T>(
         typeof errorBody.message === "string"
           ? errorBody.message
           : response.statusText,
+        undefined,
+        retryAfterSeconds(response),
       );
     }
     return {
@@ -131,11 +243,15 @@ async function requestEnvelope<T>(
     );
   }
   if (!body.success) {
+    if (body.statusCode === 401) {
+      redirectToSignIn();
+    }
     throw new ApiRequestError(
       body.statusCode,
       body.code,
       body.message,
       body.errors,
+      retryAfterSeconds(response),
     );
   }
 

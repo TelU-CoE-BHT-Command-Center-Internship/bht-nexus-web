@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { NexusBroadcast } from "@/components/nexus-broadcast/nexus-broadcast";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -17,8 +15,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function NexusBroadcastPage() {
-  const access = nexusPreviewWorkspaceAccess;
+export default async function NexusBroadcastPage() {
+  const access = await getNexusWorkspaceAccess();
 
   if (!nexusWorkspaceCanOpen(access, "broadcast")) {
     return (

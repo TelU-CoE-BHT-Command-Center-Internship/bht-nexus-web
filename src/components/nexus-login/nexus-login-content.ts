@@ -16,6 +16,21 @@ export type NexusLoginContent = {
   helpLabel: string;
   invalidCredentialsError: string;
   invitationNote: string;
+  otpDescription: string;
+  otpInvalidError: string;
+  otpLabel: string;
+  otpResendLabel: string;
+  otpResentNotice: string;
+  otpSubmitLabel: string;
+  otpTitle: string;
+  rateLimitedError: string;
+  stepBackLabel: string;
+  suspendedError: string;
+  totpDescription: string;
+  totpLabel: string;
+  totpTitle: string;
+  unavailableError: string;
+  verifyingLabel: string;
   languageLabel: string;
   passwordHideLabel: string;
   passwordLabel: string;
@@ -39,7 +54,7 @@ const nexusLoginContent = {
     backShortLabel: "Situs CoE BHT",
     emailLabel: "Email",
     emailPlaceholder: "nama@telkomuniversity.ac.id",
-    destinationHref: "/nexus/dashboard",
+    destinationHref: "/nexus",
     forgotPasswordHref: `${COE_BHT_LINKS.email}?subject=Bantuan%20kata%20sandi%20BHT%20Nexus`,
     forgotPasswordLabel: "Lupa kata sandi?",
     formDescription:
@@ -53,6 +68,25 @@ const nexusLoginContent = {
     invitationNote:
       "Akun BHT Nexus dibuat melalui undangan. Tidak ada pendaftaran publik.",
     languageLabel: "Pilih bahasa",
+    otpDescription:
+      "Untuk melanjutkan, masukkan kode verifikasi yang dikirim ke",
+    otpInvalidError: "Kode tidak cocok atau sudah kedaluwarsa. Coba lagi.",
+    otpLabel: "Kode verifikasi",
+    otpResendLabel: "Kirim ulang kode",
+    otpResentNotice: "Kode baru sudah diminta. Periksa email Anda.",
+    otpSubmitLabel: "Verifikasi dan masuk",
+    otpTitle: "Verifikasi email",
+    rateLimitedError:
+      "Terlalu banyak percobaan. Tunggu beberapa saat lalu coba lagi.",
+    stepBackLabel: "Gunakan akun lain",
+    suspendedError: "Akun Anda dinonaktifkan. Hubungi pengelola BHT Nexus.",
+    totpDescription:
+      "Akun ini memakai verifikasi dua langkah. Masukkan 6 digit kode dari aplikasi autentikator Anda.",
+    totpLabel: "Kode autentikator",
+    totpTitle: "Verifikasi dua langkah",
+    unavailableError:
+      "Layanan BHT Nexus belum dapat dihubungi. Coba lagi beberapa saat lagi.",
+    verifyingLabel: "Memverifikasi…",
     passwordHideLabel: "Sembunyikan kata sandi",
     passwordLabel: "Kata sandi",
     passwordPlaceholder: "Masukkan kata sandi",
@@ -70,7 +104,7 @@ const nexusLoginContent = {
     backShortLabel: "CoE BHT website",
     emailLabel: "Email",
     emailPlaceholder: "name@telkomuniversity.ac.id",
-    destinationHref: "/en/nexus/coming-soon",
+    destinationHref: "/en/nexus",
     forgotPasswordHref: `${COE_BHT_LINKS.email}?subject=BHT%20Nexus%20password%20help`,
     forgotPasswordLabel: "Forgot your password?",
     formDescription:
@@ -84,6 +118,26 @@ const nexusLoginContent = {
     invitationNote:
       "BHT Nexus accounts are created by invitation. Public registration is not available.",
     languageLabel: "Choose language",
+    otpDescription:
+      "To continue, enter the verification code sent to",
+    otpInvalidError:
+      "The code does not match or has expired. Please try again.",
+    otpLabel: "Verification code",
+    otpResendLabel: "Send a new code",
+    otpResentNotice: "A new code was requested. Please check your email.",
+    otpSubmitLabel: "Verify and sign in",
+    otpTitle: "Verify your email",
+    rateLimitedError: "Too many attempts. Please wait a moment and try again.",
+    stepBackLabel: "Use another account",
+    suspendedError:
+      "Your account is deactivated. Please contact the BHT Nexus administrator.",
+    totpDescription:
+      "This account uses two-step verification. Enter the 6-digit code from your authenticator app.",
+    totpLabel: "Authenticator code",
+    totpTitle: "Two-step verification",
+    unavailableError:
+      "The BHT Nexus service cannot be reached right now. Please try again shortly.",
+    verifyingLabel: "Verifying…",
     passwordHideLabel: "Hide password",
     passwordLabel: "Password",
     passwordPlaceholder: "Enter your password",

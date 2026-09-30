@@ -3,7 +3,6 @@ import { connection } from "next/server";
 import { NexusDashboardOverview } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview";
 import { getNexusDashboardOverviewContent } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview-content";
 import { getServerSession } from "@/lib/api-server";
-import { viewerNameFromSession } from "@/lib/session-viewer";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -17,7 +16,8 @@ export const metadata: Metadata = {
 export default async function NexusDashboardPage() {
   await connection();
   const session = await getServerSession();
-  const viewerName = viewerNameFromSession(session?.user);
+  const viewerName =
+    session.kind === "authenticated" ? session.user.name : "Pengguna";
   const content = getNexusDashboardOverviewContent(viewerName);
 
   return <NexusDashboardOverview content={content} />;

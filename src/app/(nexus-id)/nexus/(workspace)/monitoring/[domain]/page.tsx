@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import {
   NEXUS_MONITORING_HREF,
   nexusCategoryFromDomainSlug,
@@ -58,7 +56,7 @@ export default async function NexusMonitoringDomainPage({
   params,
   searchParams,
 }: NexusMonitoringDomainPageProps) {
-  const access = nexusPreviewWorkspaceAccess;
+  const access = await getNexusWorkspaceAccess();
   const { domain } = await params;
   const { periode } = await searchParams;
 

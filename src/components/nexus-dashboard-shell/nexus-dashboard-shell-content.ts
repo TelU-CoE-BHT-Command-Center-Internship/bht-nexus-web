@@ -119,8 +119,10 @@ export type NexusDashboardShellContent = {
   searchItems: DashboardSearchItem[];
   searchLabel: string;
   searchPlaceholder: string;
+  signOutErrorLabel: string;
   signOutHref: string;
   signOutLabel: string;
+  signingOutLabel: string;
   supportDescription: string;
   supportHref: string;
   supportTitle: string;
@@ -303,6 +305,33 @@ const navigationDefinitions: NavigationDefinition[] = [
   },
 ];
 
+/**
+ * Dashboard belum matang: kodenya tetap ada dan dapat dibuka lewat alamatnya,
+ * tetapi tidak tampil di navigasi dan tidak pernah menjadi tujuan setelah masuk.
+ */
+const hiddenFromNavigation: ReadonlySet<NexusWorkspaceNavigationId> = new Set([
+  "dashboard",
+]);
+
+/**
+ * Halaman pertama yang boleh dibuka akun, dipakai sebagai tujuan setelah masuk
+ * dan tujuan kembali dari keadaan tanpa akses. Profil Saya selalu tersedia.
+ */
+export function nexusFirstAccessibleHref(
+  access: NexusWorkspaceAccess,
+  locale: Locale = "id",
+): string {
+  return (
+    navigationDefinitions.find(
+      (item) =>
+        item.implemented[locale] &&
+        !hiddenFromNavigation.has(item.id) &&
+        nexusWorkspaceCanOpen(access, item.id),
+    )?.href[locale] ??
+    (locale === "id" ? "/nexus/profil" : "/en/nexus/coming-soon")
+  );
+}
+
 const groupLabels = {
   id: {
     administration: "Administrasi",
@@ -390,10 +419,7 @@ export function getNexusDashboardShellPreviewContent(
       label: "Profil Saya",
     });
   }
-  const firstAllowedHref = navigationDefinitions.find(
-    (item) =>
-      item.implemented[locale] && nexusWorkspaceCanOpen(access, item.id),
-  )?.href[locale];
+  const firstAllowedHref = nexusFirstAccessibleHref(access, locale);
   const navigationGroups = (
     ["main", "pipeline", "official", "administration"] as const
   )
@@ -402,7 +428,9 @@ export function getNexusDashboardShellPreviewContent(
       items: navigationDefinitions
         .filter(
           (item) =>
-            item.group === group && nexusWorkspaceCanOpen(access, item.id),
+            item.group === group &&
+            !hiddenFromNavigation.has(item.id) &&
+            nexusWorkspaceCanOpen(access, item.id),
         )
         .map((item) => ({
           activeHrefs: item.activeHrefs?.[locale] ?? [item.href[locale]],
@@ -457,8 +485,7 @@ export function getNexusDashboardShellPreviewContent(
     expandMenuLabel: isId ? "Perluas navigasi" : "Expand navigation",
     helpHref: `${COE_BHT_LINKS.email}?subject=${isId ? "Bantuan%20BHT%20Nexus" : "BHT%20Nexus%20help"}`,
     helpLabel: isId ? "Bantuan BHT Nexus" : "BHT Nexus help",
-    homeHref:
-      firstAllowedHref ?? (isId ? "/nexus/dashboard" : "/en/nexus/coming-soon"),
+    homeHref: firstAllowedHref,
     languageLabel: isId
       ? "Pilih bahasa ruang kerja"
       : "Choose workspace language",
@@ -468,19 +495,7 @@ export function getNexusDashboardShellPreviewContent(
     reviewCapabilities: access.reviewCapabilities,
     routeAccess,
     notificationLabel: isId ? "Buka notifikasi" : "Open notifications",
-    notifications:
-      isId && nexusWorkspaceCanOpen(access, "reviews")
-        ? [
-            {
-              detail:
-                "Kandidat publikasi dan lintas-domain tersedia dalam satu antrean.",
-              href: "/nexus/tinjauan",
-              id: "candidate-review",
-              timeLabel: "Baru saja",
-              title: "Data menunggu tinjauan",
-            },
-          ]
-        : [],
+    notifications: [],
     notificationsEmptyLabel: isId
       ? "Belum ada notifikasi baru."
       : "No new notifications.",
@@ -501,8 +516,12 @@ export function getNexusDashboardShellPreviewContent(
     searchPlaceholder: isId
       ? "Cari anggota, pengumpulan, tinjauan, data resmi, atau dokumen"
       : "Search collection, reviews, publications, or documents",
+    signOutErrorLabel: isId
+      ? "Belum dapat keluar dari akun. Coba lagi."
+      : "Could not sign out yet. Please try again.",
     signOutHref: isId ? "/nexus/masuk" : "/en/nexus/sign-in",
     signOutLabel: isId ? "Keluar" : "Sign out",
+    signingOutLabel: isId ? "Keluar…" : "Signing out…",
     supportDescription: isId
       ? "Hubungi Dukungan BHT Nexus"
       : "Contact BHT Nexus Support",

@@ -24,12 +24,14 @@ type UnsavedChangesRegistration = UnsavedChangesCopy & {
 };
 
 type PendingNavigation = UnsavedChangesCopy & {
-  href: string;
+  /** Kosong bila tindakan lanjutan bukan perpindahan halaman, misalnya keluar dari akun. */
+  href?: string;
   onProceed?: () => void;
 };
 
 type NexusWorkspaceUnsavedChangesContextValue = {
   navigate: (href: string, onProceed?: () => void) => void;
+  proceed: (action: () => void) => void;
   register: (registration: UnsavedChangesRegistration) => void;
   unregister: (id: string) => void;
 };
@@ -83,6 +85,29 @@ export function NexusWorkspaceUnsavedChangesProvider({
     [registrations, router],
   );
 
+  /**
+   * Menjalankan tindakan yang meninggalkan ruang kerja tanpa berpindah lewat
+   * router (misalnya keluar dari akun) setelah perubahan yang belum disimpan
+   * dikonfirmasi untuk dibuang.
+   */
+  const proceed = useCallback(
+    (action: () => void) => {
+      const registration = registrations.at(-1);
+      if (registration) {
+        setPendingNavigation({
+          confirmLabel: registration.confirmLabel,
+          description: registration.description,
+          onProceed: action,
+          title: registration.title,
+        });
+        return;
+      }
+
+      action();
+    },
+    [registrations],
+  );
+
   useEffect(() => {
     if (!activeRegistration) return;
 
@@ -96,8 +121,8 @@ export function NexusWorkspaceUnsavedChangesProvider({
   }, [activeRegistration]);
 
   const value = useMemo(
-    () => ({ navigate, register, unregister }),
-    [navigate, register, unregister],
+    () => ({ navigate, proceed, register, unregister }),
+    [navigate, proceed, register, unregister],
   );
 
   return (
@@ -112,6 +137,11 @@ export function NexusWorkspaceUnsavedChangesProvider({
           onConfirm={() => {
             const target = pendingNavigation;
             setPendingNavigation(null);
+            if (target.href === undefined) {
+              setRegistrations([]);
+              target.onProceed?.();
+              return;
+            }
             target.onProceed?.();
             router.push(target.href);
           }}
@@ -135,6 +165,10 @@ function useNexusWorkspaceUnsavedChangesContext() {
 
 export function useNexusWorkspaceNavigation() {
   return useNexusWorkspaceUnsavedChangesContext().navigate;
+}
+
+export function useNexusWorkspaceProceed() {
+  return useNexusWorkspaceUnsavedChangesContext().proceed;
 }
 
 export function useNexusWorkspaceUnsavedChanges({

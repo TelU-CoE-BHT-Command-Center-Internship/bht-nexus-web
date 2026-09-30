@@ -293,6 +293,62 @@
   transform: translateY(1px);
 }
 
+.submitButton:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.formNotice {
+  margin: -0.4rem 0 0;
+  color: var(--color-nexus-success);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.stepIntro h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.stepIntro p {
+  margin: 0.4rem 0 0;
+  color: #667181;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.stepActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.stepActions button {
+  min-height: 1.9rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-brand-navy);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 640;
+}
+
+.stepActions button:hover,
+.stepActions button:focus-visible {
+  color: var(--color-brand-red);
+}
+
+.stepActions button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
 .supportLinks {
   display: grid;
   gap: 0.55rem;

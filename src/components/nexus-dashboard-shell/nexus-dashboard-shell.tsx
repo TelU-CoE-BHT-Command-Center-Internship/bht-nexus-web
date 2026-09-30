@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import {
   type ReactNode,
   type TransitionEvent,
+  useEffect,
   useLayoutEffect,
   useState,
 } from "react";
@@ -42,6 +43,24 @@ export function NexusDashboardShell({
   const accessDenied = Boolean(
     activeRouteAccess?.implemented && !activeRouteAccess.allowed,
   );
+
+  /* Halaman yang dipulihkan peramban lewat Back/Forward (dari cache atau
+     bfcache) dimuat ulang supaya sesi diperiksa lagi; setelah keluar, isi
+     ruang kerja tidak tampil dari cache. */
+  useEffect(() => {
+    const [navigation] = performance.getEntriesByType("navigation") as
+      | PerformanceNavigationTiming[]
+      | [];
+    if (navigation?.type === "back_forward") {
+      window.location.reload();
+      return;
+    }
+    const revalidateRestoredPage = (event: PageTransitionEvent) => {
+      if (event.persisted) window.location.reload();
+    };
+    window.addEventListener("pageshow", revalidateRestoredPage);
+    return () => window.removeEventListener("pageshow", revalidateRestoredPage);
+  }, []);
 
   useLayoutEffect(() => {
     if (pathname) {

@@ -9,6 +9,16 @@ export type OtpPurpose =
   | "forget-password"
   | "sign-in";
 
+/**
+ * Hasil masuk dengan email dan kata sandi. Server dapat meminta langkah kedua:
+ * kode OTP email untuk akun yang baru diundang, atau kode autentikator (TOTP)
+ * untuk akun yang mengaktifkan autentikasi dua faktor.
+ */
+export type SignInOutcome =
+  | { kind: "signed-in" }
+  | { kind: "otp-required" }
+  | { kind: "totp-required" };
+
 export function fetchActiveSession(): Promise<{
   user: ApiSessionUser;
   session: ApiSession;
@@ -16,17 +26,37 @@ export function fetchActiveSession(): Promise<{
   return apiFetch("/auth/me");
 }
 
-export function signInWithEmail(input: {
+export async function signInWithEmail(input: {
   email: string;
   password: string;
-}): Promise<{
-  redirect: boolean;
-  token: string;
-  url?: string;
-  user: ApiSessionUser;
-}> {
-  return apiFetch("/auth/sign-in/email", {
+}): Promise<SignInOutcome> {
+  const result = await apiFetch<{
+    requiresOtp?: boolean;
+    token?: string;
+    twoFactorRedirect?: boolean;
+  } | null>("/auth/sign-in/email", {
     body: JSON.stringify(input),
+    method: "POST",
+  });
+  if (result?.requiresOtp === true) return { kind: "otp-required" };
+  if (result?.twoFactorRedirect === true) return { kind: "totp-required" };
+  return { kind: "signed-in" };
+}
+
+export async function signInWithEmailOtp(input: {
+  email: string;
+  otp: string;
+  password: string;
+}): Promise<void> {
+  await apiFetch("/auth/sign-in/email-otp", {
+    body: JSON.stringify(input),
+    method: "POST",
+  });
+}
+
+export async function verifyTotpSignIn(code: string): Promise<void> {
+  await apiFetch("/auth/two-factor/verify-totp/challenge", {
+    body: JSON.stringify({ code }),
     method: "POST",
   });
 }

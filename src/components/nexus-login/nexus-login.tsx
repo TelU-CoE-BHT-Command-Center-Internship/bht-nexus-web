@@ -12,6 +12,8 @@ import type { Locale } from "@/i18n/locales";
 
 type NexusLoginProps = {
   locale: Locale;
+  /** Halaman ruang kerja yang diminta sebelum pengguna diarahkan ke sini. */
+  returnPath?: string;
 };
 
 function ArrowBackIcon() {
@@ -31,7 +33,7 @@ function LockIcon() {
   );
 }
 
-export function NexusLogin({ locale }: NexusLoginProps) {
+export function NexusLogin({ locale, returnPath }: NexusLoginProps) {
   const content = getNexusLoginContent(locale);
   const isIndonesian = locale === "id";
   const activeFlag = isIndonesian ? indonesiaFlag : unitedKingdomFlag;
@@ -95,7 +97,7 @@ export function NexusLogin({ locale }: NexusLoginProps) {
             <p>{content.formDescription}</p>
           </div>
 
-          <NexusLoginForm content={content} />
+          <NexusLoginForm content={content} returnPath={returnPath} />
 
           <div className={styles.supportLinks}>
             <a href={content.forgotPasswordHref}>

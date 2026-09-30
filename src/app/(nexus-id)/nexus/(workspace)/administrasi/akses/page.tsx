@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { NexusUserAccess } from "@/components/nexus-access-policy/nexus-user-access";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 
@@ -27,7 +25,7 @@ const PAGE_DESCRIPTION =
 export default async function NexusUserAccessPage({
   searchParams,
 }: NexusUserAccessPageProps) {
-  const access = nexusPreviewWorkspaceAccess;
+  const access = await getNexusWorkspaceAccess();
   const params = await searchParams;
   const account = Array.isArray(params.account)
     ? params.account[0]
