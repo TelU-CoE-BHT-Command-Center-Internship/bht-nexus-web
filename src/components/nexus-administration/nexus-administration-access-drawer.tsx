@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import {
+  type NexusAccessSummaryModule,
   nexusRoleAccessSummary,
   nexusRoleHasUsableBaseline,
   resolveNexusRole,
@@ -21,16 +22,19 @@ import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-w
 import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type NexusAdministrationAccessDrawerProps = {
+  /** Katalog modul untuk ringkasan cakupan peran; kosong bila tidak terbaca. */
+  accessModules: readonly NexusAccessSummaryModule[];
   account: NexusAdministrationAccount;
   allRoles: readonly NexusAdministrationRole[];
   onClose: () => void;
-  onSave: (roleId: string) => void;
+  onSave: (roleId: string) => Promise<void> | void;
   personName: string;
   roles: readonly NexusAdministrationRole[];
   specialAccessCount: number;
 };
 
 export function NexusAdministrationAccessDrawer({
+  accessModules,
   account,
   allRoles,
   onClose,
@@ -49,6 +53,7 @@ export function NexusAdministrationAccessDrawer({
   const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] =
     useState(false);
   const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const selectedRole = roles.find((role) => role.id === roleId);
   const roleWillChange = Boolean(
     selectedRole &&
@@ -74,20 +79,23 @@ export function NexusAdministrationAccessDrawer({
     onClose();
   }
 
-  function submitAccess(event: FormEvent<HTMLFormElement>) {
+  async function submitAccess(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSaving) return;
     if (!selectedRole) {
       setError("Pilih peran yang masih berlaku untuk akun ini.");
       return;
     }
+    setIsSaving(true);
     try {
-      onSave(selectedRole.id);
+      await onSave(selectedRole.id);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
           : "Peran akun tidak dapat disimpan.",
       );
+      setIsSaving(false);
     }
   }
 
@@ -147,11 +155,15 @@ export function NexusAdministrationAccessDrawer({
               <span>Cakupan peran</span>
               <h3>{selectedRole.label}</h3>
               <p>{selectedRole.description}</p>
-              <ul>
-                {nexusRoleAccessSummary(selectedRole).map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+              {accessModules.length > 0 ? (
+                <ul>
+                  {nexusRoleAccessSummary(selectedRole, accessModules).map(
+                    (item) => (
+                      <li key={item}>{item}</li>
+                    ),
+                  )}
+                </ul>
+              ) : null}
             </section>
           ) : null}
 
@@ -168,11 +180,19 @@ export function NexusAdministrationAccessDrawer({
           ) : null}
 
           <footer className={styles.drawerFooter}>
-            <NexusWorkspaceButton onClick={requestClose} type="button">
+            <NexusWorkspaceButton
+              disabled={isSaving}
+              onClick={requestClose}
+              type="button"
+            >
               Batal
             </NexusWorkspaceButton>
-            <NexusWorkspaceButton tone="primary" type="submit">
-              Simpan perubahan
+            <NexusWorkspaceButton
+              disabled={isSaving}
+              tone="primary"
+              type="submit"
+            >
+              {isSaving ? "Menyimpan…" : "Simpan perubahan"}
             </NexusWorkspaceButton>
           </footer>
         </form>

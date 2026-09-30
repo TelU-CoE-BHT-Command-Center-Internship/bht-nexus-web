@@ -551,6 +551,11 @@
   font-weight: 650;
 }
 
+/* Keterangan yang menyertai tindakan akun: akun sendiri atau penolakan server. */
+.detailActionNotice {
+  padding: 1rem 1rem 0;
+}
+
 .detailActions {
   display: flex;
   flex-wrap: wrap;
@@ -646,6 +651,11 @@
   border-radius: 0.65rem;
   background: #fbfcfe;
   cursor: pointer;
+}
+
+.relationshipChoices label[data-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .relationshipChoices label[data-selected="true"] {

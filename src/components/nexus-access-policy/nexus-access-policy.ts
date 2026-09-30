@@ -52,6 +52,12 @@ export type NexusRoleKind = "CUSTOM" | "SYSTEM";
 export type NexusRoleStatus = "ACTIVE" | "INACTIVE";
 
 export type NexusRoleRecord = {
+  /**
+   * Terisi hanya untuk rekam gabungan akun yang memegang lebih dari satu
+   * peran. Rekam gabungan menjelaskan akses akun itu dan bukan peran yang dapat
+   * ditetapkan kepada akun lain.
+   */
+  combinedRoleIds?: readonly string[];
   description: string;
   /**
    * Pengenal peran yang stabil dan tidak diturunkan dari nama tampilan, supaya
@@ -425,7 +431,9 @@ export function nexusRoleHasUsableBaseline(resolution: NexusRoleResolution) {
 
 /** Peran yang boleh dipilih untuk penugasan akun baru. */
 export function nexusAssignableRoles(roles: readonly NexusRoleRecord[]) {
-  return roles.filter((role) => role.status === "ACTIVE");
+  return roles.filter(
+    (role) => role.status === "ACTIVE" && !role.combinedRoleIds,
+  );
 }
 
 export type NexusRoleHealth = {

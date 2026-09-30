@@ -20,14 +20,19 @@ type RelationshipChoice = "" | "linked" | "non-member";
 
 type NexusAdministrationRelationshipDrawerProps = {
   availableMembers: readonly NexusAdministrationMemberOption[];
+  /** Direktori Anggota terbaca, sehingga akun dapat ditautkan ke anggota. */
+  membersReadable?: boolean;
   onClose: () => void;
-  onSave: (relationship: NexusAccountMemberRelationship) => void;
+  onSave: (
+    relationship: NexusAccountMemberRelationship,
+  ) => Promise<void> | void;
   personName: string;
   relationship: NexusResolvedAdministrationRelationship;
 };
 
 export function NexusAdministrationRelationshipDrawer({
   availableMembers,
+  membersReadable = true,
   onClose,
   onSave,
   personName,
@@ -51,6 +56,7 @@ export function NexusAdministrationRelationshipDrawer({
   const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
   const [pendingRelationship, setPendingRelationship] =
     useState<NexusAccountMemberRelationship | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const draftIsDirty =
     choice !== initialDraft.choice || memberId !== initialDraft.memberId;
   const selectedMember = availableMembers.find(
@@ -127,9 +133,13 @@ export function NexusAdministrationRelationshipDrawer({
 
           <fieldset className={styles.relationshipChoices}>
             <legend>Hubungan akun</legend>
-            <label data-selected={choice === "linked" || undefined}>
+            <label
+              data-disabled={!membersReadable || undefined}
+              data-selected={choice === "linked" || undefined}
+            >
               <input
                 checked={choice === "linked"}
+                disabled={!membersReadable}
                 name="relationshipChoice"
                 onChange={() => {
                   setChoice("linked");
@@ -167,7 +177,14 @@ export function NexusAdministrationRelationshipDrawer({
             </label>
           </fieldset>
 
-          {choice === "linked" ? (
+          {membersReadable ? null : (
+            <NexusWorkspaceNotice>
+              Akun Anda belum berwenang membaca direktori Anggota, sehingga akun
+              ini belum dapat ditautkan ke anggota dari sini.
+            </NexusWorkspaceNotice>
+          )}
+
+          {choice === "linked" && membersReadable ? (
             <NexusWorkspaceFormField
               error={error}
               hint="Satu profil anggota hanya dapat mempunyai satu hubungan akun."
@@ -192,11 +209,19 @@ export function NexusAdministrationRelationshipDrawer({
           ) : null}
 
           <footer className={styles.drawerFooter}>
-            <NexusWorkspaceButton onClick={requestClose} type="button">
+            <NexusWorkspaceButton
+              disabled={isSaving}
+              onClick={requestClose}
+              type="button"
+            >
               Batal
             </NexusWorkspaceButton>
-            <NexusWorkspaceButton tone="primary" type="submit">
-              Tinjau perubahan
+            <NexusWorkspaceButton
+              disabled={isSaving}
+              tone="primary"
+              type="submit"
+            >
+              {isSaving ? "Menyimpan…" : "Tinjau perubahan"}
             </NexusWorkspaceButton>
           </footer>
         </form>
@@ -213,16 +238,19 @@ export function NexusAdministrationRelationshipDrawer({
           }
           onCancel={() => setPendingRelationship(null)}
           onConfirm={() => {
-            try {
-              onSave(pendingRelationship);
-            } catch (caughtError) {
-              setPendingRelationship(null);
-              setError(
-                caughtError instanceof Error
-                  ? caughtError.message
-                  : "Hubungan akun tidak dapat disimpan.",
-              );
-            }
+            const relationshipToSave = pendingRelationship;
+            setPendingRelationship(null);
+            setIsSaving(true);
+            Promise.resolve()
+              .then(() => onSave(relationshipToSave))
+              .catch((caughtError: unknown) => {
+                setError(
+                  caughtError instanceof Error
+                    ? caughtError.message
+                    : "Hubungan akun tidak dapat disimpan.",
+                );
+                setIsSaving(false);
+              });
           }}
           title="Simpan perubahan hubungan?"
           tone="warning"

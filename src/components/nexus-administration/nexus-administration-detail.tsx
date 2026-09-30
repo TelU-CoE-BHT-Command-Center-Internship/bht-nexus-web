@@ -25,18 +25,28 @@ import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-work
 import {
   NexusWorkspaceButton,
   NexusWorkspaceLinkButton,
+  NexusWorkspaceNotice,
   NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusAdministrationDetailProps = {
   /** Katalog modul untuk ringkasan cakupan peran; kosong bila tidak terbaca. */
-  accessModules?: readonly NexusAccessSummaryModule[];
+  accessModules: readonly NexusAccessSummaryModule[];
   account: NexusAdministrationAccount;
-  /** Bila belum tersedia, tindakan akun tampil dengan penanda "Segera". */
-  actionsAvailable: boolean;
+  /** Penolakan terakhir atas tindakan pada akun ini. */
+  actionError?: string;
   canOpenMembers: boolean;
   capabilities: NexusAdministrationCapabilities;
+  /**
+   * Kirim ulang dan pembatalan undangan. Selama belum tersedia, tindakannya
+   * tetap tampil seperti rancangannya dengan penanda "Segera".
+   */
+  invitationActionsAvailable: boolean;
+  /** Tindakan pada akun ini sedang disimpan. */
+  isActionPending: boolean;
+  /** Akun yang dibuka adalah akun yang sedang masuk. */
+  isOwnAccount: boolean;
   onCancelInvitation: () => void;
   onClose: () => void;
   onEditAccess: () => void;
@@ -160,34 +170,26 @@ function AccountProfileSummary({ profile }: { profile: NexusProfileView }) {
 }
 
 function AccountRelationshipSummary({
-  actionsAvailable,
   canManageRelationship,
   canOpenMembers,
   onEditRelationship,
   relationship,
 }: {
-  actionsAvailable: boolean;
   canManageRelationship: boolean;
   canOpenMembers: boolean;
   onEditRelationship: () => void;
   relationship: NexusResolvedAdministrationRelationship;
 }) {
-  const manageRelationshipAction =
-    !canManageRelationship ? null : actionsAvailable ? (
-      <NexusWorkspaceButton
-        className={styles.relationManageButton}
-        onClick={onEditRelationship}
-        type="button"
-      >
-        <NexusAdministrationIcon name="link" />
-        Ubah hubungan
-      </NexusWorkspaceButton>
-    ) : (
-      <NexusWorkspacePlannedButton className={styles.relationManageButton}>
-        <NexusAdministrationIcon name="link" />
-        Ubah hubungan
-      </NexusWorkspacePlannedButton>
-    );
+  const manageRelationshipAction = canManageRelationship ? (
+    <NexusWorkspaceButton
+      className={styles.relationManageButton}
+      onClick={onEditRelationship}
+      type="button"
+    >
+      <NexusAdministrationIcon name="link" />
+      Ubah hubungan
+    </NexusWorkspaceButton>
+  ) : null;
 
   if (relationship.kind === "LINKED") {
     return (
@@ -223,10 +225,7 @@ function AccountRelationshipSummary({
         <div className={styles.relationCardContent}>
           <span>Akun non-anggota</span>
           <strong>Tidak memerlukan profil anggota</strong>
-          <small>
-            Hubungan ini ditetapkan secara eksplisit untuk pengguna di luar
-            keanggotaan CoE BHT.
-          </small>
+          <small>Akun ini tidak ditautkan ke profil anggota CoE BHT.</small>
         </div>
         {manageRelationshipAction ? (
           <div className={styles.relationCardActions}>
@@ -297,16 +296,23 @@ function AccountRelationshipSummary({
 function AccountAction({
   available,
   children,
+  disabled,
   onClick,
   tone,
 }: {
   available: boolean;
   children: string;
+  disabled: boolean;
   onClick: () => void;
   tone?: "danger" | "primary";
 }) {
   return available ? (
-    <NexusWorkspaceButton onClick={onClick} tone={tone} type="button">
+    <NexusWorkspaceButton
+      disabled={disabled}
+      onClick={onClick}
+      tone={tone}
+      type="button"
+    >
       {children}
     </NexusWorkspaceButton>
   ) : (
@@ -319,9 +325,12 @@ function AccountAction({
 export function NexusAdministrationDetail({
   accessModules,
   account,
-  actionsAvailable,
+  actionError,
   canOpenMembers,
   capabilities,
+  invitationActionsAvailable,
+  isActionPending,
+  isOwnAccount,
   onCancelInvitation,
   onClose,
   onEditAccess,
@@ -457,7 +466,6 @@ export function NexusAdministrationDetail({
             </div>
           </header>
           <AccountRelationshipSummary
-            actionsAvailable={actionsAvailable}
             canManageRelationship={capabilities.canManageAccess}
             canOpenMembers={canOpenMembers}
             onEditRelationship={onEditRelationship}
@@ -484,7 +492,9 @@ export function NexusAdministrationDetail({
               ) : null}
               <p>{roleDescription}</p>
             </div>
-            {roleHealth.isUsable && role.kind === "KNOWN" && accessModules ? (
+            {roleHealth.isUsable &&
+            role.kind === "KNOWN" &&
+            accessModules.length > 0 ? (
               <ul aria-label="Cakupan hak akses bawaan peran">
                 {nexusRoleAccessSummary(role.role, accessModules).map(
                   (item) => (
@@ -533,33 +543,55 @@ export function NexusAdministrationDetail({
               <p>Hanya tindakan yang sesuai dengan status akun yang tampil.</p>
             </div>
           </header>
+          {isOwnAccount &&
+          (capabilities.canManageAccess ||
+            capabilities.canManageAccountStatus) ? (
+            <div className={styles.detailActionNotice}>
+              <NexusWorkspaceNotice>
+                Ini akun Anda sendiri. Peran dan status akun sendiri hanya dapat
+                diubah oleh pengelola akses lain.
+              </NexusWorkspaceNotice>
+            </div>
+          ) : null}
+          {actionError ? (
+            <div className={styles.detailActionNotice} role="alert">
+              <NexusWorkspaceNotice tone="danger">
+                {actionError}
+              </NexusWorkspaceNotice>
+            </div>
+          ) : null}
           <div className={styles.detailActions}>
-            {capabilities.canManageAccess &&
+            {!isOwnAccount &&
+            capabilities.canManageAccess &&
             (account.status === "ACTIVE" || !roleHealth.isUsable) ? (
-              <AccountAction
-                available={actionsAvailable}
+              <NexusWorkspaceButton
+                disabled={isActionPending}
                 onClick={onEditAccess}
+                type="button"
               >
                 {roleHealth.isUsable ? "Ubah akses" : "Tetapkan peran"}
-              </AccountAction>
+              </NexusWorkspaceButton>
             ) : null}
 
-            {account.status === "ACTIVE" &&
+            {!isOwnAccount &&
+            account.status === "ACTIVE" &&
             capabilities.canManageAccountStatus ? (
-              <AccountAction
-                available={actionsAvailable}
+              <NexusWorkspaceButton
+                disabled={isActionPending}
                 onClick={onSuspend}
                 tone="danger"
+                type="button"
               >
-                Tangguhkan akses
-              </AccountAction>
+                {isActionPending ? "Menyimpan…" : "Tangguhkan akses"}
+              </NexusWorkspaceButton>
             ) : null}
 
             {account.status === "INVITED" ? (
               <>
                 {capabilities.canInviteAccount ? (
                   <AccountAction
-                    available={actionsAvailable}
+                    available={invitationActionsAvailable}
+                    disabled={isActionPending}
                     onClick={onRefreshInvitation}
                   >
                     Perbarui undangan
@@ -567,7 +599,8 @@ export function NexusAdministrationDetail({
                 ) : null}
                 {capabilities.canManageAccountStatus ? (
                   <AccountAction
-                    available={actionsAvailable}
+                    available={invitationActionsAvailable}
+                    disabled={isActionPending}
                     onClick={onCancelInvitation}
                     tone="danger"
                   >
@@ -579,13 +612,14 @@ export function NexusAdministrationDetail({
 
             {account.status === "SUSPENDED" &&
             capabilities.canManageAccountStatus ? (
-              <AccountAction
-                available={actionsAvailable}
+              <NexusWorkspaceButton
+                disabled={isActionPending}
                 onClick={onRestore}
                 tone="primary"
+                type="button"
               >
-                Pulihkan akses
-              </AccountAction>
+                {isActionPending ? "Menyimpan…" : "Pulihkan akses"}
+              </NexusWorkspaceButton>
             ) : null}
           </div>
           <p className={styles.auditBoundary}>

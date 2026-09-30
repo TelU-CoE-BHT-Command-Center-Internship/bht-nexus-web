@@ -13,6 +13,7 @@ import { NexusAccountSessionProvider } from "@/components/nexus-account-session/
 import type { NexusAccountDirectoryRecord } from "@/components/nexus-accounts/nexus-account-directory";
 import {
   nexusAccountFromServer,
+  nexusAccountRemote,
   nexusAccountRoles,
   nexusLinkedMemberFromAccount,
 } from "@/components/nexus-accounts/nexus-account-server";
@@ -55,6 +56,8 @@ type AccountDirectory = {
   accessModules?: NexusPermissionMatrixModule[];
   accounts: NexusAccountDirectoryRecord[];
   members: NexusMemberRecord[];
+  /** Direktori Anggota benar-benar terbaca, bukan disusun dari daftar akun. */
+  membersKnown: boolean;
   roles: NexusRoleRecord[];
 };
 
@@ -101,6 +104,7 @@ function useNexusAccountDirectory(canReadMembers: boolean) {
           members: members
             ? members.map(nexusMemberFromSummary)
             : accounts.flatMap(nexusLinkedMemberFromAccount),
+          membersKnown: members !== undefined,
           roles: nexusAccountRoles(accounts, catalogue),
         });
         setVersion((current) => current + 1);
@@ -164,7 +168,7 @@ function useAccountSpecialAccess(
 
 type NexusAdministrationLiveProps = Omit<
   NexusAdministrationProps,
-  "accessModules" | "accountActionsAvailable" | "specialAccess"
+  "accessModules" | "membersReadable" | "specialAccess"
 > & {
   /** Direktori Anggota boleh dibaca akun ini, sehingga nama anggota dapat ditampilkan. */
   canReadMembers: boolean;
@@ -180,6 +184,11 @@ export function NexusAdministrationLive({
     props.capabilities.canManageUserOverrides,
   );
   const { actor } = useNexusReviewSession();
+  const membersKnown = directory?.membersKnown ?? false;
+  const remote = useMemo(
+    () => nexusAccountRemote(membersKnown),
+    [membersKnown],
+  );
 
   if (!directory) {
     return (
@@ -225,11 +234,12 @@ export function NexusAdministrationLive({
         <NexusAccountSessionProvider
           actor={actor}
           initialAccounts={directory.accounts}
+          remote={remote}
         >
           <NexusAdministration
             {...props}
-            accessModules={directory.accessModules}
-            accountActionsAvailable={false}
+            accessModules={directory.accessModules ?? []}
+            membersReadable={directory.membersKnown}
             specialAccess={specialAccess}
           />
         </NexusAccountSessionProvider>

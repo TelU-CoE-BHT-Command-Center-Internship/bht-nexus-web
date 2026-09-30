@@ -117,9 +117,11 @@ export function nexusProfileFromServer(
       displayName: profile.name,
       email: profile.email,
       id: profile.publicId,
+      /* Server hanya mengenal akun yang tertaut ke anggota atau tidak; akun
+         tanpa tautan diperlakukan sebagai akun non-anggota. */
       relationship: member
         ? { kind: "LINKED", memberId: member.id }
-        : { kind: "UNLINKED" },
+        : { kind: "NON_MEMBER" },
       roleId: profile.roles[0]?.name,
       status: accountStatuses[profile.status],
       updatedAt: "",
@@ -145,7 +147,7 @@ export function nexusProfileFromServer(
     missingRequiredFields: missing,
     phone,
     preferredName,
-    relationship: member ? { kind: "LINKED", member } : { kind: "UNLINKED" },
+    relationship: member ? { kind: "LINKED", member } : { kind: "NON_MEMBER" },
     role: roleResolution(profile),
     source: linkedMember ? "MEMBER" : "ACCOUNT",
   };
