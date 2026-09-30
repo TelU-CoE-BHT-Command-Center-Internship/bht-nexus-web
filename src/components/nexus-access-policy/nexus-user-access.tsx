@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  type NexusAccessModuleId,
   type NexusPermissionId,
   type NexusPermissionMode,
   nexusAccessActionLabels,
@@ -17,6 +16,7 @@ import {
   useNexusAccessPolicySession,
 } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import { NexusAccessStateBadge } from "@/components/nexus-access-policy/nexus-access-state";
+import type { NexusPermissionMatrixModule } from "@/components/nexus-access-policy/nexus-role-server";
 import styles from "@/components/nexus-access-policy/nexus-user-access.module.css";
 import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
 import { nexusAccountStatusLabels } from "@/components/nexus-accounts/nexus-account-directory";
@@ -36,8 +36,12 @@ import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nex
 import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
+  NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  displayRecordId,
+  personInitials,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import {
@@ -47,7 +51,14 @@ import {
 
 type NexusUserAccessProps = {
   capabilities: NexusAdministrationCapabilities;
+  /**
+   * Penyimpanan akses khusus. Selama belum tersedia, halaman menampilkan akses
+   * akun apa adanya dan tindakannya diberi penanda "Segera".
+   */
+  editingAvailable?: boolean;
   initialAccountId?: string;
+  /** Modul beserta izinnya; bawaan memakai katalog izin ruang kerja. */
+  modules?: readonly NexusPermissionMatrixModule[];
 };
 
 type PendingDialog = { kind: "reset" };
@@ -76,7 +87,9 @@ function ChevronIcon() {
 
 export function NexusUserAccess({
   capabilities,
+  editingAvailable = true,
   initialAccountId,
+  modules = nexusAccessModules,
 }: NexusUserAccessProps) {
   const navigate = useNexusWorkspaceNavigation();
   const { overrides, replaceAccountOverrides, roles } =
@@ -90,9 +103,7 @@ export function NexusUserAccess({
   );
   const [announcement, setAnnouncement] = useState("");
   const [filter, setFilter] = useState<AccessFilterId>("all");
-  const [openModules, setOpenModules] = useState<NexusAccessModuleId[] | null>(
-    null,
-  );
+  const [openModules, setOpenModules] = useState<string[] | null>(null);
 
   const account = accounts.find(
     (candidate) => candidate.id === initialAccountId,
@@ -140,7 +151,7 @@ export function NexusUserAccess({
     return draft[permissionId] ?? storedModes[permissionId] ?? "INHERIT";
   }
 
-  const groups = nexusAccessModules.map((module) => {
+  const groups = modules.map((module) => {
     const rows = module.permissions.map((permission) => {
       const mode = modeFor(permission.id);
       const baseline = roleGrants.has(permission.id);
@@ -247,13 +258,16 @@ export function NexusUserAccess({
       : role.kind === "UNKNOWN"
         ? "Peran perlu ditinjau"
         : "Belum ditetapkan";
-  const canEdit = capabilities.canManageUserOverrides && hasUsableRoleBaseline;
+  const canEdit =
+    editingAvailable &&
+    capabilities.canManageUserOverrides &&
+    hasUsableRoleBaseline;
   /* Penugasan peran akun dan permukaan Peran dimiliki kemampuan lain, sehingga
      tindakannya hanya ditawarkan ketika kewenangannya memang tersedia. */
   const canAssignAccountRole = capabilities.canManageAccess;
   const canOpenRoleManagement = nexusCanOpenRoleManagement(capabilities);
 
-  function toggleModule(moduleId: NexusAccessModuleId) {
+  function toggleModule(moduleId: string) {
     setOpenModules(
       expandedModules.includes(moduleId)
         ? expandedModules.filter((id) => id !== moduleId)
@@ -318,7 +332,7 @@ export function NexusUserAccess({
             <div className={styles.identityCopy}>
               <h3>{personName}</h3>
               <p>{account.email}</p>
-              <small>{account.id}</small>
+              <small title={account.id}>{displayRecordId(account.id)}</small>
             </div>
             <span
               className={styles.identityStatus}
@@ -443,7 +457,10 @@ export function NexusUserAccess({
         </div>
       )}
 
-      <section className={styles.matrixCard}>
+      <section
+        className={styles.matrixCard}
+        data-unresolved={!hasUsableRoleBaseline || undefined}
+      >
         <header className={styles.matrixToolbar}>
           <fieldset className={styles.filterGroup}>
             <legend className={styles.visuallyHidden}>
@@ -664,6 +681,21 @@ export function NexusUserAccess({
             >
               Simpan perubahan
             </NexusWorkspaceButton>
+          </div>
+        </footer>
+      ) : !editingAvailable && capabilities.canManageUserOverrides ? (
+        <footer className={styles.actionBar}>
+          <div className={styles.actionsMeta}>
+            <strong>{`${adjustedCount} penyesuaian aktif`}</strong>
+            <span>Saat ini akses khusus hanya dapat dilihat.</span>
+          </div>
+          <div className={styles.actionsButtons}>
+            <NexusWorkspacePlannedButton>
+              Reset ke peran
+            </NexusWorkspacePlannedButton>
+            <NexusWorkspacePlannedButton tone="primary">
+              Simpan perubahan
+            </NexusWorkspacePlannedButton>
           </div>
         </footer>
       ) : null}

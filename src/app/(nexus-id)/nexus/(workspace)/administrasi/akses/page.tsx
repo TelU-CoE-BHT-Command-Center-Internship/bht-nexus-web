@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { NexusUserAccess } from "@/components/nexus-access-policy/nexus-user-access";
+import { NexusUserAccessLive } from "@/components/nexus-access-policy/nexus-user-access-server";
 import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
@@ -53,7 +53,8 @@ export default async function NexusUserAccessPage({
   }
 
   return (
-    <NexusUserAccess
+    <NexusUserAccessLive
+      canReadMembers={nexusWorkspaceCanOpen(access, "members")}
       capabilities={access.administrationCapabilities}
       initialAccountId={account}
     />
