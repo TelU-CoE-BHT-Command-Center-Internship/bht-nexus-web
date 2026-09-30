@@ -19,7 +19,10 @@ import {
 } from "@/components/nexus-activities/nexus-activity-server";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
+import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
+import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
 import { useNexusMemberName } from "@/components/nexus-publications/nexus-publication-server";
+import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
@@ -29,6 +32,7 @@ import {
 import {
   NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -59,6 +63,8 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
+import { requestActivityCompletion } from "@/lib/api-activities";
+import { apiErrorMessage } from "@/lib/api-client";
 
 const NexusActivityDetail = dynamic(() =>
   import("@/components/nexus-activities/nexus-activity-detail").then(
@@ -212,6 +218,8 @@ export function NexusActivities({
   initialMemberId,
 }: NexusActivitiesProps) {
   const catalog = useNexusActivityCatalog();
+  const reviewSession = useOptionalNexusReviewSession();
+  const [completionError, setCompletionError] = useState("");
   const records = catalog.records;
   const isCatalogLoading = catalog.state === "loading";
   const memberName = useNexusMemberName(initialMemberId, canReadMembers);
@@ -227,6 +235,32 @@ export function NexusActivities({
   /* Daftar kegiatan server belum dapat disaring per anggota; kartu filter
      menjelaskannya dan daftar tetap memuat seluruh rekam resmi. */
   const contextRecords = records;
+
+  const submitCompletionProposal = (
+    activityId: string,
+    resolutions: MetadataCompletionResolutions,
+    note: string,
+  ) => {
+    if (!reviewSession) return;
+    setCompletionError("");
+    requestActivityCompletion(activityId, {
+      note,
+      proposals: toCompletionProposals(resolutions),
+    })
+      .then(() => {
+        reviewSession.createCompletionProposal(
+          "PLG-KGT-2026",
+          activityId,
+          resolutions,
+          note,
+        );
+      })
+      .catch((error: unknown) => {
+        setCompletionError(
+          apiErrorMessage(error, "Usulan pelengkapan belum dapat dikirim."),
+        );
+      });
+  };
 
   const indicatorConfig = useMemo(
     () => createIndicatorConfig(contextRecords),
@@ -434,6 +468,11 @@ export function NexusActivities({
       title={content.title}
       titleId="activities-title"
     >
+      {completionError ? (
+        <NexusWorkspaceNotice tone="danger">
+          {completionError}
+        </NexusWorkspaceNotice>
+      ) : null}
       <NexusMemberContextFilter
         clearHref="/nexus/kegiatan"
         memberId={initialMemberId}
@@ -585,6 +624,10 @@ export function NexusActivities({
         <NexusActivityDetail
           canOpenReviews={canOpenReviews}
           onClose={() => setSelectedId(null)}
+          onSubmitProposal={
+            reviewSession ? submitCompletionProposal : undefined
+          }
+          proposal={reviewSession?.completionProposals[selected.id]}
           record={selected}
         />
       ) : null}

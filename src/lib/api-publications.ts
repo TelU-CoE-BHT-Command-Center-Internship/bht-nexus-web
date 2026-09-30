@@ -92,3 +92,19 @@ export async function listAllPublications(
 export function getPublication(publicId: string): Promise<PublicationDetail> {
   return apiFetch(`/publications/${encodeURIComponent(publicId)}`);
 }
+
+export type CompletionProposalItem = {
+  reason?: string;
+  status: "not-applicable" | "not-available" | "provided";
+  value: string;
+};
+
+export function requestPublicationCompletion(
+  publicId: string,
+  body: { note?: string; proposals: Record<string, CompletionProposalItem> },
+): Promise<{ reviewCasePublicId: string; status: string }> {
+  return apiFetch(
+    `/publications/${encodeURIComponent(publicId)}/completion-request`,
+    { body: JSON.stringify(body), method: "POST" },
+  );
+}

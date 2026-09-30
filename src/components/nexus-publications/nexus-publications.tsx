@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
+import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
 import {
   useNexusMemberName,
   useNexusPublicationCatalog,
@@ -13,6 +14,7 @@ import styles from "@/components/nexus-publications/nexus-publications.module.cs
 import {
   type NexusPublicationsContent,
   type NexusPublicationView,
+  type PublicationCompletionResolutions,
   type PublicationIndicatorId,
   publicationAuthorNames,
   publicationDisplayTitle,
@@ -27,6 +29,7 @@ import {
   type PublicationSourceId,
   publicationHasSource,
 } from "@/components/nexus-publications/nexus-publications-utils";
+import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
@@ -37,6 +40,7 @@ import {
 import {
   NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -67,6 +71,8 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
+import { apiErrorMessage } from "@/lib/api-client";
+import { requestPublicationCompletion } from "@/lib/api-publications";
 
 const NexusPublicationDetail = dynamic(() =>
   import("@/components/nexus-publications/nexus-publication-detail").then(
@@ -366,6 +372,8 @@ export function NexusPublications({
   initialMemberId,
 }: NexusPublicationsProps) {
   const catalog = useNexusPublicationCatalog(initialMemberId);
+  const reviewSession = useOptionalNexusReviewSession();
+  const [completionError, setCompletionError] = useState("");
   const records = catalog.records;
   const isCatalogLoading = catalog.state === "loading";
   const memberName = useNexusMemberName(initialMemberId, canReadMembers);
@@ -506,6 +514,32 @@ export function NexusPublications({
       [filterId as PublicationFilterId]: value,
     }));
     setCurrentPage(1);
+  };
+
+  const submitCompletionProposal = (
+    publicationId: string,
+    resolutions: PublicationCompletionResolutions,
+    note: string,
+  ) => {
+    if (!reviewSession) return;
+    setCompletionError("");
+    requestPublicationCompletion(publicationId, {
+      note,
+      proposals: toCompletionProposals(resolutions),
+    })
+      .then(() => {
+        reviewSession.createCompletionProposal(
+          "PLG-2026",
+          publicationId,
+          resolutions,
+          note,
+        );
+      })
+      .catch((error: unknown) => {
+        setCompletionError(
+          apiErrorMessage(error, "Usulan pelengkapan belum dapat dikirim."),
+        );
+      });
   };
 
   const rows = visiblePublications.map((publication) => {
@@ -664,6 +698,11 @@ export function NexusPublications({
       title={content.title}
       titleId="publications-title"
     >
+      {completionError ? (
+        <NexusWorkspaceNotice tone="danger">
+          {completionError}
+        </NexusWorkspaceNotice>
+      ) : null}
       <NexusMemberContextFilter
         clearHref="/nexus/publikasi"
         memberId={initialMemberId}
@@ -832,6 +871,10 @@ export function NexusPublications({
           canOpenReviews={canOpenReviews}
           onClose={() => setSelectedPublicationId(null)}
           onRetryAuthors={publicationDetail.retry}
+          onSubmitCompletionProposal={
+            reviewSession ? submitCompletionProposal : undefined
+          }
+          proposal={reviewSession?.completionProposals[selectedPublication.id]}
           publication={selectedPublication}
         />
       ) : null}

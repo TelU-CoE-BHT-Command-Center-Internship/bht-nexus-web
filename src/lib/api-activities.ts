@@ -1,4 +1,5 @@
 import { apiFetch, apiFetchPaginated } from "@/lib/api-client";
+import type { CompletionProposalItem } from "@/lib/api-publications";
 
 export type ActivityType =
   | "collaboration"
@@ -82,4 +83,14 @@ export async function listAllActivities(): Promise<ActivitySummary[]> {
 
 export function getActivity(publicId: string): Promise<ActivityDetail> {
   return apiFetch(`/activities/${encodeURIComponent(publicId)}`);
+}
+
+export function requestActivityCompletion(
+  publicId: string,
+  body: { note?: string; proposals: Record<string, CompletionProposalItem> },
+): Promise<{ reviewCasePublicId: string; status: string }> {
+  return apiFetch(
+    `/activities/${encodeURIComponent(publicId)}/completion-request`,
+    { body: JSON.stringify(body), method: "POST" },
+  );
 }
