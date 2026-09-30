@@ -164,10 +164,10 @@ type NexusServerPermission =
   | "user_role.read";
 
 /**
- * Cermin izin bawaan setiap peran sistem pada server. Peta ini hanya membentuk
- * navigasi dan tindakan yang ditampilkan; server tetap menolak setiap
- * permintaan yang tidak diizinkan, dan halaman menampilkan keadaan tanpa akses
- * bila izin peran di server berbeda dari bawaan ini.
+ * Cermin izin bawaan setiap peran sistem pada server. Peta ini hanya dipakai
+ * bila server belum menjawab izin efektif akun; selama itu peran kustom dan
+ * akses khusus per akun tidak tercermin pada navigasi. Server tetap menolak
+ * setiap permintaan yang tidak diizinkan.
  */
 const serverRolePermissions: Record<
   NexusServerRoleName,
@@ -253,23 +253,19 @@ export function nexusServerRoleLabel(roleName: string): string {
   return isServerRoleName(roleName) ? serverRoleLabels[roleName] : roleName;
 }
 
-/**
- * Akses ruang kerja dari peran akun yang sedang masuk. Bila peran belum dapat
- * dibaca dari server, navigasi tetap lengkap dan setiap halaman mengikuti
- * jawaban server (termasuk keadaan tanpa akses).
- */
-export function nexusWorkspaceAccessFromRoles(
-  roles: readonly string[] | null,
-): NexusWorkspaceAccess {
-  if (roles === null) return nexusPreviewWorkspaceAccess;
-
-  const knownRoles = roles.filter(isServerRoleName);
-  const permissions = new Set(
-    knownRoles.flatMap((role) => serverRolePermissions[role]),
+function canBroadcastWith(roles: readonly string[]) {
+  return roles.some(
+    (role) => isServerRoleName(role) && broadcastRoles.includes(role),
   );
+}
+
+/** Navigasi dan kemampuan yang dibuka oleh satu himpunan izin server. */
+function accessFromPermissions(
+  permissions: ReadonlySet<string>,
+  canBroadcast: boolean,
+): NexusWorkspaceAccess {
   const has = (permission: NexusServerPermission) =>
     permissions.has(permission);
-  const canBroadcast = knownRoles.some((role) => broadcastRoles.includes(role));
   const navigation = new Set<NexusWorkspaceNavigationId>();
 
   if (has("dashboard.read")) navigation.add("dashboard");
@@ -333,6 +329,43 @@ export function nexusWorkspaceAccessFromRoles(
       canSubmitRecord: has("job.create"),
     },
   };
+}
+
+/**
+ * Akses ruang kerja dari nama peran saja. Bila peran belum dapat dibaca dari
+ * server, navigasi tetap lengkap dan setiap halaman mengikuti jawaban server
+ * (termasuk keadaan tanpa akses).
+ */
+export function nexusWorkspaceAccessFromRoles(
+  roles: readonly string[] | null,
+): NexusWorkspaceAccess {
+  if (roles === null) return nexusPreviewWorkspaceAccess;
+
+  return accessFromPermissions(
+    new Set(
+      roles
+        .filter(isServerRoleName)
+        .flatMap((role) => serverRolePermissions[role]),
+    ),
+    canBroadcastWith(roles),
+  );
+}
+
+/**
+ * Akses ruang kerja akun yang sedang masuk. Izin efektif dari server sudah
+ * memperhitungkan seluruh peran akun, peran kustom, dan akses khusus per
+ * akun; bila server belum menjawabnya, izin bawaan peran dipakai.
+ */
+export function nexusWorkspaceAccessFromSession(
+  roles: readonly string[] | null,
+  permissions: readonly string[] | null,
+): NexusWorkspaceAccess {
+  if (permissions === null) return nexusWorkspaceAccessFromRoles(roles);
+
+  return accessFromPermissions(
+    new Set(permissions),
+    canBroadcastWith(roles ?? []),
+  );
 }
 
 export function nexusWorkspaceCanOpen(

@@ -2,6 +2,7 @@ import { cache } from "react";
 import {
   type NexusWorkspaceAccess,
   nexusWorkspaceAccessFromRoles,
+  nexusWorkspaceAccessFromSession,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { getServerSession } from "@/lib/api-server";
 
@@ -12,8 +13,8 @@ import { getServerSession } from "@/lib/api-server";
 export const getNexusWorkspaceAccess = cache(
   async (): Promise<NexusWorkspaceAccess> => {
     const session = await getServerSession();
-    return nexusWorkspaceAccessFromRoles(
-      session.kind === "authenticated" ? session.roles : [],
-    );
+    return session.kind === "authenticated"
+      ? nexusWorkspaceAccessFromSession(session.roles, session.permissions)
+      : nexusWorkspaceAccessFromRoles([]);
   },
 );

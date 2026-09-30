@@ -23,7 +23,8 @@ export type NexusSessionUser = {
 /**
  * Hasil penyelesaian sesi di server. `unavailable` dan `rate-limited` berarti
  * server belum dapat menjawab, sehingga pengguna tidak boleh dianggap keluar.
- * `roles` bernilai null bila peran akun belum dapat dibaca.
+ * `roles` bernilai null bila peran akun belum dapat dibaca; `permissions`
+ * bernilai null bila server belum menjawab izin efektif akun.
  */
 export type NexusServerSession =
   | { kind: "anonymous" }
@@ -31,6 +32,7 @@ export type NexusServerSession =
   | { kind: "unavailable" }
   | {
       kind: "authenticated";
+      permissions: readonly string[] | null;
       roles: readonly string[] | null;
       user: NexusSessionUser;
     };
@@ -68,6 +70,7 @@ type ProfileData = {
   email?: unknown;
   image?: unknown;
   name?: unknown;
+  permissions?: unknown;
   publicId?: unknown;
   roles?: unknown;
 };
@@ -84,6 +87,13 @@ function rolesFrom(profile: ProfileData): readonly string[] | null {
     .filter((name): name is string => typeof name === "string");
 }
 
+function permissionsFrom(profile: ProfileData): readonly string[] | null {
+  if (!Array.isArray(profile.permissions)) return null;
+  return profile.permissions.filter(
+    (name): name is string => typeof name === "string",
+  );
+}
+
 function failureKind(result: JsonResult): NexusServerSession | null {
   if (result === null || result.status >= 500) return { kind: "unavailable" };
   if (result.status === 429) return { kind: "rate-limited" };
@@ -93,8 +103,8 @@ function failureKind(result: JsonResult): NexusServerSession | null {
 
 /**
  * Sesi dibaca dari profil akun (`/profile/me`): satu permintaan menjawab
- * identitas sekaligus peran. Server yang belum membuka profil untuk akun biasa
- * (403) tetap dilayani lewat `/auth/me`, tanpa informasi peran.
+ * identitas, peran, dan izin efektif. Server yang belum membuka profil untuk
+ * akun biasa (403) tetap dilayani lewat `/auth/me`, tanpa informasi peran.
  */
 async function resolveFromSessionEndpoint(
   cookies: string,
@@ -122,6 +132,7 @@ async function resolveFromSessionEndpoint(
   const email = text(body.user.email) ?? "";
   return {
     kind: "authenticated",
+    permissions: null,
     roles: null,
     user: {
       email,
@@ -149,6 +160,7 @@ export const getServerSession = cache(async (): Promise<NexusServerSession> => {
   const email = text(profile.email) ?? "";
   return {
     kind: "authenticated",
+    permissions: permissionsFrom(profile),
     roles: rolesFrom(profile),
     user: {
       email,
