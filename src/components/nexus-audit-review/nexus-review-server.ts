@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type {
   AuditDecisionKind,
   AuditOfficialMatch,
@@ -44,6 +44,7 @@ import {
   type ReviewPromotionResult,
   submitReviewEdit,
 } from "@/lib/api-reviews";
+import { useLoadEffect } from "@/lib/use-load-effect";
 
 /**
  * Satu-satunya penerjemah kasus tinjauan server ke bentuk ruang Tinjauan.
@@ -830,12 +831,7 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
       });
   }, [loadDetails]);
 
-  useEffect(() => {
-    load();
-    return () => {
-      generation.current += 1;
-    };
-  }, [load]);
+  useLoadEffect(load);
 
   const ensureDetails = useCallback(
     (ids: readonly string[]) => {

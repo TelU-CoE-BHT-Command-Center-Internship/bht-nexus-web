@@ -19,6 +19,7 @@ import {
   type PublicationSummary,
   type WorkType,
 } from "@/lib/api-publications";
+import { useLoadEffect } from "@/lib/use-load-effect";
 
 /**
  * Satu-satunya penerjemah publikasi server ke bentuk halaman Publikasi. Bidang
@@ -129,12 +130,7 @@ export function useNexusPublicationCatalog(memberPublicId?: string) {
       });
   }, [memberPublicId]);
 
-  useEffect(() => {
-    load();
-    return () => {
-      latestRequest.current += 1;
-    };
-  }, [load]);
+  useLoadEffect(load);
 
   return { errorMessage, loadedAt, records, retry: load, state };
 }

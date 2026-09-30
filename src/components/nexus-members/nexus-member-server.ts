@@ -15,6 +15,7 @@ import {
   type MemberDetail,
   type MemberSummary,
 } from "@/lib/api-members";
+import { useLoadEffect } from "@/lib/use-load-effect";
 
 /**
  * Satu-satunya penerjemah data anggota server ke bentuk yang dipakai halaman
@@ -192,12 +193,7 @@ export function useNexusMemberDirectory() {
       });
   }, []);
 
-  useEffect(() => {
-    load();
-    return () => {
-      latestRequest.current += 1;
-    };
-  }, [load]);
+  useLoadEffect(load);
 
   return { errorMessage, records, retry: load, state };
 }

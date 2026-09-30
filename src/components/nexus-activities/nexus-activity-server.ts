@@ -17,6 +17,7 @@ import {
   listAllActivities,
 } from "@/lib/api-activities";
 import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
+import { useLoadEffect } from "@/lib/use-load-effect";
 
 /**
  * Satu-satunya penerjemah kegiatan server ke bentuk halaman Kegiatan &
@@ -164,12 +165,7 @@ export function useNexusActivityCatalog() {
       });
   }, []);
 
-  useEffect(() => {
-    load();
-    return () => {
-      latestRequest.current += 1;
-    };
-  }, [load]);
+  useLoadEffect(load);
 
   return { errorMessage, loadedAt, records, retry: load, state };
 }

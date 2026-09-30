@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type {
   NexusAccessActionId,
   NexusPermissionId,
@@ -22,6 +22,7 @@ import {
   revokeRolePermission,
   updateRole,
 } from "@/lib/api-roles";
+import { useLoadEffect } from "@/lib/use-load-effect";
 
 /**
  * Penerjemah peran dan izin server ke permukaan Peran & Hak Akses. Setiap sel
@@ -296,12 +297,7 @@ export function useNexusServerRoles() {
       });
   }, []);
 
-  useEffect(() => {
-    load();
-    return () => {
-      latestRequest.current += 1;
-    };
-  }, [load]);
+  useLoadEffect(load);
 
   const refreshRole = useCallback(async (publicId: string) => {
     const permissions = await grantedPermissionNames(publicId);

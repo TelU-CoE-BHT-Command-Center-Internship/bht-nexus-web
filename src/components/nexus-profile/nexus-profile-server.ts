@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { NexusRoleResolution } from "@/components/nexus-access-policy/nexus-access-policy";
 import type { NexusAccountStatus } from "@/components/nexus-accounts/nexus-account-directory";
 import { nexusServerRoleLabel } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
@@ -15,6 +15,7 @@ import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-
 import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
 import { getMember } from "@/lib/api-members";
 import { getMyProfile, type MyProfile } from "@/lib/api-profile";
+import { useLoadEffect } from "@/lib/use-load-effect";
 
 /**
  * Satu-satunya penerjemah profil akun server ke bentuk halaman Profil Saya.
@@ -187,12 +188,7 @@ export function useNexusSessionProfile() {
       });
   }, []);
 
-  useEffect(() => {
-    load();
-    return () => {
-      latestRequest.current += 1;
-    };
-  }, [load]);
+  useLoadEffect(load);
 
   return { errorMessage, profile, retry: load, state };
 }
