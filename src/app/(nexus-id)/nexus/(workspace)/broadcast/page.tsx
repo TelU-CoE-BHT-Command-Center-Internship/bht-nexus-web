@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NexusBroadcast } from "@/components/nexus-broadcast/nexus-broadcast";
+import { nexusFirstAccessibleHref } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
@@ -27,9 +28,9 @@ export default async function NexusBroadcastPage() {
         titleId="broadcast-no-access-title"
       >
         <NexusWorkspaceNoAccess
-          description="Akun Anda belum memiliki izin untuk membuka Broadcast / Newsletter. Silakan kembali ke Dashboard atau hubungi pengelola jika akses tersebut diperlukan."
-          returnHref="/nexus/dashboard"
-          returnLabel="Kembali ke Dashboard"
+          description="Akun Anda belum memiliki izin untuk membuka Broadcast / Newsletter. Silakan kembali ke ruang kerja atau hubungi pengelola jika akses tersebut diperlukan."
+          returnHref={nexusFirstAccessibleHref(access)}
+          returnLabel="Kembali ke ruang kerja"
           title="Broadcast / Newsletter tidak tersedia untuk akun Anda"
         />
       </NexusWorkspacePage>

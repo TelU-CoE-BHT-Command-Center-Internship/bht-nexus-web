@@ -20,7 +20,7 @@ export default function EnglishWorkspaceComingSoonPage() {
     >
       <NexusWorkspaceState
         actions={
-          <NexusWorkspaceLinkButton href="/nexus/dashboard" tone="primary">
+          <NexusWorkspaceLinkButton href="/nexus" tone="primary">
             Continue in Indonesian
           </NexusWorkspaceLinkButton>
         }
