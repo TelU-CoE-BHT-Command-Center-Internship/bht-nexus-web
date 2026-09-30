@@ -199,7 +199,7 @@ export function createCollectionReviewRecords(
       candidate,
     );
     return createBaseRecord(
-      job.submittedBy,
+      job.submittedBy ?? job.sourceLabel,
       {
         ...candidate,
         discoveredAt: job.submittedAt,

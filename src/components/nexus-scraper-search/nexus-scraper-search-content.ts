@@ -49,7 +49,8 @@ export type CollectionJob = {
   statusLabel: string;
   submittedAt: string;
   submittedAtLabel: string;
-  submittedBy: string;
+  /** Pengaju; kosong bila server belum menyebutnya. */
+  submittedBy?: string;
   submittedByActorId?: string;
 };
 

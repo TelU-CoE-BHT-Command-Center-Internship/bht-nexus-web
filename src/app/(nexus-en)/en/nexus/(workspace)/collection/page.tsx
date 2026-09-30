@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import type { NexusCollectionRequest } from "@/components/nexus-scraper-search/nexus-scraper-search";
 import { NexusScraperSearch } from "@/components/nexus-scraper-search/nexus-scraper-search";
 import { getNexusScraperSearchContent } from "@/components/nexus-scraper-search/nexus-scraper-search-content";
@@ -25,6 +26,7 @@ function firstValue(value?: string | string[]) {
 export default async function CollectionPage({
   searchParams,
 }: CollectionPageProps) {
+  const access = await getNexusWorkspaceAccess();
   const params = await searchParams;
   const memberId = firstValue(params.member);
   const memberName = firstValue(params.name);
@@ -36,6 +38,8 @@ export default async function CollectionPage({
 
   return (
     <NexusScraperSearch
+      canOpenReviews={false}
+      capabilities={access.collectionCapabilities}
       content={getNexusScraperSearchContent("en")}
       initialRequest={initialRequest}
     />

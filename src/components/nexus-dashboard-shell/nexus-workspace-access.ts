@@ -39,9 +39,14 @@ export type NexusBroadcastCapabilities = {
   canCompose: boolean;
 };
 
-/** Kemampuan pada Pengumpulan: melihat riwayat terpisah dari mengajukan pekerjaan baru. */
+/**
+ * Kemampuan pada Pengumpulan: melihat riwayat terpisah dari mengajukan
+ * pekerjaan baru (`job.create`) dan mengirim hasil pekerjaan ke Tinjauan
+ * (`review.edit`).
+ */
 export type NexusCollectionCapabilities = {
   canCreateJob: boolean;
+  canSendToReview: boolean;
 };
 
 /**
@@ -99,6 +104,7 @@ export const nexusPreviewWorkspaceAccess = {
   },
   collectionCapabilities: {
     canCreateJob: true,
+    canSendToReview: true,
   },
   memberCapabilities: {
     canCreateMember: true,
@@ -298,7 +304,10 @@ export function nexusWorkspaceAccessFromRoles(
         navigation.has(id),
       ),
     broadcastCapabilities: { canCompose: canBroadcast },
-    collectionCapabilities: { canCreateJob: has("job.create") },
+    collectionCapabilities: {
+      canCreateJob: has("job.create"),
+      canSendToReview: has("review.edit"),
+    },
     memberCapabilities: {
       canCreateMember: has("iam.manage"),
       canDeactivateMember: has("iam.manage"),
