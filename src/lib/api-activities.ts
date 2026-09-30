@@ -10,8 +10,11 @@ export type ActivityType =
 export type ActivityStatus = "cancelled" | "closed" | "ongoing" | "planned";
 
 export type ActivitySummary = {
+  amount?: number | null;
   createdAt: string;
   isPublic: boolean;
+  kmIndicators?: string[];
+  metadata?: Record<string, unknown>;
   periodEnd: string | null;
   periodStart: string;
   publicId: string;
@@ -60,6 +63,23 @@ export function listActivities(
   return apiFetchPaginated(`/activities${buildQuery(params)}`);
 }
 
+/** Seluruh kegiatan resmi, dibaca per halaman sebanyak yang diizinkan server. */
+export async function listAllActivities(): Promise<ActivitySummary[]> {
+  const activities: ActivitySummary[] = [];
+  for (let page = 1; ; page += 1) {
+    const result = await listActivities({
+      limit: 100,
+      page,
+      sortBy: "periodStart",
+      sortOrder: "desc",
+    });
+    activities.push(...result.data);
+    if (result.data.length === 0 || activities.length >= result.meta.total) {
+      return activities;
+    }
+  }
+}
+
 export function getActivity(publicId: string): Promise<ActivityDetail> {
-  return apiFetch(`/activities/${publicId}`);
+  return apiFetch(`/activities/${encodeURIComponent(publicId)}`);
 }

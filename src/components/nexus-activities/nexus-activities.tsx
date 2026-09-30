@@ -4,29 +4,29 @@ import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import styles from "@/components/nexus-activities/nexus-activities.module.css";
 import {
-  type ActivityProposal,
   activityContextLabel,
   activityDisplayTitle,
   activityEvidenceLabel,
   activityIndicatorScope,
   activityKmLabel,
   type NexusActivitiesContent,
-  type OfficialActivityRecord,
+  type NexusActivityView,
 } from "@/components/nexus-activities/nexus-activities-content";
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
+import {
+  useNexusActivityCatalog,
+  useNexusActivityDetail,
+} from "@/components/nexus-activities/nexus-activity-server";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
-import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import { projectNexusActivities } from "@/components/nexus-official-records/nexus-official-records";
-import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
-import { createActivityCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
-import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import { useNexusMemberName } from "@/components/nexus-publications/nexus-publication-server";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceSearch,
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
+  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -53,6 +53,7 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 
 const NexusActivityDetail = dynamic(() =>
@@ -62,7 +63,14 @@ const NexusActivityDetail = dynamic(() =>
 );
 
 type NexusActivitiesProps = {
-  content: NexusActivitiesContent;
+  /** Antrean Tinjauan dapat dibuka oleh akun ini. */
+  canOpenReviews: boolean;
+  /** Direktori anggota dapat dibaca, sehingga kartu filter menampilkan nama. */
+  canReadMembers: boolean;
+  content: Pick<
+    NexusActivitiesContent,
+    "description" | "officialNote" | "title"
+  >;
   initialMemberId?: string;
 };
 
@@ -134,7 +142,7 @@ const pageSizeConfig: NexusSelectConfig = {
   ],
 };
 
-function searchableText(record: OfficialActivityRecord) {
+function searchableText(record: NexusActivityView) {
   return normalizeWorkspaceSearch(
     [
       record.title,
@@ -159,7 +167,7 @@ function searchableText(record: OfficialActivityRecord) {
 }
 
 function createIndicatorConfig(
-  records: readonly OfficialActivityRecord[],
+  records: readonly NexusActivityView[],
 ): NexusSelectConfig {
   const indicators = records
     .flatMap((record) => record.kmLinks)
@@ -194,34 +202,27 @@ function createIndicatorConfig(
 }
 
 export function NexusActivities({
+  canOpenReviews,
+  canReadMembers,
   content,
   initialMemberId,
 }: NexusActivitiesProps) {
-  const reviewSession = useNexusReviewSession();
-  const officialRecordSession = useNexusOfficialRecordSession();
-  const records = useMemo(
-    () => projectNexusActivities(content.records, officialRecordSession),
-    [content.records, officialRecordSession],
-  );
+  const catalog = useNexusActivityCatalog();
+  const records = catalog.records;
+  const isCatalogLoading = catalog.state === "loading";
+  const memberName = useNexusMemberName(initialMemberId, canReadMembers);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterValues, setFilterValues] =
     useState<FilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
   const [pageSizeValue, setPageSizeValue] = useState("10");
-  const proposals = reviewSession.completionProposals;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-  const contextRecords = useMemo(
-    () =>
-      initialMemberId
-        ? records.filter((record) =>
-            record.relatedMemberIds.includes(initialMemberId),
-          )
-        : records,
-    [initialMemberId, records],
-  );
+  /* Daftar kegiatan server belum dapat disaring per anggota; kartu filter
+     menjelaskannya dan daftar tetap memuat seluruh rekam resmi. */
+  const contextRecords = records;
 
   const indicatorConfig = useMemo(
     () => createIndicatorConfig(contextRecords),
@@ -277,14 +278,20 @@ export function NexusActivities({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = contextRecords.find((record) => record.id === selectedId);
+  const activityDetail = useNexusActivityDetail(selectedId);
+  const selected =
+    activityDetail.record ??
+    contextRecords.find((record) => record.id === selectedId);
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
   ).length;
   const hasActiveFilters = activeFilterCount > 0 || searchQuery.length > 0;
+  const evaluationPeriod =
+    contextRecords.find((record) => record.evaluationPeriod)
+      ?.evaluationPeriod ?? "";
   const resultSummary = [
-    `Periode evaluasi ${contextRecords[0]?.evaluationPeriod ?? records[0]?.evaluationPeriod ?? "—"}`,
+    ...(evaluationPeriod ? [`Periode evaluasi ${evaluationPeriod}`] : []),
     `${filtered.length} dari ${contextRecords.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
@@ -297,29 +304,11 @@ export function NexusActivities({
     setCurrentPage(1);
   };
 
-  const submitProposal = (
-    recordId: string,
-    resolutions: MetadataCompletionResolutions,
-    note: string,
-  ) => {
-    const record = records.find((item) => item.id === recordId);
-    if (!record) return;
-
-    const proposal: ActivityProposal = reviewSession.createCompletionProposal(
-      "PLG-KGT-2026",
-      recordId,
-      resolutions,
-      note,
-    );
-    reviewSession.submitRecord(
-      createActivityCompletionReviewRecord(record, proposal),
-    );
-  };
-
   const rows = visible.map((record) => {
     const open = () => setSelectedId(record.id);
     const displayTitle = activityDisplayTitle(record);
     const context = activityContextLabel(record) || "Belum tercatat";
+    const party = record.primaryParty || "Belum tercatat";
     const qualityBadge = (
       <NexusWorkspaceTableBadge
         key={`${record.id}-quality`}
@@ -359,15 +348,13 @@ export function NexusActivities({
             <small>{record.recordStatus}</small>
           </span>
         ),
-        party: (
-          <NexusWorkspaceTableText>
-            {record.primaryParty}
-          </NexusWorkspaceTableText>
-        ),
+        party: <NexusWorkspaceTableText>{party}</NexusWorkspaceTableText>,
         primary: (
           <NexusWorkspaceTablePrimary
             onClick={open}
-            subtitle={`${record.primaryParty} · ${record.group}`}
+            subtitle={[record.primaryParty, record.group]
+              .filter(Boolean)
+              .join(" · ")}
             title={displayTitle}
           />
         ),
@@ -409,7 +396,7 @@ export function NexusActivities({
               </div>
               <div>
                 <dt>Pihak utama</dt>
-                <dd>{record.primaryParty}</dd>
+                <dd>{party}</dd>
               </div>
               <div>
                 <dt>Bukti</dt>
@@ -429,19 +416,21 @@ export function NexusActivities({
     <NexusWorkspacePage
       actions={
         <NexusManualSubmissionLink
+          available={false}
           domain="activity"
           label="Ajukan kegiatan / pengabdian"
         />
       }
       description={content.description}
       descriptionId="activities-description"
-      meta={content.updatedAt}
       title={content.title}
       titleId="activities-title"
     >
       <NexusMemberContextFilter
         clearHref="/nexus/kegiatan"
         memberId={initialMemberId}
+        memberName={memberName}
+        unsupportedDescription="Kegiatan belum dapat disaring per anggota, sehingga daftar di bawah memuat seluruh rekam resmi."
       />
       <NexusWorkspaceMetrics
         metrics={[
@@ -451,7 +440,7 @@ export function NexusActivities({
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: contextRecords.length,
+            value: isCatalogLoading ? null : contextRecords.length,
           },
           {
             icon: <NexusActivitiesIcon name="indicator" />,
@@ -459,7 +448,7 @@ export function NexusActivities({
             label: "Indikator Terisi",
             tone: "waiting",
             unit: `dari ${activityIndicatorScope.length} indikator`,
-            value: coveredIndicatorCount,
+            value: isCatalogLoading ? null : coveredIndicatorCount,
           },
           {
             icon: <NexusActivitiesIcon name="alert" />,
@@ -467,7 +456,7 @@ export function NexusActivities({
             label: "Perlu Dilengkapi",
             tone: "needs-fix",
             unit: "data",
-            value: needsCompletionCount,
+            value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
       />
@@ -526,6 +515,21 @@ export function NexusActivities({
           title="Daftar kegiatan dan pengabdian resmi"
           titleId="official-activities-title"
         >
+          {catalog.state === "error" ? (
+            <NexusWorkspaceState
+              actions={
+                <NexusWorkspaceButton onClick={catalog.retry} type="button">
+                  Coba lagi
+                </NexusWorkspaceButton>
+              }
+              description={
+                catalog.errorMessage ?? "Kegiatan resmi belum dapat dimuat."
+              }
+              eyebrow="Gagal memuat"
+              title="Kegiatan resmi belum dapat dimuat"
+              tone="danger"
+            />
+          ) : null}
           <NexusWorkspaceRecordTable
             caption="Kegiatan dan pengabdian resmi CoE BHT beserta pihak, konteks, bukti, dan indikator KM"
             columns={columns}
@@ -544,7 +548,7 @@ export function NexusActivities({
                 }
               />
             }
-            isLoading={isSearchUpdating}
+            isLoading={isSearchUpdating || isCatalogLoading}
             pagination={
               <NexusTablePagination
                 currentPage={safePage}
@@ -571,9 +575,8 @@ export function NexusActivities({
 
       {selected ? (
         <NexusActivityDetail
+          canOpenReviews={canOpenReviews}
           onClose={() => setSelectedId(null)}
-          onSubmitProposal={submitProposal}
-          proposal={proposals[selected.id]}
           record={selected}
         />
       ) : null}
