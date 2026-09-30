@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  type NexusAccessSummaryModule,
   type NexusRoleResolution,
   nexusRoleAccessSummary,
   nexusRoleHealth,
@@ -9,6 +10,7 @@ import {
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
   accountStatusLabels,
+  type NexusAccountSpecialAccess,
   type NexusAdministrationAccount,
 } from "@/components/nexus-administration/nexus-administration-content";
 import { NexusAdministrationIcon } from "@/components/nexus-administration/nexus-administration-icons";
@@ -23,10 +25,17 @@ import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-work
 import {
   NexusWorkspaceButton,
   NexusWorkspaceLinkButton,
+  NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusAdministrationDetailProps = {
+  /** Katalog modul untuk ringkasan cakupan peran; kosong bila tidak terbaca. */
+  accessModules?: readonly NexusAccessSummaryModule[];
   account: NexusAdministrationAccount;
+  /** Bila belum tersedia, tindakan akun tampil dengan penanda "Segera". */
+  actionsAvailable: boolean;
+  canOpenMembers: boolean;
   capabilities: NexusAdministrationCapabilities;
   onCancelInvitation: () => void;
   onClose: () => void;
@@ -39,7 +48,7 @@ type NexusAdministrationDetailProps = {
   profile: NexusProfileView;
   relationship: NexusResolvedAdministrationRelationship;
   role: NexusRoleResolution;
-  specialAccessCount: number;
+  specialAccessCount: NexusAccountSpecialAccess;
 };
 
 function statusTone(status: NexusAdministrationAccount["status"]) {
@@ -57,6 +66,22 @@ function AccountProfileSummary({ profile }: { profile: NexusProfileView }) {
   const missingLabels = profile.missingRequiredFields.map(
     (field) => nexusProfileRequiredFieldLabels[field],
   );
+
+  /* Rincian profil tidak ikut terbaca bersama daftar akun, jadi hanya nama
+     yang ditampilkan dan tidak ada bidang yang dinyatakan kosong. */
+  if (profile.account.personalProfileKnown === false) {
+    return (
+      <div className={styles.profileSummary} data-standalone="true">
+        <span aria-hidden="true" className={styles.profileSummaryAvatar}>
+          {profile.initials}
+        </span>
+        <div>
+          <strong>{profile.fullName.trim() || profile.displayName}</strong>
+          <small>Rincian profil dikelola pemilik akun di Profil Saya</small>
+        </div>
+      </div>
+    );
+  }
 
   if (!profile.hasPersonalData) {
     return (
@@ -135,41 +160,59 @@ function AccountProfileSummary({ profile }: { profile: NexusProfileView }) {
 }
 
 function AccountRelationshipSummary({
+  actionsAvailable,
   canManageRelationship,
+  canOpenMembers,
   onEditRelationship,
   relationship,
 }: {
+  actionsAvailable: boolean;
   canManageRelationship: boolean;
+  canOpenMembers: boolean;
   onEditRelationship: () => void;
   relationship: NexusResolvedAdministrationRelationship;
 }) {
-  const manageRelationshipAction = canManageRelationship ? (
-    <NexusWorkspaceButton
-      className={styles.relationManageButton}
-      onClick={onEditRelationship}
-      type="button"
-    >
-      <NexusAdministrationIcon name="link" />
-      Ubah hubungan
-    </NexusWorkspaceButton>
-  ) : null;
+  const manageRelationshipAction =
+    !canManageRelationship ? null : actionsAvailable ? (
+      <NexusWorkspaceButton
+        className={styles.relationManageButton}
+        onClick={onEditRelationship}
+        type="button"
+      >
+        <NexusAdministrationIcon name="link" />
+        Ubah hubungan
+      </NexusWorkspaceButton>
+    ) : (
+      <NexusWorkspacePlannedButton className={styles.relationManageButton}>
+        <NexusAdministrationIcon name="link" />
+        Ubah hubungan
+      </NexusWorkspacePlannedButton>
+    );
 
   if (relationship.kind === "LINKED") {
     return (
       <div className={styles.relationCard} data-relationship="LINKED">
         <div className={styles.relationCardContent}>
-          <span>{relationship.member.id}</span>
+          <span title={relationship.member.id}>
+            {displayRecordId(relationship.member.id)}
+          </span>
           <strong>{relationship.member.name}</strong>
-          <small>{relationship.member.assignment}</small>
+          {relationship.member.assignment ? (
+            <small>{relationship.member.assignment}</small>
+          ) : null}
         </div>
-        <div className={styles.relationCardActions}>
-          <NexusWorkspaceLinkButton
-            href={relatedDataHref("/nexus/anggota", relationship.member.id)}
-          >
-            Buka Anggota
-          </NexusWorkspaceLinkButton>
-          {manageRelationshipAction}
-        </div>
+        {canOpenMembers || manageRelationshipAction ? (
+          <div className={styles.relationCardActions}>
+            {canOpenMembers ? (
+              <NexusWorkspaceLinkButton
+                href={relatedDataHref("/nexus/anggota", relationship.member.id)}
+              >
+                Buka Anggota
+              </NexusWorkspaceLinkButton>
+            ) : null}
+            {manageRelationshipAction}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -205,12 +248,16 @@ function AccountRelationshipSummary({
             ditetapkan sebagai akun non-anggota.
           </small>
         </div>
-        <div className={styles.relationCardActions}>
-          <NexusWorkspaceLinkButton href="/nexus/anggota">
-            Buka direktori Anggota
-          </NexusWorkspaceLinkButton>
-          {manageRelationshipAction}
-        </div>
+        {canOpenMembers || manageRelationshipAction ? (
+          <div className={styles.relationCardActions}>
+            {canOpenMembers ? (
+              <NexusWorkspaceLinkButton href="/nexus/anggota">
+                Buka direktori Anggota
+              </NexusWorkspaceLinkButton>
+            ) : null}
+            {manageRelationshipAction}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -230,9 +277,9 @@ function AccountRelationshipSummary({
           </small>
         ) : null}
       </div>
-      {relationship.member || manageRelationshipAction ? (
+      {(relationship.member && canOpenMembers) || manageRelationshipAction ? (
         <div className={styles.relationCardActions}>
-          {relationship.member ? (
+          {relationship.member && canOpenMembers ? (
             <NexusWorkspaceLinkButton
               href={relatedDataHref("/nexus/anggota", relationship.member.id)}
             >
@@ -246,8 +293,34 @@ function AccountRelationshipSummary({
   );
 }
 
+/** Tindakan akun: tombol biasa, atau tombol berpenanda "Segera" bila belum tersedia. */
+function AccountAction({
+  available,
+  children,
+  onClick,
+  tone,
+}: {
+  available: boolean;
+  children: string;
+  onClick: () => void;
+  tone?: "danger" | "primary";
+}) {
+  return available ? (
+    <NexusWorkspaceButton onClick={onClick} tone={tone} type="button">
+      {children}
+    </NexusWorkspaceButton>
+  ) : (
+    <NexusWorkspacePlannedButton tone={tone}>
+      {children}
+    </NexusWorkspacePlannedButton>
+  );
+}
+
 export function NexusAdministrationDetail({
+  accessModules,
   account,
+  actionsAvailable,
+  canOpenMembers,
   capabilities,
   onCancelInvitation,
   onClose,
@@ -310,7 +383,7 @@ export function NexusAdministrationDetail({
             </span>
             <h3>{profile.displayName}</h3>
             <p>{account.email}</p>
-            <small>{account.id}</small>
+            <small title={account.id}>{displayRecordId(account.id)}</small>
           </div>
         </header>
 
@@ -384,7 +457,9 @@ export function NexusAdministrationDetail({
             </div>
           </header>
           <AccountRelationshipSummary
+            actionsAvailable={actionsAvailable}
             canManageRelationship={capabilities.canManageAccess}
+            canOpenMembers={canOpenMembers}
             onEditRelationship={onEditRelationship}
             relationship={relationship}
           />
@@ -409,11 +484,13 @@ export function NexusAdministrationDetail({
               ) : null}
               <p>{roleDescription}</p>
             </div>
-            {roleHealth.isUsable && role.kind === "KNOWN" ? (
+            {roleHealth.isUsable && role.kind === "KNOWN" && accessModules ? (
               <ul aria-label="Cakupan hak akses bawaan peran">
-                {nexusRoleAccessSummary(role.role).map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
+                {nexusRoleAccessSummary(role.role, accessModules).map(
+                  (item) => (
+                    <li key={item}>{item}</li>
+                  ),
+                )}
               </ul>
             ) : null}
           </div>
@@ -421,9 +498,13 @@ export function NexusAdministrationDetail({
             <div>
               <span>Akses khusus</span>
               <strong>
-                {specialAccessCount > 0
-                  ? `${specialAccessCount} penyesuaian`
-                  : "Mengikuti peran"}
+                {specialAccessCount === "loading"
+                  ? "Memeriksa…"
+                  : specialAccessCount === "unavailable"
+                    ? "Belum dapat dibaca"
+                    : specialAccessCount > 0
+                      ? `${specialAccessCount} penyesuaian`
+                      : "Mengikuti peran"}
               </strong>
               <small>
                 {roleHealth.isUsable
@@ -455,53 +536,56 @@ export function NexusAdministrationDetail({
           <div className={styles.detailActions}>
             {capabilities.canManageAccess &&
             (account.status === "ACTIVE" || !roleHealth.isUsable) ? (
-              <NexusWorkspaceButton onClick={onEditAccess} type="button">
+              <AccountAction
+                available={actionsAvailable}
+                onClick={onEditAccess}
+              >
                 {roleHealth.isUsable ? "Ubah akses" : "Tetapkan peran"}
-              </NexusWorkspaceButton>
+              </AccountAction>
             ) : null}
 
             {account.status === "ACTIVE" &&
             capabilities.canManageAccountStatus ? (
-              <NexusWorkspaceButton
+              <AccountAction
+                available={actionsAvailable}
                 onClick={onSuspend}
                 tone="danger"
-                type="button"
               >
                 Tangguhkan akses
-              </NexusWorkspaceButton>
+              </AccountAction>
             ) : null}
 
             {account.status === "INVITED" ? (
               <>
                 {capabilities.canInviteAccount ? (
-                  <NexusWorkspaceButton
+                  <AccountAction
+                    available={actionsAvailable}
                     onClick={onRefreshInvitation}
-                    type="button"
                   >
                     Perbarui undangan
-                  </NexusWorkspaceButton>
+                  </AccountAction>
                 ) : null}
                 {capabilities.canManageAccountStatus ? (
-                  <NexusWorkspaceButton
+                  <AccountAction
+                    available={actionsAvailable}
                     onClick={onCancelInvitation}
                     tone="danger"
-                    type="button"
                   >
                     Batalkan undangan
-                  </NexusWorkspaceButton>
+                  </AccountAction>
                 ) : null}
               </>
             ) : null}
 
             {account.status === "SUSPENDED" &&
             capabilities.canManageAccountStatus ? (
-              <NexusWorkspaceButton
+              <AccountAction
+                available={actionsAvailable}
                 onClick={onRestore}
                 tone="primary"
-                type="button"
               >
                 Pulihkan akses
-              </NexusWorkspaceButton>
+              </AccountAction>
             ) : null}
           </div>
           <p className={styles.auditBoundary}>

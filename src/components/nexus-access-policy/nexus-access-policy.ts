@@ -499,14 +499,26 @@ export function nexusAccountOverrides(
   return overrides.filter((override) => override.accountId === accountId);
 }
 
+/** Modul beserta izinnya, sebagaimana dibutuhkan ringkasan cakupan peran. */
+export type NexusAccessSummaryModule = {
+  id: string;
+  permissions: ReadonlyArray<{
+    action: NexusAccessActionId;
+    id: NexusPermissionId;
+  }>;
+};
+
 /**
  * Ringkasan cakupan peran dihitung dari hak akses yang sedang berlaku, bukan
  * dari teks terpisah yang bisa tertinggal ketika matriks berubah.
  */
-export function nexusRoleAccessSummary(role: NexusRoleRecord) {
+export function nexusRoleAccessSummary(
+  role: NexusRoleRecord,
+  modules: readonly NexusAccessSummaryModule[] = nexusAccessModules,
+) {
   const granted = new Set(role.permissions);
   const countModules = (action: NexusAccessActionId) =>
-    nexusAccessModules.filter((module) =>
+    modules.filter((module) =>
       module.permissions.some(
         (permission) =>
           permission.action === action && granted.has(permission.id),
@@ -515,7 +527,7 @@ export function nexusRoleAccessSummary(role: NexusRoleRecord) {
 
   const viewable = countModules("view");
   const editable = new Set(
-    nexusAccessModules
+    modules
       .filter((module) =>
         module.permissions.some(
           (permission) =>
@@ -534,7 +546,7 @@ export function nexusRoleAccessSummary(role: NexusRoleRecord) {
   }
 
   return [
-    `Dapat membuka ${viewable} dari ${nexusAccessModules.length} modul`,
+    `Dapat membuka ${viewable} dari ${modules.length} modul`,
     editable > 0
       ? `Dapat mengisi atau memperbarui data pada ${editable} modul`
       : "Tidak dapat mengubah data",

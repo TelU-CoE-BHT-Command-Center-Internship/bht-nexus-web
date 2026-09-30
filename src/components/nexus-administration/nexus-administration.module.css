@@ -365,6 +365,11 @@
   background: #fbfcfe;
 }
 
+/* Tanpa rincian di bawahnya, ringkasan menutup bagiannya sendiri. */
+.profileSummary[data-standalone="true"] {
+  margin-bottom: 1rem;
+}
+
 .profileSummaryAvatar {
   position: relative;
   display: grid;
@@ -468,7 +473,7 @@
   stroke-width: 1.7;
 }
 
-.relationCard span,
+.relationCardContent span,
 .roleSummary span,
 .rolePreview > span {
   color: #315ca8;

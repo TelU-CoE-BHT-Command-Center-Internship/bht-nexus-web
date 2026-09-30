@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
+  type NexusAccessSummaryModule,
   nexusAccountOverrides,
   nexusAssignableRoles,
   nexusRoleHealth,
@@ -18,6 +19,7 @@ import type {
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
   accountStatusLabels,
+  type NexusAccountSpecialAccessReader,
   type NexusAdministrationAccount,
   type NexusAdministrationContent,
 } from "@/components/nexus-administration/nexus-administration-content";
@@ -44,9 +46,11 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
   NexusWorkspaceLinkButton,
+  NexusWorkspacePlannedButton,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
+  displayRecordId,
   normalizeWorkspaceSearch,
   personInitials,
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -95,13 +99,26 @@ const NexusAdministrationRelationshipDrawer = dynamic(() =>
   ).then((module) => module.NexusAdministrationRelationshipDrawer),
 );
 
-type NexusAdministrationProps = {
+export type NexusAdministrationProps = {
+  /** Katalog modul untuk ringkasan cakupan peran; kosong bila tidak terbaca. */
+  accessModules?: readonly NexusAccessSummaryModule[];
+  /**
+   * Undangan dan perubahan akun. Selama belum tersedia, tindakannya tetap
+   * tampil seperti rancangannya dengan penanda "Segera".
+   */
+  accountActionsAvailable?: boolean;
+  /** Direktori Anggota dapat dibuka akun ini. */
+  canOpenMembers?: boolean;
+  /** Catatan penolakan akses dapat dibuka akun ini. */
+  canOpenAudit?: boolean;
   capabilities: NexusAdministrationCapabilities;
   content: NexusAdministrationContent;
   hasInitialAccountContext: boolean;
   hasInitialInviteMemberContext: boolean;
   initialAccountId?: string;
   initialInviteMemberId?: string;
+  /** Akses khusus per akun bila jumlahnya dibaca terpisah dari sesi. */
+  specialAccess?: NexusAccountSpecialAccessReader;
 };
 
 type FilterId = "member" | "role" | "status";
@@ -190,7 +207,12 @@ function AccountRelationshipCell({
       <span className={styles.memberCell} data-relationship="LINKED">
         <strong>{relationship.member.name}</strong>
         <small>
-          {relationship.member.id} · {relationship.member.assignment}
+          {[
+            displayRecordId(relationship.member.id),
+            relationship.member.assignment,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </small>
       </span>
     );
@@ -211,12 +233,17 @@ function AccountRelationshipCell({
 }
 
 export function NexusAdministration({
+  accessModules,
+  accountActionsAvailable = true,
+  canOpenAudit = false,
+  canOpenMembers = true,
   capabilities,
   content,
   hasInitialAccountContext,
   hasInitialInviteMemberContext,
   initialAccountId,
   initialInviteMemberId,
+  specialAccess,
 }: NexusAdministrationProps) {
   const router = useRouter();
   const {
@@ -283,7 +310,8 @@ export function NexusAdministration({
         : null,
   );
   const [inviteOpen, setInviteOpen] = useState(
-    !hasInitialAccountContext &&
+    accountActionsAvailable &&
+      !hasInitialAccountContext &&
       initialInviteMemberExists &&
       !accountClaimingInitialMember,
   );
@@ -311,6 +339,11 @@ export function NexusAdministration({
     const timeoutId = window.setTimeout(() => setAnnouncement(""), 4500);
     return () => window.clearTimeout(timeoutId);
   }, [announcement]);
+
+  const requestSpecialAccess = specialAccess?.request;
+  useEffect(() => {
+    if (selectedAccountId) requestSpecialAccess?.(selectedAccountId);
+  }, [requestSpecialAccess, selectedAccountId]);
 
   const roleConfig = useMemo<NexusSelectConfig>(() => {
     const options: [NexusSelectOption, ...NexusSelectOption[]] = [
@@ -605,7 +638,9 @@ export function NexusAdministration({
           }
           eyebrow={
             <>
-              <span className={styles.mobileAccountId}>{account.id}</span>
+              <span className={styles.mobileAccountId}>
+                {displayRecordId(account.id)}
+              </span>
               <NexusWorkspaceTableBadge
                 tone={accountStatusTone(account.status)}
               >
@@ -646,26 +681,43 @@ export function NexusAdministration({
   return (
     <NexusWorkspacePage
       actions={
-        canOpenRoleManagement || capabilities.canInviteAccount ? (
+        canOpenAudit ||
+        canOpenRoleManagement ||
+        capabilities.canInviteAccount ? (
           <div className={styles.headerActions}>
+            {canOpenAudit ? (
+              <NexusWorkspaceLinkButton href="/nexus/administrasi/audit">
+                Penolakan Akses
+              </NexusWorkspaceLinkButton>
+            ) : null}
             {canOpenRoleManagement ? (
               <NexusWorkspaceLinkButton href="/nexus/administrasi/peran">
                 Peran &amp; Hak Akses
               </NexusWorkspaceLinkButton>
             ) : null}
             {capabilities.canInviteAccount ? (
-              <NexusWorkspaceButton
-                className={styles.inviteButton}
-                onClick={() => {
-                  setInviteMemberId(undefined);
-                  setInviteOpen(true);
-                }}
-                tone="primary"
-                type="button"
-              >
-                <NexusAdministrationIcon name="plus" />
-                Undang akun
-              </NexusWorkspaceButton>
+              accountActionsAvailable ? (
+                <NexusWorkspaceButton
+                  className={styles.inviteButton}
+                  onClick={() => {
+                    setInviteMemberId(undefined);
+                    setInviteOpen(true);
+                  }}
+                  tone="primary"
+                  type="button"
+                >
+                  <NexusAdministrationIcon name="plus" />
+                  Undang akun
+                </NexusWorkspaceButton>
+              ) : (
+                <NexusWorkspacePlannedButton
+                  className={styles.inviteButton}
+                  tone="primary"
+                >
+                  <NexusAdministrationIcon name="plus" />
+                  Undang akun
+                </NexusWorkspacePlannedButton>
+              )
             ) : null}
           </div>
         ) : null
@@ -766,7 +818,7 @@ export function NexusAdministration({
                   <p>
                     Undang akun pertama untuk mulai memberikan akses BHT Nexus.
                   </p>
-                  {capabilities.canInviteAccount ? (
+                  {capabilities.canInviteAccount && accountActionsAvailable ? (
                     <NexusWorkspaceButton
                       onClick={() => {
                         setInviteMemberId(undefined);
@@ -809,7 +861,10 @@ export function NexusAdministration({
 
       {selectedAccount && selectedProfile ? (
         <NexusAdministrationDetail
+          accessModules={accessModules}
           account={selectedAccount}
+          actionsAvailable={accountActionsAvailable}
+          canOpenMembers={canOpenMembers}
           capabilities={capabilities}
           onCancelInvitation={() =>
             setPendingAccountAction({
@@ -851,7 +906,9 @@ export function NexusAdministration({
             }
           }
           specialAccessCount={
-            nexusAccountOverrides(overrides, selectedAccount.id).length
+            specialAccess
+              ? specialAccess.countFor(selectedAccount.id)
+              : nexusAccountOverrides(overrides, selectedAccount.id).length
           }
         />
       ) : null}

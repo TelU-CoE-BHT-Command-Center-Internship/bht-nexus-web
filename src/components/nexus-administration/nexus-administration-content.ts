@@ -21,6 +21,19 @@ export type NexusAdministrationContent = {
   title: string;
 };
 
+/**
+ * Jumlah penyesuaian akses khusus pada satu akun. Selain angka, jumlahnya bisa
+ * sedang dibaca atau tidak dapat dibaca oleh akun yang sedang melihat.
+ */
+export type NexusAccountSpecialAccess = number | "loading" | "unavailable";
+
+/** Pembaca akses khusus per akun bila jumlahnya dibaca terpisah dari sesi. */
+export type NexusAccountSpecialAccessReader = {
+  countFor: (accountId: string) => NexusAccountSpecialAccess;
+  /** Dipanggil ketika detail akun dibuka. */
+  request: (accountId: string) => void;
+};
+
 export const accountStatusLabels = nexusAccountStatusLabels;
 
 export type { NexusAccountMemberRelationship, NexusAccountStatus };
