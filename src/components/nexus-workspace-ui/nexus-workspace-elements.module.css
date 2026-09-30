@@ -90,10 +90,24 @@
   opacity: 0.5;
 }
 
-/* Tindakan yang belum tersedia: tetap terbaca, bukan hanya dibedakan warna. */
+/*
+ * Tindakan yang belum tersedia: tetap terbaca, bukan hanya dibedakan warna.
+ * Label dan penanda ditumpuk di dalam tinggi tombol yang sama, sehingga ukuran
+ * tombol tidak berbeda dari tombol aslinya.
+ */
 .button[data-planned="true"] {
+  flex-direction: column;
+  gap: 0.12rem;
+  padding-block: 0.22rem;
   cursor: default;
   opacity: 0.62;
+}
+
+.plannedContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
 }
 
 .plannedBadge {
@@ -106,6 +120,11 @@
   line-height: 1.2;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.button[data-planned="true"] .plannedBadge {
+  padding: 0.02rem 0.34rem;
+  font-size: 0.52rem;
 }
 
 .card {
