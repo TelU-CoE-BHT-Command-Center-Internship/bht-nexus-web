@@ -44,7 +44,7 @@
 }
 
 .queue th[data-column="primary"] {
-  width: 24%;
+  width: 23.5%;
 }
 
 .queue th[data-column="type"],
@@ -57,8 +57,11 @@
   width: 12.5%;
 }
 
+/* Judul kolom ini lebih panjang daripada isinya, jadi dibiarkan dua baris. */
 .queue th[data-column="period"] {
-  width: 7.5%;
+  width: 8%;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .queue th[data-column="status"] {

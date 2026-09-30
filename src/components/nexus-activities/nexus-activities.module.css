@@ -3,11 +3,11 @@
 }
 
 .catalog th[data-column="primary"] {
-  width: 16rem;
+  width: 14.75rem;
 }
 
 .catalog th[data-column="signal"] {
-  width: 6rem;
+  width: 7.25rem;
 }
 
 .catalog th[data-column="kind"] {

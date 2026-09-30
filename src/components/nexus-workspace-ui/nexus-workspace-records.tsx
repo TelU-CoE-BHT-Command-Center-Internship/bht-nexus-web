@@ -42,6 +42,10 @@ type NexusWorkspaceTablePrimaryProps = {
 type NexusWorkspaceTableSignalProps = {
   primary: ReactNode;
   secondary?: ReactNode;
+  /** Penanda berupa kalimat (bukan kode atau angka) ditampilkan lebih tenang. */
+  subdued?: boolean;
+  /** Keterangan lengkap bila `primary` berupa penanda ringkas. */
+  title?: string;
   tone?: "danger" | "info" | "neutral" | "success" | "waiting";
 };
 
@@ -182,10 +186,17 @@ export function NexusWorkspaceTablePrimary({
 export function NexusWorkspaceTableSignal({
   primary,
   secondary,
+  subdued = false,
+  title,
   tone = "info",
 }: NexusWorkspaceTableSignalProps) {
   return (
-    <span className={styles.signal} data-tone={tone}>
+    <span
+      className={styles.signal}
+      data-subdued={subdued || undefined}
+      data-tone={tone}
+      title={title}
+    >
       <strong>{primary}</strong>
       {secondary ? <span>{secondary}</span> : null}
     </span>

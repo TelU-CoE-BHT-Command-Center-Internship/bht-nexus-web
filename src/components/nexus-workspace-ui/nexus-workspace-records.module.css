@@ -71,6 +71,8 @@
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.45;
+  /* Kata yang lebih lebar dari kolomnya dipatahkan, tidak menabrak kolom sebelah. */
+  overflow-wrap: anywhere;
   text-align: left;
   text-transform: none;
   vertical-align: middle;
@@ -214,6 +216,14 @@
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
+}
+
+/* Penanda berupa kalimat: tetap terbaca tanpa seberat kode indikator. */
+.signal[data-subdued="true"] strong {
+  color: var(--color-nexus-text-soft);
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1.25;
 }
 
 .signal span {
