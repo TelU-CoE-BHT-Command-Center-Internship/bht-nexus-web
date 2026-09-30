@@ -90,6 +90,52 @@ export function NexusWorkspaceButton({
   );
 }
 
+/**
+ * Tindakan yang sudah dirancang tetapi belum dapat dipakai. Tombol tetap tampil
+ * seperti rancangannya, diberi penanda tertulis "Segera", dapat difokus, dan
+ * tidak menjalankan apa pun sehingga tidak ada perubahan yang seolah tersimpan.
+ */
+export function NexusWorkspacePlannedButton({
+  children,
+  className,
+  description = "Layanan ini akan segera tersedia",
+  plannedLabel = "Segera",
+  tone = "secondary",
+}: {
+  children: ReactNode;
+  className?: string;
+  description?: string;
+  plannedLabel?: string;
+  tone?: "danger" | "primary" | "secondary";
+}) {
+  return (
+    <button
+      aria-disabled="true"
+      className={`${styles.button} ${className ?? ""}`}
+      data-planned="true"
+      data-tone={tone}
+      onClick={(event) => event.preventDefault()}
+      title={description}
+      type="button"
+    >
+      {children}
+      <span aria-hidden="true" className={styles.plannedBadge}>
+        {plannedLabel}
+      </span>
+      <span className={styles.visuallyHidden}>. {description}.</span>
+    </button>
+  );
+}
+
+/** Penanda tertulis untuk bagian rancangan yang segera tersedia. */
+export function NexusWorkspacePlannedBadge({
+  children = "Segera",
+}: {
+  children?: ReactNode;
+}) {
+  return <span className={styles.plannedBadge}>{children}</span>;
+}
+
 export function NexusWorkspaceCard({
   actions,
   children,

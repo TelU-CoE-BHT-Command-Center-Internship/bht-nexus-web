@@ -7,7 +7,8 @@ export type NexusWorkspaceMetric = {
   label: string;
   tone: "completed" | "needs-fix" | "waiting";
   unit: string;
-  value: number;
+  /** `null` selama angka masih dimuat. */
+  value: number | null;
 };
 
 type NexusWorkspacePageProps = {
@@ -57,7 +58,12 @@ export function NexusWorkspaceMetrics({ metrics }: NexusWorkspaceMetricsProps) {
     <div className={styles.summaryGrid}>
       {metrics.map((metric) => (
         <article
-          aria-label={`${metric.label}: ${metric.value} ${metric.unit}`}
+          aria-busy={metric.value === null || undefined}
+          aria-label={
+            metric.value === null
+              ? `${metric.label}: sedang dimuat`
+              : `${metric.label}: ${metric.value} ${metric.unit}`
+          }
           className={styles.summaryCard}
           data-tone={metric.tone}
           key={metric.id}
@@ -68,7 +74,7 @@ export function NexusWorkspaceMetrics({ metrics }: NexusWorkspaceMetricsProps) {
           <div className={styles.cardCopy}>
             <h3>{metric.label}</h3>
             <p>
-              <strong>{metric.value}</strong>
+              <strong>{metric.value ?? "–"}</strong>
               <span>{metric.unit}</span>
             </p>
           </div>
