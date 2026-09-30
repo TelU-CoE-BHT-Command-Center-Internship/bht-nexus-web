@@ -652,7 +652,6 @@ export function NexusPublications({
     <NexusWorkspacePage
       actions={
         <NexusManualSubmissionLink
-          available={false}
           domain="publication"
           label="Ajukan publikasi"
         />

@@ -14,33 +14,39 @@ import type { AuditReviewRecord } from "@/components/nexus-audit-review/nexus-au
 import styles from "@/components/nexus-manual-submission/nexus-manual-submission.module.css";
 import {
   createEmptyManualSubmissionValues,
-  createManualSubmissionReviewRecord,
   type ManualFieldDefinition,
-  type ManualRecordComparisonCandidate,
   type ManualSubmissionDomain,
   type ManualSubmissionValues,
-  manualEntityYear,
   manualKmSuggestion,
   manualReportedQuarterField,
   manualSubmissionDefinitions,
-  manualSubmissionIdentifiers,
   manualSubtype,
   manualSubtypeFields,
   validateManualSubmissionFields,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
-import { manualOfficialPublicId } from "@/components/nexus-manual-submission/nexus-manual-submission-projection";
 import { manualSubmissionRoutes } from "@/components/nexus-manual-submission/nexus-manual-submission-routes";
+import {
+  manualSubmissionAvailable,
+  manualSubmissionFieldErrors,
+  submitNexusManualSubmission,
+} from "@/components/nexus-manual-submission/nexus-manual-submission-server";
 import { NexusManualSubmissionSuccess } from "@/components/nexus-manual-submission/nexus-manual-submission-success";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import {
   NexusWorkspaceBackLink,
   NexusWorkspaceButton,
+  NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
+import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
+import {
+  NexusWorkspaceNoAccess,
+  NexusWorkspaceState,
+} from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import { apiErrorMessage } from "@/lib/api-client";
 
 type NexusManualSubmissionPageProps = {
-  comparisonCandidates?: readonly ManualRecordComparisonCandidate[];
   domain: ManualSubmissionDomain;
 };
 
@@ -202,50 +208,21 @@ function ChecklistItem({
 }
 
 export function NexusManualSubmissionPage({
-  comparisonCandidates = [],
   domain,
 }: NexusManualSubmissionPageProps) {
   const router = useRouter();
   const definition = manualSubmissionDefinitions[domain];
   const route = manualSubmissionRoutes[domain];
-  const reviewSession = useNexusReviewSession();
-  const effectiveComparisonCandidates = useMemo(() => {
-    const byId = new Map(
-      comparisonCandidates.map((candidate) => [candidate.id, candidate]),
-    );
-
-    for (const projection of Object.values(
-      reviewSession.officialRecordDecisions,
-    )) {
-      const submission = projection.candidate.manualSubmission;
-      if (!submission || submission.domain !== domain) continue;
-      if (projection.decisionKind === "merged") continue;
-      const candidateId =
-        projection.decisionKind === "approved_new"
-          ? manualOfficialPublicId(projection)
-          : projection.targetRecordId;
-      if (!candidateId) continue;
-
-      byId.set(candidateId, {
-        id: candidateId,
-        identifiers: manualSubmissionIdentifiers(
-          submission.values as ManualSubmissionValues,
-        ),
-        recordType: submission.recordType,
-        subtitle: projection.candidate.subtitle,
-        title: projection.candidate.title,
-        year: manualEntityYear(submission.values as ManualSubmissionValues),
-      });
-    }
-
-    return [...byId.values()];
-  }, [comparisonCandidates, domain, reviewSession.officialRecordDecisions]);
+  const { actor, capabilities } = useNexusReviewSession();
   const [values, setValues] = useState<ManualSubmissionValues>(() =>
     createEmptyManualSubmissionValues(),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submittedRecord, setSubmittedRecord] =
     useState<AuditReviewRecord | null>(null);
+  const [reviewHref, setReviewHref] = useState<string>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string>();
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
@@ -405,6 +382,8 @@ export function NexusManualSubmissionPage({
     setValues(emptyValues);
     setErrors({});
     setSubmittedRecord(null);
+    setReviewHref(undefined);
+    setSubmitError(undefined);
     setDraftSavedAt(null);
     setDraftRestored(false);
     submissionComplete.current = false;
@@ -485,45 +464,95 @@ export function NexusManualSubmissionPage({
     router.push(route.officialHref);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function focusFirstError(fieldErrors: Record<string, string>) {
+    const firstErrorKey =
+      formFieldOrder.find((key) => fieldErrors[key]) ??
+      Object.keys(fieldErrors)[0];
+    requestAnimationFrame(() => {
+      document.getElementById(`manual-${firstErrorKey}`)?.focus();
+    });
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
     const nextErrors = validateManualSubmissionFields(domain, values, "all");
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
-      const firstErrorKey =
-        formFieldOrder.find((key) => nextErrors[key]) ??
-        Object.keys(nextErrors)[0];
-      requestAnimationFrame(() => {
-        document.getElementById(`manual-${firstErrorKey}`)?.focus();
-      });
+      focusFirstError(nextErrors);
       return;
     }
 
-    const idPrefix =
-      domain === "publication"
-        ? "MAN-PUB"
-        : domain === "intellectual-property"
-          ? "MAN-KI"
-          : domain === "contract"
-            ? "MAN-KON"
-            : domain === "academic"
-              ? "MAN-AKD"
-              : "MAN-KEG";
-    const recordId = reviewSession.createSessionRecordId(idPrefix);
-    const record = createManualSubmissionReviewRecord({
-      actor: reviewSession.actor,
-      comparisonCandidates: effectiveComparisonCandidates,
-      domain,
-      id: recordId,
-      values,
-    });
-    reviewSession.submitRecord(record);
-    submissionComplete.current = true;
-    sessionStorage.removeItem(draftStorageKey(domain));
-    setSavedSnapshot(serializedValues(values));
-    setSubmittedRecord(record);
-    document.getElementById("main-content")?.focus({ preventScroll: true });
-    document.scrollingElement?.scrollTo({ behavior: "smooth", top: 0 });
+    setIsSubmitting(true);
+    setSubmitError(undefined);
+    try {
+      const result = await submitNexusManualSubmission({
+        actor,
+        domain,
+        values,
+      });
+      submissionComplete.current = true;
+      sessionStorage.removeItem(draftStorageKey(domain));
+      setSavedSnapshot(serializedValues(values));
+      setReviewHref(result.reviewHref);
+      setSubmittedRecord(result.record);
+      document.getElementById("main-content")?.focus({ preventScroll: true });
+      document.scrollingElement?.scrollTo({ behavior: "smooth", top: 0 });
+    } catch (error) {
+      const fieldErrors = manualSubmissionFieldErrors(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors(fieldErrors);
+        focusFirstError(fieldErrors);
+      }
+      setSubmitError(
+        apiErrorMessage(
+          error,
+          "Pengajuan belum dapat dikirim. Isian Anda tetap tersimpan; coba kirim lagi.",
+        ),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (!manualSubmissionAvailable(domain)) {
+    return (
+      <NexusWorkspacePage
+        description={definition.description}
+        descriptionId="manual-submission-planned-description"
+        title={definition.title}
+        titleId="manual-submission-planned-title"
+      >
+        <NexusWorkspaceState
+          actions={
+            <NexusWorkspaceLinkButton href={route.officialHref}>
+              Kembali ke {route.officialLabel}
+            </NexusWorkspaceLinkButton>
+          }
+          description={`Pengajuan ${definition.noun} lewat formulir sedang disiapkan. Data yang sudah tercatat tetap dapat dilihat pada halaman ${route.officialLabel}.`}
+          eyebrow="Segera"
+          title={`Pengajuan ${definition.noun} segera tersedia`}
+        />
+      </NexusWorkspacePage>
+    );
+  }
+
+  if (!capabilities.canSubmitRecord) {
+    return (
+      <NexusWorkspacePage
+        description={definition.description}
+        descriptionId="manual-submission-no-access-description"
+        title={definition.title}
+        titleId="manual-submission-no-access-title"
+      >
+        <NexusWorkspaceNoAccess
+          description="Akun Anda belum dapat mengirim pengajuan ke Tinjauan. Hubungi pengurus CoE BHT bila capaian Anda perlu dicatat."
+          returnHref={route.officialHref}
+          returnLabel={`Kembali ke ${route.officialLabel}`}
+          title="Pengajuan belum tersedia untuk akun Anda"
+        />
+      </NexusWorkspacePage>
+    );
   }
 
   if (submittedRecord) {
@@ -535,6 +564,7 @@ export function NexusManualSubmissionPage({
         officialLabel={route.officialLabel}
         onReset={resetJourney}
         record={submittedRecord}
+        reviewHref={reviewHref}
         subtypeLabel={subtype?.label ?? submittedRecord.typeLabel}
         titleLabel={definition.titleFieldLabel}
       />
@@ -855,11 +885,17 @@ export function NexusManualSubmissionPage({
 
         <footer className={styles.actionBar}>
           <div className={styles.actionNotice}>
-            <NexusWorkspaceNotice>
-              Jika metadata belum lengkap, pengajuan tetap dapat dikirim selama
-              bidang wajib dan bukti utama tersedia. Keterkaitan KM dapat
-              ditentukan setelah verifikasi.
-            </NexusWorkspaceNotice>
+            {submitError ? (
+              <NexusWorkspaceNotice tone="danger">
+                {submitError}
+              </NexusWorkspaceNotice>
+            ) : (
+              <NexusWorkspaceNotice>
+                Jika metadata belum lengkap, pengajuan tetap dapat dikirim
+                selama bidang wajib dan bukti utama tersedia. Keterkaitan KM
+                dapat ditentukan setelah verifikasi.
+              </NexusWorkspaceNotice>
+            )}
           </div>
           <div className={styles.actionButtons}>
             <button
@@ -872,11 +908,15 @@ export function NexusManualSubmissionPage({
             <NexusWorkspaceButton onClick={saveDraft} type="button">
               Simpan draft
             </NexusWorkspaceButton>
-            <NexusWorkspaceButton tone="primary" type="submit">
+            <NexusWorkspaceButton
+              disabled={isSubmitting}
+              tone="primary"
+              type="submit"
+            >
               <span className={styles.sendIcon}>
                 <SendIcon />
               </span>
-              Kirim ke Tinjauan
+              {isSubmitting ? "Mengirim…" : "Kirim ke Tinjauan"}
             </NexusWorkspaceButton>
           </div>
         </footer>

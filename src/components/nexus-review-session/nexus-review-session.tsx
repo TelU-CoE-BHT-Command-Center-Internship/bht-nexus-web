@@ -42,9 +42,14 @@ export type NexusReviewActor = {
 export type NexusReviewCapabilities = {
   canReview: boolean;
   canSubmitCorrection: boolean;
+  /** Mengajukan rekam baru ke Tinjauan lewat formulir pengajuan. */
+  canSubmitRecord: boolean;
 };
 
-export type NexusRecordCapabilities = NexusReviewCapabilities & {
+export type NexusRecordCapabilities = Omit<
+  NexusReviewCapabilities,
+  "canSubmitRecord"
+> & {
   canApprove: boolean;
   canReject: boolean;
   canRequestChanges: boolean;

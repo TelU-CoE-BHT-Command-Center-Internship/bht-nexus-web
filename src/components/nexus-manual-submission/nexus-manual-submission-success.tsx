@@ -11,6 +11,8 @@ type NexusManualSubmissionSuccessProps = {
   officialLabel: string;
   onReset: () => void;
   record: AuditReviewRecord;
+  /** Kasus Tinjauan yang dibentuk pengajuan ini; bawaan mencari kodenya. */
+  reviewHref?: string;
   subtypeLabel: string;
   titleLabel: string;
 };
@@ -138,6 +140,7 @@ export function NexusManualSubmissionSuccess({
   officialLabel,
   onReset,
   record,
+  reviewHref,
   subtypeLabel,
   titleLabel,
 }: NexusManualSubmissionSuccessProps) {
@@ -273,7 +276,10 @@ export function NexusManualSubmissionSuccess({
 
       <div className={styles.successActions}>
         <NexusWorkspaceLinkButton
-          href={`/nexus/tinjauan?record=${encodeURIComponent(record.id)}`}
+          href={
+            reviewHref ??
+            `/nexus/tinjauan?record=${encodeURIComponent(record.id)}`
+          }
           tone="primary"
         >
           <SuccessGlyph name="review" />
@@ -291,11 +297,6 @@ export function NexusManualSubmissionSuccess({
       <p className={styles.successHint}>
         <SuccessGlyph name="info" />
         Cari kandidat di Tinjauan menggunakan judul atau kode pengajuan.
-      </p>
-      <p className={styles.successHint}>
-        <SuccessGlyph name="info" />
-        Keputusan tinjauan untuk pengajuan ini belum tersambung ke daftar{" "}
-        {officialLabel}.
       </p>
     </section>
   );

@@ -1,6 +1,8 @@
 import styles from "@/components/nexus-manual-submission/nexus-manual-submission.module.css";
 import type { ManualSubmissionDomain } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import { manualSubmissionRoutes } from "@/components/nexus-manual-submission/nexus-manual-submission-routes";
+import { manualSubmissionAvailable } from "@/components/nexus-manual-submission/nexus-manual-submission-server";
+import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import {
   NexusWorkspaceLinkButton,
   NexusWorkspacePlannedButton,
@@ -14,17 +16,21 @@ function PlusIcon() {
   );
 }
 
+/**
+ * Tombol menuju formulir pengajuan. Bila pengajuan jenis data ini belum
+ * tersedia, atau akun belum dapat mengirim pengajuan, tombolnya tetap tampil
+ * dengan penanda "Segera".
+ */
 export function NexusManualSubmissionLink({
-  available = true,
   domain,
   label,
 }: {
-  /** Bila pengajuan belum tersedia, tombol tampil dengan penanda "Segera". */
-  available?: boolean;
   domain: ManualSubmissionDomain;
   label: string;
 }) {
-  if (!available) {
+  const { capabilities } = useNexusReviewSession();
+
+  if (!capabilities.canSubmitRecord || !manualSubmissionAvailable(domain)) {
     return (
       <NexusWorkspacePlannedButton tone="primary">
         <span className={styles.triggerIcon}>

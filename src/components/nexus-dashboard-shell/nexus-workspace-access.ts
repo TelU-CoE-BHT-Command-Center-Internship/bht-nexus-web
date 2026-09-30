@@ -125,6 +125,7 @@ export const nexusPreviewWorkspaceAccess = {
   reviewCapabilities: {
     canReview: true,
     canSubmitCorrection: true,
+    canSubmitRecord: true,
   },
 } satisfies NexusWorkspaceAccess;
 
@@ -329,6 +330,7 @@ export function nexusWorkspaceAccessFromRoles(
     reviewCapabilities: {
       canReview: has("review.decide"),
       canSubmitCorrection: has("review.edit"),
+      canSubmitRecord: has("job.create"),
     },
   };
 }

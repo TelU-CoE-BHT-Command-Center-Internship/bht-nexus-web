@@ -422,7 +422,6 @@ export function NexusActivities({
     <NexusWorkspacePage
       actions={
         <NexusManualSubmissionLink
-          available={false}
           domain="activity"
           label="Ajukan kegiatan / pengabdian"
         />
