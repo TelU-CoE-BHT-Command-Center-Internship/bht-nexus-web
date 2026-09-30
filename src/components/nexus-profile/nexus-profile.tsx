@@ -17,7 +17,6 @@ import {
   type MemberProfileErrors,
   validateMemberProfile,
 } from "@/components/nexus-members/nexus-members-model";
-import { useNexusCurrentProfile } from "@/components/nexus-profile/nexus-current-profile";
 import styles from "@/components/nexus-profile/nexus-profile.module.css";
 import {
   NexusProfileAcademicEditor,
@@ -38,19 +37,32 @@ import {
   nexusProfileRequiredFieldLabels,
   validateNexusProfileDraft,
 } from "@/components/nexus-profile/nexus-profile-model";
+import { useNexusSessionProfile } from "@/components/nexus-profile/nexus-profile-server";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import {
   NexusWorkspaceButton,
+  NexusWorkspacePlannedButton,
   nexusWorkspaceElementStyles,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
-import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
 
 export type NexusProfileContent = {
   description: string;
   title: string;
+};
+
+type NexusProfileProps = {
+  content: NexusProfileContent;
+  /** Penyimpanan bidang anggota milik akun sendiri. */
+  onSaveMemberPatch?: (patch: NexusSelfMemberPatch) => void;
+  /**
+   * Penyimpanan informasi pribadi. Selama belum tersedia, tindakan ubah tetap
+   * tampil seperti rancangannya dengan penanda "Segera".
+   */
+  onSaveProfile?: (draft: NexusProfileDraft) => void;
 };
 
 type MemberEditorKind = "academic" | "expertise" | "member";
@@ -179,12 +191,29 @@ function InfoItem({
  * aksesibelnya harus menyebut bagian yang disunting agar tetap dapat dibedakan.
  */
 function EditAction({
+  available,
   onClick,
   section,
 }: {
+  available: boolean;
   onClick: () => void;
   section: string;
 }) {
+  if (!available) {
+    return (
+      <NexusWorkspacePlannedButton
+        badgeClassName={styles.editActionLabel}
+        className={styles.editAction}
+      >
+        <NexusProfileIcon name="pencil" />
+        <span className={styles.editActionLabel}>Ubah</span>
+        <span className={nexusWorkspaceElementStyles.visuallyHidden}>
+          {section}
+        </span>
+      </NexusWorkspacePlannedButton>
+    );
+  }
+
   return (
     <NexusWorkspaceButton
       aria-label={`Ubah ${section}`}
@@ -198,9 +227,13 @@ function EditAction({
   );
 }
 
-export function NexusProfile({ content }: { content: NexusProfileContent }) {
-  const { members, profile, saveProfileDraft, saveSelfMemberPatch } =
-    useNexusCurrentProfile();
+export function NexusProfile({
+  content,
+  onSaveMemberPatch,
+  onSaveProfile,
+}: NexusProfileProps) {
+  const session = useNexusSessionProfile();
+  const profile = session.profile;
   const [personalEditor, setPersonalEditor] =
     useState<PersonalEditorState | null>(null);
   const [personalErrors, setPersonalErrors] = useState<NexusProfileErrors>({});
@@ -236,6 +269,28 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
     return () => window.clearTimeout(timeoutId);
   }, [announcement]);
 
+  if (!profile && session.state === "loading") {
+    return (
+      <NexusWorkspacePage
+        description={content.description}
+        descriptionId="profile-loading-description"
+        title={content.title}
+        titleId="profile-loading-title"
+      >
+        <div className={styles.layout}>
+          <div aria-busy="true" className={styles.shell}>
+            <h3 className={styles.shellTitle}>Profil BHT Nexus</h3>
+            <div className={styles.cards}>
+              <section className={styles.card}>
+                <p className={styles.loadingCopy}>Memuat profil Anda…</p>
+              </section>
+            </div>
+          </div>
+        </div>
+      </NexusWorkspacePage>
+    );
+  }
+
   if (!profile) {
     return (
       <NexusWorkspacePage
@@ -244,12 +299,18 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
         title={content.title}
         titleId="profile-unavailable-title"
       >
-        <NexusWorkspaceNoAccess
-          description="Akun yang sedang Anda gunakan tidak dapat dikenali, sehingga profilnya belum dapat ditampilkan. Kembali ke Dashboard lalu buka kembali halaman ini."
-          eyebrow="Profil tidak tersedia"
-          returnHref="/nexus/dashboard"
-          returnLabel="Kembali ke Dashboard"
-          title="Profil untuk akun ini belum dapat ditampilkan"
+        <NexusWorkspaceState
+          actions={
+            <NexusWorkspaceButton onClick={session.retry} type="button">
+              Coba lagi
+            </NexusWorkspaceButton>
+          }
+          description={
+            session.errorMessage ?? "Profil Anda belum dapat dimuat."
+          }
+          eyebrow="Gagal memuat"
+          title="Profil belum dapat ditampilkan"
+          tone="danger"
         />
       </NexusWorkspacePage>
     );
@@ -332,7 +393,7 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
 
   function submitPersonalEditor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!personalEditor) return;
+    if (!personalEditor || !onSaveProfile) return;
     const errors = validateNexusProfileDraft(personalEditor.value, {
       includeInstitutionalEmail: Boolean(linkedMember),
     });
@@ -342,7 +403,7 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
       return;
     }
 
-    saveProfileDraft(personalEditor.value);
+    onSaveProfile(personalEditor.value);
     setPersonalEditor(null);
     setPersonalErrors({});
     setAnnouncement("Informasi pribadi berhasil diperbarui.");
@@ -365,10 +426,10 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
 
   function submitMemberEditor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!memberEditor || !linkedMember) return;
+    if (!memberEditor || !linkedMember || !onSaveMemberPatch) return;
     const allErrors = validateMemberProfile(
       memberEditor.value,
-      members,
+      [],
       linkedMember.id,
     );
     const ownedFields = memberEditorFields[memberEditor.kind];
@@ -383,7 +444,7 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
       return;
     }
 
-    saveSelfMemberPatch(selfMemberPatch(memberEditor.kind, memberEditor.value));
+    onSaveMemberPatch(selfMemberPatch(memberEditor.kind, memberEditor.value));
     setMemberEditor(null);
     setMemberErrors({});
     setAnnouncement(
@@ -421,14 +482,23 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
                 Lengkapi agar rekan CoE dapat menghubungi Anda.
               </p>
             </div>
-            <NexusWorkspaceButton
-              className={styles.cardAction}
-              onClick={openPersonalEditor}
-              tone="primary"
-              type="button"
-            >
-              Lengkapi profil
-            </NexusWorkspaceButton>
+            {onSaveProfile ? (
+              <NexusWorkspaceButton
+                className={styles.cardAction}
+                onClick={openPersonalEditor}
+                tone="primary"
+                type="button"
+              >
+                Lengkapi profil
+              </NexusWorkspaceButton>
+            ) : (
+              <NexusWorkspacePlannedButton
+                className={styles.cardAction}
+                tone="primary"
+              >
+                Lengkapi profil
+              </NexusWorkspacePlannedButton>
+            )}
           </section>
         ) : null}
 
@@ -469,6 +539,7 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
                   </div>
                 </div>
                 <EditAction
+                  available={onSaveProfile !== undefined}
                   onClick={openPersonalEditor}
                   section="informasi pribadi"
                 />
@@ -595,6 +666,7 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
                       </p>
                     </div>
                     <EditAction
+                      available={onSaveMemberPatch !== undefined}
                       onClick={() => openMemberEditor("member")}
                       section="profil anggota"
                     />
@@ -630,6 +702,7 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
                       </p>
                     </div>
                     <EditAction
+                      available={onSaveMemberPatch !== undefined}
                       onClick={() => openMemberEditor("expertise")}
                       section="bidang keahlian"
                     />
@@ -664,6 +737,7 @@ export function NexusProfile({ content }: { content: NexusProfileContent }) {
                       </p>
                     </div>
                     <EditAction
+                      available={onSaveMemberPatch !== undefined}
                       onClick={() => openMemberEditor("academic")}
                       section="identitas akademik"
                     />
