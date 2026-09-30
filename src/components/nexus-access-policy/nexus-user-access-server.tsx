@@ -5,7 +5,10 @@ import type {
   NexusRoleRecord,
   NexusUserPermissionOverride,
 } from "@/components/nexus-access-policy/nexus-access-policy";
-import { NexusAccessPolicySessionProvider } from "@/components/nexus-access-policy/nexus-access-policy-session";
+import {
+  NexusAccessPolicySessionProvider,
+  type NexusAccountOverrideDraft,
+} from "@/components/nexus-access-policy/nexus-access-policy-session";
 import {
   type NexusPermissionMatrixModule,
   permissionMatrixModules,
@@ -31,6 +34,7 @@ import {
   type AccountPermissionEntry,
   getAccountPermissions,
   listAllAccounts,
+  overrideAccountPermissions,
 } from "@/lib/api-accounts";
 import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
 import { listAllMembers } from "@/lib/api-members";
@@ -68,6 +72,15 @@ function overridesFromServer(
   );
 }
 
+/** Penyesuaian sebagaimana dipahami server: tambah, batasi, atau ikuti peran. */
+function storedGrant(permission: AccountPermissionEntry) {
+  if (permission.overrideStatus === "granted_override") return true;
+  if (permission.overrideStatus === "revoked_override") return false;
+  return null;
+}
+
+const acceptsEveryPermission = () => true;
+
 type UserAccessDirectory = {
   accounts: NexusAccountDirectoryRecord[];
   members: NexusMemberRecord[];
@@ -85,6 +98,9 @@ function useNexusUserAccessDirectory(
   const [errorMessage, setErrorMessage] = useState<string>();
   const [version, setVersion] = useState(0);
   const latestRequest = useRef(0);
+  /* Izin akun sebagaimana terakhir dijawab server; dasar perbandingan saat
+     penyesuaian berikutnya disimpan. */
+  const storedPermissions = useRef<readonly AccountPermissionEntry[]>([]);
 
   const load = useCallback(() => {
     const request = ++latestRequest.current;
@@ -107,6 +123,7 @@ function useNexusUserAccessDirectory(
           ? (await getAccountPermissions(account.publicId)).permissions
           : [];
         if (request !== latestRequest.current) return;
+        storedPermissions.current = permissions;
         const accountRoleId = account ? nexusAccountRoleId(account) : undefined;
         const inherited = permissions
           .filter((permission) => permission.isInherited)
@@ -144,7 +161,45 @@ function useNexusUserAccessDirectory(
 
   useLoadEffect(load);
 
-  return { directory, errorMessage, retry: load, state, version };
+  /** Mengirim hanya izin yang penyesuaiannya berubah terhadap keadaan tersimpan. */
+  const saveOverrides = useCallback(
+    async (
+      targetAccountId: string,
+      drafts: readonly NexusAccountOverrideDraft[],
+    ) => {
+      const desired = new Map(
+        drafts.map((draft) => [draft.permissionId, draft.mode === "GRANT"]),
+      );
+      const changes = storedPermissions.current.flatMap((permission) => {
+        const isGranted = desired.get(permission.name) ?? null;
+        return isGranted === storedGrant(permission)
+          ? []
+          : [{ isGranted, permissionPublicId: permission.publicId }];
+      });
+      if (changes.length === 0) return;
+      try {
+        const stored = await overrideAccountPermissions(
+          targetAccountId,
+          changes,
+        );
+        storedPermissions.current = stored.permissions;
+      } catch (error) {
+        throw new Error(
+          apiErrorMessage(error, "Akses khusus belum dapat disimpan."),
+        );
+      }
+    },
+    [],
+  );
+
+  return {
+    directory,
+    errorMessage,
+    retry: load,
+    saveOverrides,
+    state,
+    version,
+  };
 }
 
 type NexusUserAccessLiveProps = {
@@ -159,7 +214,7 @@ export function NexusUserAccessLive({
   capabilities,
   initialAccountId,
 }: NexusUserAccessLiveProps) {
-  const { directory, errorMessage, retry, state, version } =
+  const { directory, errorMessage, retry, saveOverrides, state, version } =
     useNexusUserAccessDirectory(initialAccountId, canReadMembers);
   const { actor } = useNexusReviewSession();
 
@@ -205,6 +260,7 @@ export function NexusUserAccessLive({
       <NexusAccessPolicySessionProvider
         initialOverrides={directory.overrides}
         initialRoles={directory.roles}
+        isKnownPermission={acceptsEveryPermission}
       >
         <NexusAccountSessionProvider
           actor={actor}
@@ -212,9 +268,9 @@ export function NexusUserAccessLive({
         >
           <NexusUserAccess
             capabilities={capabilities}
-            editingAvailable={false}
             initialAccountId={initialAccountId}
             modules={directory.modules}
+            onSaveOverrides={saveOverrides}
           />
         </NexusAccountSessionProvider>
       </NexusAccessPolicySessionProvider>

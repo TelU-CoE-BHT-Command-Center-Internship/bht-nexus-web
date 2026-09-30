@@ -36,7 +36,6 @@ import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nex
 import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
-  NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
   displayRecordId,
@@ -51,14 +50,17 @@ import {
 
 type NexusUserAccessProps = {
   capabilities: NexusAdministrationCapabilities;
-  /**
-   * Penyimpanan akses khusus. Selama belum tersedia, halaman menampilkan akses
-   * akun apa adanya dan tindakannya diberi penanda "Segera".
-   */
-  editingAvailable?: boolean;
   initialAccountId?: string;
   /** Modul beserta izinnya; bawaan memakai katalog izin ruang kerja. */
   modules?: readonly NexusPermissionMatrixModule[];
+  /**
+   * Penyimpan akses khusus di server. Bila diberikan, penyesuaian baru berlaku
+   * di halaman setelah server menerimanya.
+   */
+  onSaveOverrides?: (
+    accountId: string,
+    drafts: readonly NexusAccountOverrideDraft[],
+  ) => Promise<void>;
 };
 
 type PendingDialog = { kind: "reset" };
@@ -87,9 +89,9 @@ function ChevronIcon() {
 
 export function NexusUserAccess({
   capabilities,
-  editingAvailable = true,
   initialAccountId,
   modules = nexusAccessModules,
+  onSaveOverrides,
 }: NexusUserAccessProps) {
   const navigate = useNexusWorkspaceNavigation();
   const { overrides, replaceAccountOverrides, roles } =
@@ -102,6 +104,8 @@ export function NexusUserAccess({
     null,
   );
   const [announcement, setAnnouncement] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [filter, setFilter] = useState<AccessFilterId>("all");
   const [openModules, setOpenModules] = useState<string[] | null>(null);
 
@@ -258,10 +262,7 @@ export function NexusUserAccess({
       : role.kind === "UNKNOWN"
         ? "Peran perlu ditinjau"
         : "Belum ditetapkan";
-  const canEdit =
-    editingAvailable &&
-    capabilities.canManageUserOverrides &&
-    hasUsableRoleBaseline;
+  const canEdit = capabilities.canManageUserOverrides && hasUsableRoleBaseline;
   /* Penugasan peran akun dan permukaan Peran dimiliki kemampuan lain, sehingga
      tindakannya hanya ditawarkan ketika kewenangannya memang tersedia. */
   const canAssignAccountRole = capabilities.canManageAccess;
@@ -294,6 +295,34 @@ export function NexusUserAccess({
     );
   }
 
+  /** Menyimpan seluruh penyesuaian akun; daftar kosong berarti kembali ke peran. */
+  async function storeOverrides(
+    accountId: string,
+    drafts: readonly NexusAccountOverrideDraft[],
+  ) {
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveError("");
+    try {
+      await onSaveOverrides?.(accountId, drafts);
+      replaceAccountOverrides(accountId, drafts);
+      setDraft({});
+      setAnnouncement(
+        drafts.length === 0
+          ? `Akses ${personName} kembali mengikuti peran.`
+          : `Akses khusus ${personName} disimpan: ${drafts.length} penyesuaian aktif.`,
+      );
+    } catch (caughtError) {
+      setSaveError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Akses khusus belum dapat disimpan.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   function saveOverrides() {
     if (!account || !canEdit) return;
     const drafts: NexusAccountOverrideDraft[] = [];
@@ -301,13 +330,7 @@ export function NexusUserAccess({
       if (row.mode === "INHERIT") continue;
       drafts.push({ mode: row.mode, permissionId: row.permissionId });
     }
-    replaceAccountOverrides(account.id, drafts);
-    setDraft({});
-    setAnnouncement(
-      drafts.length === 0
-        ? `Akses ${personName} kembali mengikuti peran.`
-        : `Akses khusus ${personName} disimpan: ${drafts.length} penyesuaian aktif.`,
-    );
+    void storeOverrides(account.id, drafts);
   }
 
   return (
@@ -609,7 +632,7 @@ export function NexusUserAccess({
                               >
                                 <input
                                   checked={row.mode === option.value}
-                                  disabled={!canEdit}
+                                  disabled={!canEdit || isSaving}
                                   name={`mode-${row.permissionId}`}
                                   onChange={() =>
                                     setDraft((current) => ({
@@ -655,6 +678,12 @@ export function NexusUserAccess({
         hak akses akun lain pada peran yang sama.
       </p>
 
+      {saveError ? (
+        <div className={styles.saveError} role="alert">
+          <NexusWorkspaceNotice tone="danger">{saveError}</NexusWorkspaceNotice>
+        </div>
+      ) : null}
+
       {canEdit ? (
         <footer className={styles.actionBar}>
           <div className={styles.actionsMeta}>
@@ -667,35 +696,20 @@ export function NexusUserAccess({
           </div>
           <div className={styles.actionsButtons}>
             <NexusWorkspaceButton
-              disabled={adjustedCount === 0}
+              disabled={adjustedCount === 0 || isSaving}
               onClick={() => setPendingDialog({ kind: "reset" })}
               type="button"
             >
               Reset ke peran
             </NexusWorkspaceButton>
             <NexusWorkspaceButton
-              disabled={!isDirty}
+              disabled={!isDirty || isSaving}
               onClick={saveOverrides}
               tone="primary"
               type="button"
             >
-              Simpan perubahan
+              {isSaving ? "Menyimpan…" : "Simpan perubahan"}
             </NexusWorkspaceButton>
-          </div>
-        </footer>
-      ) : !editingAvailable && capabilities.canManageUserOverrides ? (
-        <footer className={styles.actionBar}>
-          <div className={styles.actionsMeta}>
-            <strong>{`${adjustedCount} penyesuaian aktif`}</strong>
-            <span>Saat ini akses khusus hanya dapat dilihat.</span>
-          </div>
-          <div className={styles.actionsButtons}>
-            <NexusWorkspacePlannedButton>
-              Reset ke peran
-            </NexusWorkspacePlannedButton>
-            <NexusWorkspacePlannedButton tone="primary">
-              Simpan perubahan
-            </NexusWorkspacePlannedButton>
           </div>
         </footer>
       ) : null}
@@ -708,9 +722,7 @@ export function NexusUserAccess({
           onCancel={() => setPendingDialog(null)}
           onConfirm={() => {
             setPendingDialog(null);
-            replaceAccountOverrides(account.id, []);
-            setDraft({});
-            setAnnouncement(`Akses ${personName} kembali mengikuti peran.`);
+            void storeOverrides(account.id, []);
           }}
           title="Hapus seluruh akses khusus akun ini?"
           tone="warning"

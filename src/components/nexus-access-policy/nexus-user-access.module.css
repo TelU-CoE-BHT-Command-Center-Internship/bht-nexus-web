@@ -701,6 +701,10 @@
   box-shadow: 0 -0.35rem 1.4rem rgb(8 40 92 / 10%);
 }
 
+.saveError {
+  margin-top: 0.9rem;
+}
+
 .actionsMeta {
   display: grid;
   gap: 0.1rem;

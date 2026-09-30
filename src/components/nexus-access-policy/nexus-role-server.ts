@@ -6,6 +6,7 @@ import {
   type NexusPermissionId,
   type NexusRoleRecord,
   nexusAccessActionLabels,
+  nexusAccessActions,
 } from "@/components/nexus-access-policy/nexus-access-policy";
 import type { NexusRoleDraftInput } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import type { DashboardShellIconName } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
@@ -230,10 +231,21 @@ export function permissionMatrixModules(
     const index = resourceOrder.indexOf(id.split(".")[0] ?? id);
     return index < 0 ? resourceOrder.length : index;
   };
-  return [...modules.values()].toSorted(
-    (first, second) =>
-      rank(first.id) - rank(second.id) || first.id.localeCompare(second.id),
-  );
+  /* Izin dalam satu modul mengikuti urutan tindakan yang sama dengan kolom
+     matriks: Lihat lebih dahulu, Kelola paling akhir. */
+  const actionRank = (action: NexusAccessActionId) =>
+    nexusAccessActions.findIndex((candidate) => candidate.id === action);
+  return [...modules.values()]
+    .map((module) => ({
+      ...module,
+      permissions: module.permissions.toSorted(
+        (first, second) => actionRank(first.action) - actionRank(second.action),
+      ),
+    }))
+    .toSorted(
+      (first, second) =>
+        rank(first.id) - rank(second.id) || first.id.localeCompare(second.id),
+    );
 }
 
 export function nexusRoleFromServer(
