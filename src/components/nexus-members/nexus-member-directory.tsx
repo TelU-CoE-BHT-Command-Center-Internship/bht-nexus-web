@@ -96,7 +96,7 @@ export function NexusMemberDirectory({
             <h1 id="members-page-title">{title}</h1>
             <p>{description}</p>
           </div>
-          {canCreateMember ? (
+          {!creationAvailable || canCreateMember ? (
             creationAvailable ? (
               <NexusWorkspaceButton
                 className={styles.addMemberButton}

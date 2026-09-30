@@ -23,6 +23,7 @@ import {
   NexusWorkspaceLinkButton,
   NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 export type MemberDetailTab =
   | "access"
@@ -133,6 +134,11 @@ export function NexusMemberDetail({
   const hasAcademicSource = Boolean(
     member.academic.sintaId || member.academic.googleScholar,
   );
+  /* Tindakan yang belum tersedia tampil bagi semua dengan penanda "Segera";
+     setelah tersedia, tampilnya mengikuti kewenangan akun. */
+  const showsEditing = !editingAvailable || capabilities.canEditMember;
+  const showsAccountManagement =
+    !accountManagementAvailable || capabilities.canGrantAccess;
 
   function moveTab(
     event: KeyboardEvent<HTMLButtonElement>,
@@ -166,7 +172,7 @@ export function NexusMemberDetail({
           Kembali ke daftar
         </button>
         <div className={styles.detailActions}>
-          {capabilities.canEditMember ? (
+          {showsEditing ? (
             editingAvailable ? (
               <NexusWorkspaceButton
                 className={styles.detailActionButton}
@@ -185,8 +191,7 @@ export function NexusMemberDetail({
               </NexusWorkspacePlannedButton>
             )
           ) : null}
-          {capabilities.canGrantAccess &&
-          member.accountAccess.kind === "NONE" ? (
+          {showsAccountManagement && member.accountAccess.kind === "NONE" ? (
             accountManagementAvailable ? (
               <NexusWorkspaceLinkButton
                 className={styles.detailActionButton}
@@ -254,7 +259,7 @@ export function NexusMemberDetail({
           </div>
           <div>
             <dt>ID anggota</dt>
-            <dd>{member.id}</dd>
+            <dd title={member.id}>{displayRecordId(member.id)}</dd>
           </div>
         </dl>
       </header>
@@ -442,7 +447,7 @@ export function NexusMemberDetail({
                     Mulai pengumpulan
                     <MemberIcon name="chevron" />
                   </NexusWorkspaceLinkButton>
-                ) : !hasAcademicSource && capabilities.canEditMember ? (
+                ) : !hasAcademicSource && showsEditing ? (
                   editingAvailable ? (
                     <NexusWorkspaceButton
                       onClick={onOpenAcademicEditor}
@@ -529,7 +534,7 @@ export function NexusMemberDetail({
                 </div>
                 <MemberGuidanceCard
                   action={
-                    capabilities.canGrantAccess ? (
+                    showsAccountManagement ? (
                       accountManagementAvailable ? (
                         <NexusWorkspaceLinkButton
                           href={`/nexus/administrasi?account=${encodeURIComponent(linkedAccount.id)}`}
@@ -560,7 +565,7 @@ export function NexusMemberDetail({
                   Terdapat catatan akun yang bertentangan untuk profil anggota
                   ini.
                 </p>
-                {capabilities.canGrantAccess ? (
+                {showsAccountManagement ? (
                   accountManagementAvailable ? (
                     <NexusWorkspaceLinkButton
                       href={
@@ -592,7 +597,7 @@ export function NexusMemberDetail({
                   Anggota tetap dapat dicatat tanpa akun. Berikan akses hanya
                   jika orang ini memang perlu masuk ke sistem.
                 </p>
-                {capabilities.canGrantAccess ? (
+                {showsAccountManagement ? (
                   accountManagementAvailable ? (
                     <>
                       <NexusWorkspaceLinkButton
