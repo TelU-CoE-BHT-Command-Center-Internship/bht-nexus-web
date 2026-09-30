@@ -119,7 +119,7 @@ export function nexusProfileFromServer(
       id: profile.publicId,
       relationship: member
         ? { kind: "LINKED", memberId: member.id }
-        : { kind: "NON_MEMBER" },
+        : { kind: "UNLINKED" },
       roleId: profile.roles[0]?.name,
       status: accountStatuses[profile.status],
       updatedAt: "",
@@ -145,7 +145,7 @@ export function nexusProfileFromServer(
     missingRequiredFields: missing,
     phone,
     preferredName,
-    relationship: member ? { kind: "LINKED", member } : { kind: "NON_MEMBER" },
+    relationship: member ? { kind: "LINKED", member } : { kind: "UNLINKED" },
     role: roleResolution(profile),
     source: linkedMember ? "MEMBER" : "ACCOUNT",
   };
