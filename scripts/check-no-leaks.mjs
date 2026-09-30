@@ -7,17 +7,25 @@ const secretPatterns = [
   { label: "private key block", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
   {
     label: "database connection string with embedded password",
-    pattern: /(postgres(ql)?|mysql|mongodb(\+srv)?):\/\/[^:\/\s]+:[^@\/\s]+@/,
+    pattern: /(postgres(ql)?|mysql|mongodb(\+srv)?):\/\/[^:/\s]+:[^@/\s]+@/,
   },
   { label: "AWS access key", pattern: /AKIA[0-9A-Z]{16}/ },
   { label: "GitHub token", pattern: /gh[pousr]_[A-Za-z0-9]{20,}/ },
-  { label: "generic bearer-style secret", pattern: /(api|secret|access)[-_]?key["']?\s*[:=]\s*["'][A-Za-z0-9_\-]{16,}["']/i },
+  {
+    label: "generic bearer-style secret",
+    pattern:
+      /(api|secret|access)[-_]?key["']?\s*[:=]\s*["'][A-Za-z0-9_-]{16,}["']/i,
+  },
 ];
 
 function stagedFiles() {
-  return execFileSync("git", ["diff", "--cached", "--name-only", "--diff-filter=ACM"], {
-    encoding: "utf8",
-  })
+  return execFileSync(
+    "git",
+    ["diff", "--cached", "--name-only", "--diff-filter=ACM"],
+    {
+      encoding: "utf8",
+    },
+  )
     .split("\n")
     .filter(Boolean);
 }
@@ -52,6 +60,8 @@ if (problems.length > 0) {
   for (const problem of [...new Set(problems)]) {
     console.error(`  - ${problem}`);
   }
-  console.error("\nRemove the file/content from staging, or confirm it's a false positive before overriding.");
+  console.error(
+    "\nRemove the file/content from staging, or confirm it's a false positive before overriding.",
+  );
   process.exit(1);
 }
