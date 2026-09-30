@@ -16,7 +16,8 @@ import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui
 type NexusRoleFormDrawerProps = {
   duplicateSource?: NexusRoleRecord;
   onClose: () => void;
-  onSubmit: (input: NexusRoleDraftInput) => void;
+  /** Menyimpan peran; mengembalikan pesan bila layanan menolaknya. */
+  onSubmit: (input: NexusRoleDraftInput) => Promise<string | undefined>;
   roles: readonly NexusRoleRecord[];
 };
 
@@ -44,6 +45,7 @@ export function NexusRoleFormDrawer({
   const [draft, setDraft] = useState(startingDraft);
   const [error, setError] = useState("");
   const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const draftIsDirty = (Object.keys(startingDraft) as (keyof RoleDraft)[]).some(
     (field) => draft[field] !== startingDraft[field],
   );
@@ -68,21 +70,21 @@ export function NexusRoleFormDrawer({
     onClose();
   }
 
-  function submitRole(event: FormEvent<HTMLFormElement>) {
+  async function submitRole(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    try {
-      onSubmit({
-        ...(sourceRole ? { copyFromRoleId: sourceRole.id } : {}),
-        description: draft.description,
-        label: draft.label,
-      });
-    } catch (caughtError) {
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Peran tidak dapat disimpan.",
-      );
+    if (isSubmitting) return;
+    if (!draft.label.trim()) {
+      setError("Nama peran wajib diisi.");
+      return;
     }
+    setIsSubmitting(true);
+    const submitError = await onSubmit({
+      ...(sourceRole ? { copyFromRoleId: sourceRole.id } : {}),
+      description: draft.description,
+      label: draft.label,
+    });
+    setIsSubmitting(false);
+    if (submitError) setError(submitError);
   }
 
   return (
@@ -168,8 +170,16 @@ export function NexusRoleFormDrawer({
             <NexusWorkspaceButton onClick={requestClose} type="button">
               Batal
             </NexusWorkspaceButton>
-            <NexusWorkspaceButton tone="primary" type="submit">
-              {duplicateSource ? "Duplikasi peran" : "Tambah peran"}
+            <NexusWorkspaceButton
+              disabled={isSubmitting}
+              tone="primary"
+              type="submit"
+            >
+              {isSubmitting
+                ? "Menyimpan…"
+                : duplicateSource
+                  ? "Duplikasi peran"
+                  : "Tambah peran"}
             </NexusWorkspaceButton>
           </footer>
         </form>
