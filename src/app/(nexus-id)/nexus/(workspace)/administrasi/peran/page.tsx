@@ -54,6 +54,7 @@ export default async function NexusRolePage({
 
   return (
     <NexusRoleManagement
+      canReadMembers={nexusWorkspaceCanOpen(access, "members")}
       capabilities={access.administrationCapabilities}
       hasInitialRoleContext={Object.hasOwn(params, "role")}
       initialRoleId={role}

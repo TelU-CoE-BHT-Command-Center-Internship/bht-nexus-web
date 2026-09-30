@@ -12,6 +12,19 @@ import {
   type NexusServerRoleRecord,
   useNexusServerRoles,
 } from "@/components/nexus-access-policy/nexus-role-server";
+import {
+  type NexusAccountStatus,
+  nexusAccountStatusLabels,
+} from "@/components/nexus-accounts/nexus-account-directory";
+import { nexusAccountRoleIds } from "@/components/nexus-accounts/nexus-account-server";
+import {
+  nexusAccountSpecialAccessLabel,
+  useNexusAccountSpecialAccess,
+} from "@/components/nexus-accounts/nexus-account-special-access";
+import {
+  administrationRelationshipLabel,
+  resolveAdministrationRelationship,
+} from "@/components/nexus-administration/nexus-administration-relationship";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
 import type { NexusAdministrationCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { NexusWorkspaceBreadcrumb } from "@/components/nexus-workspace-ui/nexus-workspace-breadcrumb";
@@ -23,10 +36,20 @@ import {
 import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
-  NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  displayRecordId,
+  normalizeWorkspaceSearch,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
+import {
+  NexusWorkspaceMobileAction,
+  NexusWorkspaceMobileCard,
+  type NexusWorkspaceRecordColumn,
+  NexusWorkspaceRecordTable,
+  NexusWorkspaceTableAction,
+  NexusWorkspaceTableBadge,
+} from "@/components/nexus-workspace-ui/nexus-workspace-records";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import {
   useNexusWorkspaceNavigation,
@@ -40,6 +63,8 @@ const NexusRoleFormDrawer = dynamic(() =>
 );
 
 type NexusRoleManagementProps = {
+  /** Direktori Anggota boleh dibaca akun ini, sehingga nama anggota dapat ditampilkan. */
+  canReadMembers: boolean;
   capabilities: NexusAdministrationCapabilities;
   hasInitialRoleContext: boolean;
   initialRoleId?: string;
@@ -61,17 +86,36 @@ type PendingRoleAction =
   | { kind: "select-role"; roleId: string };
 
 type PendingDialog =
+  | { kind: "assigned-role"; count: number }
   | { kind: "deactivate" }
   | { kind: "discard"; nextAction: PendingRoleAction }
-  | { kind: "save" };
+  | { kind: "restore" }
+  /* Jumlah akun tidak ada bila daftar akun tidak boleh dibaca akun ini. */
+  | { accountCount?: number; kind: "save" };
 
 const ADMINISTRATION_HREF = "/nexus/administrasi";
 const PAGE_DESCRIPTION =
   "Atur hak akses bawaan untuk setiap peran pengguna BHT Nexus.";
 
+const userColumns: readonly NexusWorkspaceRecordColumn[] = [
+  { id: "primary", label: "Pengguna", primary: true },
+  { id: "member", label: "Hubungan Anggota" },
+  { id: "status", label: "Status Akun" },
+  { id: "special", label: "Akses Khusus" },
+  { id: "action", label: "Aksi" },
+];
+
+function accountStatusTone(status: NexusAccountStatus) {
+  if (status === "ACTIVE") return "success";
+  if (status === "INVITED") return "waiting";
+  return "danger";
+}
+
+/* Deskripsi yang disunting adalah yang tersimpan, bukan kalimat pengganti
+   yang ditampilkan selama peran belum punya deskripsi. */
 function draftFromRole(role: NexusServerRoleRecord): RoleDraft {
   return {
-    description: role.description,
+    description: role.storedDescription,
     label: role.label,
     permissions: [...role.permissions],
   };
@@ -126,14 +170,18 @@ function roleAccessSummary(
 }
 
 export function NexusRoleManagement({
+  canReadMembers,
   capabilities,
   hasInitialRoleContext,
   initialRoleId,
 }: NexusRoleManagementProps) {
   const router = useRouter();
   const navigate = useNexusWorkspaceNavigation();
-  const directory = useNexusServerRoles();
-  const { modules, roles } = directory;
+  const directory = useNexusServerRoles({ canReadMembers });
+  const { accounts, members, modules, roles } = directory;
+  const specialAccess = useNexusAccountSpecialAccess(
+    capabilities.canManageUserOverrides,
+  );
 
   const initialRoleExists = roles.some((role) => role.id === initialRoleId);
   const [chosenRoleId, setChosenRoleId] = useState<string>();
@@ -171,7 +219,7 @@ export function NexusRoleManagement({
     selectedRole &&
       activeDraft &&
       (activeDraft.label !== selectedRole.label ||
-        activeDraft.description !== selectedRole.description),
+        activeDraft.description !== selectedRole.storedDescription),
   );
   const hasUnsavedPermissions = Boolean(
     selectedRole &&
@@ -187,6 +235,41 @@ export function NexusRoleManagement({
     isDirty,
     title: "Buang perubahan peran?",
   });
+
+  /* Tanpa daftar akun, jumlah pemakai peran tidak diketahui dan tidak pernah
+     ditampilkan sebagai nol. Akun berperan ganda terhitung pada setiap perannya. */
+  const accountsKnown = accounts !== undefined;
+  const accountsByRole = useMemo(
+    () =>
+      (accounts ?? []).filter((account) =>
+        nexusAccountRoleIds(account).includes(selectedRoleId),
+      ),
+    [accounts, selectedRoleId],
+  );
+  const roleUsage = useMemo(() => {
+    const usage = new Map<string, number>();
+    for (const account of accounts ?? []) {
+      for (const roleId of nexusAccountRoleIds(account)) {
+        usage.set(roleId, (usage.get(roleId) ?? 0) + 1);
+      }
+    }
+    return usage;
+  }, [accounts]);
+  const memberDirectory = useMemo(
+    () =>
+      members.map((member) => ({
+        assignment: member.coeAssignment,
+        id: member.id,
+        name: member.name,
+      })),
+    [members],
+  );
+
+  const requestSpecialAccess = specialAccess.request;
+  useEffect(() => {
+    if (activeTab !== "users") return;
+    for (const account of accountsByRole) requestSpecialAccess(account.id);
+  }, [accountsByRole, activeTab, requestSpecialAccess]);
 
   const filteredRoles = useMemo(() => {
     const normalized = normalizeWorkspaceSearch(query);
@@ -336,6 +419,11 @@ export function NexusRoleManagement({
     );
   }
 
+  function reportActionError(message: string) {
+    setActionError(message);
+    setAnnouncement(message);
+  }
+
   async function applyDraft() {
     if (!selectedRole || !activeDraft || isSaving) return;
     const changes = permissionChangeSummary(
@@ -347,8 +435,7 @@ export function NexusRoleManagement({
     const error = await directory.saveRole(selectedRole, activeDraft);
     setIsSaving(false);
     if (error) {
-      setActionError(error);
-      setAnnouncement(error);
+      reportActionError(error);
       return;
     }
     setDraft(null);
@@ -361,8 +448,16 @@ export function NexusRoleManagement({
 
   function requestSave() {
     if (!selectedRole || !activeDraft) return;
-    if (hasUnsavedPermissions) {
+    if (!hasUnsavedPermissions) {
+      void applyDraft();
+      return;
+    }
+    if (!accountsKnown) {
       setPendingDialog({ kind: "save" });
+      return;
+    }
+    if (accountsByRole.length > 0) {
+      setPendingDialog({ accountCount: accountsByRole.length, kind: "save" });
       return;
     }
     void applyDraft();
@@ -385,38 +480,77 @@ export function NexusRoleManagement({
     return undefined;
   }
 
-  async function deactivateSelectedRole() {
+  function requestDeactivate() {
     if (!selectedRole) return;
+    if (accountsByRole.length > 0) {
+      setPendingDialog({ count: accountsByRole.length, kind: "assigned-role" });
+      return;
+    }
+    setPendingDialog({ kind: "deactivate" });
+  }
+
+  async function deactivateSelectedRole() {
+    if (!selectedRole || isSaving) return;
     const role = selectedRole;
     setIsSaving(true);
+    setActionError("");
     const error = await directory.deactivateRole(role);
     setIsSaving(false);
     if (error) {
-      setActionError(error);
-      setAnnouncement(error);
+      setDraft(null);
+      reportActionError(error);
       return;
     }
     setChosenRoleId(undefined);
     setDraft(null);
-    setActionError("");
     setAnnouncement(`Peran ${role.label} dinonaktifkan.`);
+  }
+
+  async function restoreSelectedRole() {
+    if (!selectedRole || isSaving) return;
+    const role = selectedRole;
+    const keptDetails = hasUnsavedDetails ? activeDraft : null;
+    setIsSaving(true);
+    setActionError("");
+    const result = await directory.restoreRole(role);
+    setIsSaving(false);
+    if (result.error || !result.permissions) {
+      reportActionError(
+        result.error ?? "Hak akses peran tidak dapat dipulihkan.",
+      );
+      return;
+    }
+    setDraft(
+      keptDetails
+        ? { ...keptDetails, permissions: [...result.permissions] }
+        : null,
+    );
+    setAnnouncement(
+      keptDetails
+        ? `Hak akses ${role.label} dipulihkan ke bawaan. Perubahan nama atau deskripsi masih perlu disimpan.`
+        : `Hak akses ${role.label} dipulihkan ke bawaan.`,
+    );
   }
 
   const tabs = [
     { id: "matrix", label: "Matriks Hak Akses" },
-    { id: "users", label: "Pengguna" },
+    {
+      ...(accountsKnown ? { count: accountsByRole.length } : {}),
+      id: "users",
+      label: "Pengguna",
+    },
     { id: "info", label: "Informasi" },
   ];
 
   const canEditPermissions = capabilities.canManageRolePermissions;
   const canEditDetails = capabilities.canManageRoles;
   const isDefaultRole = Boolean(selectedRole && selectedRole.kind === "SYSTEM");
-  const canRestoreRoleDefaults =
-    capabilities.canManageRolePermissions && isDefaultRole;
+  const canRestoreSelectedRole =
+    capabilities.canRestoreRoleDefaults && isDefaultRole;
   const canManageSelectedRoleLifecycle =
     capabilities.canManageRoles && !isDefaultRole;
   const hasSecondaryActions =
-    capabilities.canManageRoles || canRestoreRoleDefaults;
+    capabilities.canManageRoles || canRestoreSelectedRole;
   const discardDescription =
     pendingDialog?.kind === "discard"
       ? pendingDialog.nextAction.kind === "duplicate-role"
@@ -425,6 +559,138 @@ export function NexusRoleManagement({
           ? "Perubahan peran yang belum disimpan akan dibuang sebelum Anda membuat peran baru."
           : "Perubahan peran yang belum disimpan akan dibuang sebelum Anda membuka peran lain."
       : "";
+  const restoreDescription = [
+    `Hak akses peran ${selectedRole?.label ?? "ini"} kembali ke bawaan BHT Nexus.`,
+    accountsByRole.length > 0
+      ? `${accountsByRole.length} akun memakai peran ini dan langsung mengikuti hak akses bawaannya.`
+      : "",
+    "Akses khusus pada masing-masing akun tidak ikut berubah.",
+    hasUnsavedPermissions
+      ? "Perubahan hak akses yang belum disimpan akan diganti dengan bawaan."
+      : "",
+    hasUnsavedDetails
+      ? "Perubahan nama atau deskripsi tetap dipertahankan sampai Anda menyimpannya."
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const duplicateSource = formDrawer?.duplicateRoleId
+    ? roles.find((role) => role.id === formDrawer.duplicateRoleId)
+    : undefined;
+
+  const userRows = accountsByRole.map((account) => {
+    const personName = account.displayName;
+    const relationship = resolveAdministrationRelationship(
+      account,
+      memberDirectory,
+      accounts ?? [],
+    );
+    const relationshipLabel = administrationRelationshipLabel(relationship);
+    const specialAccessCount = specialAccess.countFor(account.id);
+    const specialAccessLabel =
+      nexusAccountSpecialAccessLabel(specialAccessCount);
+    const openAccount = () =>
+      navigate(
+        `${ADMINISTRATION_HREF}?account=${encodeURIComponent(account.id)}`,
+      );
+
+    return {
+      cells: {
+        action: (
+          <NexusWorkspaceTableAction
+            label={`Buka akun ${personName}`}
+            onClick={openAccount}
+          >
+            Buka akun
+          </NexusWorkspaceTableAction>
+        ),
+        member: (
+          <span className={styles.userMember}>
+            <strong>
+              {relationship.kind === "LINKED"
+                ? relationship.member.name
+                : relationshipLabel}
+            </strong>
+            <small>
+              {relationship.kind === "LINKED"
+                ? relationship.member.assignment || relationshipLabel
+                : relationship.kind === "NON_MEMBER"
+                  ? "Tidak memerlukan profil anggota"
+                  : "Hubungan belum ditentukan"}
+            </small>
+          </span>
+        ),
+        primary: (
+          <span className={styles.userIdentity}>
+            <strong>{personName}</strong>
+            <small>{account.email}</small>
+          </span>
+        ),
+        special: (
+          <NexusWorkspaceTableBadge
+            tone={
+              typeof specialAccessCount === "number" && specialAccessCount > 0
+                ? "info"
+                : "neutral"
+            }
+          >
+            {specialAccessLabel}
+          </NexusWorkspaceTableBadge>
+        ),
+        status: (
+          <NexusWorkspaceTableBadge tone={accountStatusTone(account.status)}>
+            {nexusAccountStatusLabels[account.status]}
+          </NexusWorkspaceTableBadge>
+        ),
+      },
+      id: account.id,
+      mobile: (
+        <NexusWorkspaceMobileCard
+          action={
+            <NexusWorkspaceMobileAction
+              label={`Buka akun ${personName}`}
+              onClick={openAccount}
+            >
+              Buka akun
+            </NexusWorkspaceMobileAction>
+          }
+          eyebrow={
+            <>
+              <span className={styles.userAccountId} title={account.id}>
+                {displayRecordId(account.id)}
+              </span>
+              <NexusWorkspaceTableBadge
+                tone={accountStatusTone(account.status)}
+              >
+                {nexusAccountStatusLabels[account.status]}
+              </NexusWorkspaceTableBadge>
+            </>
+          }
+          meta={
+            <dl>
+              <div>
+                <dt>Email</dt>
+                <dd>{account.email}</dd>
+              </div>
+              <div>
+                <dt>Anggota</dt>
+                <dd>
+                  {relationship.kind === "LINKED"
+                    ? relationship.member.name
+                    : relationshipLabel}
+                </dd>
+              </div>
+              <div>
+                <dt>Akses khusus</dt>
+                <dd>{specialAccessLabel}</dd>
+              </div>
+            </dl>
+          }
+          title={personName}
+        />
+      ),
+    };
+  });
 
   return (
     <NexusWorkspacePage
@@ -493,14 +759,16 @@ export function NexusRoleManagement({
                       <strong>{role.label}</strong>
                       <small>{role.description}</small>
                     </span>
-                    <span className={styles.roleListMeta}>
-                      <span className={styles.roleListCount}>
-                        {role.permissions.length}
-                        <span className={styles.visuallyHidden}>
-                          {` izin aktif pada peran ${role.label}`}
+                    {accountsKnown ? (
+                      <span className={styles.roleListMeta}>
+                        <span className={styles.roleListCount}>
+                          {roleUsage.get(role.id) ?? 0}
+                          <span className={styles.visuallyHidden}>
+                            {` akun memakai peran ${role.label}`}
+                          </span>
                         </span>
                       </span>
-                    </span>
+                    ) : null}
                   </button>
                 </li>
               ))}
@@ -511,8 +779,8 @@ export function NexusRoleManagement({
             <strong>Tentang hak akses bawaan</strong>
             <p>
               Hak akses bawaan berlaku untuk seluruh akun yang memakai peran
-              tersebut. Angka pada setiap peran menunjukkan jumlah izin yang
-              sedang aktif.
+              tersebut. Kebutuhan satu akun yang berbeda diatur melalui akses
+              khusus pada akun itu sendiri.
             </p>
           </div>
         </aside>
@@ -576,17 +844,38 @@ export function NexusRoleManagement({
                   </>
                 ) : null}
 
-                {activeTab === "users" ? (
+                {activeTab === "users" && accountsKnown ? (
+                  <NexusWorkspaceRecordTable
+                    caption={`Akun yang memakai peran ${selectedRole.label}`}
+                    columns={userColumns}
+                    empty={
+                      <div className={styles.usersEmpty}>
+                        <strong>Belum ada akun pada peran ini</strong>
+                        <p>
+                          Peran ini dapat dipilih ketika mengundang akun baru
+                          atau ketika mengubah akses akun yang sudah ada.
+                        </p>
+                        <NexusWorkspaceButton
+                          onClick={() => navigate(ADMINISTRATION_HREF)}
+                          type="button"
+                        >
+                          Buka daftar akun
+                        </NexusWorkspaceButton>
+                      </div>
+                    }
+                    pagination={null}
+                    rows={userRows}
+                  />
+                ) : null}
+
+                {activeTab === "users" && !accountsKnown ? (
                   <div className={styles.usersEmpty}>
-                    <strong>Daftar akun per peran segera tersedia</strong>
+                    <strong>Daftar akun tidak dapat dibaca</strong>
                     <p>
-                      Akun yang memakai peran {selectedRole.label} akan tampil
-                      di sini setelah layanan daftar akun tersambung ke halaman
-                      ini.
+                      Akun Anda belum berwenang membaca daftar akun, sehingga
+                      akun yang memakai peran {selectedRole.label} tidak
+                      ditampilkan.
                     </p>
-                    <NexusWorkspacePlannedButton>
-                      Buka daftar akun
-                    </NexusWorkspacePlannedButton>
                   </div>
                 ) : null}
 
@@ -606,8 +895,12 @@ export function NexusRoleManagement({
                         <dd>Aktif dan dapat dipilih</dd>
                       </div>
                       <div>
-                        <dt>Pengenal peran</dt>
-                        <dd>{selectedRole.name}</dd>
+                        <dt>Akun pada peran ini</dt>
+                        <dd>
+                          {accountsKnown
+                            ? `${accountsByRole.length} akun`
+                            : "Tidak dapat dibaca akun Anda"}
+                        </dd>
                       </div>
                       <div>
                         <dt>Hak akses aktif</dt>
@@ -654,6 +947,7 @@ export function NexusRoleManagement({
                               description: event.currentTarget.value,
                             })
                           }
+                          placeholder="Belum ada deskripsi"
                           rows={3}
                           value={activeDraft.description}
                         />
@@ -701,15 +995,19 @@ export function NexusRoleManagement({
                         Duplikasi peran
                       </NexusWorkspaceButton>
                     ) : null}
-                    {canRestoreRoleDefaults ? (
-                      <NexusWorkspacePlannedButton description="Pemulihan hak akses bawaan akan segera tersedia">
+                    {canRestoreSelectedRole ? (
+                      <NexusWorkspaceButton
+                        disabled={isSaving}
+                        onClick={() => setPendingDialog({ kind: "restore" })}
+                        type="button"
+                      >
                         Pulihkan ke default
-                      </NexusWorkspacePlannedButton>
+                      </NexusWorkspaceButton>
                     ) : null}
                     {canManageSelectedRoleLifecycle ? (
                       <NexusWorkspaceButton
                         disabled={isSaving}
-                        onClick={() => setPendingDialog({ kind: "deactivate" })}
+                        onClick={requestDeactivate}
                         tone="danger"
                         type="button"
                       >
@@ -732,11 +1030,12 @@ export function NexusRoleManagement({
 
       {formDrawer ? (
         <NexusRoleFormDrawer
-          {...(formDrawer.duplicateRoleId
+          {...(duplicateSource
             ? {
-                duplicateSource: roles.find(
-                  (role) => role.id === formDrawer.duplicateRoleId,
-                ),
+                duplicateSource: {
+                  ...duplicateSource,
+                  description: duplicateSource.storedDescription,
+                },
               }
             : {})}
           onClose={() => setFormDrawer(null)}
@@ -749,7 +1048,11 @@ export function NexusRoleManagement({
         <NexusWorkspaceConfirmDialog
           cancelLabel="Periksa lagi"
           confirmLabel="Simpan hak akses"
-          description={`Perubahan hak akses berlaku untuk seluruh akun yang memakai peran ${selectedRole.label}, dan tercatat pada log audit.`}
+          description={
+            pendingDialog.accountCount === undefined
+              ? `Perubahan hak akses berlaku untuk seluruh akun yang memakai peran ${selectedRole.label}, kecuali izin yang sudah diatur sebagai akses khusus pada akun tertentu.`
+              : `${pendingDialog.accountCount} akun memakai peran ${selectedRole.label}. Perubahan hak akses berlaku untuk seluruh akun tersebut, kecuali izin yang sudah diatur sebagai akses khusus pada akun tertentu.`
+          }
           onCancel={() => setPendingDialog(null)}
           onConfirm={() => {
             setPendingDialog(null);
@@ -760,11 +1063,26 @@ export function NexusRoleManagement({
         />
       ) : null}
 
+      {pendingDialog?.kind === "restore" && selectedRole ? (
+        <NexusWorkspaceConfirmDialog
+          cancelLabel="Batal"
+          confirmLabel="Pulihkan hak akses"
+          description={restoreDescription}
+          onCancel={() => setPendingDialog(null)}
+          onConfirm={() => {
+            setPendingDialog(null);
+            void restoreSelectedRole();
+          }}
+          title="Pulihkan hak akses ke bawaan?"
+          tone="warning"
+        />
+      ) : null}
+
       {pendingDialog?.kind === "deactivate" && selectedRole ? (
         <NexusWorkspaceConfirmDialog
           cancelLabel="Batal"
           confirmLabel="Nonaktifkan peran"
-          description={`Peran ${selectedRole.label} dikeluarkan dari daftar dan tidak dapat dipilih lagi. Layanan hanya menerima bila peran tidak dipakai akun dan tidak memiliki hak akses aktif; mengaktifkan kembali belum tersedia.${isDirty ? " Perubahan peran yang belum disimpan akan dibuang." : ""}`}
+          description={`Peran ${selectedRole.label} dikeluarkan dari daftar peran beserta hak aksesnya dan tidak dapat dipilih lagi. Mengaktifkan kembali belum tersedia.${isDirty ? " Perubahan peran yang belum disimpan akan dibuang." : ""}`}
           onCancel={() => setPendingDialog(null)}
           onConfirm={() => {
             setPendingDialog(null);
@@ -772,6 +1090,21 @@ export function NexusRoleManagement({
           }}
           title="Nonaktifkan peran ini?"
           tone="danger"
+        />
+      ) : null}
+
+      {pendingDialog?.kind === "assigned-role" && selectedRole ? (
+        <NexusWorkspaceConfirmDialog
+          cancelLabel="Kembali"
+          confirmLabel="Lihat pengguna"
+          description={`${pendingDialog.count} akun masih memakai peran ${selectedRole.label}. Pindahkan akun tersebut ke peran lain sebelum menonaktifkannya.`}
+          onCancel={() => setPendingDialog(null)}
+          onConfirm={() => {
+            setPendingDialog(null);
+            setActiveTab("users");
+          }}
+          title="Peran masih digunakan"
+          tone="warning"
         />
       ) : null}
 

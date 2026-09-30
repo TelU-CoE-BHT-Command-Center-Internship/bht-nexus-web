@@ -9,9 +9,23 @@ import {
   nexusAccessActions,
 } from "@/components/nexus-access-policy/nexus-access-policy";
 import type { NexusRoleDraftInput } from "@/components/nexus-access-policy/nexus-access-policy-session";
+import type { NexusAccountDirectoryRecord } from "@/components/nexus-accounts/nexus-account-directory";
+import {
+  nexusAccountFromServer,
+  nexusLinkedMemberFromAccount,
+} from "@/components/nexus-accounts/nexus-account-server";
 import type { DashboardShellIconName } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { nexusServerRoleLabel } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
-import { ApiRequestError, apiErrorMessage } from "@/lib/api-client";
+import { nexusMemberFromSummary } from "@/components/nexus-members/nexus-member-server";
+import type { NexusMemberRecord } from "@/components/nexus-members/nexus-members-content";
+import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { type AccountSummary, listAllAccounts } from "@/lib/api-accounts";
+import {
+  ApiRequestError,
+  apiErrorMessage,
+  whenForbidden,
+} from "@/lib/api-client";
+import { listAllMembers, type MemberSummary } from "@/lib/api-members";
 import { listPermissions, type PermissionRecord } from "@/lib/api-permissions";
 import {
   createRole as createServerRole,
@@ -21,6 +35,7 @@ import {
   listRoles,
   type RoleCategory,
   type RoleRecord,
+  resetRole,
   revokeRolePermission,
   updateRole,
 } from "@/lib/api-roles";
@@ -46,7 +61,38 @@ export type NexusPermissionMatrixModule = {
 export type NexusServerRoleRecord = NexusRoleRecord & {
   category: RoleCategory | null;
   name: string;
+  /** Deskripsi yang benar-benar tersimpan; kosong bila peran belum punya. */
+  storedDescription: string;
 };
+
+/**
+ * Akun untuk halaman Peran. `accounts` tidak ada bila akun yang sedang masuk
+ * tidak berwenang membaca daftar akun, sehingga jumlahnya tidak pernah
+ * dianggap nol.
+ */
+type RoleAccountDirectory = {
+  accounts?: NexusAccountDirectoryRecord[];
+  members: NexusMemberRecord[];
+  /** Direktori Anggota benar-benar terbaca, bukan disusun dari daftar akun. */
+  membersKnown: boolean;
+};
+
+function roleAccountDirectory(
+  accounts: readonly AccountSummary[] | undefined,
+  members: readonly MemberSummary[] | undefined,
+): RoleAccountDirectory {
+  const membersKnown = members !== undefined;
+  if (!accounts) return { members: [], membersKnown };
+  return {
+    accounts: accounts.map((account) =>
+      nexusAccountFromServer(account, membersKnown),
+    ),
+    members: members
+      ? members.map(nexusMemberFromSummary)
+      : accounts.flatMap(nexusLinkedMemberFromAccount),
+    membersKnown,
+  };
+}
 
 type LoadState = "error" | "loading" | "ready";
 
@@ -248,6 +294,38 @@ export function permissionMatrixModules(
     );
 }
 
+/* Peran bawaan tampil menurut jenjangnya, seperti rancangan Administrasi;
+   peran kustom menyusul sesuai waktu dibuat. Server mengurutkan menurut waktu
+   dibuat, padahal seluruh peran bawaan dibuat bersamaan, sehingga urutan dari
+   server berubah-ubah. */
+const systemRoleOrder = [
+  "director",
+  "admin",
+  "auditor",
+  "officer",
+  "cluster_head",
+  "member",
+  "external_partner",
+  "intern",
+];
+
+export function nexusSortServerRoles(
+  roles: readonly RoleRecord[],
+): RoleRecord[] {
+  const rank = (role: RoleRecord) => {
+    const index = systemRoleOrder.indexOf(role.name);
+    return role.type === "system" && index >= 0
+      ? index
+      : systemRoleOrder.length;
+  };
+  return roles.toSorted(
+    (first, second) =>
+      rank(first) - rank(second) ||
+      first.createdAt.localeCompare(second.createdAt) ||
+      first.name.localeCompare(second.name),
+  );
+}
+
 export function nexusRoleFromServer(
   role: RoleRecord,
   permissions: readonly string[],
@@ -265,6 +343,7 @@ export function nexusRoleFromServer(
     name: role.name,
     permissions,
     status: "ACTIVE",
+    storedDescription: role.description?.id ?? "",
   };
 }
 
@@ -299,10 +378,50 @@ export type RoleSaveInput = {
   permissions: readonly NexusPermissionId[];
 };
 
-/** Peran, katalog izin, dan hak akses bawaan dari server. */
-export function useNexusServerRoles() {
+const ROLE_LABEL_MAX_LENGTH = 60;
+const ROLE_DESCRIPTION_MAX_LENGTH = 200;
+
+const ROLE_IN_USE_MESSAGE =
+  "Peran masih dipakai akun atau masih memiliki hak akses. Pindahkan akunnya ke peran lain dan cabut hak aksesnya terlebih dahulu.";
+
+/** Aturan nama dan deskripsi peran; pesan dikembalikan bila isian belum dapat dipakai. */
+function roleDetailsError(
+  label: string,
+  description: string,
+  roles: readonly NexusServerRoleRecord[],
+  currentRoleId?: string,
+) {
+  if (!label) return "Nama peran wajib diisi.";
+  if (label.length > ROLE_LABEL_MAX_LENGTH) {
+    return `Nama peran maksimal ${ROLE_LABEL_MAX_LENGTH} karakter.`;
+  }
+  const normalized = normalizeWorkspaceSearch(label);
+  if (
+    roles.some(
+      (role) =>
+        role.id !== currentRoleId &&
+        normalizeWorkspaceSearch(role.label) === normalized,
+    )
+  ) {
+    return "Nama peran ini sudah digunakan.";
+  }
+  if (description.length > ROLE_DESCRIPTION_MAX_LENGTH) {
+    return `Deskripsi maksimal ${ROLE_DESCRIPTION_MAX_LENGTH} karakter.`;
+  }
+  return undefined;
+}
+
+type RoleDirectoryOptions = {
+  /** Direktori Anggota boleh dibaca akun ini, sehingga nama anggota dapat ditampilkan. */
+  canReadMembers: boolean;
+};
+
+/** Peran, katalog izin, hak akses bawaan, dan akun pemakainya dari server. */
+export function useNexusServerRoles({ canReadMembers }: RoleDirectoryOptions) {
   const [roles, setRoles] = useState<NexusServerRoleRecord[]>([]);
   const [catalogue, setCatalogue] = useState<PermissionRecord[]>([]);
+  const [accountDirectory, setAccountDirectory] =
+    useState<RoleAccountDirectory>({ members: [], membersKnown: false });
   const [state, setState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>();
   const latestRequest = useRef(0);
@@ -310,10 +429,17 @@ export function useNexusServerRoles() {
   const load = useCallback(() => {
     const request = ++latestRequest.current;
     setState("loading");
-    Promise.all([listRoles({ limit: 100 }), listPermissions({ limit: 100 })])
-      .then(async ([roleResult, permissionResult]) => {
+    Promise.all([
+      listRoles({ limit: 100 }),
+      listPermissions({ limit: 100 }),
+      listAllAccounts().catch(whenForbidden(undefined)),
+      canReadMembers
+        ? listAllMembers().catch(whenForbidden(undefined))
+        : Promise.resolve(undefined),
+    ])
+      .then(async ([roleResult, permissionResult, accounts, members]) => {
         const withGrants = await Promise.all(
-          roleResult.data.map(async (role) =>
+          nexusSortServerRoles(roleResult.data).map(async (role) =>
             nexusRoleFromServer(
               role,
               await nexusServerRoleGrants(role.publicId),
@@ -323,6 +449,7 @@ export function useNexusServerRoles() {
         if (request !== latestRequest.current) return;
         setCatalogue(permissionResult.data);
         setRoles(withGrants);
+        setAccountDirectory(roleAccountDirectory(accounts, members));
         setState("ready");
       })
       .catch((error: unknown) => {
@@ -332,7 +459,7 @@ export function useNexusServerRoles() {
         );
         setState("error");
       });
-  }, []);
+  }, [canReadMembers]);
 
   useLoadEffect(load);
 
@@ -356,28 +483,39 @@ export function useNexusServerRoles() {
       role: NexusServerRoleRecord,
       input: RoleSaveInput,
     ): Promise<string | undefined> => {
+      const label = input.label.trim();
+      const description = input.description.trim();
+      const labelChanged = label !== role.label;
+      const descriptionChanged = description !== role.storedDescription;
+      if (labelChanged || descriptionChanged) {
+        const detailsError = roleDetailsError(
+          label,
+          description,
+          roles,
+          role.id,
+        );
+        if (detailsError) return detailsError;
+        if (descriptionChanged && !description) {
+          return "Deskripsi yang sudah tersimpan belum dapat dikosongkan. Tulis deskripsi penggantinya.";
+        }
+      }
       const permissionIds = new Map(
         catalogue.map((permission) => [permission.name, permission.publicId]),
       );
       const before = new Set(role.permissions);
       const after = new Set(input.permissions);
       try {
-        if (
-          input.label.trim() !== role.label ||
-          input.description.trim() !== role.description
-        ) {
+        if (labelChanged || descriptionChanged) {
+          /* Hanya bidang yang diubah yang dikirim, supaya nama dan deskripsi
+             bawaan yang belum tersimpan tidak ikut tertulis ke server. */
           const updated = await updateRole(role.id, {
-            description: input.description.trim()
-              ? { id: input.description.trim() }
-              : undefined,
-            displayName: { id: input.label.trim() },
+            ...(descriptionChanged ? { description: { id: description } } : {}),
+            ...(labelChanged ? { displayName: { id: label } } : {}),
           });
           setRoles((current) =>
             current.map((candidate) =>
               candidate.id === role.id
-                ? {
-                    ...nexusRoleFromServer(updated, candidate.permissions),
-                  }
+                ? nexusRoleFromServer(updated, candidate.permissions)
                 : candidate,
             ),
           );
@@ -401,7 +539,7 @@ export function useNexusServerRoles() {
         return apiErrorMessage(error, "Perubahan peran tidak dapat disimpan.");
       }
     },
-    [catalogue, refreshRole],
+    [catalogue, refreshRole, roles],
   );
 
   const createRole = useCallback(
@@ -409,23 +547,14 @@ export function useNexusServerRoles() {
       input: NexusRoleDraftInput,
     ): Promise<{ error?: string; role?: NexusServerRoleRecord }> => {
       const label = input.label.trim();
-      if (!label) return { error: "Nama peran wajib diisi." };
-      if (
-        roles.some(
-          (role) =>
-            role.label.toLocaleLowerCase("id-ID") ===
-            label.toLocaleLowerCase("id-ID"),
-        )
-      ) {
-        return { error: "Nama peran sudah dipakai peran lain." };
-      }
+      const description = input.description.trim();
+      const detailsError = roleDetailsError(label, description, roles);
+      if (detailsError) return { error: detailsError };
       const source = roles.find((role) => role.id === input.copyFromRoleId);
       try {
         const created = await createServerRole({
           category: source?.category ?? null,
-          description: input.description.trim()
-            ? { id: input.description.trim() }
-            : undefined,
+          description: description ? { id: description } : undefined,
           displayName: { id: label },
           name: roleNameFromLabel(
             label,
@@ -452,7 +581,7 @@ export function useNexusServerRoles() {
         return {
           error:
             error instanceof ApiRequestError && error.status === 409
-              ? "Nama peran sudah dipakai peran lain."
+              ? "Nama peran ini sudah digunakan."
               : apiErrorMessage(error, "Peran tidak dapat dibuat."),
         };
       }
@@ -460,22 +589,83 @@ export function useNexusServerRoles() {
     [catalogue, load, roles],
   );
 
-  /** Menonaktifkan peran kustom; server menolak bila peran masih dipakai. */
+  /**
+   * Menonaktifkan peran kustom. Server hanya melepas peran yang tidak dipakai
+   * akun dan tidak lagi memegang izin, sehingga hak aksesnya dicabut lebih
+   * dahulu, tetapi hanya setelah daftar akun terbaru memastikan tidak ada
+   * akun yang memakainya.
+   */
   const deactivateRole = useCallback(
     async (role: NexusServerRoleRecord): Promise<string | undefined> => {
+      const permissionIds = new Map(
+        catalogue.map((permission) => [permission.name, permission.publicId]),
+      );
       try {
+        if (accountDirectory.accounts) {
+          const accounts = await listAllAccounts();
+          setAccountDirectory((current) => ({
+            ...current,
+            accounts: accounts.map((account) =>
+              nexusAccountFromServer(account, current.membersKnown),
+            ),
+            members: current.membersKnown
+              ? current.members
+              : accounts.flatMap(nexusLinkedMemberFromAccount),
+          }));
+          if (
+            accounts.some((account) =>
+              account.roles.some((held) => held.publicId === role.id),
+            )
+          ) {
+            return ROLE_IN_USE_MESSAGE;
+          }
+          for (const name of role.permissions) {
+            const permissionId = permissionIds.get(name);
+            if (permissionId) {
+              await revokeRolePermission(role.id, permissionId);
+            }
+          }
+        }
         await deleteRole(role.id);
         setRoles((current) =>
           current.filter((candidate) => candidate.id !== role.id),
         );
         return undefined;
       } catch (error) {
+        await refreshRole(role.id).catch(() => undefined);
         return error instanceof ApiRequestError && error.status === 409
-          ? "Peran masih dipakai akun atau masih memiliki hak akses. Cabut hak aksesnya dan pindahkan akunnya ke peran lain terlebih dahulu."
+          ? ROLE_IN_USE_MESSAGE
           : apiErrorMessage(error, "Peran tidak dapat dinonaktifkan.");
       }
     },
-    [],
+    [accountDirectory.accounts, catalogue, refreshRole],
+  );
+
+  /**
+   * Mengembalikan hak akses peran bawaan ke bawaan BHT Nexus. Hasilnya dibaca
+   * ulang dari server, sehingga tampilan mengikuti yang benar-benar berlaku.
+   */
+  const restoreRole = useCallback(
+    async (
+      role: NexusServerRoleRecord,
+    ): Promise<{
+      error?: string;
+      permissions?: readonly NexusPermissionId[];
+    }> => {
+      try {
+        await resetRole(role.id);
+        return { permissions: await refreshRole(role.id) };
+      } catch (error) {
+        await refreshRole(role.id).catch(() => undefined);
+        return {
+          error: apiErrorMessage(
+            error,
+            "Hak akses peran tidak dapat dipulihkan.",
+          ),
+        };
+      }
+    },
+    [refreshRole],
   );
 
   const modules = useMemo(
@@ -484,10 +674,13 @@ export function useNexusServerRoles() {
   );
 
   return {
+    accounts: accountDirectory.accounts,
     createRole,
     deactivateRole,
     errorMessage,
+    members: accountDirectory.members,
     modules,
+    restoreRole,
     retry: load,
     roles,
     saveRole,

@@ -36,7 +36,7 @@ import {
   listAllAccounts,
   overrideAccountPermissions,
 } from "@/lib/api-accounts";
-import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
+import { apiErrorMessage, whenForbidden } from "@/lib/api-client";
 import { listAllMembers } from "@/lib/api-members";
 import { useLoadEffect } from "@/lib/use-load-effect";
 
@@ -108,10 +108,7 @@ function useNexusUserAccessDirectory(
     Promise.all([
       listAllAccounts(),
       canReadMembers
-        ? listAllMembers().catch((error: unknown) => {
-            if (apiErrorKind(error) === "forbidden") return undefined;
-            throw error;
-          })
+        ? listAllMembers().catch(whenForbidden(undefined))
         : Promise.resolve(undefined),
     ])
       .then(async ([accounts, members]) => {

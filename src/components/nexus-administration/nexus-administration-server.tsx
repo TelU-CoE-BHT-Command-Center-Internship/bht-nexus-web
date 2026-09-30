@@ -7,6 +7,7 @@ import {
   type NexusPermissionMatrixModule,
   nexusRoleFromServer,
   nexusServerRoleGrants,
+  nexusSortServerRoles,
   permissionMatrixModules,
 } from "@/components/nexus-access-policy/nexus-role-server";
 import { NexusAccountSessionProvider } from "@/components/nexus-account-session/nexus-account-session";
@@ -17,14 +18,11 @@ import {
   nexusAccountRoles,
   nexusLinkedMemberFromAccount,
 } from "@/components/nexus-accounts/nexus-account-server";
+import { useNexusAccountSpecialAccess } from "@/components/nexus-accounts/nexus-account-special-access";
 import {
   NexusAdministration,
   type NexusAdministrationProps,
 } from "@/components/nexus-administration/nexus-administration";
-import type {
-  NexusAccountSpecialAccess,
-  NexusAccountSpecialAccessReader,
-} from "@/components/nexus-administration/nexus-administration-content";
 import { NexusMemberSessionProvider } from "@/components/nexus-member-session/nexus-member-session";
 import { nexusMemberFromSummary } from "@/components/nexus-members/nexus-member-server";
 import type { NexusMemberRecord } from "@/components/nexus-members/nexus-members-content";
@@ -32,8 +30,8 @@ import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-r
 import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
-import { getAccountPermissions, listAllAccounts } from "@/lib/api-accounts";
-import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
+import { listAllAccounts } from "@/lib/api-accounts";
+import { apiErrorMessage, whenForbidden } from "@/lib/api-client";
 import { listAllMembers } from "@/lib/api-members";
 import { listPermissions } from "@/lib/api-permissions";
 import { listRoles } from "@/lib/api-roles";
@@ -44,13 +42,6 @@ import { useLoadEffect } from "@/lib/use-load-effect";
  * dibaca dari server lalu mengisi sesi halaman, sehingga tampilan dan perilaku
  * halamannya tetap sama.
  */
-
-function whenForbidden<T>(fallback: T) {
-  return (error: unknown) => {
-    if (apiErrorKind(error) === "forbidden") return fallback;
-    throw error;
-  };
-}
 
 type AccountDirectory = {
   accessModules?: NexusPermissionMatrixModule[];
@@ -82,7 +73,7 @@ function useNexusAccountDirectory(canReadMembers: boolean) {
       .then(async ([accounts, roleResult, permissionResult, members]) => {
         const catalogue = roleResult
           ? await Promise.all(
-              roleResult.data.map(async (role) =>
+              nexusSortServerRoles(roleResult.data).map(async (role) =>
                 nexusRoleFromServer(
                   role,
                   await nexusServerRoleGrants(role.publicId).catch(
@@ -124,48 +115,6 @@ function useNexusAccountDirectory(canReadMembers: boolean) {
   return { directory, errorMessage, retry: load, state, version };
 }
 
-/**
- * Jumlah akses khusus tiap akun, dibaca saat detail akun dibuka supaya daftar
- * akun tidak membaca izin setiap akun satu per satu.
- */
-function useAccountSpecialAccess(
-  canRead: boolean,
-): NexusAccountSpecialAccessReader {
-  const [counts, setCounts] = useState<
-    Record<string, NexusAccountSpecialAccess>
-  >({});
-  const requested = useRef(new Set<string>());
-
-  const request = useCallback(
-    (accountId: string) => {
-      if (!canRead || requested.current.has(accountId)) return;
-      requested.current.add(accountId);
-      getAccountPermissions(accountId)
-        .then((result) => {
-          const adjusted = result.permissions.filter(
-            (permission) => permission.overrideStatus !== "inherited",
-          ).length;
-          setCounts((current) => ({ ...current, [accountId]: adjusted }));
-        })
-        .catch(() => {
-          // Pembukaan detail berikutnya mencoba membaca lagi.
-          requested.current.delete(accountId);
-          setCounts((current) => ({ ...current, [accountId]: "unavailable" }));
-        });
-    },
-    [canRead],
-  );
-
-  return useMemo(
-    () => ({
-      countFor: (accountId) =>
-        canRead ? (counts[accountId] ?? "loading") : "unavailable",
-      request,
-    }),
-    [canRead, counts, request],
-  );
-}
-
 type NexusAdministrationLiveProps = Omit<
   NexusAdministrationProps,
   "accessModules" | "membersReadable" | "specialAccess"
@@ -180,7 +129,7 @@ export function NexusAdministrationLive({
 }: NexusAdministrationLiveProps) {
   const { directory, errorMessage, retry, state, version } =
     useNexusAccountDirectory(canReadMembers);
-  const specialAccess = useAccountSpecialAccess(
+  const specialAccess = useNexusAccountSpecialAccess(
     props.capabilities.canManageUserOverrides,
   );
   const { actor } = useNexusReviewSession();

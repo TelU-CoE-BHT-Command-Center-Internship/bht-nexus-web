@@ -70,6 +70,8 @@ export type NexusAdministrationCapabilities = {
   canReadAccounts: boolean;
   /** Membuka catatan penolakan akses. */
   canReadAudit: boolean;
+  /** Mengembalikan hak akses peran bawaan ke bawaan BHT Nexus. */
+  canRestoreRoleDefaults: boolean;
 };
 
 export type NexusMemberCapabilities = {
@@ -89,6 +91,7 @@ export const nexusPreviewWorkspaceAccess = {
     canManageUserOverrides: true,
     canReadAccounts: true,
     canReadAudit: true,
+    canRestoreRoleDefaults: true,
   },
   allowedNavigationIds: [
     "dashboard",
@@ -303,6 +306,7 @@ function accessFromPermissions(
       canManageUserOverrides: has("iam.manage"),
       canReadAccounts: has("user.read"),
       canReadAudit: has("audit.read"),
+      canRestoreRoleDefaults: has("iam.manage"),
     },
     allowedNavigationIds:
       nexusPreviewWorkspaceAccess.allowedNavigationIds.filter((id) =>

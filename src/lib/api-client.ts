@@ -81,6 +81,17 @@ export function apiErrorKind(error: unknown): ApiErrorKind {
   return "unknown";
 }
 
+/**
+ * Untuk bacaan pelengkap sebuah halaman: penolakan akses diganti nilai
+ * cadangan supaya halaman tetap tampil, sedangkan kegagalan lain tetap gagal.
+ */
+export function whenForbidden<T>(fallback: T) {
+  return (error: unknown): T => {
+    if (apiErrorKind(error) === "forbidden") return fallback;
+    throw error;
+  };
+}
+
 const apiErrorCopy = {
   en: {
     conflict:

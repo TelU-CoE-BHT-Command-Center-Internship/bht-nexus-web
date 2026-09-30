@@ -39,6 +39,11 @@ export function nexusAccountRoleId(account: AccountSummary) {
     : undefined;
 }
 
+/** Seluruh peran yang dipegang satu akun pada direktori akun halaman. */
+export function nexusAccountRoleIds(account: { roleId?: string }) {
+  return account.roleId?.split("+") ?? [];
+}
+
 export function nexusAccountFromServer(
   account: AccountSummary,
   membersKnown: boolean,
@@ -200,7 +205,7 @@ export function nexusAccountRemote(membersKnown: boolean): NexusAccountRemote {
       }
     },
     updateRole: async (account, roleId) => {
-      const currentRoleIds = account.roleId?.split("+") ?? [];
+      const currentRoleIds = nexusAccountRoleIds(account);
       try {
         if (!currentRoleIds.includes(roleId)) {
           await assignAccountRole(account.id, roleId);

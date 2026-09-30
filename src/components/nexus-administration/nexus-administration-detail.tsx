@@ -7,6 +7,7 @@ import {
   nexusRoleAccessSummary,
   nexusRoleHealth,
 } from "@/components/nexus-access-policy/nexus-access-policy";
+import { nexusAccountSpecialAccessLabel } from "@/components/nexus-accounts/nexus-account-special-access";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import {
   accountStatusLabels,
@@ -508,13 +509,7 @@ export function NexusAdministrationDetail({
             <div>
               <span>Akses khusus</span>
               <strong>
-                {specialAccessCount === "loading"
-                  ? "Memeriksa…"
-                  : specialAccessCount === "unavailable"
-                    ? "Belum dapat dibaca"
-                    : specialAccessCount > 0
-                      ? `${specialAccessCount} penyesuaian`
-                      : "Mengikuti peran"}
+                {nexusAccountSpecialAccessLabel(specialAccessCount)}
               </strong>
               <small>
                 {roleHealth.isUsable
