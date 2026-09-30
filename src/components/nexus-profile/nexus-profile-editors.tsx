@@ -13,8 +13,12 @@ import styles from "@/components/nexus-profile/nexus-profile-modal.module.css";
 import type {
   NexusProfileDraft,
   NexusProfileErrors,
+  NexusProfileField,
 } from "@/components/nexus-profile/nexus-profile-model";
-import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import {
+  NexusWorkspaceButton,
+  NexusWorkspaceNotice,
+} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
 
 type FormChangeHandler = (
@@ -31,16 +35,37 @@ export type NexusProfilePhotoChange = {
   position: NexusMemberAvatarPosition;
 };
 
-function ModalActions({ onClose }: { onClose: () => void }) {
+/** Petunjuk untuk bidang yang tampil tetapi belum dapat disimpan dari halaman ini. */
+const UNAVAILABLE_FIELD_HINT = "Belum dapat diubah dari Profil Saya.";
+
+type SaveState = {
+  /** Penyimpanan sedang berjalan; formulir menunggu jawaban layanan. */
+  isSaving?: boolean;
+  /** Alasan penyimpanan terakhir ditolak, ditampilkan di atas tombol aksi. */
+  saveError?: string;
+};
+
+function ModalActions({
+  isSaving = false,
+  onClose,
+  saveError,
+}: SaveState & { onClose: () => void }) {
   return (
-    <footer className={styles.actions}>
-      <NexusWorkspaceButton onClick={onClose} type="button">
-        Batal
-      </NexusWorkspaceButton>
-      <NexusWorkspaceButton tone="primary" type="submit">
-        Simpan perubahan
-      </NexusWorkspaceButton>
-    </footer>
+    <>
+      {saveError ? (
+        <div className={styles.saveError}>
+          <NexusWorkspaceNotice tone="danger">{saveError}</NexusWorkspaceNotice>
+        </div>
+      ) : null}
+      <footer className={styles.actions}>
+        <NexusWorkspaceButton onClick={onClose} type="button">
+          Batal
+        </NexusWorkspaceButton>
+        <NexusWorkspaceButton disabled={isSaving} tone="primary" type="submit">
+          {isSaving ? "Menyimpan…" : "Simpan perubahan"}
+        </NexusWorkspaceButton>
+      </footer>
+    </>
   );
 }
 
@@ -48,11 +73,15 @@ export function NexusProfilePersonalEditor({
   draft,
   errors,
   includeInstitutionalEmail,
+  isSaving,
   onChange,
   onClose,
   onPhotoChange,
   onSubmit,
-}: {
+  photoAvailable = true,
+  saveError,
+  unavailableFields,
+}: SaveState & {
   draft: NexusProfileDraft;
   errors: NexusProfileErrors;
   includeInstitutionalEmail: boolean;
@@ -60,7 +89,14 @@ export function NexusProfilePersonalEditor({
   onClose: () => void;
   onPhotoChange: (value: NexusProfilePhotoChange) => void;
   onSubmit: SubmitHandler;
+  /** Foto profil dapat diganti dan disimpan dari halaman ini. */
+  photoAvailable?: boolean;
+  /** Bidang yang tampil sebagai informasi karena belum dapat disimpan. */
+  unavailableFields?: ReadonlySet<NexusProfileField>;
 }) {
+  const unavailable = (field: NexusProfileField) =>
+    unavailableFields?.has(field) ?? false;
+
   return (
     <NexusProfileModal
       closeLabel="Tutup formulir informasi pribadi"
@@ -72,13 +108,19 @@ export function NexusProfilePersonalEditor({
         <div className={styles.body}>
           <section className={styles.section}>
             <h3>Foto profil</h3>
-            <NexusMemberProfilePhoto
-              onChange={onPhotoChange}
-              originalValue={draft.avatarOriginalSrc}
-              personName={draft.fullName}
-              position={draft.avatarPosition}
-              value={draft.avatarSrc}
-            />
+            {photoAvailable ? (
+              <NexusMemberProfilePhoto
+                onChange={onPhotoChange}
+                originalValue={draft.avatarOriginalSrc}
+                personName={draft.fullName}
+                position={draft.avatarPosition}
+                value={draft.avatarSrc}
+              />
+            ) : (
+              <p className={styles.sectionNote}>
+                Mengganti foto profil belum tersedia dari halaman ini.
+              </p>
+            )}
           </section>
 
           <section className={styles.section}>
@@ -95,7 +137,12 @@ export function NexusProfilePersonalEditor({
                 value={draft.fullName}
               />
               <NexusWorkspaceFormField
-                hint="Jika kosong, nama lengkap akan digunakan."
+                disabled={unavailable("preferredName")}
+                hint={
+                  unavailable("preferredName")
+                    ? UNAVAILABLE_FIELD_HINT
+                    : "Jika kosong, nama lengkap akan digunakan."
+                }
                 id="profile-preferred-name"
                 label="Nama panggilan"
                 name="preferredName"
@@ -114,8 +161,13 @@ export function NexusProfilePersonalEditor({
                 value={draft.phone}
               />
               <NexusWorkspaceFormField
+                disabled={unavailable("alternateEmail")}
                 error={errors.alternateEmail}
-                hint="Kanal cadangan untuk dihubungi, bukan email masuk."
+                hint={
+                  unavailable("alternateEmail")
+                    ? UNAVAILABLE_FIELD_HINT
+                    : "Kanal cadangan untuk dihubungi, bukan email masuk."
+                }
                 id="profile-alternate-email"
                 label="Email alternatif"
                 name="alternateEmail"
@@ -125,7 +177,13 @@ export function NexusProfilePersonalEditor({
               />
               {includeInstitutionalEmail ? (
                 <NexusWorkspaceFormField
+                  disabled={unavailable("institutionalEmail")}
                   error={errors.institutionalEmail}
+                  hint={
+                    unavailable("institutionalEmail")
+                      ? UNAVAILABLE_FIELD_HINT
+                      : undefined
+                  }
                   id="profile-institutional-email"
                   label="Email institusi personal"
                   name="institutionalEmail"
@@ -136,6 +194,7 @@ export function NexusProfilePersonalEditor({
                 />
               ) : null}
               <NexusWorkspaceFormField
+                error={errors.biography}
                 id="profile-biography"
                 label="Ringkasan profil"
                 name="biography"
@@ -147,7 +206,11 @@ export function NexusProfilePersonalEditor({
             </div>
           </section>
         </div>
-        <ModalActions onClose={onClose} />
+        <ModalActions
+          isSaving={isSaving}
+          onClose={onClose}
+          saveError={saveError}
+        />
       </form>
     </NexusProfileModal>
   );
@@ -258,16 +321,24 @@ export function NexusProfileExpertiseEditor({
 export function NexusProfileAcademicEditor({
   draft,
   errors,
+  isSaving,
   onChange,
   onClose,
   onSubmit,
-}: {
+  saveError,
+  unavailableFields,
+}: SaveState & {
   draft: MemberProfileDraft;
   errors: MemberProfileErrors;
   onChange: FormChangeHandler;
   onClose: () => void;
   onSubmit: SubmitHandler;
+  /** Pengenal yang tampil sebagai informasi karena belum dapat disimpan. */
+  unavailableFields?: ReadonlySet<keyof MemberProfileDraft>;
 }) {
+  const unavailable = (field: keyof MemberProfileDraft) =>
+    unavailableFields?.has(field) ?? false;
+
   return (
     <NexusProfileModal
       closeLabel="Tutup formulir identitas akademik"
@@ -288,7 +359,9 @@ export function NexusProfileAcademicEditor({
               value={draft.sintaId}
             />
             <NexusWorkspaceFormField
+              disabled={unavailable("orcid")}
               error={errors.orcid}
+              hint={unavailable("orcid") ? UNAVAILABLE_FIELD_HINT : undefined}
               id="profile-orcid"
               label="ORCID iD"
               name="orcid"
@@ -316,7 +389,11 @@ export function NexusProfileAcademicEditor({
               value={draft.scopusAuthorId}
             />
             <NexusWorkspaceFormField
+              disabled={unavailable("researcherId")}
               error={errors.researcherId}
+              hint={
+                unavailable("researcherId") ? UNAVAILABLE_FIELD_HINT : undefined
+              }
               id="profile-researcher-id"
               label="ResearcherID"
               name="researcherId"
@@ -326,7 +403,11 @@ export function NexusProfileAcademicEditor({
             />
           </div>
         </div>
-        <ModalActions onClose={onClose} />
+        <ModalActions
+          isSaving={isSaving}
+          onClose={onClose}
+          saveError={saveError}
+        />
       </form>
     </NexusProfileModal>
   );

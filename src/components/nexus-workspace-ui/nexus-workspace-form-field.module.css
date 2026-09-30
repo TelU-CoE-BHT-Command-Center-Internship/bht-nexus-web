@@ -70,6 +70,14 @@ textarea.control {
     0 0 0 0.2rem rgb(24 92 168 / 10%);
 }
 
+.control:disabled {
+  border-color: #dce4ee;
+  background: var(--color-nexus-surface-subtle);
+  box-shadow: none;
+  color: var(--color-nexus-text-muted);
+  cursor: not-allowed;
+}
+
 .control[aria-invalid="true"] {
   border-color: #cf6575;
   background: #fffafb;

@@ -1,5 +1,5 @@
 import {
-  type OfficialPublication,
+  type NexusPublicationView,
   type PublicationSourceName,
   publicationSourceNames,
 } from "@/components/nexus-publications/nexus-publications-content";
@@ -25,7 +25,7 @@ export function getPublicationSourceId(source: PublicationSourceName) {
 }
 
 export function publicationHasSource(
-  publication: OfficialPublication,
+  publication: NexusPublicationView,
   sourceId: PublicationSourceId,
 ) {
   return (
@@ -38,7 +38,7 @@ export function publicationHasSource(
 
 /** Tab sumber hanya memuat sumber yang benar-benar membentuk rekam resmi. */
 export function getPublicationSourceTabs(
-  publications: readonly OfficialPublication[],
+  publications: readonly NexusPublicationView[],
 ) {
   return [
     { count: publications.length, id: "all", label: "Semua sumber" },

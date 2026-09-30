@@ -174,6 +174,7 @@ export function MemberAvatar({ member }: { member: NexusMemberRecord }) {
           style={{
             objectPosition: `${avatarPosition.x}% ${avatarPosition.y}%`,
           }}
+          unoptimized={typeof member.avatarSrc === "string"}
         />
       ) : (
         <span

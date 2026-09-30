@@ -1,0 +1,11 @@
+.catalog table {
+  min-width: 36rem;
+}
+
+.catalog th[data-column="kind"] {
+  width: 10rem;
+}
+
+.catalog th[data-column="signal"] {
+  width: 12rem;
+}

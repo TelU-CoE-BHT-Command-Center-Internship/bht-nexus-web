@@ -21,6 +21,7 @@ import { projectNexusAcademics } from "@/components/nexus-official-records/nexus
 import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
 import { createAcademicCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceSearch,
@@ -404,9 +405,11 @@ export function NexusAcademic({
         ),
         signal: (
           <NexusWorkspaceTableSignal
-            primary={academicKmLabel(record)}
+            {...officialKpiTableSignal(
+              record.kmLinks,
+              record.kpiResolutionStatus,
+            )}
             secondary={record.activity}
-            tone={record.kmLinks.length === 0 ? "neutral" : "info"}
           />
         ),
         status: qualityBadge,

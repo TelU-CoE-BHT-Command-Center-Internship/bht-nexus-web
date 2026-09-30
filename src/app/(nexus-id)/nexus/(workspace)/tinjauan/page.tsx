@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { NexusReviewLive } from "@/components/nexus-audit-review/nexus-review-live";
+import { NexusAuditReview } from "@/components/nexus-audit-review/nexus-audit-review";
 
 export const metadata: Metadata = {
   title: "Tinjauan Data",
@@ -10,6 +10,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function NexusReviewPage() {
-  return <NexusReviewLive />;
+export default async function NexusReviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ record?: string | string[] }>;
+}) {
+  const requestedRecord = (await searchParams).record;
+  const initialRecordId = Array.isArray(requestedRecord)
+    ? requestedRecord[0]
+    : requestedRecord;
+
+  return <NexusAuditReview initialRecordId={initialRecordId} />;
 }

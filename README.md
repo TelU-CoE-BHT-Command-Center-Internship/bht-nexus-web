@@ -17,31 +17,46 @@
 
 BHT-Nexus Web adalah antarmuka publik CoE Biomedical & Healthcare Technology: pintu masuk menuju informasi organisasi, kegiatan, riset, kolaborasi, dan ruang kerja BHT Nexus.
 
-Web dan server dikelola terpisah. Repository ini berisi halaman dan interaksi pengguna, sedangkan autentikasi, aturan bisnis, dan pengelolaan data berada di [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server). Web belum mengirim permintaan ke server; seluruh data pada antarmuka masih disediakan adapter frontend.
+Web dan server dikelola terpisah. Repository ini berisi halaman dan interaksi pengguna, sedangkan autentikasi, aturan bisnis, dan pengelolaan data berada di [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server). Ruang kerja BHT Nexus sudah tersambung ke server tersebut untuk masuk, sesi, hak akses, dan sebagian besar datanya; bagian yang belum punya layanan server masih memakai data pratinjau di frontend.
 
 ## Status singkat
 
 - Landing page dan halaman anggota sudah tersedia dalam bahasa Indonesia dan Inggris serta nyaman dibuka di berbagai ukuran layar, tetapi isinya masih terus berkembang. Beberapa bagian—terutama daftar mitra—masih menunggu data dan konfirmasi tim.
 - Ruang kerja BHT Nexus sudah mempunyai Dashboard, Monitoring KM, Broadcast / Newsletter, Pengumpulan, Tinjauan, lima rumah Data Resmi, Dokumen, Anggota, Profil Saya, serta Administrasi beserta peran dan hak aksesnya.
+- Masuk, sesi, dan identitas pengguna dibaca dari server. Menu dan tombol mengikuti izin efektif akun yang sedang masuk, termasuk akses khusus per akun, jadi setiap peran hanya melihat bagian yang memang boleh dibukanya. Halaman yang tidak boleh dibuka menampilkan keterangan tanpa akses, bukan data kosong.
+- Anggota, Publikasi, Kegiatan & Pengabdian, Pengumpulan, Tinjauan, pengajuan Publikasi, Administrasi (akun, undangan, peran & hak akses, akses khusus, penolakan akses), dan Profil Saya sudah memakai data server.
+- Monitoring KM, Broadcast / Newsletter, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Dokumen, dan Dashboard masih memakai data pratinjau di frontend sampai layanan servernya siap. Dashboard sengaja tidak tampil di menu untuk sementara. Tindakan yang belum didukung server tetap terlihat dengan penanda **Segera**.
 - Monitoring KM menghitung realisasi hanya dari rekam resmi yang memenuhi ketentuan indikatornya. Rekam yang tertaut tetapi belum memenuhi ketentuan, atau yang bidang penentunya belum tercatat, tetap ditampilkan beserta alasannya sehingga selisihnya dapat ditelusuri.
 - Target Monitoring KM dapat dikelola per periode dengan riwayat versi, rekam pembentuk dapat dikoreksi langsung dari rinciannya, dan laporan periode maupun rekam indikator dapat diunduh sebagai berkas Excel (.xlsx).
 - Broadcast / Newsletter dipakai pengurus untuk menyusun email pengumuman bagi anggota aktif. Editornya visual seperti editor LMS: gambar bisa diletakkan di kiri, tengah, atau kanan dan diubah ukurannya, penerima dihitung dari direktori Anggota, dan hasil emailnya bisa dicek untuk desktop maupun ponsel. Pengirimannya masih menunggu layanan email di server, jadi untuk sekarang alurnya berhenti di tahap peninjauan.
-- Autentikasi, penyimpanan permanen, worker, dan audit belum ada di repository ini; keempatnya milik server.
+- Autentikasi, penyimpanan permanen, worker, dan audit tetap berada di server. Web hanya memanggil API-nya dan tidak menyimpan token di browser; sesi memakai cookie HTTP-only dari server.
 
-Inventaris per halaman, daftar route, batas implementasi, dan prioritas berikutnya ada di [cakupan produk saat ini](docs/current-scope.md).
+Inventaris per halaman, daftar route, batas implementasi, dan prioritas berikutnya ada di [cakupan produk saat ini](docs/current-scope.md). Peta adapter data dan endpoint server yang dipakai ada di [batas data frontend](docs/preview-data.md).
 
 ## Menjalankan proyek
 
-Prasyarat: Git, Node.js 24.18.0, npm 11.16.0.
+Prasyarat: Git, Node.js 24.18.0, npm 11.16.0, dan [`bht-nexus-server`](https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-server) yang berjalan di laptop atau server tim bila ingin masuk ke ruang kerja.
 
 ```powershell
 git clone https://github.com/TelU-CoE-BHT-Command-Center-Internship/bht-nexus-web.git
 Set-Location bht-nexus-web
 npm ci
-npm run dev
+Copy-Item .env.example .env.local
+npm run dev -- --port 3001
 ```
 
-Buka `http://localhost:3000`, dan tekan `Ctrl+C` untuk menghentikannya. `npm ci` memasang versi paket yang tercatat di `package-lock.json` supaya seluruh anggota memakai susunan dependency yang sama.
+Buka `http://localhost:3001`, dan tekan `Ctrl+C` untuk menghentikannya. Port 3001 dipakai karena server API lokal biasanya sudah menempati port 3000. `npm ci` memasang versi paket yang tercatat di `package-lock.json` supaya seluruh anggota memakai susunan dependency yang sama.
+
+Alamat server diatur lewat `.env.local` (tidak ikut ke Git):
+
+| Variabel | Kegunaan |
+|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | Alamat API yang dipanggil browser, misalnya `http://localhost:3000/api`. Nilai ini juga menjadi bawaan bila variabel tidak diisi. |
+| `API_INTERNAL_BASE_URL` | Opsional. Alamat API untuk permintaan dari server Next.js, dipakai bila jalurnya berbeda dari browser, misalnya ketika web dan API berjalan di container yang berbeda. |
+
+Landing page tetap bisa dibuka tanpa server. Ruang kerja membutuhkan server untuk masuk; bila server belum bisa dihubungi, halaman menampilkan keadaan layanan tidak tersedia beserta tombol coba lagi, bukan mengalihkan pengguna ke halaman masuk.
+
+Untuk menyalakan server dari folder sebelah, `npm run backend` menjalankan `npm run start:dev` di `../nexus-server-run`, atau di folder yang ditunjuk variabel `NEXUS_SERVER_PATH`.
 
 Sebelum mengusulkan perubahan, jalankan pemeriksaan lengkapnya:
 
@@ -59,13 +74,16 @@ npm run audit:deps
 | `npm run dev` | Menjalankan web untuk pengembangan |
 | `npm run build` | Membuat build produksi |
 | `npm run start` | Menjalankan hasil build |
+| `npm run backend` | Menjalankan `bht-nexus-server` dari folder sebelah untuk pengembangan |
 | `npm run check` | Menjalankan seluruh pemeriksaan di bawah ini sekaligus, lalu build |
 | `npm run validate:config` | Memeriksa YAML dan struktur issue form |
 | `npm run validate:contrast` | Memeriksa pasangan token warna terhadap ambang WCAG 2.2 AA |
+| `npm run check:leaks` | Memeriksa berkas yang akan di-commit dari rahasia dan berkas lokal |
 | `npm run audit:deps` | Memeriksa kerentanan dependency tingkat `high` ke atas |
 | `npm run lint` | Memeriksa format dan pola kode |
 | `npm run typecheck` | Memeriksa kesesuaian TypeScript |
 | `npm run format` | Merapikan format berkas yang didukung Biome |
+| `npm run hooks:install` | Memasang hook Git (Lefthook) yang menjalankan `check:leaks` sebelum commit |
 
 ## Teknologi
 
@@ -94,14 +112,20 @@ npm run audit:deps
 │   ├── assets/          # logo serta gambar landing page dan ruang kerja
 │   ├── components/      # komponen landing page, halaman masuk, dan ruang kerja
 │   ├── content/         # data institusi yang dipakai lintas komponen
-│   └── i18n/            # tipe bahasa yang dipakai lintas fitur
+│   ├── i18n/            # tipe bahasa yang dipakai lintas fitur
+│   ├── lib/             # klien API server, pembacaan sesi, dan utilitas bersama
+│   └── proxy.ts         # meneruskan alamat halaman ke layout untuk pengalihan masuk
+├── .env.example        # contoh alamat API untuk .env.local
 ├── biome.json          # aturan pemeriksaan dan format kode
+├── lefthook.yml        # hook Git sebelum commit
 ├── next.config.ts      # pengaturan Next.js
 ├── package.json        # daftar perintah dan dependency
 └── tsconfig.json       # aturan TypeScript
 ```
 
 Komponen dipisahkan menurut bagian tampilan supaya isi, presentasi, dan interaksi dapat diperbarui tanpa membuat satu halaman menjadi sulit dirawat. Palet dasar ruang kerja—permukaan, teks, garis, aksen, dan warna status—didefinisikan sebagai token CSS di `src/app/globals.css`.
+
+Data server masuk lewat adapter kecil per bagian, misalnya `nexus-member-server.ts` atau `nexus-role-server.ts`. Adapter menerjemahkan jawaban API ke bentuk data yang sudah dipakai komponen, sehingga tampilan tidak perlu dibongkar ketika sumber datanya berpindah dari data pratinjau ke server.
 
 MapLibre 6 membutuhkan worker ESM beserta modul shared di alamat yang sama. `npm run dev` dan `npm run build` otomatis menyalin kedua berkas dari versi dependency yang terpasang ke `public/maplibre/`. Folder hasil salinan ini diabaikan Git; jangan mengedit atau menyalinnya secara manual. Gunakan perintah npm tersebut agar penyiapan worker ikut berjalan. Jika peta belum selesai dimuat dalam 30 detik, halaman menampilkan petunjuk menggunakan tautan arah; peta tetap dapat tampil bila pemuatan kemudian berhasil.
 
@@ -111,7 +135,7 @@ MapLibre 6 membutuhkan worker ESM beserta modul shared di alamat yang sama. `npm
 |---|---|
 | [docs/current-scope.md](docs/current-scope.md) | Kemampuan tiap halaman, daftar route, batas implementasi, dan prioritas berikutnya |
 | [docs/design-guide.md](docs/design-guide.md) | Navigasi, struktur halaman, tabel, warna, interaksi, aksesibilitas, dan bahasa antarmuka |
-| [docs/preview-data.md](docs/preview-data.md) | Adapter data frontend, kemampuan server yang dibutuhkan, kontrak integrasi, dan urutan migrasinya |
+| [docs/preview-data.md](docs/preview-data.md) | Adapter data, endpoint server yang sudah dipakai, kontrak integrasi, dan bagian yang masih memakai data pratinjau |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Alur issue, branch, commit, dan pull request |
 
 Mulailah dari `docs/current-scope.md` bila ingin tahu apa yang sudah ada, dan dari `docs/design-guide.md` bila hendak menambah tampilan baru.

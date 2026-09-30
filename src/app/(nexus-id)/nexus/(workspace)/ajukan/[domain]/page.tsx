@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NexusManualSubmissionPage } from "@/components/nexus-manual-submission/nexus-manual-submission";
-import { getManualComparisonCandidates } from "@/components/nexus-manual-submission/nexus-manual-submission-comparison";
 import type { ManualSubmissionDomain } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 
 const submissionRoutes = {
@@ -76,10 +75,5 @@ export default async function NexusManualSubmissionRoute({
   if (!isSubmissionRouteSlug(slug)) notFound();
 
   const route = submissionRoutes[slug];
-  return (
-    <NexusManualSubmissionPage
-      comparisonCandidates={getManualComparisonCandidates(route.domain)}
-      domain={route.domain}
-    />
-  );
+  return <NexusManualSubmissionPage domain={route.domain} />;
 }

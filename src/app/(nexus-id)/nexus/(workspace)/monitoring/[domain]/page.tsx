@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import {
-  nexusPreviewWorkspaceAccess,
-  nexusWorkspaceCanOpen,
-} from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { nexusFirstAccessibleHref } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import {
   NEXUS_MONITORING_HREF,
   nexusCategoryFromDomainSlug,
@@ -58,7 +57,7 @@ export default async function NexusMonitoringDomainPage({
   params,
   searchParams,
 }: NexusMonitoringDomainPageProps) {
-  const access = nexusPreviewWorkspaceAccess;
+  const access = await getNexusWorkspaceAccess();
   const { domain } = await params;
   const { periode } = await searchParams;
 
@@ -72,8 +71,8 @@ export default async function NexusMonitoringDomainPage({
       >
         <NexusWorkspaceNoAccess
           description="Akun Anda belum memiliki izin untuk membuka pemantauan indikator KM. Silakan kembali ke ruang kerja atau hubungi pengelola jika akses tersebut diperlukan."
-          returnHref="/nexus/dashboard"
-          returnLabel="Kembali ke Dashboard"
+          returnHref={nexusFirstAccessibleHref(access)}
+          returnLabel="Kembali ke ruang kerja"
           title="Monitoring KM tidak tersedia untuk akun Anda"
         />
       </NexusWorkspacePage>

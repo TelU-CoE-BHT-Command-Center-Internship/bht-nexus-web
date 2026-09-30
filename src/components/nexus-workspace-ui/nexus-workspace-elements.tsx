@@ -90,6 +90,62 @@ export function NexusWorkspaceButton({
   );
 }
 
+/**
+ * Tindakan yang sudah dirancang tetapi belum dapat dipakai. Tombol tetap tampil
+ * seperti rancangannya, diberi penanda tertulis "Segera", dapat difokus, dan
+ * tidak menjalankan apa pun sehingga tidak ada perubahan yang seolah tersimpan.
+ *
+ * Penanda diletakkan di bawah label (seperti butir navigasi yang belum
+ * tersedia), sehingga lebar dan tinggi tombol sama dengan tombol aslinya dan
+ * tata letak di sekitarnya tidak bergeser.
+ */
+export function NexusWorkspacePlannedButton({
+  badgeClassName,
+  children,
+  className,
+  description = "Layanan ini akan segera tersedia",
+  plannedLabel = "Segera",
+  tone = "secondary",
+}: {
+  /** Untuk tombol yang menyusut menjadi ikon pada layar sempit. */
+  badgeClassName?: string;
+  children: ReactNode;
+  className?: string;
+  description?: string;
+  plannedLabel?: string;
+  tone?: "danger" | "primary" | "secondary";
+}) {
+  return (
+    <button
+      aria-disabled="true"
+      className={`${styles.button} ${className ?? ""}`}
+      data-planned="true"
+      data-tone={tone}
+      onClick={(event) => event.preventDefault()}
+      title={description}
+      type="button"
+    >
+      <span className={styles.plannedContent}>{children}</span>
+      <span
+        aria-hidden="true"
+        className={`${styles.plannedBadge} ${badgeClassName ?? ""}`}
+      >
+        {plannedLabel}
+      </span>
+      <span className={styles.visuallyHidden}>. {description}.</span>
+    </button>
+  );
+}
+
+/** Penanda tertulis untuk bagian rancangan yang segera tersedia. */
+export function NexusWorkspacePlannedBadge({
+  children = "Segera",
+}: {
+  children?: ReactNode;
+}) {
+  return <span className={styles.plannedBadge}>{children}</span>;
+}
+
 export function NexusWorkspaceCard({
   actions,
   children,

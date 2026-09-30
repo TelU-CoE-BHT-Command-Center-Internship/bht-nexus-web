@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  type NexusAccessModuleId,
   type NexusPermissionId,
   type NexusPermissionMode,
   nexusAccessActionLabels,
@@ -17,6 +16,7 @@ import {
   useNexusAccessPolicySession,
 } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import { NexusAccessStateBadge } from "@/components/nexus-access-policy/nexus-access-state";
+import type { NexusPermissionMatrixModule } from "@/components/nexus-access-policy/nexus-role-server";
 import styles from "@/components/nexus-access-policy/nexus-user-access.module.css";
 import { useNexusAccountSession } from "@/components/nexus-account-session/nexus-account-session";
 import { nexusAccountStatusLabels } from "@/components/nexus-accounts/nexus-account-directory";
@@ -37,7 +37,10 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  displayRecordId,
+  personInitials,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import {
@@ -48,6 +51,16 @@ import {
 type NexusUserAccessProps = {
   capabilities: NexusAdministrationCapabilities;
   initialAccountId?: string;
+  /** Modul beserta izinnya; bawaan memakai katalog izin ruang kerja. */
+  modules?: readonly NexusPermissionMatrixModule[];
+  /**
+   * Penyimpan akses khusus di server. Bila diberikan, penyesuaian baru berlaku
+   * di halaman setelah server menerimanya.
+   */
+  onSaveOverrides?: (
+    accountId: string,
+    drafts: readonly NexusAccountOverrideDraft[],
+  ) => Promise<void>;
 };
 
 type PendingDialog = { kind: "reset" };
@@ -77,6 +90,8 @@ function ChevronIcon() {
 export function NexusUserAccess({
   capabilities,
   initialAccountId,
+  modules = nexusAccessModules,
+  onSaveOverrides,
 }: NexusUserAccessProps) {
   const navigate = useNexusWorkspaceNavigation();
   const { overrides, replaceAccountOverrides, roles } =
@@ -89,10 +104,10 @@ export function NexusUserAccess({
     null,
   );
   const [announcement, setAnnouncement] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [filter, setFilter] = useState<AccessFilterId>("all");
-  const [openModules, setOpenModules] = useState<NexusAccessModuleId[] | null>(
-    null,
-  );
+  const [openModules, setOpenModules] = useState<string[] | null>(null);
 
   const account = accounts.find(
     (candidate) => candidate.id === initialAccountId,
@@ -140,7 +155,7 @@ export function NexusUserAccess({
     return draft[permissionId] ?? storedModes[permissionId] ?? "INHERIT";
   }
 
-  const groups = nexusAccessModules.map((module) => {
+  const groups = modules.map((module) => {
     const rows = module.permissions.map((permission) => {
       const mode = modeFor(permission.id);
       const baseline = roleGrants.has(permission.id);
@@ -253,7 +268,7 @@ export function NexusUserAccess({
   const canAssignAccountRole = capabilities.canManageAccess;
   const canOpenRoleManagement = nexusCanOpenRoleManagement(capabilities);
 
-  function toggleModule(moduleId: NexusAccessModuleId) {
+  function toggleModule(moduleId: string) {
     setOpenModules(
       expandedModules.includes(moduleId)
         ? expandedModules.filter((id) => id !== moduleId)
@@ -280,6 +295,34 @@ export function NexusUserAccess({
     );
   }
 
+  /** Menyimpan seluruh penyesuaian akun; daftar kosong berarti kembali ke peran. */
+  async function storeOverrides(
+    accountId: string,
+    drafts: readonly NexusAccountOverrideDraft[],
+  ) {
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveError("");
+    try {
+      await onSaveOverrides?.(accountId, drafts);
+      replaceAccountOverrides(accountId, drafts);
+      setDraft({});
+      setAnnouncement(
+        drafts.length === 0
+          ? `Akses ${personName} kembali mengikuti peran.`
+          : `Akses khusus ${personName} disimpan: ${drafts.length} penyesuaian aktif.`,
+      );
+    } catch (caughtError) {
+      setSaveError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Akses khusus belum dapat disimpan.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   function saveOverrides() {
     if (!account || !canEdit) return;
     const drafts: NexusAccountOverrideDraft[] = [];
@@ -287,13 +330,7 @@ export function NexusUserAccess({
       if (row.mode === "INHERIT") continue;
       drafts.push({ mode: row.mode, permissionId: row.permissionId });
     }
-    replaceAccountOverrides(account.id, drafts);
-    setDraft({});
-    setAnnouncement(
-      drafts.length === 0
-        ? `Akses ${personName} kembali mengikuti peran.`
-        : `Akses khusus ${personName} disimpan: ${drafts.length} penyesuaian aktif.`,
-    );
+    void storeOverrides(account.id, drafts);
   }
 
   return (
@@ -318,7 +355,7 @@ export function NexusUserAccess({
             <div className={styles.identityCopy}>
               <h3>{personName}</h3>
               <p>{account.email}</p>
-              <small>{account.id}</small>
+              <small title={account.id}>{displayRecordId(account.id)}</small>
             </div>
             <span
               className={styles.identityStatus}
@@ -443,7 +480,10 @@ export function NexusUserAccess({
         </div>
       )}
 
-      <section className={styles.matrixCard}>
+      <section
+        className={styles.matrixCard}
+        data-unresolved={!hasUsableRoleBaseline || undefined}
+      >
         <header className={styles.matrixToolbar}>
           <fieldset className={styles.filterGroup}>
             <legend className={styles.visuallyHidden}>
@@ -592,7 +632,7 @@ export function NexusUserAccess({
                               >
                                 <input
                                   checked={row.mode === option.value}
-                                  disabled={!canEdit}
+                                  disabled={!canEdit || isSaving}
                                   name={`mode-${row.permissionId}`}
                                   onChange={() =>
                                     setDraft((current) => ({
@@ -638,6 +678,12 @@ export function NexusUserAccess({
         hak akses akun lain pada peran yang sama.
       </p>
 
+      {saveError ? (
+        <div className={styles.saveError} role="alert">
+          <NexusWorkspaceNotice tone="danger">{saveError}</NexusWorkspaceNotice>
+        </div>
+      ) : null}
+
       {canEdit ? (
         <footer className={styles.actionBar}>
           <div className={styles.actionsMeta}>
@@ -650,19 +696,19 @@ export function NexusUserAccess({
           </div>
           <div className={styles.actionsButtons}>
             <NexusWorkspaceButton
-              disabled={adjustedCount === 0}
+              disabled={adjustedCount === 0 || isSaving}
               onClick={() => setPendingDialog({ kind: "reset" })}
               type="button"
             >
               Reset ke peran
             </NexusWorkspaceButton>
             <NexusWorkspaceButton
-              disabled={!isDirty}
+              disabled={!isDirty || isSaving}
               onClick={saveOverrides}
               tone="primary"
               type="button"
             >
-              Simpan perubahan
+              {isSaving ? "Menyimpan…" : "Simpan perubahan"}
             </NexusWorkspaceButton>
           </div>
         </footer>
@@ -676,9 +722,7 @@ export function NexusUserAccess({
           onCancel={() => setPendingDialog(null)}
           onConfirm={() => {
             setPendingDialog(null);
-            replaceAccountOverrides(account.id, []);
-            setDraft({});
-            setAnnouncement(`Akses ${personName} kembali mengikuti peran.`);
+            void storeOverrides(account.id, []);
           }}
           title="Hapus seluruh akses khusus akun ini?"
           tone="warning"

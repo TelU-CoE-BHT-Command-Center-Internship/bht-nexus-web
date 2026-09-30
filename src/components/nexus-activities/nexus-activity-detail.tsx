@@ -8,7 +8,7 @@ import {
   activityEvidenceLabel,
   activityFieldLabels,
   activityKmLabel,
-  type OfficialActivityRecord,
+  type NexusActivityView,
 } from "@/components/nexus-activities/nexus-activities-content";
 import { NexusActivitiesIcon } from "@/components/nexus-activities/nexus-activities-icons";
 import {
@@ -27,16 +27,24 @@ import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-offi
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
+import { NexusWorkspacePlannedButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusActivityDetailProps = {
+  /** Antrean Tinjauan dapat dibuka oleh akun ini. */
+  canOpenReviews?: boolean;
   onClose: () => void;
-  onSubmitProposal: (
+  /**
+   * Pengajuan pelengkapan metadata. Selama belum tersedia, bagian pengajuan
+   * tampil sebagai tindakan yang segera tersedia.
+   */
+  onSubmitProposal?: (
     recordId: string,
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => void;
   proposal?: ActivityProposal;
-  record: OfficialActivityRecord;
+  record: NexusActivityView;
 };
 
 type MetadataItem = NexusMetadataCompletenessItem & {
@@ -65,7 +73,7 @@ function formatDate(value: string) {
   }).format(new Date(`${value}T00:00:00Z`));
 }
 
-function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
+function getMetadataItems(record: NexusActivityView): MetadataItem[] {
   const isMissing = (key: ActivityCompletionFieldKey) =>
     record.missingFields.includes(key);
   const resolved = (key: ActivityCompletionFieldKey, fallback: string) =>
@@ -165,8 +173,17 @@ function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
     {
       key: "evaluationPeriod",
       label: "Periode evaluasi KM",
-      value: record.evaluationPeriod,
+      value: record.evaluationPeriod || "Belum tercatat",
     },
+    ...(record.periodLabel
+      ? [
+          {
+            key: "period",
+            label: "Periode pelaksanaan",
+            value: record.periodLabel,
+          },
+        ]
+      : []),
   );
 
   items.push(
@@ -190,6 +207,7 @@ function getMetadataItems(record: OfficialActivityRecord): MetadataItem[] {
 }
 
 export function NexusActivityDetail({
+  canOpenReviews = true,
   onClose,
   onSubmitProposal,
   proposal,
@@ -202,7 +220,7 @@ export function NexusActivityDetail({
     <NexusWorkspaceDrawer
       closeLabel="Tutup rincian kegiatan dan pengabdian"
       description="Telusuri bentuk kegiatan, pihak terkait, klasifikasi KM, kelengkapan bukti, sumber pembentuk, dan keputusan tinjauannya."
-      eyebrow={record.publicId}
+      eyebrow={displayRecordId(record.publicId)}
       onClose={onClose}
       steps={[
         { active: true, complete: true, label: "Metadata", number: 1 },
@@ -228,12 +246,14 @@ export function NexusActivityDetail({
               {record.quality}
             </span>
           </div>
-          <time>Diperbarui {record.updatedAt}</time>
+          {record.updatedAt ? (
+            <time>Diperbarui {record.updatedAt}</time>
+          ) : record.recordedAt ? (
+            <time>Tercatat {record.recordedAt}</time>
+          ) : null}
         </div>
         <h3 id="activity-overview-title">{displayTitle}</h3>
-        <p>
-          {record.primaryParty} · {record.group}
-        </p>
+        <p>{[record.primaryParty, record.group].filter(Boolean).join(" · ")}</p>
 
         <dl className={detail.metaGrid}>
           <div className={detail.metaItem}>
@@ -382,6 +402,11 @@ export function NexusActivityDetail({
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
+        {record.provenance.length === 0 ? (
+          <p className={detail.explanation}>
+            Jejak sumber pembentuk rekam ini belum tersedia di halaman ini.
+          </p>
+        ) : null}
         <div className={detail.provenanceGrid}>
           {record.provenance.map((source) => (
             <article className={detail.provenanceCard} key={source.identifier}>
@@ -425,37 +450,65 @@ export function NexusActivityDetail({
           </div>
           <p>Riwayat keputusan tersimpan</p>
         </div>
-        <div className={detail.reviewDecision}>
-          <span className={detail.reviewCheck}>
-            <NexusActivitiesIcon name="check" />
-          </span>
-          <div>
-            <strong>{record.review.decision}</strong>
-            <p>{record.review.note}</p>
-            <small>
-              {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
-              {record.review.candidateId}
-            </small>
+        {record.review ? (
+          <div className={detail.reviewDecision}>
+            <span className={detail.reviewCheck}>
+              <NexusActivitiesIcon name="check" />
+            </span>
+            <div>
+              <strong>{record.review.decision}</strong>
+              <p>{record.review.note}</p>
+              <small>
+                {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
+                {record.review.candidateId}
+              </small>
+            </div>
           </div>
-        </div>
-        <Link
-          className={detail.reviewLink}
-          href="/nexus/tinjauan"
-          prefetch={false}
-        >
-          Buka antrean Tinjauan <ArrowIcon />
-        </Link>
+        ) : (
+          <p className={detail.explanation}>
+            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+          </p>
+        )}
+        {canOpenReviews ? (
+          <Link
+            className={detail.reviewLink}
+            href="/nexus/tinjauan"
+            prefetch={false}
+          >
+            Buka antrean Tinjauan <ArrowIcon />
+          </Link>
+        ) : null}
       </section>
 
       {record.missingFields.length > 0 ? (
-        <NexusMetadataCompletionForm
-          missingFields={record.missingFields}
-          onClose={onClose}
-          onSubmitProposal={onSubmitProposal}
-          proposal={proposal}
-          recordId={record.id}
-          sectionIndex="06"
-        />
+        onSubmitProposal ? (
+          <NexusMetadataCompletionForm
+            missingFields={record.missingFields}
+            onClose={onClose}
+            onSubmitProposal={onSubmitProposal}
+            proposal={proposal}
+            recordId={record.id}
+            sectionIndex="06"
+          />
+        ) : (
+          <section
+            aria-labelledby="activity-completion-title"
+            className={detail.detailSection}
+          >
+            <div className={detail.sectionHeading}>
+              <div>
+                <span className={detail.sectionIndex}>06</span>
+                <h3 id="activity-completion-title">
+                  Ajukan pelengkapan metadata
+                </h3>
+              </div>
+              <p>Usulan pelengkapan diperiksa melalui Tinjauan</p>
+            </div>
+            <NexusWorkspacePlannedButton tone="primary">
+              Ajukan pelengkapan
+            </NexusWorkspacePlannedButton>
+          </section>
+        )
       ) : null}
     </NexusWorkspaceDrawer>
   );

@@ -701,6 +701,10 @@
   box-shadow: 0 -0.35rem 1.4rem rgb(8 40 92 / 10%);
 }
 
+.saveError {
+  margin-top: 0.9rem;
+}
+
 .actionsMeta {
   display: grid;
   gap: 0.1rem;
@@ -727,6 +731,17 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* Tanpa peran aktif, lencana "Belum dapat dihitung" lebih lebar daripada kolom
+   keadaan bawaan sehingga kolomnya dilebarkan agar tidak menimpa kendali. */
+@media (min-width: 60.0625rem) {
+  .matrixCard[data-unresolved="true"] .columnHeader,
+  .matrixCard[data-unresolved="true"] .permissionRow {
+    grid-template-columns:
+      minmax(6rem, 1fr) 9rem minmax(15rem, 17rem)
+      10rem;
+  }
 }
 
 @media (max-width: 74rem) {

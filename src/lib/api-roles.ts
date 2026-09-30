@@ -60,6 +60,11 @@ export function deleteRole(publicId: string): Promise<void> {
   return apiFetch(`/roles/${publicId}`, { method: "DELETE" });
 }
 
+/** Mengembalikan hak akses satu peran bawaan ke bawaan BHT Nexus. */
+export function resetRole(publicId: string): Promise<RoleRecord> {
+  return apiFetch(`/roles/${publicId}/reset`, { method: "POST" });
+}
+
 export type PermissionGrantEntry = {
   description: LocalizedText | null;
   granted: boolean;

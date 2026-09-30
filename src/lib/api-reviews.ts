@@ -48,12 +48,40 @@ export type ReviewCaseDetail = {
   status: ReviewCaseStatus;
 };
 
+export type ReviewPromotionResult = {
+  created: boolean;
+  targetEntityPublicId: string;
+  targetEntityType: string;
+} | null;
+
 export type ReviewDecisionResult = {
   decidedAt: string;
   decision: ReviewDecisionKind;
+  /** Rekam resmi yang dibentuk atau ditautkan; null bila tidak ada promosi. */
+  promotion?: ReviewPromotionResult;
   publicId: string;
   reason: string | null;
   reviewCaseStatus: ReviewCaseStatus;
+};
+
+export type ReviewComparisonMatch = {
+  identifier: string | null;
+  matchFields: string[];
+  publicId: string;
+  similarity: number;
+  targetEntityType: string;
+  title: string;
+};
+
+export type ReviewComparison = {
+  candidate: {
+    authors: string[] | null;
+    identifier: string | null;
+    title: string;
+    year: number | null;
+  };
+  matches: ReviewComparisonMatch[];
+  reviewCasePublicId: string;
 };
 
 export function listReviewCases(
@@ -74,15 +102,40 @@ export function listReviewCases(
   return apiFetchPaginated(`/reviews/cases?${search.toString()}`);
 }
 
+/**
+ * Seluruh kasus tinjauan pada satu status, dibaca per halaman. Server
+ * memakai status menunggu bila status tidak dikirim, jadi status selalu
+ * disebutkan.
+ */
+export async function listAllReviewCases(
+  status: ReviewCaseStatus,
+): Promise<ReviewCaseRecord[]> {
+  const cases: ReviewCaseRecord[] = [];
+  for (let page = 1; ; page += 1) {
+    const result = await listReviewCases({ limit: 100, page, status });
+    cases.push(...result.data);
+    if (result.data.length === 0 || cases.length >= result.meta.total) {
+      return cases;
+    }
+  }
+}
+
 export function getReviewCase(publicId: string): Promise<ReviewCaseDetail> {
-  return apiFetch(`/reviews/cases/${publicId}`);
+  return apiFetch(`/reviews/cases/${encodeURIComponent(publicId)}`);
+}
+
+/** Rekam resmi yang mirip kandidat, berdasarkan DOI atau judul. */
+export function getReviewComparison(
+  publicId: string,
+): Promise<ReviewComparison> {
+  return apiFetch(`/reviews/cases/${encodeURIComponent(publicId)}/comparison`);
 }
 
 export function decideReviewCase(
   publicId: string,
   input: { decision: ReviewDecisionKind; reason?: string },
 ): Promise<ReviewDecisionResult> {
-  return apiFetch(`/reviews/cases/${publicId}/decision`, {
+  return apiFetch(`/reviews/cases/${encodeURIComponent(publicId)}/decision`, {
     body: JSON.stringify(input),
     method: "POST",
   });
@@ -92,7 +145,7 @@ export function submitReviewEdit(
   publicId: string,
   fieldChanges: Record<string, unknown>,
 ): Promise<ReviewCaseDetail> {
-  return apiFetch(`/reviews/cases/${publicId}/candidate`, {
+  return apiFetch(`/reviews/cases/${encodeURIComponent(publicId)}/candidate`, {
     body: JSON.stringify({ fieldChanges }),
     method: "PATCH",
   });
@@ -101,5 +154,7 @@ export function submitReviewEdit(
 export function restoreReviewCandidate(
   publicId: string,
 ): Promise<ReviewCaseDetail> {
-  return apiFetch(`/reviews/cases/${publicId}/restore`, { method: "POST" });
+  return apiFetch(`/reviews/cases/${encodeURIComponent(publicId)}/restore`, {
+    method: "POST",
+  });
 }

@@ -58,9 +58,18 @@ export function NexusMemberContext({
 export function NexusMemberContextFilter({
   clearHref,
   memberId,
+  memberName,
+  unsupportedDescription,
 }: {
   clearHref: string;
   memberId?: string;
+  /** Nama anggota dari direktori, bila akun boleh membacanya. */
+  memberName?: string;
+  /**
+   * Diisi bila katalog ini belum dapat disaring per anggota. Kartu lalu
+   * menjelaskan bahwa daftar di bawahnya tidak disaring, bukan berpura-pura.
+   */
+  unsupportedDescription?: string;
 }) {
   if (!memberId) return null;
 
@@ -72,8 +81,13 @@ export function NexusMemberContextFilter({
           Hapus filter
         </NexusWorkspaceLinkButton>
       }
-      label="Filter anggota aktif"
-      memberName={knownMemberName(memberId) ?? "Anggota terpilih"}
+      description={unsupportedDescription}
+      label={
+        unsupportedDescription
+          ? "Filter anggota belum tersedia"
+          : "Filter anggota aktif"
+      }
+      memberName={memberName ?? knownMemberName(memberId) ?? "Anggota terpilih"}
     />
   );
 }

@@ -40,6 +40,11 @@ export type NexusAccountDirectoryRecord = {
   lastActiveAt?: string;
   lastInvitationAt?: string;
   personalProfile?: NexusAccountPersonalProfile;
+  /**
+   * `false` ketika informasi pribadi akun tidak ikut terbaca bersama daftar
+   * akun, sehingga tidak boleh disimpulkan kosong.
+   */
+  personalProfileKnown?: boolean;
   relationship: NexusAccountMemberRelationship;
   roleId?: string;
   status: NexusAccountStatus;

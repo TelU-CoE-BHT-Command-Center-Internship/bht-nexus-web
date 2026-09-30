@@ -23,6 +23,7 @@ export type NexusWorkspaceAccess = {
   administrationCapabilities: NexusAdministrationCapabilities;
   allowedNavigationIds: readonly NexusWorkspaceNavigationId[];
   broadcastCapabilities: NexusBroadcastCapabilities;
+  collectionCapabilities: NexusCollectionCapabilities;
   memberCapabilities: NexusMemberCapabilities;
   monitoringCapabilities: NexusMonitoringCapabilities;
   reviewCapabilities: NexusReviewCapabilities;
@@ -36,6 +37,16 @@ export type NexusWorkspaceAccess = {
  */
 export type NexusBroadcastCapabilities = {
   canCompose: boolean;
+};
+
+/**
+ * Kemampuan pada Pengumpulan: melihat riwayat terpisah dari mengajukan
+ * pekerjaan baru (`job.create`) dan mengirim hasil pekerjaan ke Tinjauan
+ * (`review.edit`).
+ */
+export type NexusCollectionCapabilities = {
+  canCreateJob: boolean;
+  canSendToReview: boolean;
 };
 
 /**
@@ -55,6 +66,12 @@ export type NexusAdministrationCapabilities = {
   canManageRolePermissions: boolean;
   canManageRoles: boolean;
   canManageUserOverrides: boolean;
+  /** Membuka daftar akun pada halaman Administrasi. */
+  canReadAccounts: boolean;
+  /** Membuka catatan penolakan akses. */
+  canReadAudit: boolean;
+  /** Mengembalikan hak akses peran bawaan ke bawaan BHT Nexus. */
+  canRestoreRoleDefaults: boolean;
 };
 
 export type NexusMemberCapabilities = {
@@ -72,6 +89,9 @@ export const nexusPreviewWorkspaceAccess = {
     canManageRolePermissions: true,
     canManageRoles: true,
     canManageUserOverrides: true,
+    canReadAccounts: true,
+    canReadAudit: true,
+    canRestoreRoleDefaults: true,
   },
   allowedNavigationIds: [
     "dashboard",
@@ -91,6 +111,10 @@ export const nexusPreviewWorkspaceAccess = {
   broadcastCapabilities: {
     canCompose: true,
   },
+  collectionCapabilities: {
+    canCreateJob: true,
+    canSendToReview: true,
+  },
   memberCapabilities: {
     canCreateMember: true,
     canDeactivateMember: true,
@@ -104,8 +128,249 @@ export const nexusPreviewWorkspaceAccess = {
   reviewCapabilities: {
     canReview: true,
     canSubmitCorrection: true,
+    canSubmitRecord: true,
   },
 } satisfies NexusWorkspaceAccess;
+
+/** Nama peran sistem pada server BHT Nexus. */
+export type NexusServerRoleName =
+  | "admin"
+  | "auditor"
+  | "cluster_head"
+  | "director"
+  | "external_partner"
+  | "intern"
+  | "member"
+  | "officer";
+
+type NexusServerPermission =
+  | "activity.read"
+  | "audit.read"
+  | "dashboard.read"
+  | "iam.manage"
+  | "job.create"
+  | "job.read"
+  | "kpi.read"
+  | "member.read"
+  | "permission.manage"
+  | "permission.read"
+  | "publication.read"
+  | "review.decide"
+  | "review.edit"
+  | "review.read"
+  | "role.manage"
+  | "role.read"
+  | "role_permission.manage"
+  | "role_permission.read"
+  | "user.read"
+  | "user_role.manage"
+  | "user_role.read";
+
+/**
+ * Cermin izin bawaan setiap peran sistem pada server. Peta ini hanya dipakai
+ * bila server belum menjawab izin efektif akun; selama itu peran kustom dan
+ * akses khusus per akun tidak tercermin pada navigasi. Server tetap menolak
+ * setiap permintaan yang tidak diizinkan.
+ */
+const serverRolePermissions: Record<
+  NexusServerRoleName,
+  readonly NexusServerPermission[]
+> = {
+  admin: [
+    "job.create",
+    "job.read",
+    "review.read",
+    "review.edit",
+    "review.decide",
+    "publication.read",
+    "member.read",
+    "activity.read",
+    "audit.read",
+    "kpi.read",
+    "dashboard.read",
+  ],
+  auditor: [
+    "iam.manage",
+    "user.read",
+    "user_role.read",
+    "user_role.manage",
+    "role.read",
+    "role.manage",
+    "permission.read",
+    "permission.manage",
+    "role_permission.read",
+    "role_permission.manage",
+    "audit.read",
+  ],
+  cluster_head: [
+    "job.read",
+    "review.read",
+    "review.edit",
+    "publication.read",
+    "member.read",
+    "activity.read",
+  ],
+  director: [
+    "review.read",
+    "review.decide",
+    "job.read",
+    "publication.read",
+    "member.read",
+    "activity.read",
+    "audit.read",
+  ],
+  external_partner: ["publication.read"],
+  intern: ["publication.read"],
+  member: ["member.read", "publication.read", "activity.read"],
+  officer: [
+    "job.create",
+    "job.read",
+    "review.read",
+    "review.edit",
+    "publication.read",
+    "member.read",
+    "activity.read",
+  ],
+};
+
+const serverRoleLabels: Record<NexusServerRoleName, string> = {
+  admin: "Admin",
+  auditor: "Auditor",
+  cluster_head: "Ketua Klaster",
+  director: "Pimpinan",
+  external_partner: "Mitra Eksternal",
+  intern: "Magang",
+  member: "Anggota",
+  officer: "Pengurus",
+};
+
+/** Broadcast / Newsletter belum punya izin server; Meeting Minggu 12 membatasinya untuk pengurus dan admin. */
+const broadcastRoles: readonly NexusServerRoleName[] = ["admin", "officer"];
+
+function isServerRoleName(value: string): value is NexusServerRoleName {
+  return Object.hasOwn(serverRolePermissions, value);
+}
+
+/** Label peran untuk identitas pengguna; peran di luar katalog sistem ditampilkan apa adanya. */
+export function nexusServerRoleLabel(roleName: string): string {
+  return isServerRoleName(roleName) ? serverRoleLabels[roleName] : roleName;
+}
+
+function canBroadcastWith(roles: readonly string[]) {
+  return roles.some(
+    (role) => isServerRoleName(role) && broadcastRoles.includes(role),
+  );
+}
+
+/** Navigasi dan kemampuan yang dibuka oleh satu himpunan izin server. */
+function accessFromPermissions(
+  permissions: ReadonlySet<string>,
+  canBroadcast: boolean,
+): NexusWorkspaceAccess {
+  const has = (permission: NexusServerPermission) =>
+    permissions.has(permission);
+  const navigation = new Set<NexusWorkspaceNavigationId>();
+
+  if (has("dashboard.read")) navigation.add("dashboard");
+  if (has("kpi.read")) navigation.add("monitoring");
+  if (canBroadcast) navigation.add("broadcast");
+  if (has("job.read")) {
+    navigation.add("collection");
+    navigation.add("documents");
+  }
+  if (has("review.read")) navigation.add("reviews");
+  if (has("publication.read")) navigation.add("publications");
+  if (has("activity.read")) {
+    navigation.add("intellectual-property");
+    navigation.add("contracts");
+    navigation.add("academic");
+    navigation.add("activities");
+  }
+  if (has("member.read")) navigation.add("members");
+  if (
+    has("user.read") ||
+    has("iam.manage") ||
+    has("role.read") ||
+    has("audit.read")
+  ) {
+    navigation.add("administration");
+  }
+
+  return {
+    administrationCapabilities: {
+      canInviteAccount: has("iam.manage"),
+      canManageAccess: has("iam.manage"),
+      canManageAccountStatus: has("iam.manage"),
+      canManageRolePermissions: has("role_permission.manage"),
+      canManageRoles: has("role.manage"),
+      canManageUserOverrides: has("iam.manage"),
+      canReadAccounts: has("user.read"),
+      canReadAudit: has("audit.read"),
+      canRestoreRoleDefaults: has("iam.manage"),
+    },
+    allowedNavigationIds:
+      nexusPreviewWorkspaceAccess.allowedNavigationIds.filter((id) =>
+        navigation.has(id),
+      ),
+    broadcastCapabilities: { canCompose: canBroadcast },
+    collectionCapabilities: {
+      canCreateJob: has("job.create"),
+      canSendToReview: has("review.edit"),
+    },
+    memberCapabilities: {
+      canCreateMember: has("iam.manage"),
+      canDeactivateMember: has("iam.manage"),
+      canEditMember: has("iam.manage"),
+      canGrantAccess: has("iam.manage"),
+    },
+    monitoringCapabilities: {
+      canCorrectRecords: has("kpi.read"),
+      canManageTargets: has("kpi.read"),
+    },
+    reviewCapabilities: {
+      canReview: has("review.decide"),
+      canSubmitCorrection: has("review.edit"),
+      canSubmitRecord: has("job.create"),
+    },
+  };
+}
+
+/**
+ * Akses ruang kerja dari nama peran saja. Bila peran belum dapat dibaca dari
+ * server, navigasi tetap lengkap dan setiap halaman mengikuti jawaban server
+ * (termasuk keadaan tanpa akses).
+ */
+export function nexusWorkspaceAccessFromRoles(
+  roles: readonly string[] | null,
+): NexusWorkspaceAccess {
+  if (roles === null) return nexusPreviewWorkspaceAccess;
+
+  return accessFromPermissions(
+    new Set(
+      roles
+        .filter(isServerRoleName)
+        .flatMap((role) => serverRolePermissions[role]),
+    ),
+    canBroadcastWith(roles),
+  );
+}
+
+/**
+ * Akses ruang kerja akun yang sedang masuk. Izin efektif dari server sudah
+ * memperhitungkan seluruh peran akun, peran kustom, dan akses khusus per
+ * akun; bila server belum menjawabnya, izin bawaan peran dipakai.
+ */
+export function nexusWorkspaceAccessFromSession(
+  roles: readonly string[] | null,
+  permissions: readonly string[] | null,
+): NexusWorkspaceAccess {
+  if (permissions === null) return nexusWorkspaceAccessFromRoles(roles);
+
+  return accessFromPermissions(
+    new Set(permissions),
+    canBroadcastWith(roles ?? []),
+  );
+}
 
 export function nexusWorkspaceCanOpen(
   access: NexusWorkspaceAccess,
@@ -123,4 +388,19 @@ export function nexusCanOpenRoleManagement(
   capabilities: NexusAdministrationCapabilities,
 ) {
   return capabilities.canManageRoles || capabilities.canManageRolePermissions;
+}
+
+/**
+ * Permukaan Administrasi pertama yang boleh dibuka akun: daftar akun, lalu
+ * Peran & Hak Akses, lalu catatan penolakan akses.
+ */
+export function nexusAdministrationHomeHref(
+  capabilities: NexusAdministrationCapabilities,
+): string | undefined {
+  if (capabilities.canReadAccounts) return "/nexus/administrasi";
+  if (nexusCanOpenRoleManagement(capabilities)) {
+    return "/nexus/administrasi/peran";
+  }
+  if (capabilities.canReadAudit) return "/nexus/administrasi/audit";
+  return undefined;
 }

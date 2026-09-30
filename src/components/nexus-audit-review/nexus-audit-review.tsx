@@ -1,18 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import styles from "@/components/nexus-audit-review/nexus-audit-review.module.css";
 import type {
   AuditDecisionKind,
-  AuditKpiResolution,
-  AuditMemberPersonBinding,
-  AuditPersonMapping,
   AuditReviewCategory,
   AuditReviewRecord,
   AuditReviewSource,
   AuditReviewStatus,
-  NexusAuditReviewContent,
 } from "@/components/nexus-audit-review/nexus-audit-review-content";
 import {
   auditCurrentValue,
@@ -21,18 +17,11 @@ import {
   auditEvaluationPeriodLabel,
 } from "@/components/nexus-audit-review/nexus-audit-review-drawer-model";
 import {
-  getManualComparisonCandidates,
-  manualDomainForReviewRecord,
-} from "@/components/nexus-manual-submission/nexus-manual-submission-comparison";
-import {
-  createManualOfficialMatches,
-  type ManualSubmissionValues,
-  manualKmSuggestion,
-  manualSubmissionPresentation,
-} from "@/components/nexus-manual-submission/nexus-manual-submission-model";
-import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import { useNexusOfficialRecords } from "@/components/nexus-official-records/nexus-official-records-hooks";
-import { reconcileMemberPersonBinding } from "@/components/nexus-review-session/nexus-member-person-binding";
+  revisionReason,
+  serverDecisionFor,
+  serverReviewCapabilities,
+  useNexusReviewQueue,
+} from "@/components/nexus-audit-review/nexus-review-server";
 import {
   type AuditRuntimeState,
   initialAuditRuntimeState,
@@ -49,7 +38,10 @@ import {
   NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { compareTimestamps } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  compareTimestamps,
+  formatAuditTimestamp,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -70,10 +62,7 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import {
-  NexusWorkspaceNoAccess,
-  NexusWorkspaceState,
-} from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 
 const NexusAuditReviewDrawer = dynamic(() =>
@@ -153,6 +142,16 @@ const sourceOrder: AuditReviewSource[] = [
   "manual",
 ];
 
+/**
+ * Bagian keputusan yang belum dicatat server tetap tampil sebagai tindakan
+ * yang segera tersedia dan tidak menjadi syarat keputusan.
+ */
+const plannedReviewParts = {
+  correctionEvidenceNote: true,
+  kpiResolution: true,
+  mergeRequiresSameIdentifier: true,
+} as const;
+
 function ReviewIcon({ name }: { name: "completed" | "fix" | "waiting" }) {
   if (name === "completed")
     return (
@@ -195,85 +194,6 @@ function sourceTone(source: AuditReviewSource) {
   return "neutral" as const;
 }
 
-function decisionLabel(kind: AuditDecisionKind) {
-  if (kind === "approved_completion") return "Pelengkapan metadata disetujui";
-  if (kind === "approved_new") return "Diterima sebagai data baru";
-  if (kind === "approved_update") return "Pembaruan data disetujui";
-  if (kind === "merged") return "Dihubungkan ke data resmi";
-  if (kind === "rejected") return "Ditolak";
-  return "Perbaikan diminta";
-}
-
-function effectiveReviewRecord(
-  record: AuditReviewRecord,
-  state: AuditRuntimeState,
-): AuditReviewRecord {
-  const submission = record.manualSubmission;
-  const corrected = state.correction?.after ?? {};
-  const correctedRecord: AuditReviewRecord = {
-    ...record,
-    evaluationPeriodLabel:
-      corrected.evaluationPeriod ?? record.evaluationPeriodLabel,
-    fields: record.fields.map((field) => {
-      const value = corrected[field.id];
-      return value === undefined ? field : { ...field, rawValue: value, value };
-    }),
-    title: auditEffectiveTitle(record, state),
-  };
-  if (!submission) return reconcileMemberPersonBinding(correctedRecord);
-
-  const values = {
-    ...submission.values,
-    ...Object.fromEntries(
-      Object.entries(corrected).filter(
-        ([key]) => !["record_type", "submitter_note"].includes(key),
-      ),
-    ),
-    note: corrected.submitter_note ?? submission.values.note ?? "",
-    recordType: corrected.record_type ?? submission.recordType,
-  } as ManualSubmissionValues;
-  const suggestion = manualKmSuggestion(submission.domain, values);
-  const presentation = manualSubmissionPresentation(
-    submission.domain,
-    values,
-    record.primaryPerson,
-  );
-  const evidenceUrl = values.evidenceUrl?.trim();
-
-  return reconcileMemberPersonBinding({
-    ...correctedRecord,
-    category: presentation.category,
-    categoryLabel: presentation.categoryLabel,
-    evaluationPeriodLabel:
-      values.evaluationPeriod || record.evaluationPeriodLabel,
-    evidence: evidenceUrl
-      ? record.evidence.map((item, index) =>
-          index === 0
-            ? { ...item, href: evidenceUrl, reference: evidenceUrl }
-            : item,
-        )
-      : record.evidence,
-    kpiLinks: suggestion
-      ? [
-          {
-            evidenceRule: suggestion.evidenceRule,
-            indicator: suggestion.indicator,
-          },
-        ]
-      : [],
-    kpiLinksSuggested: Boolean(suggestion),
-    manualSubmission: {
-      ...submission,
-      recordType: values.recordType,
-      values,
-    },
-    primaryPerson: presentation.primaryPerson,
-    subtitle: presentation.subtitle,
-    title: presentation.title,
-    typeLabel: presentation.typeLabel,
-  });
-}
-
 function actionLabel(status: AuditReviewStatus) {
   if (status === "completed") return "Lihat hasil";
   if (status === "needs_fix") return "Lihat status";
@@ -283,6 +203,7 @@ function actionLabel(status: AuditReviewStatus) {
 function searchableText(record: AuditReviewRecord, state: AuditRuntimeState) {
   return [
     record.id,
+    record.provenance.sourceKey ?? "",
     auditEffectiveTitle(record, state),
     auditEffectiveSubtitle(record, state),
     record.typeLabel,
@@ -305,40 +226,18 @@ function searchableText(record: AuditReviewRecord, state: AuditRuntimeState) {
 }
 
 export function NexusAuditReview({
-  content,
   initialRecordId,
 }: {
-  content: NexusAuditReviewContent;
   initialRecordId?: string;
 }) {
   const reviewSession = useNexusReviewSession();
-  const officialRecords = useNexusOfficialRecords();
-  const allRecords = useMemo(
-    () => [
-      ...reviewSession.records,
-      ...content.records.filter(
-        (record) =>
-          !reviewSession.records.some(
-            (sessionRecord) => sessionRecord.id === record.id,
-          ),
-      ),
-    ],
-    [content.records, reviewSession.records],
-  );
-  const runtime = reviewSession.runtimeByRecordId;
-  const records = useMemo(
-    () =>
-      reviewSession.capabilities.canReview
-        ? allRecords
-        : allRecords.filter(
-            (record) =>
-              reviewSession.capabilitiesFor(
-                record,
-                runtime[record.id] ?? initialAuditRuntimeState(record),
-              ).canSubmitCorrection,
-          ),
-    [allRecords, reviewSession, runtime],
-  );
+  const queue = useNexusReviewQueue(reviewSession.actor);
+  const { ensureDetails, loadComparison } = queue;
+  const records = queue.records;
+  const runtime = queue.runtime;
+  const isQueueLoading = queue.state === "loading";
+  const stateFor = (record: AuditReviewRecord) =>
+    runtime[record.id] ?? initialAuditRuntimeState(record);
   const [source, setSource] = useState<AuditReviewSource | "all">("all");
   const [status, setStatus] = useState<AuditReviewStatus | "all">("all");
   const [category, setCategory] = useState<AuditReviewCategory | "all">("all");
@@ -348,12 +247,19 @@ export function NexusAuditReview({
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSizeValue, setPageSizeValue] = useState("5");
-  const [openId, setOpenId] = useState<string | null>(
-    initialRecordId && records.some((record) => record.id === initialRecordId)
-      ? initialRecordId
-      : null,
-  );
+  // `undefined` berarti pengguna belum memilih; tautan langsung dibuka
+  // setelah antrean selesai dimuat.
+  const [chosenId, setChosenId] = useState<string | null>();
   const deferredQuery = useDeferredValue(query);
+  const requestedRecordExists = records.some(
+    (record) => record.id === initialRecordId,
+  );
+  const openId =
+    chosenId === undefined
+      ? queue.state === "ready" && requestedRecordExists
+        ? (initialRecordId ?? null)
+        : null
+      : chosenId;
 
   const counts = useMemo(() => {
     const statuses = records.map(
@@ -457,12 +363,13 @@ export function NexusAuditReview({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
+  const visibleIds = visible.map((record) => record.id).join(",");
   const selected = records.find((record) => record.id === openId);
-  const selectedState = selected
-    ? (runtime[selected.id] ?? initialAuditRuntimeState(selected))
-    : undefined;
+  const selectedState = selected ? stateFor(selected) : undefined;
+  const selectedDetail = openId ? queue.details[openId] : undefined;
+  const selectedComparison = openId ? queue.comparisons[openId] : undefined;
   const requestedRecordIsMissing = Boolean(
-    initialRecordId && !records.some((record) => record.id === initialRecordId),
+    initialRecordId && queue.state === "ready" && !requestedRecordExists,
   );
   const hasActiveFilters =
     source !== "all" ||
@@ -471,6 +378,17 @@ export function NexusAuditReview({
     period !== "all" ||
     sort !== "newest" ||
     query.length > 0;
+
+  // Rincian kasus yang tampil dan kasus yang dibuka dibaca bila belum ada.
+  useEffect(() => {
+    if (visibleIds) ensureDetails(visibleIds.split(","));
+  }, [ensureDetails, visibleIds]);
+
+  useEffect(() => {
+    if (!openId) return;
+    ensureDetails([openId]);
+    loadComparison(openId);
+  }, [ensureDetails, loadComparison, openId]);
 
   const resetFilters = () => {
     setSource("all");
@@ -482,20 +400,16 @@ export function NexusAuditReview({
     setCurrentPage(1);
   };
 
-  const decide = (
+  const decide = async (
     record: AuditReviewRecord,
     kind: AuditDecisionKind,
     note: string,
     fieldIds: string[],
     targetRecordId?: string,
-    kpiResolution?: AuditKpiResolution,
-    memberPersonBinding?: AuditMemberPersonBinding,
-    targetPersonId?: string,
-    personMappings?: AuditPersonMapping[],
   ) => {
-    const currentState = runtime[record.id] ?? initialAuditRuntimeState(record);
-    const recordCapabilities = reviewSession.capabilitiesFor(
-      record,
+    const currentState = stateFor(record);
+    const recordCapabilities = serverReviewCapabilities(
+      reviewSession.capabilities,
       currentState,
     );
     const decisionIsAllowed =
@@ -504,247 +418,46 @@ export function NexusAuditReview({
         : kind === "rejected"
           ? recordCapabilities.canReject
           : recordCapabilities.canApprove;
-    if (!decisionIsAllowed) return;
-
-    const label = decisionLabel(kind);
-    const selfReview = recordCapabilities.selfReview
-      ? (true as const)
-      : undefined;
-    const occurredAt = new Date().toISOString();
-    const reviewer = `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`;
-    if (
-      kind === "approved_new" ||
-      kind === "approved_update" ||
-      kind === "merged"
-    ) {
-      const effectiveCandidate = effectiveReviewRecord(record, currentState);
-      const candidate = memberPersonBinding
-        ? {
-            ...effectiveCandidate,
-            memberId: memberPersonBinding.memberId,
-            memberPersonBinding,
-          }
-        : effectiveCandidate;
-      reviewSession.applyOfficialRecordDecision({
-        appliedAt: occurredAt,
-        candidate,
-        decisionKind: kind,
-        kpiResolution,
-        note,
-        personMappings,
-        reviewer,
-        targetRecordId,
-        targetPersonId,
-      });
+    if (!decisionIsAllowed) {
+      return "Akun ini tidak dapat menetapkan keputusan untuk kandidat ini.";
     }
-    const completionResolutions =
-      currentState.correction?.resolutions ?? record.completionResolutions;
-    if (
-      kind === "approved_completion" &&
-      targetRecordId &&
-      completionResolutions
-    ) {
-      reviewSession.applyOfficialMetadataCompletion(targetRecordId, {
-        appliedAt: occurredAt,
-        note,
-        resolutions: completionResolutions,
-        reviewRecordId: record.id,
-        reviewer,
-      });
-    }
-    reviewSession.updateRecordRuntime(record, (previous) => ({
-      ...previous,
-      decision: {
-        actor: reviewer,
-        actorId: reviewSession.actor.id,
-        kind,
-        kpiResolution,
-        memberPersonBinding,
-        personMappings,
-        label,
-        note,
-        selfReview,
-        targetRecordId,
-        targetPersonId,
-        occurredAt,
-      },
-      fixRequest:
-        kind === "changes_requested"
-          ? {
-              assigneeActorId:
-                record.correctionAssigneeActorId ??
-                currentState.latestSubmittedByActorId ??
-                record.submittedByActorId,
-              assigneeLabel:
-                record.correctionAssigneeLabel ??
-                currentState.latestSubmittedBy,
-              fieldIds,
-              reason: note,
-            }
-          : undefined,
-      history: [
-        ...previous.history,
-        {
-          actor: reviewer,
-          actorId: reviewSession.actor.id,
-          decisionKind: kind,
-          fieldIds: kind === "changes_requested" ? fieldIds : undefined,
-          id: `${record.id}-${kind}-${previous.history.length + 1}`,
-          kind: "decision",
-          label,
-          note,
-          selfReview,
-          targetRecordId,
-          occurredAt,
-          version: previous.version,
-        },
-      ],
-      reviewTargetRecordId: targetRecordId ?? previous.reviewTargetRecordId,
-      status: kind === "changes_requested" ? "needs_fix" : "completed",
-    }));
-    setCurrentPage(1);
+    const decision = serverDecisionFor(
+      kind,
+      currentState.matches.find((match) => match.id === targetRecordId),
+    );
+    if (!decision) return "Keputusan ini belum tersedia.";
+    const fieldLabels = record.fields
+      .filter((field) => fieldIds.includes(field.id))
+      .map((field) => field.label);
+    const error = await queue.decide(record.id, {
+      decision,
+      reason:
+        kind === "changes_requested" ? revisionReason(note, fieldLabels) : note,
+    });
+    if (!error) setCurrentPage(1);
+    return error;
   };
 
-  const resubmit = (
+  const resubmit = async (
     record: AuditReviewRecord,
     values: Record<string, string>,
-    evidenceNote: string,
-    resolutions?: MetadataCompletionResolutions,
   ) => {
-    const currentState = runtime[record.id] ?? initialAuditRuntimeState(record);
     if (
-      !reviewSession.capabilitiesFor(record, currentState).canSubmitCorrection
-    )
-      return;
-
-    reviewSession.updateRecordRuntime(record, (previous) => {
-      if (!previous.fixRequest) return previous;
-      const nextVersion = previous.version + 1;
-      const currentValue = (fieldId: string) =>
-        previous.correction?.after[fieldId] ??
-        record.fields.find((item) => item.id === fieldId)?.rawValue ??
-        record.fields.find((item) => item.id === fieldId)?.value ??
-        (fieldId === "record_type"
-          ? record.manualSubmission?.recordType
-          : record.manualSubmission?.values[fieldId]) ??
-        "";
-      const submittedFieldIds = Array.from(
-        new Set([
-          ...previous.fixRequest.fieldIds,
-          ...Object.keys(values).filter(
-            (fieldId) => values[fieldId] !== currentValue(fieldId),
-          ),
-        ]),
-      );
-      const before = Object.fromEntries(
-        submittedFieldIds.map((fieldId) => [fieldId, currentValue(fieldId)]),
-      );
-      const changedAfter = Object.fromEntries(
-        submittedFieldIds.map((fieldId) => [fieldId, values[fieldId] ?? ""]),
-      );
-      const after = { ...previous.correction?.after, ...changedAfter };
-      const allCorrectedFieldIds = Array.from(
-        new Set([
-          ...(previous.correction?.fieldIds ?? []),
-          ...submittedFieldIds,
-        ]),
-      );
-      const matchingValues = record.manualSubmission
-        ? {
-            ...record.manualSubmission.values,
-            ...previous.correction?.after,
-            ...changedAfter,
-            recordType:
-              changedAfter.record_type ??
-              previous.correction?.after.record_type ??
-              record.manualSubmission.recordType,
-          }
-        : {
-            ...Object.fromEntries(
-              record.fields.map((field) => [
-                field.id,
-                previous.correction?.after[field.id] ?? field.value,
-              ]),
-            ),
-            ...changedAfter,
-            title:
-              changedAfter.title ??
-              previous.correction?.after.title ??
-              record.title,
-            evaluationPeriod: record.evaluationPeriodLabel ?? "",
-          };
-      const refreshedMatches =
-        record.candidateKind === "metadata_completion"
-          ? previous.matches
-          : createManualOfficialMatches(
-              matchingValues as ManualSubmissionValues,
-              // Pencocokan ulang memakai rekam resmi sesi berjalan, bukan
-              // salinan pembanding saat kandidat pertama kali dikirim, supaya
-              // rekam yang disetujui sesudahnya ikut terdeteksi.
-              getManualComparisonCandidates(
-                manualDomainForReviewRecord(record),
-                officialRecords,
-              ),
-            );
-
-      return {
-        ...previous,
-        correction: {
-          after,
-          before: { ...previous.correction?.before, ...before },
-          evidenceNote,
-          fieldIds: allCorrectedFieldIds,
-          resolutions: {
-            ...record.completionResolutions,
-            ...previous.correction?.resolutions,
-            ...resolutions,
-          },
-          version: nextVersion,
-        },
-        decision: undefined,
-        fixRequest: undefined,
-        history: [
-          ...previous.history,
-          {
-            actor: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
-            actorId: reviewSession.actor.id,
-            changes: submittedFieldIds.map((fieldId) => ({
-              after: changedAfter[fieldId] ?? "",
-              before: before[fieldId] ?? "",
-              fieldId,
-            })),
-            id: `${record.id}-resubmitted-${nextVersion}`,
-            kind: "correction_submitted",
-            label: `Kandidat versi ${nextVersion} dikirim ulang`,
-            note: evidenceNote,
-            occurredAt: new Date().toISOString(),
-            version: nextVersion,
-          },
-        ],
-        latestSubmittedBy: `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`,
-        latestSubmittedByActorId: reviewSession.actor.id,
-        matches: refreshedMatches,
-        matchingStatus:
-          record.candidateKind === "metadata_completion"
-            ? "not_required"
-            : "current",
-        matchingVersion:
-          record.candidateKind === "metadata_completion"
-            ? undefined
-            : nextVersion,
-        status: "waiting",
-        version: nextVersion,
-      };
-    });
-    setCurrentPage(1);
+      !serverReviewCapabilities(reviewSession.capabilities, stateFor(record))
+        .canSubmitCorrection
+    ) {
+      return "Akun ini tidak dapat mengirim perbaikan untuk kandidat ini.";
+    }
+    const error = await queue.correct(record, values);
+    if (!error) setCurrentPage(1);
+    return error;
   };
 
   const rows = visible.map((record) => {
-    const recordState = runtime[record.id];
-    const effectiveState = recordState ?? initialAuditRuntimeState(record);
-    const effectiveStatus = recordState?.status ?? record.status;
-    const recordCapabilities = reviewSession.capabilitiesFor(
-      record,
+    const effectiveState = stateFor(record);
+    const effectiveStatus = effectiveState.status;
+    const recordCapabilities = serverReviewCapabilities(
+      reviewSession.capabilities,
       effectiveState,
     );
     const visibleActionLabel =
@@ -752,20 +465,21 @@ export function NexusAuditReview({
         ? "Lihat status"
         : actionLabel(effectiveStatus);
     const effectiveTitle = auditEffectiveTitle(record, effectiveState);
-    const signal = recordState?.correction
-      ? {
-          primary: `Versi ${recordState.version} dikirim ulang`,
-          secondary: "Perubahan menunggu verifikasi",
-          tone: "info" as const,
-        }
-      : recordState?.status === "completed" && recordState.decision
+    const signal =
+      effectiveStatus === "completed" && effectiveState.decision
         ? {
             primary: "Keputusan tercatat",
-            secondary: recordState.decision.label,
+            secondary: effectiveState.decision.label,
             tone: "neutral" as const,
           }
-        : record.signal;
-    const open = () => setOpenId(record.id);
+        : effectiveState.correction && effectiveStatus === "waiting"
+          ? {
+              primary: `Versi ${effectiveState.version} dikirim ulang`,
+              secondary: "Perubahan menunggu verifikasi",
+              tone: "info" as const,
+            }
+          : record.signal;
+    const open = () => setChosenId(record.id);
     const action = (
       <NexusWorkspaceTableAction
         key={`${record.id}-action`}
@@ -858,36 +572,6 @@ export function NexusAuditReview({
     };
   });
 
-  const effectiveSelected =
-    selected && selectedState
-      ? effectiveReviewRecord(selected, selectedState)
-      : undefined;
-  const hasReviewWorkspaceAccess =
-    reviewSession.capabilities.canReview ||
-    records.some(
-      (record) =>
-        reviewSession.capabilitiesFor(
-          record,
-          runtime[record.id] ?? initialAuditRuntimeState(record),
-        ).canSubmitCorrection,
-    );
-
-  if (!hasReviewWorkspaceAccess) {
-    return (
-      <NexusWorkspacePage
-        description="Verifikasi kandidat lintas-domain sebelum menjadi data resmi dan masuk ke perhitungan evaluasi CoE."
-        descriptionId="audit-review-description"
-        title="Tinjauan Data"
-        titleId="audit-review-title"
-      >
-        <NexusWorkspaceNoAccess
-          returnHref="/nexus/dashboard"
-          returnLabel="Kembali ke dashboard"
-        />
-      </NexusWorkspacePage>
-    );
-  }
-
   if (requestedRecordIsMissing) {
     return (
       <NexusWorkspacePage
@@ -914,7 +598,11 @@ export function NexusAuditReview({
     <NexusWorkspacePage
       description="Verifikasi kandidat lintas-domain sebelum menjadi data resmi dan masuk ke perhitungan evaluasi CoE."
       descriptionId="audit-review-description"
-      meta={content.lastUpdatedLabel}
+      meta={
+        queue.loadedAt
+          ? `Diperbarui ${formatAuditTimestamp(queue.loadedAt)}`
+          : undefined
+      }
       title="Tinjauan Data"
       titleId="audit-review-title"
     >
@@ -926,7 +614,7 @@ export function NexusAuditReview({
             label: "Menunggu Tinjauan",
             tone: "waiting",
             unit: "data",
-            value: counts.waiting,
+            value: isQueueLoading ? null : counts.waiting,
           },
           {
             icon: <ReviewIcon name="fix" />,
@@ -934,7 +622,7 @@ export function NexusAuditReview({
             label: "Perlu Perbaikan",
             tone: "needs-fix",
             unit: "data",
-            value: counts.needsFix,
+            value: isQueueLoading ? null : counts.needsFix,
           },
           {
             icon: <ReviewIcon name="completed" />,
@@ -942,7 +630,7 @@ export function NexusAuditReview({
             label: "Selesai Ditinjau",
             tone: "completed",
             unit: "data",
-            value: counts.completed,
+            value: isQueueLoading ? null : counts.completed,
           },
         ]}
       />
@@ -1016,9 +704,11 @@ export function NexusAuditReview({
 
         <div aria-live="polite" className={styles.resultMeta}>
           <p className={styles.resultMetaCopy}>
-            {query !== deferredQuery
-              ? "Memperbarui hasil"
-              : `${filtered.length} data ditemukan`}
+            {isQueueLoading
+              ? "Memuat antrean tinjauan"
+              : query !== deferredQuery
+                ? "Memperbarui hasil"
+                : `${filtered.length} data ditemukan`}
           </p>
           {hasActiveFilters ? (
             <button onClick={resetFilters} type="button">
@@ -1027,29 +717,80 @@ export function NexusAuditReview({
           ) : null}
         </div>
 
+        {selectedDetail?.state === "error" ? (
+          <NexusWorkspaceState
+            actions={
+              <>
+                <NexusWorkspaceButton
+                  onClick={() => openId && ensureDetails([openId])}
+                  type="button"
+                >
+                  Coba lagi
+                </NexusWorkspaceButton>
+                <NexusWorkspaceButton
+                  onClick={() => setChosenId(null)}
+                  type="button"
+                >
+                  Tutup
+                </NexusWorkspaceButton>
+              </>
+            }
+            description={
+              selectedDetail.errorMessage ??
+              "Rincian kandidat belum dapat dimuat."
+            }
+            eyebrow="Gagal memuat"
+            title="Rincian kandidat belum dapat dibuka"
+            tone="danger"
+          />
+        ) : null}
+
         <NexusWorkspaceTableSection
           guidance="Sinyal hanya membantu memusatkan perhatian. Reviewer tetap memeriksa identitas, periode, bukti, dan data pembanding."
           summary={`${sourceTabs.find((tab) => tab.id === source)?.label ?? "Semua sumber"}: ${filtered.length} data sesuai filter`}
           title="Antrean tinjauan"
           titleId="audit-review-queue-table-title"
         >
+          {queue.state === "error" ? (
+            <NexusWorkspaceState
+              actions={
+                <NexusWorkspaceButton onClick={queue.retry} type="button">
+                  Coba lagi
+                </NexusWorkspaceButton>
+              }
+              description={
+                queue.errorMessage ?? "Antrean tinjauan belum dapat dimuat."
+              }
+              eyebrow="Gagal memuat"
+              title="Antrean tinjauan belum dapat dimuat"
+              tone="danger"
+            />
+          ) : null}
           <NexusWorkspaceRecordTable
             caption="Daftar kandidat lintas-domain untuk ditinjau oleh Audit KM"
             columns={columns}
             empty={
-              <div className={styles.emptyState}>
-                <strong>Tidak ada data yang cocok</strong>
-                <p className={styles.emptyCopy}>
-                  Ubah kata kunci atau filter untuk melihat kandidat lainnya.
-                </p>
-                {hasActiveFilters ? (
+              hasActiveFilters ? (
+                <div className={styles.emptyState}>
+                  <strong>Tidak ada data yang cocok</strong>
+                  <p className={styles.emptyCopy}>
+                    Ubah kata kunci atau filter untuk melihat kandidat lainnya.
+                  </p>
                   <NexusWorkspaceButton onClick={resetFilters} type="button">
                     Atur ulang filter
                   </NexusWorkspaceButton>
-                ) : null}
-              </div>
+                </div>
+              ) : (
+                <div className={styles.emptyState}>
+                  <strong>Belum ada kandidat untuk ditinjau</strong>
+                  <p className={styles.emptyCopy}>
+                    Kandidat dari pengumpulan, impor, atau pengajuan manual akan
+                    muncul di sini.
+                  </p>
+                </div>
+              )
             }
-            isLoading={query !== deferredQuery}
+            isLoading={isQueueLoading || query !== deferredQuery}
             pagination={
               <NexusTablePagination
                 currentPage={safePage}
@@ -1074,37 +815,25 @@ export function NexusAuditReview({
         </NexusWorkspaceTableSection>
       </section>
 
-      {selected && selectedState && effectiveSelected ? (
+      {selected && selectedState && selectedDetail?.state === "ready" ? (
         <NexusAuditReviewDrawer
           key={`${selected.id}-${selectedState.status}-${selectedState.version}-${selectedState.decision?.kind ?? "open"}`}
-          capabilities={reviewSession.capabilitiesFor(selected, selectedState)}
-          onClose={() => setOpenId(null)}
-          onDecide={(
-            kind,
-            note,
-            fieldIds,
-            targetRecordId,
-            kpiResolution,
-            memberPersonBinding,
-            targetPersonId,
-            personMappings,
-          ) =>
-            decide(
-              selected,
-              kind,
-              note,
-              fieldIds,
-              targetRecordId,
-              kpiResolution,
-              memberPersonBinding,
-              targetPersonId,
-              personMappings,
-            )
+          capabilities={serverReviewCapabilities(
+            reviewSession.capabilities,
+            selectedState,
+          )}
+          matching={{
+            errorMessage: selectedComparison?.errorMessage,
+            onRetry: () => loadComparison(selected.id, true),
+            state: selectedComparison?.state ?? "loading",
+          }}
+          onClose={() => setChosenId(null)}
+          onDecide={(kind, note, fieldIds, targetRecordId) =>
+            decide(selected, kind, note, fieldIds, targetRecordId)
           }
-          onResubmit={(values, evidenceNote, resolutions) =>
-            resubmit(selected, values, evidenceNote, resolutions)
-          }
-          record={effectiveSelected}
+          onResubmit={(values) => resubmit(selected, values)}
+          planned={plannedReviewParts}
+          record={selected}
           state={selectedState}
         />
       ) : null}

@@ -3,11 +3,11 @@
 }
 
 .catalog th[data-column="primary"] {
-  width: 16rem;
+  width: 14.5rem;
 }
 
 .catalog th[data-column="signal"] {
-  width: 6rem;
+  width: 7.25rem;
 }
 
 .catalog th[data-column="kind"] {
@@ -15,15 +15,15 @@
 }
 
 .catalog th[data-column="scheme"] {
-  width: 7rem;
+  width: 8.25rem;
 }
 
 .catalog th[data-column="party"] {
-  width: 7rem;
+  width: 6.5rem;
 }
 
 .catalog th[data-column="evidence"] {
-  width: 7rem;
+  width: 6.5rem;
 }
 
 .catalog th[data-column="status"] {

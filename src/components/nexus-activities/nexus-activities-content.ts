@@ -120,6 +120,28 @@ export type OfficialActivityRecord = {
   updatedAt: string;
 };
 
+/**
+ * Rekam kegiatan sebagaimana ditampilkan halaman Kegiatan & Pengabdian. Rekam
+ * yang dibaca dari server membawa status kegiatannya sendiri, periode
+ * pelaksanaan, dan waktu pencatatan, tetapi belum membawa keputusan tinjauan.
+ */
+export type NexusActivityView = Omit<
+  OfficialActivityRecord,
+  "recordStatus" | "review"
+> & {
+  /** Periode pelaksanaan, dipakai sebagai konteks bila bidang khusus jenis kosong. */
+  periodLabel?: string;
+  recordStatus:
+    | OfficialActivityRecord["recordStatus"]
+    | "Berjalan"
+    | "Dibatalkan"
+    | "Direncanakan"
+    | "Selesai";
+  /** Waktu rekam resmi dicatat, dipakai bila waktu pembaruan belum tercatat. */
+  recordedAt?: string;
+  review?: OfficialActivityRecord["review"];
+};
+
 export type NexusActivitiesContent = {
   description: string;
   officialNote: string;
@@ -421,7 +443,7 @@ function createRecord(seed: ActivitySeed): OfficialActivityRecord {
 
 const records = seeds.map(createRecord);
 
-export function activityDisplayTitle(record: OfficialActivityRecord) {
+export function activityDisplayTitle(record: NexusActivityView) {
   if (record.title) return record.title;
   if (
     record.kind === "Keterlibatan Unit Bisnis" ||
@@ -434,7 +456,7 @@ export function activityDisplayTitle(record: OfficialActivityRecord) {
   return `${record.kind} · judul belum tercatat`;
 }
 
-export function activityEvidenceLabel(record: OfficialActivityRecord) {
+export function activityEvidenceLabel(record: NexusActivityView) {
   const availableLabel =
     record.evidenceStatus === "internal"
       ? "Tersimpan internal"
@@ -447,7 +469,7 @@ export function activityEvidenceLabel(record: OfficialActivityRecord) {
   );
 }
 
-export function activityKmLabel(record: OfficialActivityRecord) {
+export function activityKmLabel(record: NexusActivityView) {
   if (record.kmLinks.length === 0)
     return officialKpiEmptyCopy(record.kpiResolutionStatus).label;
   return record.kmLinks.map((link) => link.indicator.id).join(", ");
@@ -462,7 +484,11 @@ function formatActivityDate(value: string) {
   }).format(new Date(`${value}T00:00:00Z`));
 }
 
-export function activityContextLabel(record: OfficialActivityRecord) {
+export function activityContextLabel(record: NexusActivityView) {
+  return activityKindContextLabel(record) || record.periodLabel || "";
+}
+
+function activityKindContextLabel(record: NexusActivityView) {
   if (record.kind === "Keterlibatan Unit Bisnis") {
     return [record.role, record.organization].filter(Boolean).join(" · ");
   }

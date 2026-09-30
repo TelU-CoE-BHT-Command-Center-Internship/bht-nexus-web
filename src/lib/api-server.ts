@@ -1,44 +1,179 @@
-import { cookies } from "next/headers";
-import type { ApiSession, ApiSessionUser } from "@/lib/api-auth";
+import { cookies, headers } from "next/headers";
+import { cache } from "react";
+import { DEFAULT_API_BASE_URL } from "@/lib/api-client";
+import {
+  NEXUS_REQUEST_PATH_HEADER,
+  safeWorkspaceReturnPath,
+} from "@/lib/nexus-request-path";
 
 const API_BASE_URL =
   process.env.API_INTERNAL_BASE_URL ??
   process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "http://localhost:3001/api/v1";
+  DEFAULT_API_BASE_URL;
 
-export async function getServerSession(): Promise<{
-  session: ApiSession;
-  user: ApiSessionUser;
-} | null> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
+/** Identitas akun yang sedang masuk, sebagaimana dijawab server. */
+export type NexusSessionUser = {
+  email: string;
+  image?: string;
+  name: string;
+  /** `public_id` akun bila profil dapat dibaca; tidak pernah ID internal. */
+  publicId?: string;
+};
+
+/**
+ * Hasil penyelesaian sesi di server. `unavailable` dan `rate-limited` berarti
+ * server belum dapat menjawab, sehingga pengguna tidak boleh dianggap keluar.
+ * `roles` bernilai null bila peran akun belum dapat dibaca; `permissions`
+ * bernilai null bila server belum menjawab izin efektif akun.
+ */
+export type NexusServerSession =
+  | { kind: "anonymous" }
+  | { kind: "rate-limited" }
+  | { kind: "unavailable" }
+  | {
+      kind: "authenticated";
+      permissions: readonly string[] | null;
+      roles: readonly string[] | null;
+      user: NexusSessionUser;
+    };
+
+type JsonResult = { body: unknown; status: number } | null;
+
+/** Satu permintaan per alamat dan cookie dalam satu render server. */
+const fetchJson = cache(
+  async (path: string, cookieHeader: string): Promise<JsonResult> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        cache: "no-store",
+        headers: { Accept: "application/json", Cookie: cookieHeader },
+      });
+      const body: unknown = await response.json().catch(() => null);
+      return { body, status: response.status };
+    } catch {
+      return null;
+    }
+  },
+);
+
+async function cookieHeader(): Promise<string> {
+  return (await cookies())
     .getAll()
     .map((cookie) => `${cookie.name}=${cookie.value}`)
     .join("; ");
+}
 
-  if (cookieHeader === "") {
-    return null;
-  }
+function text(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value : undefined;
+}
 
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
-    cache: "no-store",
-    headers: { Cookie: cookieHeader },
-  });
+type ProfileData = {
+  email?: unknown;
+  image?: unknown;
+  name?: unknown;
+  permissions?: unknown;
+  publicId?: unknown;
+  roles?: unknown;
+};
 
-  if (!response.ok) {
-    return null;
-  }
+function profileData(result: JsonResult): ProfileData | null {
+  const data = (result?.body as { data?: ProfileData } | null)?.data;
+  return typeof data === "object" && data !== null ? data : null;
+}
+
+function rolesFrom(profile: ProfileData): readonly string[] | null {
+  if (!Array.isArray(profile.roles)) return null;
+  return profile.roles
+    .map((role) => (role as { name?: unknown }).name)
+    .filter((name): name is string => typeof name === "string");
+}
+
+function permissionsFrom(profile: ProfileData): readonly string[] | null {
+  if (!Array.isArray(profile.permissions)) return null;
+  return profile.permissions.filter(
+    (name): name is string => typeof name === "string",
+  );
+}
+
+function failureKind(result: JsonResult): NexusServerSession | null {
+  if (result === null || result.status >= 500) return { kind: "unavailable" };
+  if (result.status === 429) return { kind: "rate-limited" };
+  if (result.status === 401) return { kind: "anonymous" };
+  return null;
+}
+
+/**
+ * Sesi dibaca dari profil akun (`/profile/me`): satu permintaan menjawab
+ * identitas, peran, dan izin efektif. Server yang belum membuka profil untuk
+ * akun biasa (403) tetap dilayani lewat `/auth/me`, tanpa informasi peran.
+ */
+async function resolveFromSessionEndpoint(
+  cookies: string,
+): Promise<NexusServerSession> {
+  const result = await fetchJson("/auth/me", cookies);
+  const failure = failureKind(result);
+  if (failure) return failure;
 
   // /auth/me is a better-auth-mounted route - it returns {session, user}
-  // directly, not wrapped in this app's {success, data} envelope.
-  const body = (await response.json().catch(() => null)) as {
-    session?: ApiSession;
-    user?: ApiSessionUser;
+  // directly (or null without a session), not this app's envelope.
+  const body = result?.body as {
+    session?: unknown;
+    user?: Record<string, unknown>;
   } | null;
-
-  if (body === null || body.session === undefined || body.user === undefined) {
-    return null;
+  if (
+    result?.status !== 200 ||
+    body === null ||
+    body === undefined ||
+    body.session === undefined ||
+    body.user === undefined
+  ) {
+    return { kind: "anonymous" };
   }
 
-  return { session: body.session, user: body.user };
+  const email = text(body.user.email) ?? "";
+  return {
+    kind: "authenticated",
+    permissions: null,
+    roles: null,
+    user: {
+      email,
+      image: text(body.user.image),
+      name: text(body.user.name) ?? email,
+    },
+  };
+}
+
+export const getServerSession = cache(async (): Promise<NexusServerSession> => {
+  const cookies = await cookieHeader();
+  if (cookies === "") {
+    return { kind: "anonymous" };
+  }
+
+  const result = await fetchJson("/profile/me", cookies);
+  const failure = failureKind(result);
+  if (failure) return failure;
+
+  const profile = result?.status === 200 ? profileData(result) : null;
+  if (profile === null) {
+    return resolveFromSessionEndpoint(cookies);
+  }
+
+  const email = text(profile.email) ?? "";
+  return {
+    kind: "authenticated",
+    permissions: permissionsFrom(profile),
+    roles: rolesFrom(profile),
+    user: {
+      email,
+      image: text(profile.image),
+      name: text(profile.name) ?? email,
+      publicId: text(profile.publicId),
+    },
+  };
+});
+
+/** Halaman ruang kerja yang sedang diminta, bila aman dipakai sebagai tujuan kembali. */
+export async function getRequestPath(): Promise<string | undefined> {
+  return safeWorkspaceReturnPath(
+    (await headers()).get(NEXUS_REQUEST_PATH_HEADER),
+  );
 }

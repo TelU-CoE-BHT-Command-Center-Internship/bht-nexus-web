@@ -1,21 +1,22 @@
+/*
+ * Kolom judul mengisi sisa lebar tabel. Dengan lebar tetap, jumlah seluruh
+ * kolom melebihi kartu pada layar 1440px sehingga kolom Aksi terpotong.
+ */
 .catalog table {
-  min-width: 64rem;
+  min-width: 66rem;
 }
 
-.catalog th[data-column="primary"] {
-  width: 16rem;
-}
-
+/* Memuat penanda tanpa indikator ("Belum ditentukan") dalam satu baris. */
 .catalog th[data-column="signal"] {
-  width: 6rem;
+  width: 8.5rem;
 }
 
 .catalog th[data-column="kind"] {
-  width: 9rem;
+  width: 8.5rem;
 }
 
 .catalog th[data-column="party"] {
-  width: 7.5rem;
+  width: 7.25rem;
 }
 
 .catalog th[data-column="context"] {
@@ -23,15 +24,16 @@
 }
 
 .catalog th[data-column="evidence"] {
-  width: 7rem;
+  width: 6.5rem;
 }
 
+/* Memuat lencana "Perlu dilengkapi" dalam satu baris. */
 .catalog th[data-column="status"] {
-  width: 7.5rem;
+  width: 7.75rem;
 }
 
 .catalog th[data-column="action"] {
-  width: 7rem;
+  width: 6.75rem;
 }
 
 .stackedCell {

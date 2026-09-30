@@ -21,6 +21,7 @@ import { projectNexusContractProposals } from "@/components/nexus-official-recor
 import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
 import { createContractProposalCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceSearch,
@@ -392,9 +393,11 @@ export function NexusContractProposals({
         ),
         signal: (
           <NexusWorkspaceTableSignal
-            primary={contractProposalKmLabel(record)}
+            {...officialKpiTableSignal(
+              record.kmLinks,
+              record.kpiResolutionStatus,
+            )}
             secondary={record.group}
-            tone="info"
           />
         ),
         status: qualityBadge,

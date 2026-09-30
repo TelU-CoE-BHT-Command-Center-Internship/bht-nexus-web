@@ -103,10 +103,16 @@ export function NexusAccessPolicySessionProvider({
   children,
   initialOverrides,
   initialRoles,
+  isKnownPermission = nexusPermissionExists,
 }: {
   children: ReactNode;
   initialOverrides: NexusUserPermissionOverride[];
   initialRoles: NexusRoleRecord[];
+  /**
+   * Pemeriksa izin yang sah. Bawaannya katalog izin ruang kerja; halaman yang
+   * memakai katalog izin server memberikan pemeriksanya sendiri.
+   */
+  isKnownPermission?: (permissionId: NexusPermissionId) => boolean;
 }) {
   const [roles, setRoles] = useState(initialRoles);
   const [overrides, setOverrides] = useState(initialOverrides);
@@ -154,7 +160,7 @@ export function NexusAccessPolicySessionProvider({
   const updateRolePermissions = useCallback(
     (roleId: string, permissions: readonly NexusPermissionId[]) => {
       const accepted = permissions.filter((permission) =>
-        nexusPermissionExists(permission),
+        isKnownPermission(permission),
       );
       setRoles((current) =>
         current.map((role) =>
@@ -162,7 +168,7 @@ export function NexusAccessPolicySessionProvider({
         ),
       );
     },
-    [],
+    [isKnownPermission],
   );
 
   const restoreRoleDefaults = useCallback((roleId: string) => {
@@ -196,14 +202,14 @@ export function NexusAccessPolicySessionProvider({
   const replaceAccountOverrides = useCallback(
     (accountId: string, drafts: readonly NexusAccountOverrideDraft[]) => {
       const accepted = drafts
-        .filter((draft) => nexusPermissionExists(draft.permissionId))
+        .filter((draft) => isKnownPermission(draft.permissionId))
         .map((draft) => ({ ...draft, accountId }));
       setOverrides((current) => [
         ...current.filter((override) => override.accountId !== accountId),
         ...accepted,
       ]);
     },
-    [],
+    [isKnownPermission],
   );
 
   const value = useMemo(

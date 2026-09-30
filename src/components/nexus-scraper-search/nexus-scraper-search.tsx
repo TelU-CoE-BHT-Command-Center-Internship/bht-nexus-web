@@ -1,18 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   type FormEvent,
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
+import type { NexusCollectionCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { NexusMemberContext } from "@/components/nexus-members/nexus-member-context";
 import { knownMemberName } from "@/components/nexus-members/nexus-member-identity";
-import { createCollectionReviewRecords } from "@/components/nexus-review-session/nexus-review-record-factory";
-import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import {
   collectionMemberBindingMatches,
   collectionProfileMatchesSource,
@@ -31,6 +30,7 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
   NexusWorkspaceField,
+  NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -57,7 +57,7 @@ import {
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
-import { ApiRequestError } from "@/lib/api-client";
+import { apiErrorMessage } from "@/lib/api-client";
 import {
   createJob,
   getJob,
@@ -65,6 +65,7 @@ import {
   type JobRecord,
   listJobAttempts,
   listJobs,
+  retryJob,
   syncReviewCasesFromJob,
 } from "@/lib/api-jobs";
 
@@ -134,16 +135,22 @@ function CollectionIcon({ name }: { name: "check" | "clock" | "search" }) {
   );
 }
 
-const submittedNameStorageKey = (publicId: string) =>
-  `nexus-collection-submitted-name:${publicId}`;
+/** Hasil pengiriman kandidat sebuah pekerjaan ke Tinjauan pada kunjungan ini. */
+type CollectionReviewSync = {
+  createdCount: number;
+  firstReviewCaseId?: string;
+};
 
-function readSubmittedName(publicId: string): string | null {
-  return window.localStorage.getItem(submittedNameStorageKey(publicId));
-}
+/** Jeda pemantauan status: mulai 4 detik, melambat sampai 30 detik. */
+const pollDelayMs = (round: number) => Math.min(4000 * 1.5 ** round, 30000);
+/** Pemantauan berhenti setelah sekitar 15 menit; status terbaru tampil saat halaman dimuat ulang. */
+const maxPollRounds = 40;
 
-function rememberSubmittedName(publicId: string, name: string) {
-  window.localStorage.setItem(submittedNameStorageKey(publicId), name);
-}
+const attemptSourceLabels: Record<string, string> = {
+  google_scholar: "Google Scholar",
+  scholar: "Google Scholar",
+  sinta: "SINTA",
+};
 
 /**
  * inputValue membawa bentuk berbeda tergantung inputKind: "combined_profile"
@@ -210,7 +217,6 @@ function jobRecordToCollectionJob(
     fullName:
       record.normalizedName ??
       parsedInput.name ??
-      readSubmittedName(record.publicId) ??
       (content.locale === "id" ? "Belum diketahui" : "Unknown"),
     id: record.publicId,
     profileUrl: sintaUrl ?? scholarUrl ?? "",
@@ -222,8 +228,6 @@ function jobRecordToCollectionJob(
     statusLabel: getAutomationStatusLabel(content.locale, record.status),
     submittedAt: record.createdAt,
     submittedAtLabel: formatTimestamp(record.createdAt),
-    submittedBy:
-      content.locale === "id" ? "Pengguna ruang kerja" : "Workspace user",
   };
 }
 
@@ -236,17 +240,36 @@ function statusTone(status: CollectionJob["status"]) {
 }
 
 export function NexusScraperSearch({
+  canOpenReviews,
+  capabilities,
   content,
   initialRequest,
 }: {
+  /** Antrean Tinjauan dapat dibuka oleh akun ini. */
+  canOpenReviews: boolean;
+  capabilities: NexusCollectionCapabilities;
   content: NexusScraperSearchContent;
   initialRequest?: NexusCollectionRequest;
 }) {
-  const router = useRouter();
-  const reviewSession = useOptionalNexusReviewSession();
   const [jobs, setJobs] = useState<CollectionJob[]>([]);
+  const [jobsTotal, setJobsTotal] = useState<number | null>(null);
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
   const [loadJobsError, setLoadJobsError] = useState<string | null>(null);
+  const [reviewSyncs, setReviewSyncs] = useState<
+    Record<string, CollectionReviewSync>
+  >({});
+  const [busyJobIds, setBusyJobIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  // Pemantauan status berhenti ketika halaman ditinggalkan.
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  const reviewHref = canOpenReviews ? content.reviewHref : undefined;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: content is stable per locale, refetching on it would just repeat the same request
   useEffect(() => {
@@ -261,11 +284,18 @@ export function NexusScraperSearch({
           ...current.filter((job) => job.id.startsWith("local-")),
           ...fetched,
         ]);
+        setJobsTotal(result.meta.total);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         setLoadJobsError(
-          error instanceof ApiRequestError ? error.message : content.errorLabel,
+          apiErrorMessage(
+            error,
+            content.locale === "id"
+              ? "Riwayat pengumpulan belum dapat dimuat."
+              : "The collection history could not be loaded.",
+            content.locale,
+          ),
         );
       })
       .finally(() => {
@@ -317,7 +347,13 @@ export function NexusScraperSearch({
       .catch((error: unknown) => {
         if (cancelled) return;
         setAttemptsError(
-          error instanceof ApiRequestError ? error.message : content.errorLabel,
+          apiErrorMessage(
+            error,
+            content.locale === "id"
+              ? "Riwayat percobaan belum dapat dimuat."
+              : "The attempt history could not be loaded.",
+            content.locale,
+          ),
         );
       })
       .finally(() => {
@@ -326,7 +362,7 @@ export function NexusScraperSearch({
     return () => {
       cancelled = true;
     };
-  }, [attemptsJobId, content.errorLabel]);
+  }, [attemptsJobId, content.locale]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSizeValue, setPageSizeValue] = useState("10");
   const [historyQuery, setHistoryQuery] = useState("");
@@ -426,10 +462,8 @@ export function NexusScraperSearch({
   const activeCount = jobs.filter((job) =>
     ["queued", "running", "retrying"].includes(job.status),
   ).length;
-  const candidateCount = jobs.reduce(
-    (total, job) => total + job.candidates.length,
-    0,
-  );
+  // Server belum menyebut jumlah kandidat per pekerjaan, jadi kartu ketiga
+  // menghitung pekerjaan yang selesai, bukan kandidat.
   const metrics = [
     {
       icon: <CollectionIcon name="search" />,
@@ -438,7 +472,7 @@ export function NexusScraperSearch({
         content.locale === "id" ? "Pekerjaan Pengumpulan" : "Collection Jobs",
       tone: "completed" as const,
       unit: content.locale === "id" ? "data" : "jobs",
-      value: jobs.length,
+      value: isLoadingJobs ? null : (jobsTotal ?? jobs.length),
     },
     {
       icon: <CollectionIcon name="clock" />,
@@ -446,16 +480,15 @@ export function NexusScraperSearch({
       label: content.locale === "id" ? "Sedang Diproses" : "In Progress",
       tone: "waiting" as const,
       unit: content.locale === "id" ? "data" : "jobs",
-      value: activeCount,
+      value: isLoadingJobs ? null : activeCount,
     },
     {
       icon: <CollectionIcon name="check" />,
-      id: "candidates",
-      label:
-        content.locale === "id" ? "Kandidat Ditemukan" : "Candidates Found",
+      id: "completed",
+      label: content.locale === "id" ? "Selesai Diproses" : "Completed",
       tone: "completed" as const,
-      unit: content.locale === "id" ? "data" : "records",
-      value: candidateCount,
+      unit: content.locale === "id" ? "data" : "jobs",
+      value: isLoadingJobs ? null : completedCount,
     },
   ];
 
@@ -481,37 +514,103 @@ export function NexusScraperSearch({
     );
   }
 
+  function setJobBusy(publicId: string, busy: boolean) {
+    setBusyJobIds((current) => {
+      const next = new Set(current);
+      if (busy) next.add(publicId);
+      else next.delete(publicId);
+      return next;
+    });
+  }
+
+  async function sendToReview(publicId: string, announce: boolean) {
+    setJobBusy(publicId, true);
+    try {
+      const result = await syncReviewCasesFromJob(publicId);
+      if (!isMounted.current) return;
+      setReviewSyncs((current) => ({
+        ...current,
+        [publicId]: {
+          createdCount: result.createdCount,
+          firstReviewCaseId: result.reviewCases[0]?.publicId,
+        },
+      }));
+      if (announce) {
+        setFeedback({
+          message:
+            content.locale === "id"
+              ? result.createdCount > 0
+                ? `${result.createdCount} kandidat baru masuk ke antrean Tinjauan.`
+                : "Seluruh kandidat dari pekerjaan ini sudah ada di antrean Tinjauan."
+              : result.createdCount > 0
+                ? `${result.createdCount} new candidates were sent to review.`
+                : "All candidates from this job are already in review.",
+          tone: "success",
+        });
+      }
+    } catch (error) {
+      if (announce && isMounted.current) {
+        setFeedback({
+          message: apiErrorMessage(
+            error,
+            content.locale === "id"
+              ? "Hasil pengumpulan belum dapat dikirim ke Tinjauan."
+              : "The collection results could not be sent to review.",
+            content.locale,
+          ),
+          tone: "danger",
+        });
+      }
+    } finally {
+      if (isMounted.current) setJobBusy(publicId, false);
+    }
+  }
+
   async function pollJob(publicId: string) {
     const terminal = new Set(["succeeded", "failed", "failed_permanently"]);
-    for (;;) {
+    for (let round = 0; round < maxPollRounds; round += 1) {
+      if (!isMounted.current) return;
       let record: JobRecord;
       try {
         record = await getJob(publicId);
       } catch {
         return;
       }
+      if (!isMounted.current) return;
+      applyJobUpdate(publicId, record);
       if (!terminal.has(record.status)) {
-        applyJobUpdate(publicId, record);
-        await new Promise((resolve) => setTimeout(resolve, 4000));
+        await new Promise((resolve) => setTimeout(resolve, pollDelayMs(round)));
         continue;
       }
-      if (record.status === "succeeded") {
-        try {
-          const { createdCount } = await syncReviewCasesFromJob(publicId);
-          applyJobUpdate(
-            publicId,
-            record,
-            createdCount > 0
-              ? `${createdCount} ${content.candidatesLabel}`
-              : content.noResultsLabel,
-          );
-        } catch {
-          applyJobUpdate(publicId, record);
-        }
-      } else {
-        applyJobUpdate(publicId, record);
+      if (record.status === "succeeded" && capabilities.canSendToReview) {
+        await sendToReview(publicId, false);
       }
       return;
+    }
+  }
+
+  async function retry(job: CollectionJob) {
+    setJobBusy(job.id, true);
+    try {
+      const record = await retryJob(job.id);
+      if (!isMounted.current) return;
+      applyJobUpdate(job.id, record);
+      setFeedback({ message: content.queuedLabel, tone: "success" });
+      void pollJob(job.id);
+    } catch (error) {
+      if (!isMounted.current) return;
+      setFeedback({
+        message: apiErrorMessage(
+          error,
+          content.locale === "id"
+            ? "Pekerjaan belum dapat diajukan ulang."
+            : "The job could not be submitted again.",
+          content.locale,
+        ),
+        tone: "danger",
+      });
+    } finally {
+      if (isMounted.current) setJobBusy(job.id, false);
     }
   }
 
@@ -545,10 +644,6 @@ export function NexusScraperSearch({
       statusLabel: content.waitingForServiceLabel,
       submittedAt: now.toISOString(),
       submittedAtLabel: formatTimestamp(now.toISOString()),
-      submittedBy: reviewSession
-        ? `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`
-        : "Pengguna ruang kerja",
-      submittedByActorId: reviewSession?.actor.id,
     };
 
     setJobs((current) => [queued, ...current]);
@@ -564,7 +659,7 @@ export function NexusScraperSearch({
       sintaUrl: cleanSintaUrl,
     })
       .then((created) => {
-        rememberSubmittedName(created.publicId, cleanName);
+        setJobsTotal((total) => (total === null ? total : total + 1));
         setJobs((current) =>
           current.map((job) =>
             job.id === id
@@ -575,8 +670,13 @@ export function NexusScraperSearch({
         void pollJob(created.publicId);
       })
       .catch((error: unknown) => {
-        const message =
-          error instanceof ApiRequestError ? error.message : content.errorLabel;
+        const message = apiErrorMessage(
+          error,
+          content.locale === "id"
+            ? "Pekerjaan belum dapat diajukan."
+            : "The job could not be submitted.",
+          content.locale,
+        );
         setJobs((current) =>
           current.map((job) =>
             job.id === id
@@ -595,66 +695,98 @@ export function NexusScraperSearch({
       });
   }
 
-  function submitNewCollection(job: CollectionJob) {
-    const now = new Date();
-    const queued: CollectionJob = {
-      ...job,
-      attempt: (job.attempt ?? 0) + 1,
-      candidates: [],
-      failureReason: undefined,
-      id: `local-${now.getTime()}`,
-      status: "queued",
-      statusLabel: content.waitingForServiceLabel,
-      submittedAt: now.toISOString(),
-      submittedAtLabel: formatTimestamp(now.toISOString()),
-      submittedBy: reviewSession
-        ? `${reviewSession.actor.name} · ${reviewSession.actor.roleLabel}`
-        : "Pengguna ruang kerja",
-      submittedByActorId: reviewSession?.actor.id,
-    };
-    setJobs((current) => [queued, ...current]);
-    setFeedback({ message: content.queuedLabel, tone: "success" });
-    setCurrentPage(1);
-  }
-
   const rows = visibleJobs.map((job) => {
     const tone = statusTone(job.status);
-    const hasCandidates = job.candidates.length > 0;
-    const action =
-      job.status === "succeeded" && hasCandidates && content.reviewHref ? (
-        <NexusWorkspaceButton
-          key={`${job.id}-action`}
-          onClick={() => {
-            if (!reviewSession) {
-              throw new Error("Review session is unavailable");
+    const isLocal = job.id.startsWith("local-");
+    const isBusy = busyJobIds.has(job.id);
+    const reviewSync = reviewSyncs[job.id];
+    const inProgress = ["queued", "retrying", "running"].includes(job.status);
+    const failed =
+      job.status === "failed" || job.status === "failed_permanently";
+    const resultSignal =
+      job.status === "succeeded" && reviewSync
+        ? {
+            primary: reviewSync.createdCount,
+            secondary:
+              content.locale === "id"
+                ? "kandidat baru di Tinjauan"
+                : "new candidates in review",
+            tone:
+              reviewSync.createdCount > 0
+                ? ("success" as const)
+                : ("neutral" as const),
+          }
+        : job.status === "succeeded"
+          ? {
+              primary: content.locale === "id" ? "Selesai" : "Done",
+              secondary:
+                content.locale === "id"
+                  ? "Kandidat diperiksa di Tinjauan"
+                  : "Candidates are checked in review",
+              tone: "neutral" as const,
             }
-            const reviewRecords = createCollectionReviewRecords(job);
-            const firstRecord = reviewRecords[0];
-            if (!firstRecord) return;
-            reviewSession.submitRecords(reviewRecords);
-            router.push(
-              `${content.reviewHref}?record=${encodeURIComponent(firstRecord.id)}`,
-            );
-          }}
-          type="button"
-        >
-          {`Tinjau ${job.candidates.length} kandidat`}
-        </NexusWorkspaceButton>
-      ) : job.status === "succeeded" && hasCandidates ? (
-        <span className={styles.noAction} key={`${job.id}-action`}>
-          {content.reviewLabel}
-        </span>
-      ) : job.status === "succeeded" ? (
-        <span className={styles.noAction} key={`${job.id}-action`}>
-          {content.noResultsLabel}
-        </span>
-      ) : job.status === "failed" || job.status === "failed_permanently" ? (
-        <NexusWorkspaceButton
+          : inProgress
+            ? {
+                primary: "—",
+                secondary:
+                  content.locale === "id"
+                    ? "Menunggu hasil"
+                    : "Waiting for results",
+                tone: "neutral" as const,
+              }
+            : {
+                primary: "—",
+                secondary: content.noResultsLabel,
+                tone: "neutral" as const,
+              };
+    const action =
+      job.status === "succeeded" &&
+      reviewSync &&
+      reviewSync.createdCount > 0 &&
+      reviewSync.firstReviewCaseId &&
+      reviewHref ? (
+        <NexusWorkspaceLinkButton
+          href={`${reviewHref}?record=${encodeURIComponent(reviewSync.firstReviewCaseId)}`}
           key={`${job.id}-action`}
-          onClick={() => submitNewCollection(job)}
+        >
+          {`Tinjau ${reviewSync.createdCount} kandidat`}
+        </NexusWorkspaceLinkButton>
+      ) : job.status === "succeeded" &&
+        !reviewSync &&
+        !isLocal &&
+        capabilities.canSendToReview ? (
+        <NexusWorkspaceButton
+          disabled={isBusy}
+          key={`${job.id}-action`}
+          onClick={() => void sendToReview(job.id, true)}
           type="button"
         >
-          {content.locale === "id" ? "Ajukan ulang" : "Submit again"}
+          {isBusy
+            ? content.locale === "id"
+              ? "Mengirim…"
+              : "Sending…"
+            : content.locale === "id"
+              ? "Kirim ke Tinjauan"
+              : "Send to review"}
+        </NexusWorkspaceButton>
+      ) : job.status === "succeeded" && reviewHref ? (
+        <NexusWorkspaceLinkButton href={reviewHref} key={`${job.id}-action`}>
+          {content.reviewLabel}
+        </NexusWorkspaceLinkButton>
+      ) : failed && !isLocal && capabilities.canCreateJob ? (
+        <NexusWorkspaceButton
+          disabled={isBusy}
+          key={`${job.id}-action`}
+          onClick={() => void retry(job)}
+          type="button"
+        >
+          {isBusy
+            ? content.locale === "id"
+              ? "Mengajukan…"
+              : "Submitting…"
+            : content.locale === "id"
+              ? "Ajukan ulang"
+              : "Submit again"}
         </NexusWorkspaceButton>
       ) : (
         <span className={styles.noAction} key={`${job.id}-action`}>
@@ -666,11 +798,7 @@ export function NexusScraperSearch({
       cells: {
         primary: (
           <NexusWorkspaceTablePrimary
-            onClick={
-              job.id.startsWith("local-")
-                ? undefined
-                : () => setAttemptsJobId(job.id)
-            }
+            onClick={isLocal ? undefined : () => setAttemptsJobId(job.id)}
             title={job.fullName}
           />
         ),
@@ -691,9 +819,9 @@ export function NexusScraperSearch({
         ),
         result: (
           <NexusWorkspaceTableSignal
-            primary={job.candidates.length}
-            secondary={content.candidatesLabel}
-            tone={job.candidates.length > 0 ? "success" : "neutral"}
+            primary={resultSignal.primary}
+            secondary={resultSignal.secondary}
+            tone={resultSignal.tone}
           />
         ),
         submitted: (
@@ -726,7 +854,7 @@ export function NexusScraperSearch({
               <div>
                 <dt>{content.columns.candidates}</dt>
                 <dd>
-                  {job.candidates.length} {content.candidatesLabel}
+                  {resultSignal.primary} · {resultSignal.secondary}
                 </dd>
               </div>
               <div>
@@ -783,44 +911,52 @@ export function NexusScraperSearch({
               />
             </div>
           ) : null}
-          <form className={styles.form} onSubmit={submit}>
-            <NexusWorkspaceField
-              autoComplete="off"
-              id="collection-name"
-              label={content.nameLabel}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={content.namePlaceholder}
-              required
-              value={name}
-            />
-            <NexusWorkspaceField
-              autoComplete="url"
-              id="collection-sinta-url"
-              inputMode="url"
-              label={content.sintaUrlLabel}
-              onChange={(event) => setSintaUrl(event.target.value)}
-              placeholder={content.sintaUrlPlaceholder}
-              required
-              spellCheck={false}
-              type="url"
-              value={sintaUrl}
-            />
-            <NexusWorkspaceField
-              autoComplete="url"
-              id="collection-scholar-url"
-              inputMode="url"
-              label={content.scholarUrlLabel}
-              onChange={(event) => setScholarUrl(event.target.value)}
-              placeholder={content.scholarUrlPlaceholder}
-              required
-              spellCheck={false}
-              type="url"
-              value={scholarUrl}
-            />
-            <NexusWorkspaceButton tone="primary" type="submit">
-              {content.submitLabel}
-            </NexusWorkspaceButton>
-          </form>
+          {capabilities.canCreateJob ? (
+            <form className={styles.form} onSubmit={submit}>
+              <NexusWorkspaceField
+                autoComplete="off"
+                id="collection-name"
+                label={content.nameLabel}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={content.namePlaceholder}
+                required
+                value={name}
+              />
+              <NexusWorkspaceField
+                autoComplete="url"
+                id="collection-sinta-url"
+                inputMode="url"
+                label={content.sintaUrlLabel}
+                onChange={(event) => setSintaUrl(event.target.value)}
+                placeholder={content.sintaUrlPlaceholder}
+                required
+                spellCheck={false}
+                type="url"
+                value={sintaUrl}
+              />
+              <NexusWorkspaceField
+                autoComplete="url"
+                id="collection-scholar-url"
+                inputMode="url"
+                label={content.scholarUrlLabel}
+                onChange={(event) => setScholarUrl(event.target.value)}
+                placeholder={content.scholarUrlPlaceholder}
+                required
+                spellCheck={false}
+                type="url"
+                value={scholarUrl}
+              />
+              <NexusWorkspaceButton tone="primary" type="submit">
+                {content.submitLabel}
+              </NexusWorkspaceButton>
+            </form>
+          ) : (
+            <NexusWorkspaceNotice>
+              {content.locale === "id"
+                ? "Akun Anda dapat melihat riwayat pengumpulan, tetapi belum dapat mengajukan pekerjaan baru. Hubungi pengelola bila memerlukan akses."
+                : "Your account can view the collection history but cannot submit new jobs. Contact an administrator if you need access."}
+            </NexusWorkspaceNotice>
+          )}
           {feedback ? (
             <div className={styles.feedback}>
               <NexusWorkspaceNotice tone={feedback.tone}>
@@ -970,14 +1106,46 @@ export function NexusScraperSearch({
                 : "No attempts yet."}
             </p>
           ) : (
-            <ul>
+            <ul className={styles.attemptList}>
               {attempts.map((attempt) => (
-                <li key={attempt.publicId}>
-                  <strong>{attempt.source}</strong> {attempt.status},{" "}
+                <li className={styles.attemptItem} key={attempt.publicId}>
+                  <div className={styles.attemptHeader}>
+                    <strong>
+                      {attemptSourceLabels[attempt.source] ?? attempt.source}
+                    </strong>
+                    <NexusWorkspaceTableBadge
+                      tone={
+                        attempt.status === "succeeded"
+                          ? "success"
+                          : attempt.status === "failed"
+                            ? "danger"
+                            : "waiting"
+                      }
+                    >
+                      {attempt.status === "succeeded"
+                        ? content.locale === "id"
+                          ? "Berhasil"
+                          : "Succeeded"
+                        : attempt.status === "failed"
+                          ? content.locale === "id"
+                            ? "Gagal"
+                            : "Failed"
+                          : attempt.status}
+                    </NexusWorkspaceTableBadge>
+                  </div>
                   <time dateTime={attempt.createdAt}>
                     {formatTimestamp(attempt.createdAt)}
                   </time>
-                  {attempt.errorMessage ? <p>{attempt.errorMessage}</p> : null}
+                  {attempt.errorMessage ? (
+                    <details>
+                      <summary>
+                        {content.locale === "id"
+                          ? "Detail teknis"
+                          : "Technical details"}
+                      </summary>
+                      <p>{attempt.errorMessage}</p>
+                    </details>
+                  ) : null}
                 </li>
               ))}
             </ul>

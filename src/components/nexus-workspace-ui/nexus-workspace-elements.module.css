@@ -90,6 +90,43 @@
   opacity: 0.5;
 }
 
+/*
+ * Tindakan yang belum tersedia: tetap terbaca, bukan hanya dibedakan warna.
+ * Label dan penanda ditumpuk di dalam tinggi tombol yang sama, sehingga ukuran
+ * tombol tidak berbeda dari tombol aslinya.
+ */
+.button[data-planned="true"] {
+  flex-direction: column;
+  gap: 0.12rem;
+  padding-block: 0.22rem;
+  cursor: default;
+  opacity: 0.62;
+}
+
+.plannedContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.plannedBadge {
+  padding: 0.1rem 0.38rem;
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.button[data-planned="true"] .plannedBadge {
+  padding: 0.02rem 0.34rem;
+  font-size: 0.52rem;
+}
+
 .card {
   min-width: 0;
   border: 1px solid var(--color-nexus-border-soft);
@@ -287,4 +324,16 @@
   .field input {
     transition: none;
   }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

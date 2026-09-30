@@ -1,5 +1,16 @@
 const WIB_TIME_ZONE = "Asia/Jakarta";
 
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * ID rekam untuk tampilan ringkas: UUID dipendekkan menjadi delapan karakter
+ * awal, sedangkan kode yang memang pendek ditampilkan apa adanya.
+ */
+export function displayRecordId(id: string) {
+  return uuidPattern.test(id) ? id.slice(0, 8) : id;
+}
+
 /**
  * Timestamp lama tanpa offset berasal dari data lokal WIB. Tambahan offset ini
  * menjaga kompatibilitas fixture lama; event baru selalu menyimpan ISO UTC.
@@ -54,6 +65,28 @@ export function formatAuditTimestamp(value: Date | string = new Date()) {
     timeZoneName: "short",
     year: "numeric",
   }).format(date);
+}
+
+/**
+ * Keterangan waktu pada kepala halaman daftar, misalnya
+ * "Diperbarui 17 Agustus 2026 · 09.30 WIB". Untuk data yang dibaca dari server,
+ * waktunya adalah saat daftar terakhir dimuat.
+ */
+export function formatPageUpdatedLabel(value: Date) {
+  const date = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    timeZone: WIB_TIME_ZONE,
+    year: "numeric",
+  }).format(value);
+  const time = new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    timeZone: WIB_TIME_ZONE,
+  }).format(value);
+
+  return `Diperbarui ${date} · ${time} WIB`;
 }
 
 /**

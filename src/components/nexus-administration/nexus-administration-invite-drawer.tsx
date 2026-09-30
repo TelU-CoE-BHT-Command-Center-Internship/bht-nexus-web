@@ -1,7 +1,10 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
-import { nexusRoleAccessSummary } from "@/components/nexus-access-policy/nexus-access-policy";
+import {
+  type NexusAccessSummaryModule,
+  nexusRoleAccessSummary,
+} from "@/components/nexus-access-policy/nexus-access-policy";
 import type { NexusAccountInvitationInput } from "@/components/nexus-accounts/nexus-account-directory";
 import styles from "@/components/nexus-administration/nexus-administration.module.css";
 import type {
@@ -19,11 +22,15 @@ import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-w
 import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type NexusAdministrationInviteDrawerProps = {
+  /** Katalog modul untuk ringkasan cakupan peran; kosong bila tidak terbaca. */
+  accessModules: readonly NexusAccessSummaryModule[];
   accountEmails: readonly string[];
   availableMembers: readonly NexusAdministrationMemberOption[];
   initialMemberId?: string;
+  /** Direktori Anggota terbaca, sehingga akun dapat ditautkan ke anggota. */
+  membersReadable?: boolean;
   onClose: () => void;
-  onInvite: (input: NexusAccountInvitationInput) => string;
+  onInvite: (input: NexusAccountInvitationInput) => Promise<string> | string;
   onViewAccount: (accountId: string) => void;
   roles: readonly NexusAdministrationRole[];
 };
@@ -58,9 +65,11 @@ function normalizedEmail(value: string) {
 }
 
 export function NexusAdministrationInviteDrawer({
+  accessModules,
   accountEmails,
   availableMembers,
   initialMemberId,
+  membersReadable = true,
   onClose,
   onInvite,
   onViewAccount,
@@ -85,6 +94,7 @@ export function NexusAdministrationInviteDrawer({
   const [errors, setErrors] = useState<InviteErrors>({});
   const [step, setStep] = useState(1);
   const [createdAccountId, setCreatedAccountId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
   const [createdSummary, setCreatedSummary] =
     useState<CreatedInvitationSummary | null>(null);
@@ -177,8 +187,9 @@ export function NexusAdministrationInviteDrawer({
     setStep((current) => Math.min(current + 1, 4));
   }
 
-  function submitInvitation(event: FormEvent<HTMLFormElement>) {
+  async function submitInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
     if (step < 4) {
       advance();
       return;
@@ -191,8 +202,9 @@ export function NexusAdministrationInviteDrawer({
     }
 
     let accountId = "";
+    setIsSubmitting(true);
     try {
-      accountId = onInvite({
+      accountId = await onInvite({
         displayName: draft.displayName.trim(),
         email: normalizedEmail(draft.email),
         relationship:
@@ -209,6 +221,8 @@ export function NexusAdministrationInviteDrawer({
             : "Undangan tidak dapat dibuat.",
       });
       return;
+    } finally {
+      setIsSubmitting(false);
     }
     setCreatedSummary({
       member: draft.memberChoice === "yes" ? selectedMember : undefined,
@@ -338,10 +352,12 @@ export function NexusAdministrationInviteDrawer({
                 <fieldset className={styles.relationshipChoices}>
                   <legend>Apakah akun ini milik anggota CoE BHT?</legend>
                   <label
+                    data-disabled={!membersReadable || undefined}
                     data-selected={draft.memberChoice === "yes" || undefined}
                   >
                     <input
                       checked={draft.memberChoice === "yes"}
+                      disabled={!membersReadable}
                       name="memberChoice"
                       onChange={() => updateDraft("memberChoice", "yes")}
                       type="radio"
@@ -380,6 +396,13 @@ export function NexusAdministrationInviteDrawer({
                     </small>
                   ) : null}
                 </fieldset>
+                {membersReadable ? null : (
+                  <NexusWorkspaceNotice>
+                    Akun Anda belum berwenang membaca direktori Anggota,
+                    sehingga akun ini belum dapat ditautkan ke anggota dari
+                    sini.
+                  </NexusWorkspaceNotice>
+                )}
 
                 {draft.memberChoice === "yes" ? (
                   <NexusWorkspaceFormField
@@ -437,11 +460,16 @@ export function NexusAdministrationInviteDrawer({
                     <span>Cakupan peran</span>
                     <h3>{selectedRole.label}</h3>
                     <p>{selectedRole.description}</p>
-                    <ul>
-                      {nexusRoleAccessSummary(selectedRole).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
+                    {accessModules.length > 0 ? (
+                      <ul>
+                        {nexusRoleAccessSummary(
+                          selectedRole,
+                          accessModules,
+                        ).map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </section>
                 ) : null}
               </section>
@@ -494,6 +522,7 @@ export function NexusAdministrationInviteDrawer({
 
             <footer className={styles.drawerFooter}>
               <NexusWorkspaceButton
+                disabled={isSubmitting}
                 onClick={() =>
                   step === 1 ? requestClose() : setStep(step - 1)
                 }
@@ -501,8 +530,16 @@ export function NexusAdministrationInviteDrawer({
               >
                 {step === 1 ? "Batal" : "Kembali"}
               </NexusWorkspaceButton>
-              <NexusWorkspaceButton tone="primary" type="submit">
-                {step === 4 ? "Buat undangan" : "Lanjutkan"}
+              <NexusWorkspaceButton
+                disabled={isSubmitting}
+                tone="primary"
+                type="submit"
+              >
+                {step < 4
+                  ? "Lanjutkan"
+                  : isSubmitting
+                    ? "Membuat undangan…"
+                    : "Buat undangan"}
               </NexusWorkspaceButton>
             </footer>
           </form>

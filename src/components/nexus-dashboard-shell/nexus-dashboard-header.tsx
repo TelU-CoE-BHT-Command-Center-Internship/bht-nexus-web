@@ -8,15 +8,15 @@ import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
 import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
 import { resetDismissedAnnouncementsForSession } from "@/components/nexus-dashboard-announcement/nexus-dashboard-announcement-session";
 import styles from "@/components/nexus-dashboard-shell/nexus-dashboard-shell.module.css";
-import {
-  type NexusDashboardShellContent,
-  nexusDashboardViewerFromProfile,
-} from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
+import type { NexusDashboardShellContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
-import { useNexusCurrentProfile } from "@/components/nexus-profile/nexus-current-profile";
-import { useNexusWorkspaceNavigation } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
+import {
+  useNexusWorkspaceNavigation,
+  useNexusWorkspaceProceed,
+} from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import type { Locale } from "@/i18n/locales";
 import { signOut } from "@/lib/api-auth";
+import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
 
 export type DashboardHeaderPanel = "notifications" | "profile";
 
@@ -47,7 +47,7 @@ function getWorkspaceLanguageHref(
   targetLocale: Locale,
 ) {
   if (targetLocale === currentLocale) return pathname;
-  return targetLocale === "en" ? "/en/nexus/coming-soon" : "/nexus/dashboard";
+  return targetLocale === "en" ? "/en/nexus/coming-soon" : "/nexus";
 }
 
 export function NexusDashboardHeader({
@@ -60,13 +60,12 @@ export function NexusDashboardHeader({
   pageTitle,
 }: NexusDashboardHeaderProps) {
   const navigate = useNexusWorkspaceNavigation();
+  const proceed = useNexusWorkspaceProceed();
   const pathname = usePathname();
-  /* Identitas mengikuti profil akun yang sedang diwakili, sehingga perubahan
-     nama atau foto pada Profil Saya langsung terlihat di header. */
-  const { profile } = useNexusCurrentProfile();
-  const viewer = profile
-    ? nexusDashboardViewerFromProfile(profile)
-    : content.viewer;
+  /* Identitas selalu berasal dari sesi server yang sedang masuk. */
+  const viewer = content.viewer;
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const profileHref = content.profileHref;
   const notificationMenuRef = useRef<HTMLDivElement>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
@@ -123,9 +122,29 @@ export function NexusDashboardHeader({
     });
   }
 
-  async function handleSignOut() {
-    await signOut().catch(() => undefined);
-    navigate(content.signOutHref, resetDismissedAnnouncementsForSession);
+  async function signOutAndLeave() {
+    setSignOutError(null);
+    setIsSigningOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      if (apiErrorKind(error) !== "unauthenticated") {
+        setIsSigningOut(false);
+        setSignOutError(
+          apiErrorMessage(error, content.signOutErrorLabel, content.locale),
+        );
+        return;
+      }
+    }
+    resetDismissedAnnouncementsForSession();
+    /* Navigasi penuh supaya halaman ruang kerja tidak tersisa di cache peramban. */
+    window.location.replace(content.signOutHref);
+  }
+
+  function handleSignOut() {
+    proceed(() => {
+      void signOutAndLeave();
+    });
   }
 
   return (
@@ -378,13 +397,19 @@ export function NexusDashboardHeader({
                   </li>
                 </ul>
               ) : null}
+              {signOutError ? (
+                <p className={styles.profilePanelError} role="alert">
+                  {signOutError}
+                </p>
+              ) : null}
               <button
                 className={styles.profilePanelSignOut}
+                disabled={isSigningOut}
                 onClick={handleSignOut}
                 type="button"
               >
                 <DashboardShellIcon name="sign-out" />
-                {content.signOutLabel}
+                {isSigningOut ? content.signingOutLabel : content.signOutLabel}
               </button>
             </div>
           ) : null}

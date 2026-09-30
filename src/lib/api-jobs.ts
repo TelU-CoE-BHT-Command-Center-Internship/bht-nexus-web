@@ -38,7 +38,14 @@ export function createJob(input: CreateJobInput): Promise<JobRecord> {
 }
 
 export function getJob(publicId: string): Promise<JobRecord> {
-  return apiFetch(`/jobs/${publicId}`);
+  return apiFetch(`/jobs/${encodeURIComponent(publicId)}`);
+}
+
+/** Menjadwalkan ulang pekerjaan yang gagal. */
+export function retryJob(publicId: string): Promise<JobRecord> {
+  return apiFetch(`/jobs/${encodeURIComponent(publicId)}/retry`, {
+    method: "POST",
+  });
 }
 
 export function listJobs(
@@ -52,12 +59,20 @@ export function listJobs(
   return apiFetchPaginated(`/jobs?${search.toString()}`);
 }
 
+export type JobReviewSyncResult = {
+  createdCount: number;
+  jobPublicId: string;
+  reviewCases: Array<{ publicId: string; targetEntityType: string }>;
+};
+
+/** Membuat kasus tinjauan untuk kandidat pekerjaan yang belum ditinjau. */
 export function syncReviewCasesFromJob(
   publicId: string,
-): Promise<{ createdCount: number }> {
-  return apiFetch(`/reviews/cases/sync-from-job/${publicId}`, {
-    method: "POST",
-  });
+): Promise<JobReviewSyncResult> {
+  return apiFetch(
+    `/reviews/cases/sync-from-job/${encodeURIComponent(publicId)}`,
+    { method: "POST" },
+  );
 }
 
 export type JobAttemptRecord = {
@@ -73,5 +88,7 @@ export type JobAttemptRecord = {
 export function listJobAttempts(
   publicId: string,
 ): Promise<{ data: JobAttemptRecord[]; meta: { total: number } }> {
-  return apiFetchPaginated(`/jobs/${publicId}/attempts?limit=50`);
+  return apiFetchPaginated(
+    `/jobs/${encodeURIComponent(publicId)}/attempts?limit=50`,
+  );
 }

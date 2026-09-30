@@ -6,11 +6,14 @@ import {
   nexusAccessModules,
 } from "@/components/nexus-access-policy/nexus-access-policy";
 import styles from "@/components/nexus-access-policy/nexus-permission-matrix.module.css";
+import type { NexusPermissionMatrixModule } from "@/components/nexus-access-policy/nexus-role-server";
 import { DashboardShellIcon } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-icons";
 
 type NexusPermissionMatrixProps = {
   granted: ReadonlySet<NexusPermissionId>;
   isReadOnly: boolean;
+  /** Baris matriks; bawaannya katalog modul ruang kerja. */
+  modules?: readonly NexusPermissionMatrixModule[];
   onToggle: (permissionId: NexusPermissionId, isGranted: boolean) => void;
   roleLabel: string;
 };
@@ -93,6 +96,7 @@ function AccessSwitch({
 export function NexusPermissionMatrix({
   granted,
   isReadOnly,
+  modules = nexusAccessModules,
   onToggle,
   roleLabel,
 }: NexusPermissionMatrixProps) {
@@ -114,7 +118,7 @@ export function NexusPermissionMatrix({
             </tr>
           </thead>
           <tbody>
-            {nexusAccessModules.map((module) => (
+            {modules.map((module) => (
               <tr key={module.id}>
                 <th scope="row">
                   <span className={styles.moduleHead}>
@@ -164,7 +168,7 @@ export function NexusPermissionMatrix({
       </div>
 
       <div className={styles.mobileMatrix}>
-        {nexusAccessModules.map((module) => (
+        {modules.map((module) => (
           <article className={styles.moduleCard} key={module.id}>
             <header>
               <span aria-hidden="true" className={styles.moduleIcon}>

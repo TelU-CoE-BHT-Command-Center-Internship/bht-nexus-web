@@ -21,6 +21,11 @@ export type NexusAdministrationContent = {
   title: string;
 };
 
+export type {
+  NexusAccountSpecialAccess,
+  NexusAccountSpecialAccessReader,
+} from "@/components/nexus-accounts/nexus-account-special-access";
+
 export const accountStatusLabels = nexusAccountStatusLabels;
 
 export type { NexusAccountMemberRelationship, NexusAccountStatus };
