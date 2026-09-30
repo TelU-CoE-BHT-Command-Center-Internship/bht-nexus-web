@@ -118,8 +118,7 @@ const nexusLoginContent = {
     invitationNote:
       "BHT Nexus accounts are created by invitation. Public registration is not available.",
     languageLabel: "Choose language",
-    otpDescription:
-      "To continue, enter the verification code sent to",
+    otpDescription: "To continue, enter the verification code sent to",
     otpInvalidError:
       "The code does not match or has expired. Please try again.",
     otpLabel: "Verification code",
