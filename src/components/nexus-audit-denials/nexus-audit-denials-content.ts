@@ -6,14 +6,17 @@ export const windowOptions = [
 ] as const;
 
 export const nexusAuditDenialsContent = {
-  columns: { count: "Jumlah", permission: "Permission" },
   description:
-    "Permission yang paling sering ditolak sistem, dikelompokkan per nama permission.",
-  emptyDescription: "Tidak ada penolakan akses pada rentang waktu ini.",
-  emptyTitle: "Tidak ada penolakan",
-  errorLabel: "Gagal memuat data penolakan akses.",
-  tableCaption: "Jumlah penolakan akses per permission",
+    "Tinjau tindakan yang paling sering ditolak sistem untuk menemukan peran yang hak aksesnya perlu disesuaikan.",
+  errorLabel: "Catatan penolakan akses belum dapat dimuat.",
+  guidance:
+    "Penolakan dicatat setiap kali sebuah akun mencoba tindakan di luar hak aksesnya. Hak akses peran disetel melalui Peran & Hak Akses.",
+  searchLabel: "Cari modul atau tindakan yang ditolak",
+  searchPlaceholder: "Cari modul atau tindakan",
+  tableCaption:
+    "Jumlah penolakan akses per modul dan tindakan pada rentang waktu yang dipilih",
+  tableTitle: "Penolakan per hak akses",
   title: "Penolakan Akses",
-  unknownPermissionLabel: "Tidak diketahui",
-  windowLabel: "Rentang waktu",
+  unknownPermissionLabel: "Hak akses tidak dikenali",
+  windowLabel: "Rentang waktu penolakan akses",
 } as const;

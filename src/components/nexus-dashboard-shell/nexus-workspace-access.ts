@@ -66,6 +66,10 @@ export type NexusAdministrationCapabilities = {
   canManageRolePermissions: boolean;
   canManageRoles: boolean;
   canManageUserOverrides: boolean;
+  /** Membuka daftar akun pada halaman Administrasi. */
+  canReadAccounts: boolean;
+  /** Membuka catatan penolakan akses. */
+  canReadAudit: boolean;
 };
 
 export type NexusMemberCapabilities = {
@@ -83,6 +87,8 @@ export const nexusPreviewWorkspaceAccess = {
     canManageRolePermissions: true,
     canManageRoles: true,
     canManageUserOverrides: true,
+    canReadAccounts: true,
+    canReadAudit: true,
   },
   allowedNavigationIds: [
     "dashboard",
@@ -298,6 +304,8 @@ export function nexusWorkspaceAccessFromRoles(
       canManageRolePermissions: has("role_permission.manage"),
       canManageRoles: has("role.manage"),
       canManageUserOverrides: has("iam.manage"),
+      canReadAccounts: has("user.read"),
+      canReadAudit: has("audit.read"),
     },
     allowedNavigationIds:
       nexusPreviewWorkspaceAccess.allowedNavigationIds.filter((id) =>
@@ -341,4 +349,19 @@ export function nexusCanOpenRoleManagement(
   capabilities: NexusAdministrationCapabilities,
 ) {
   return capabilities.canManageRoles || capabilities.canManageRolePermissions;
+}
+
+/**
+ * Permukaan Administrasi pertama yang boleh dibuka akun: daftar akun, lalu
+ * Peran & Hak Akses, lalu catatan penolakan akses.
+ */
+export function nexusAdministrationHomeHref(
+  capabilities: NexusAdministrationCapabilities,
+): string | undefined {
+  if (capabilities.canReadAccounts) return "/nexus/administrasi";
+  if (nexusCanOpenRoleManagement(capabilities)) {
+    return "/nexus/administrasi/peran";
+  }
+  if (capabilities.canReadAudit) return "/nexus/administrasi/audit";
+  return undefined;
 }

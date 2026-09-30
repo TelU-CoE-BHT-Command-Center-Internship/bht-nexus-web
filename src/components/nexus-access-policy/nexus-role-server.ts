@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import type {
-  NexusAccessActionId,
-  NexusPermissionId,
-  NexusRoleRecord,
+import {
+  type NexusAccessActionId,
+  type NexusPermissionId,
+  type NexusRoleRecord,
+  nexusAccessActionLabels,
 } from "@/components/nexus-access-policy/nexus-access-policy";
 import type { NexusRoleDraftInput } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import type { DashboardShellIconName } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
@@ -162,6 +163,26 @@ const categoryLabels: Record<RoleCategory, string> = {
   coe_member: "Anggota CoE",
 };
 
+/**
+ * Nama izin server dalam bahasa produk: modul beserta tindakannya, sama dengan
+ * baris dan kolom pada matriks hak akses.
+ */
+export function nexusServerPermissionLabel(name: string): {
+  action?: string;
+  description?: string;
+  module: string;
+} {
+  const separator = name.lastIndexOf(".");
+  const resource = separator > 0 ? name.slice(0, separator) : name;
+  const action = actionBySuffix[separator > 0 ? name.slice(separator + 1) : ""];
+  const copy = resourceCopy[resource];
+  return {
+    action: action ? nexusAccessActionLabels[action] : undefined,
+    description: copy?.description,
+    module: copy?.label ?? name,
+  };
+}
+
 /** Baris matriks dari katalog izin server, dikelompokkan per sumber daya. */
 export function permissionMatrixModules(
   permissions: readonly Pick<PermissionRecord, "name">[],
@@ -215,7 +236,7 @@ export function permissionMatrixModules(
   );
 }
 
-function roleFromServer(
+export function nexusRoleFromServer(
   role: RoleRecord,
   permissions: readonly string[],
 ): NexusServerRoleRecord {
@@ -252,7 +273,8 @@ function roleNameFromLabel(label: string, taken: ReadonlySet<string>) {
   return name;
 }
 
-async function grantedPermissionNames(rolePublicId: string) {
+/** Nama izin yang sedang diberikan kepada satu peran. */
+export async function nexusServerRoleGrants(rolePublicId: string) {
   const grants = await listRolePermissionGrants(rolePublicId, { limit: 100 });
   return grants.data
     .filter((grant) => grant.granted)
@@ -280,7 +302,10 @@ export function useNexusServerRoles() {
       .then(async ([roleResult, permissionResult]) => {
         const withGrants = await Promise.all(
           roleResult.data.map(async (role) =>
-            roleFromServer(role, await grantedPermissionNames(role.publicId)),
+            nexusRoleFromServer(
+              role,
+              await nexusServerRoleGrants(role.publicId),
+            ),
           ),
         );
         if (request !== latestRequest.current) return;
@@ -300,7 +325,7 @@ export function useNexusServerRoles() {
   useLoadEffect(load);
 
   const refreshRole = useCallback(async (publicId: string) => {
-    const permissions = await grantedPermissionNames(publicId);
+    const permissions = await nexusServerRoleGrants(publicId);
     setRoles((current) =>
       current.map((role) =>
         role.id === publicId ? { ...role, permissions } : role,
@@ -339,7 +364,7 @@ export function useNexusServerRoles() {
             current.map((candidate) =>
               candidate.id === role.id
                 ? {
-                    ...roleFromServer(updated, candidate.permissions),
+                    ...nexusRoleFromServer(updated, candidate.permissions),
                   }
                 : candidate,
             ),
@@ -404,9 +429,9 @@ export function useNexusServerRoles() {
             await grantRolePermission(created.publicId, permissionId);
           }
         }
-        const role = roleFromServer(
+        const role = nexusRoleFromServer(
           created,
-          await grantedPermissionNames(created.publicId),
+          await nexusServerRoleGrants(created.publicId),
         );
         setRoles((current) => [...current, role]);
         return { role };
