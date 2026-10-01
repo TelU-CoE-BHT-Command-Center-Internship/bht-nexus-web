@@ -18,6 +18,7 @@ import {
   nexusWorkbookTargetVersions,
 } from "@/components/nexus-monitoring/nexus-monitoring-targets";
 import { NexusCurrentUserReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
+import { NexusWorkerNotice } from "@/components/nexus-workspace-ui/nexus-worker-notice";
 import { NexusWorkspaceUnsavedChangesProvider } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import { nexusSignInHref } from "@/lib/api-client";
 import { getRequestPath, getServerSession } from "@/lib/api-server";
@@ -72,6 +73,7 @@ export default async function NexusWorkspaceLayout({
                 <NexusDashboardShell content={content}>
                   {children}
                 </NexusDashboardShell>
+                <NexusWorkerNotice />
               </NexusWorkspaceUnsavedChangesProvider>
             </NexusMonitoringSessionProvider>
           </NexusCurrentUserReviewSessionProvider>
