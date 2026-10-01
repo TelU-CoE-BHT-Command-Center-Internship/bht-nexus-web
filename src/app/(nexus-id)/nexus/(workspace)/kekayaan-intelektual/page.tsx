@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import { NexusIntellectualProperty } from "@/components/nexus-intellectual-property/nexus-intellectual-property";
 import { getNexusIntellectualPropertyContent } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import {
@@ -18,11 +20,13 @@ export const metadata: Metadata = {
 export default async function NexusIntellectualPropertyPage({
   searchParams,
 }: NexusMemberFilteredPageProps) {
+  const access = await getNexusWorkspaceAccess();
   const content = getNexusIntellectualPropertyContent();
   const initialMemberId = await memberIdFromSearchParams(searchParams);
 
   return (
     <NexusIntellectualProperty
+      canReadMembers={nexusWorkspaceCanOpen(access, "members")}
       content={content}
       initialMemberId={initialMemberId}
     />

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { NexusAcademic } from "@/components/nexus-academic/nexus-academic";
 import { getNexusAcademicContent } from "@/components/nexus-academic/nexus-academic-content";
+import { nexusWorkspaceCanOpen } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import {
   memberIdFromSearchParams,
   type NexusMemberFilteredPageProps,
@@ -18,8 +20,15 @@ export const metadata: Metadata = {
 export default async function NexusAcademicPage({
   searchParams,
 }: NexusMemberFilteredPageProps) {
+  const access = await getNexusWorkspaceAccess();
   const content = getNexusAcademicContent();
   const initialMemberId = await memberIdFromSearchParams(searchParams);
 
-  return <NexusAcademic content={content} initialMemberId={initialMemberId} />;
+  return (
+    <NexusAcademic
+      canReadMembers={nexusWorkspaceCanOpen(access, "members")}
+      content={content}
+      initialMemberId={initialMemberId}
+    />
+  );
 }

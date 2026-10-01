@@ -29,11 +29,15 @@ type HouseRecordShapes = {
   };
 };
 
-/** Katalog satu rumah data dari server, dibaca sekali saat halaman dibuka. */
+/**
+ * Katalog satu rumah data dari server. Dibaca saat halaman dibuka dan setiap
+ * kali filter anggotanya berganti; filter anggota diterapkan server.
+ */
 export function useNexusHouseCatalog<House extends OfficialHouse, View>(
   house: House,
   toView: (summary: HouseRecordShapes[House]["summary"]) => View,
   errorFallback: string,
+  memberPublicId?: string,
 ) {
   const [records, setRecords] = useState<View[]>([]);
   const [state, setState] = useState<NexusLoadState>("loading");
@@ -44,7 +48,7 @@ export function useNexusHouseCatalog<House extends OfficialHouse, View>(
   const load = useCallback(() => {
     const request = ++latestRequest.current;
     setState("loading");
-    listAllHouseRecords(house)
+    listAllHouseRecords(house, { memberPublicId })
       .then((summaries) => {
         if (request !== latestRequest.current) return;
         setRecords(summaries.map(toView));
@@ -56,7 +60,7 @@ export function useNexusHouseCatalog<House extends OfficialHouse, View>(
         setErrorMessage(apiErrorMessage(error, errorFallback));
         setState("error");
       });
-  }, [errorFallback, house, toView]);
+  }, [errorFallback, house, memberPublicId, toView]);
 
   useLoadEffect(load);
 

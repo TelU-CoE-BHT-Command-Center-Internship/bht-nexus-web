@@ -21,6 +21,7 @@ import {
   metadataCompletionAvailabilityLabel,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
+import { useNexusMemberName } from "@/components/nexus-publications/nexus-publication-server";
 import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -62,8 +63,8 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
-import { requestActivityCompletion } from "@/lib/api-activities";
 import { apiErrorMessage } from "@/lib/api-client";
+import { requestHouseRecordCompletion } from "@/lib/api-house-records";
 
 const NexusIntellectualPropertyDetail = dynamic(() =>
   import(
@@ -72,6 +73,7 @@ const NexusIntellectualPropertyDetail = dynamic(() =>
 );
 
 type NexusIntellectualPropertyProps = {
+  canReadMembers: boolean;
   content: NexusIntellectualPropertyContent;
   initialMemberId?: string;
 };
@@ -136,7 +138,7 @@ function documentLabel(record: NexusIntellectualPropertyView) {
   const availableLabel =
     record.documentAccess === "internal"
       ? "Penyimpanan internal"
-      : "Tautan publik";
+      : "Tautan tersedia";
   return metadataCompletionAvailabilityLabel(
     record.resolvedMetadata,
     "documentUrl",
@@ -217,10 +219,12 @@ function createProtectionConfig(
 }
 
 export function NexusIntellectualProperty({
+  canReadMembers,
   content,
   initialMemberId,
 }: NexusIntellectualPropertyProps) {
-  const catalog = useNexusIntellectualPropertyCatalog();
+  const catalog = useNexusIntellectualPropertyCatalog(initialMemberId);
+  const memberName = useNexusMemberName(initialMemberId, canReadMembers);
   const reviewSession = useOptionalNexusReviewSession();
   const [completionError, setCompletionError] = useState("");
   const records = catalog.records;
@@ -234,8 +238,7 @@ export function NexusIntellectualProperty({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-  /* Daftar server belum dapat disaring per anggota; kartu filter
-     menjelaskannya dan daftar tetap memuat seluruh rekam resmi. */
+  /* Filter anggota sudah diterapkan server lewat `memberPublicId`. */
   const contextRecords = records;
 
   const indicatorConfig = useMemo(
@@ -334,7 +337,7 @@ export function NexusIntellectualProperty({
   ) => {
     if (!reviewSession) return;
     setCompletionError("");
-    requestActivityCompletion(recordId, {
+    requestHouseRecordCompletion("intellectual-properties", recordId, {
       note,
       proposals: toCompletionProposals(resolutions),
     })
@@ -483,7 +486,7 @@ export function NexusIntellectualProperty({
       <NexusMemberContextFilter
         clearHref="/nexus/kekayaan-intelektual"
         memberId={initialMemberId}
-        unsupportedDescription="Kekayaan intelektual belum dapat disaring per anggota, sehingga daftar di bawah memuat seluruh rekam resmi."
+        memberName={memberName}
       />
       <NexusWorkspaceMetrics
         metrics={[

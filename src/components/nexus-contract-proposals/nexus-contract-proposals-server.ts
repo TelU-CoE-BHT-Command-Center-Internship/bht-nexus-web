@@ -137,8 +137,13 @@ function fromDetail(detail: ContractProposalDetail) {
 const catalogError = "Kontrak dan proposal resmi belum dapat dimuat.";
 const detailError = "Rincian kontrak atau proposal belum dapat dimuat.";
 
-export function useNexusContractProposalCatalog() {
-  return useNexusHouseCatalog("contracts-proposals", fromSummary, catalogError);
+export function useNexusContractProposalCatalog(memberPublicId?: string) {
+  return useNexusHouseCatalog(
+    "contracts-proposals",
+    fromSummary,
+    catalogError,
+    memberPublicId,
+  );
 }
 
 export function useNexusContractProposalDetail(publicId: string | null) {

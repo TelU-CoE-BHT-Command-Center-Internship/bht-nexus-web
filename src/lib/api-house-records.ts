@@ -1,4 +1,5 @@
 import { apiFetch, apiFetchPaginated } from "@/lib/api-client";
+import type { CompletionProposalItem } from "@/lib/api-publications";
 
 type HouseSummary = {
   createdAt: string;
@@ -107,14 +108,21 @@ const sortByHouse: { [House in OfficialHouse]: HouseRecords[House]["sortBy"] } =
     "intellectual-properties": "year",
   };
 
-/** Seluruh rekam satu rumah data resmi, dibaca per halaman sebanyak yang diizinkan server. */
+/**
+ * Seluruh rekam satu rumah data resmi, dibaca per halaman sebanyak yang
+ * diizinkan server. Filter anggota diterapkan server.
+ */
 export async function listAllHouseRecords<House extends OfficialHouse>(
   house: House,
+  { memberPublicId }: { memberPublicId?: string } = {},
 ): Promise<HouseRecords[House]["summary"][]> {
   const records: HouseRecords[House]["summary"][] = [];
+  const memberFilter = memberPublicId
+    ? `&memberPublicId=${encodeURIComponent(memberPublicId)}`
+    : "";
   for (let page = 1; ; page += 1) {
     const result = await apiFetchPaginated<HouseRecords[House]["summary"]>(
-      `/${house}?limit=${MAX_PAGE_SIZE}&page=${page}&sortBy=${sortByHouse[house]}&sortOrder=desc`,
+      `/${house}?limit=${MAX_PAGE_SIZE}&page=${page}&sortBy=${sortByHouse[house]}&sortOrder=desc${memberFilter}`,
     );
     records.push(...result.data);
     if (result.data.length === 0 || records.length >= result.meta.total) {
@@ -128,4 +136,16 @@ export function getHouseRecord<House extends OfficialHouse>(
   publicId: string,
 ): Promise<HouseRecords[House]["detail"]> {
   return apiFetch(`/${house}/${encodeURIComponent(publicId)}`);
+}
+
+/** Usulan pelengkapan metadata satu rekam, dikirim ke antrean tinjauan. */
+export function requestHouseRecordCompletion(
+  house: OfficialHouse,
+  publicId: string,
+  body: { note?: string; proposals: Record<string, CompletionProposalItem> },
+): Promise<{ reviewCasePublicId: string; status: string }> {
+  return apiFetch(
+    `/${house}/${encodeURIComponent(publicId)}/completion-request`,
+    { body: JSON.stringify(body), method: "POST" },
+  );
 }

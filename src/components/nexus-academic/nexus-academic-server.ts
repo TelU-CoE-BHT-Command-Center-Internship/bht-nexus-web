@@ -55,6 +55,8 @@ export function nexusAcademicFromServer(
 ): NexusAcademicView {
   const activity = activityLabels[summary.activityType];
   const isInternship = activity === "Magang Mahasiswa";
+  /* Kompetisi mahasiswa dicatat per tim tanpa program studi tunggal. */
+  const programStudyApplies = activity !== "Kompetisi Mahasiswa";
   const year = summary.year ?? undefined;
   const title = summary.title.trim();
   const programStudy = summary.programStudy ?? undefined;
@@ -71,7 +73,9 @@ export function nexusAcademicFromServer(
     }));
   const missingFields: AcademicCompletionFieldKey[] = [
     ...(title ? [] : (["title"] as const)),
-    ...(programStudy ? [] : (["programStudy"] as const)),
+    ...(programStudyApplies && !programStudy
+      ? (["programStudy"] as const)
+      : []),
     ...(isInternship && !duration ? (["duration"] as const) : []),
     ...(isInternship && year === undefined ? (["year"] as const) : []),
     ...(evidenceStatus === "unrecorded" ? (["evidenceUrl"] as const) : []),
@@ -115,8 +119,13 @@ function fromDetail(detail: AcademicDetail) {
 const catalogError = "Kegiatan akademik resmi belum dapat dimuat.";
 const detailError = "Rincian kegiatan akademik belum dapat dimuat.";
 
-export function useNexusAcademicCatalog() {
-  return useNexusHouseCatalog("academics", fromSummary, catalogError);
+export function useNexusAcademicCatalog(memberPublicId?: string) {
+  return useNexusHouseCatalog(
+    "academics",
+    fromSummary,
+    catalogError,
+    memberPublicId,
+  );
 }
 
 export function useNexusAcademicDetail(publicId: string | null) {

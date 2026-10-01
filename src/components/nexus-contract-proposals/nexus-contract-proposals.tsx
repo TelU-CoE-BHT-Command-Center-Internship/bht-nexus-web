@@ -18,6 +18,7 @@ import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
+import { useNexusMemberName } from "@/components/nexus-publications/nexus-publication-server";
 import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -59,8 +60,8 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
-import { requestActivityCompletion } from "@/lib/api-activities";
 import { apiErrorMessage } from "@/lib/api-client";
+import { requestHouseRecordCompletion } from "@/lib/api-house-records";
 
 const NexusContractProposalDetail = dynamic(() =>
   import(
@@ -69,6 +70,7 @@ const NexusContractProposalDetail = dynamic(() =>
 );
 
 type NexusContractProposalsProps = {
+  canReadMembers: boolean;
   content: NexusContractProposalContent;
   initialMemberId?: string;
 };
@@ -196,10 +198,12 @@ function createIndicatorConfig(
 }
 
 export function NexusContractProposals({
+  canReadMembers,
   content,
   initialMemberId,
 }: NexusContractProposalsProps) {
-  const catalog = useNexusContractProposalCatalog();
+  const catalog = useNexusContractProposalCatalog(initialMemberId);
+  const memberName = useNexusMemberName(initialMemberId, canReadMembers);
   const reviewSession = useOptionalNexusReviewSession();
   const [completionError, setCompletionError] = useState("");
   const records = catalog.records;
@@ -213,8 +217,7 @@ export function NexusContractProposals({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-  /* Daftar server belum dapat disaring per anggota; kartu filter
-     menjelaskannya dan daftar tetap memuat seluruh rekam resmi. */
+  /* Filter anggota sudah diterapkan server lewat `memberPublicId`. */
   const contextRecords = records;
 
   const indicatorConfig = useMemo(
@@ -312,7 +315,7 @@ export function NexusContractProposals({
   ) => {
     if (!reviewSession) return;
     setCompletionError("");
-    requestActivityCompletion(recordId, {
+    requestHouseRecordCompletion("contracts-proposals", recordId, {
       note,
       proposals: toCompletionProposals(resolutions),
     })
@@ -479,7 +482,7 @@ export function NexusContractProposals({
       <NexusMemberContextFilter
         clearHref="/nexus/kontrak-proposal"
         memberId={initialMemberId}
-        unsupportedDescription="Kontrak dan proposal belum dapat disaring per anggota, sehingga daftar di bawah memuat seluruh rekam resmi."
+        memberName={memberName}
       />
       <NexusWorkspaceMetrics
         metrics={[

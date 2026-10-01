@@ -105,11 +105,12 @@ function fromDetail(detail: IntellectualPropertyDetail) {
 const catalogError = "Kekayaan intelektual resmi belum dapat dimuat.";
 const detailError = "Rincian kekayaan intelektual belum dapat dimuat.";
 
-export function useNexusIntellectualPropertyCatalog() {
+export function useNexusIntellectualPropertyCatalog(memberPublicId?: string) {
   return useNexusHouseCatalog(
     "intellectual-properties",
     fromSummary,
     catalogError,
+    memberPublicId,
   );
 }
 

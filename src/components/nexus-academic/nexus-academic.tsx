@@ -21,6 +21,7 @@ import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
+import { useNexusMemberName } from "@/components/nexus-publications/nexus-publication-server";
 import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -62,8 +63,8 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
-import { requestActivityCompletion } from "@/lib/api-activities";
 import { apiErrorMessage } from "@/lib/api-client";
+import { requestHouseRecordCompletion } from "@/lib/api-house-records";
 
 const NexusAcademicDetail = dynamic(() =>
   import("@/components/nexus-academic/nexus-academic-detail").then(
@@ -72,6 +73,7 @@ const NexusAcademicDetail = dynamic(() =>
 );
 
 type NexusAcademicProps = {
+  canReadMembers: boolean;
   content: NexusAcademicContent;
   initialMemberId?: string;
 };
@@ -218,10 +220,12 @@ function createActivityConfig(
 }
 
 export function NexusAcademic({
+  canReadMembers,
   content,
   initialMemberId,
 }: NexusAcademicProps) {
-  const catalog = useNexusAcademicCatalog();
+  const catalog = useNexusAcademicCatalog(initialMemberId);
+  const memberName = useNexusMemberName(initialMemberId, canReadMembers);
   const reviewSession = useOptionalNexusReviewSession();
   const [completionError, setCompletionError] = useState("");
   const records = catalog.records;
@@ -235,8 +239,7 @@ export function NexusAcademic({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-  /* Daftar server belum dapat disaring per anggota; kartu filter
-     menjelaskannya dan daftar tetap memuat seluruh rekam resmi. */
+  /* Filter anggota sudah diterapkan server lewat `memberPublicId`. */
   const contextRecords = records;
 
   const indicatorConfig = useMemo(
@@ -345,7 +348,7 @@ export function NexusAcademic({
   ) => {
     if (!reviewSession) return;
     setCompletionError("");
-    requestActivityCompletion(recordId, {
+    requestHouseRecordCompletion("academics", recordId, {
       note,
       proposals: toCompletionProposals(resolutions),
     })
@@ -495,7 +498,7 @@ export function NexusAcademic({
       <NexusMemberContextFilter
         clearHref="/nexus/akademik"
         memberId={initialMemberId}
-        unsupportedDescription="Kegiatan akademik belum dapat disaring per anggota, sehingga daftar di bawah memuat seluruh rekam resmi."
+        memberName={memberName}
       />
       <NexusWorkspaceMetrics
         metrics={[
