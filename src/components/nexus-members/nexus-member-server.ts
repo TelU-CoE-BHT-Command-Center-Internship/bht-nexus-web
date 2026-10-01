@@ -5,6 +5,7 @@ import type { NexusAccountStatus } from "@/components/nexus-accounts/nexus-accou
 import { nexusServerRoleLabel } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import type {
   NexusMemberAccountAccess,
+  NexusMemberRecord,
   NexusMemberViewRecord,
 } from "@/components/nexus-members/nexus-members-content";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
@@ -14,6 +15,7 @@ import {
   listAllMembers,
   type MemberDetail,
   type MemberSummary,
+  type MemberWriteBody,
 } from "@/lib/api-members";
 import { useLoadEffect } from "@/lib/use-load-effect";
 
@@ -81,6 +83,41 @@ function detailAccess(
     };
   }
   return { kind: "NONE" };
+}
+
+function scholarIdFromUrl(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  const match = /[?&]user=([^&#]+)/.exec(trimmed);
+  return match ? decodeURIComponent(match[1]) : trimmed;
+}
+
+/** Isian server dari rekam anggota yang disusun formulir profil. */
+export function memberWriteBodyFromRecord(
+  record: NexusMemberRecord,
+): MemberWriteBody {
+  const preferred = record.identity.preferredName.trim();
+  return {
+    alternateEmail: record.contact.alternateEmail ?? null,
+    biography: record.biography || null,
+    coeAssignment: record.coeAssignment || null,
+    googleScholarId: scholarIdFromUrl(record.academic.googleScholar),
+    institutionalEmail: record.contact.institutionalEmail ?? null,
+    isPublic: record.membership.publicProfile,
+    joinedAt: record.membership.joinedAt,
+    name: record.name,
+    office: record.affiliation.office ?? null,
+    orcid: record.academic.orcid ?? null,
+    phone: record.contact.phone ?? null,
+    preferredName: preferred && preferred !== record.name ? preferred : null,
+    primaryExpertise: record.expertise.primary ?? null,
+    primaryUnit: record.affiliation.primaryUnit,
+    researcherId: record.academic.researcherId ?? null,
+    scopusId: record.academic.scopusAuthorId ?? null,
+    secondaryExpertise: record.expertise.secondary,
+    sintaId: record.academic.sintaId ?? null,
+    status: record.membership.status,
+  };
 }
 
 export function nexusMemberFromSummary(
@@ -175,9 +212,9 @@ export function useNexusMemberDirectory() {
   const [errorMessage, setErrorMessage] = useState<string>();
   const latestRequest = useRef(0);
 
-  const load = useCallback(() => {
+  const load = useCallback((silent = false) => {
     const request = ++latestRequest.current;
-    setState("loading");
+    if (!silent) setState("loading");
     listAllMembers()
       .then((members) => {
         if (request !== latestRequest.current) return;
@@ -195,7 +232,10 @@ export function useNexusMemberDirectory() {
 
   useLoadEffect(load);
 
-  return { errorMessage, records, retry: load, state };
+  const retry = useCallback(() => load(), [load]);
+  const refresh = useCallback(() => load(true), [load]);
+
+  return { errorMessage, records, refresh, retry, state };
 }
 
 type DetailState = {
@@ -251,6 +291,14 @@ export function useNexusMemberDetail(publicId: string | undefined) {
   }, [load, publicId]);
 
   const retry = useCallback(() => load(publicId), [load, publicId]);
+  /** Membaca ulang satu anggota setelah perubahan, melewati hasil tersimpan. */
+  const reload = useCallback(
+    (memberId: string) => {
+      cache.current.delete(memberId);
+      load(memberId);
+    },
+    [load],
+  );
 
-  return { ...detail, retry };
+  return { ...detail, reload, retry };
 }

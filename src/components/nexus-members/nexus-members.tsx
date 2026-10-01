@@ -17,6 +17,7 @@ import {
 import { NexusMemberDirectory } from "@/components/nexus-members/nexus-member-directory";
 import { NexusMemberProfileDrawer } from "@/components/nexus-members/nexus-member-profile-drawer";
 import {
+  memberWriteBodyFromRecord,
   useNexusMemberDetail,
   useNexusMemberDirectory,
 } from "@/components/nexus-members/nexus-member-server";
@@ -40,6 +41,12 @@ import {
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { apiErrorMessage } from "@/lib/api-client";
+import {
+  createMember,
+  updateMember,
+  updateMemberAvatar,
+} from "@/lib/api-members";
 
 const PAGE_SIZE = 6;
 
@@ -51,11 +58,6 @@ type NexusMembersProps = {
   canStartCollection: boolean;
   content: NexusMembersContent;
   initialMemberId?: string;
-  /**
-   * Penyimpanan profil anggota. Selama belum tersedia, tindakan tambah dan
-   * ubah tetap tampil sebagai tindakan yang segera tersedia.
-   */
-  onSaveMember?: (member: NexusMemberRecord) => void;
   relatedCatalogIds?: readonly MemberRelatedCatalogId[];
 };
 
@@ -83,7 +85,6 @@ export function NexusMembers({
   canStartCollection,
   content,
   initialMemberId,
-  onSaveMember,
   relatedCatalogIds,
 }: NexusMembersProps) {
   const router = useRouter();
@@ -112,6 +113,8 @@ export function NexusMembers({
   );
   const [profileErrors, setProfileErrors] = useState<MemberProfileErrors>({});
   const [announcement, setAnnouncement] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState("");
   const [profileDiscardConfirmationOpen, setProfileDiscardConfirmationOpen] =
     useState(false);
 
@@ -192,6 +195,7 @@ export function NexusMembers({
   function openNewMemberEditor() {
     const value = createNewMemberDraft();
     setProfileErrors({});
+    setProfileSaveError("");
     setProfileEditor({ initialValue: value, mode: "create", value });
   }
 
@@ -199,6 +203,7 @@ export function NexusMembers({
     if (!detail.record) return;
     const value = createEditDraft(detail.record);
     setProfileErrors({});
+    setProfileSaveError("");
     setProfileEditor({ initialValue: value, mode: "edit", value });
   }
 
@@ -231,9 +236,9 @@ export function NexusMembers({
     setProfileErrors((current) => ({ ...current, [field]: undefined }));
   }
 
-  function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!profileEditor || !onSaveMember) return;
+    if (!profileEditor || isSavingProfile) return;
     const currentMember =
       profileEditor.mode === "edit" ? detail.record : undefined;
     const errors = validateMemberProfile(
@@ -254,20 +259,50 @@ export function NexusMembers({
       profileEditor.value,
       currentMember,
     );
-    onSaveMember(savedMember);
-    setAnnouncement(
-      profileEditor.mode === "create"
-        ? "Anggota baru berhasil ditambahkan."
-        : "Perubahan profil anggota berhasil disimpan.",
-    );
-    setSelectedMemberId(savedMember.id);
-    setActiveStatus("all");
-    setFieldFilter("all");
-    setQuery("");
-    setCurrentPage(1);
-    setMobileView("detail");
-    setProfileErrors({});
-    setProfileEditor(null);
+    const body = memberWriteBodyFromRecord(savedMember);
+    const avatar = savedMember.avatarSrc;
+    const avatarChanged =
+      typeof avatar === "string" &&
+      avatar !== profileEditor.initialValue.avatarSrc;
+    setIsSavingProfile(true);
+    setProfileSaveError("");
+    try {
+      const stored =
+        profileEditor.mode === "create"
+          ? await createMember(body)
+          : await updateMember(savedMember.id, body);
+      if (avatarChanged) {
+        await updateMemberAvatar(stored.publicId, {
+          avatarOriginalSrc:
+            typeof savedMember.avatarOriginalSrc === "string"
+              ? savedMember.avatarOriginalSrc
+              : undefined,
+          avatarPosition: savedMember.avatarPosition,
+          avatarSrc: avatar,
+        });
+      }
+      directory.refresh();
+      detail.reload(stored.publicId);
+      setAnnouncement(
+        profileEditor.mode === "create"
+          ? "Anggota baru berhasil ditambahkan."
+          : "Perubahan profil anggota berhasil disimpan.",
+      );
+      setSelectedMemberId(stored.publicId);
+      setActiveStatus("all");
+      setFieldFilter("all");
+      setQuery("");
+      setCurrentPage(1);
+      setMobileView("detail");
+      setProfileErrors({});
+      setProfileEditor(null);
+    } catch (error) {
+      setProfileSaveError(
+        apiErrorMessage(error, "Profil anggota belum dapat disimpan."),
+      );
+    } finally {
+      setIsSavingProfile(false);
+    }
   }
 
   function renderDetail() {
@@ -304,7 +339,7 @@ export function NexusMembers({
           activeTab={activeDetailTab}
           canStartCollection={canStartCollection}
           capabilities={capabilities}
-          editingAvailable={onSaveMember !== undefined}
+          editingAvailable
           member={detail.record}
           onBack={() => setMobileView("list")}
           onEdit={openMemberEditor}
@@ -384,9 +419,7 @@ export function NexusMembers({
             >
               Kembali ke direktori
             </NexusWorkspaceButton>
-          ) : records.length === 0 &&
-            capabilities.canCreateMember &&
-            onSaveMember ? (
+          ) : records.length === 0 && capabilities.canCreateMember ? (
             <NexusWorkspaceButton
               onClick={openNewMemberEditor}
               tone="primary"
@@ -414,7 +447,7 @@ export function NexusMembers({
       <NexusMemberDirectory
         activeStatus={activeStatus}
         canCreateMember={capabilities.canCreateMember}
-        creationAvailable={onSaveMember !== undefined}
+        creationAvailable
         currentPage={safePage}
         description={content.description}
         fieldFilter={fieldFilter}
@@ -458,6 +491,7 @@ export function NexusMembers({
           canDeactivateMember={capabilities.canDeactivateMember}
           editor={profileEditor}
           errors={profileErrors}
+          isSaving={isSavingProfile}
           memberName={detail.record?.identity.preferredName}
           onChange={changeProfileDraft}
           onClose={requestCloseProfileEditor}
@@ -466,6 +500,7 @@ export function NexusMembers({
             setProfileErrors({});
           }}
           onSubmit={saveProfile}
+          saveError={profileSaveError}
         />
       ) : null}
 

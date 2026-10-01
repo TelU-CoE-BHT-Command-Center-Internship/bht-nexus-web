@@ -128,6 +128,69 @@ export async function listAllMembers(): Promise<MemberSummary[]> {
   }
 }
 
+/** Isian anggota yang diterima server saat membuat atau mengubah anggota. */
+export type MemberWriteBody = {
+  alternateEmail?: string | null;
+  biography?: string | null;
+  coeAssignment?: string | null;
+  googleScholarId?: string | null;
+  institutionalEmail?: string | null;
+  isPublic: boolean;
+  joinedAt?: string;
+  name: string;
+  office?: string | null;
+  orcid?: string | null;
+  phone?: string | null;
+  preferredName?: string | null;
+  primaryExpertise?: string | null;
+  primaryUnit: string;
+  researcherId?: string | null;
+  scopusId?: string | null;
+  secondaryExpertise: string[];
+  sintaId?: string | null;
+  status: MembershipStatus;
+};
+
+/** Server menerima isian opsional pada pembuatan anggota hanya bila terisi. */
+function withoutEmpty(body: MemberWriteBody) {
+  return Object.fromEntries(
+    Object.entries(body).filter(
+      ([, value]) => value !== null && value !== undefined,
+    ),
+  );
+}
+
+export function createMember(body: MemberWriteBody): Promise<MemberDetail> {
+  return apiFetch("/members", {
+    body: JSON.stringify(withoutEmpty(body)),
+    method: "POST",
+  });
+}
+
+export function updateMember(
+  publicId: string,
+  body: MemberWriteBody,
+): Promise<MemberDetail> {
+  return apiFetch(`/members/${encodeURIComponent(publicId)}`, {
+    body: JSON.stringify(body),
+    method: "PATCH",
+  });
+}
+
+export function updateMemberAvatar(
+  publicId: string,
+  body: {
+    avatarOriginalSrc?: string;
+    avatarPosition?: { x: number; y: number };
+    avatarSrc: string;
+  },
+): Promise<MemberDetail> {
+  return apiFetch(`/members/${encodeURIComponent(publicId)}/avatar`, {
+    body: JSON.stringify(body),
+    method: "POST",
+  });
+}
+
 export function getMember(publicId: string): Promise<MemberDetail> {
   return apiFetch(`/members/${encodeURIComponent(publicId)}`);
 }

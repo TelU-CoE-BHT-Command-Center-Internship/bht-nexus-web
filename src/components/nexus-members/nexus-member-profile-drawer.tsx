@@ -17,6 +17,7 @@ type ProfileDrawerProps = {
   canDeactivateMember: boolean;
   editor: ProfileEditorState;
   errors: MemberProfileErrors;
+  isSaving?: boolean;
   memberName?: string;
   onChange: (
     event: ChangeEvent<
@@ -26,17 +27,21 @@ type ProfileDrawerProps = {
   onClose: () => void;
   onEditorChange: (editor: ProfileEditorState) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  /** Kegagalan penyimpanan dari server, ditampilkan di atas tombol simpan. */
+  saveError?: string;
 };
 
 export function NexusMemberProfileDrawer({
   canDeactivateMember,
   editor,
   errors,
+  isSaving = false,
   memberName,
   onChange,
   onClose,
   onEditorChange,
   onSubmit,
+  saveError,
 }: ProfileDrawerProps) {
   const draft = editor.value;
   const isCreate = editor.mode === "create";
@@ -332,11 +337,16 @@ export function NexusMemberProfileDrawer({
           </div>
         </section>
 
+        {saveError ? <p role="alert">{saveError}</p> : null}
         <footer className={styles.drawerActions}>
           <NexusWorkspaceButton onClick={onClose} type="button">
             Batal
           </NexusWorkspaceButton>
-          <NexusWorkspaceButton tone="primary" type="submit">
+          <NexusWorkspaceButton
+            disabled={isSaving}
+            tone="primary"
+            type="submit"
+          >
             {isCreate ? "Tambah anggota" : "Simpan perubahan"}
           </NexusWorkspaceButton>
         </footer>
