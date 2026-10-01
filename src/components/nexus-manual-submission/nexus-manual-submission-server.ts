@@ -15,12 +15,12 @@ import { submitManualSubmission } from "@/lib/api-submissions";
  * server membentuk kandidat dan kasus Tinjauan lalu menjawab tanda terimanya.
  */
 
-/**
- * Jenis data yang pengajuannya sudah berujung pada Data Resmi di server. Untuk
- * jenis data lain server belum menyediakan rekam resminya, sehingga
- * pengajuannya ditandai segera tersedia dan tidak dikirim.
- */
+/** Jenis data yang pengajuannya diterima server dan masuk ke antrean Tinjauan. */
 const serverSubmissionDomains: ReadonlySet<ManualSubmissionDomain> = new Set([
+  "academic",
+  "activity",
+  "contract",
+  "intellectual-property",
   "publication",
 ]);
 
