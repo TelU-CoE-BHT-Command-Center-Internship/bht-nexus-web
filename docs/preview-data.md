@@ -14,9 +14,12 @@ Setiap adapter menerjemahkan jawaban API ke bentuk data yang sudah dipakai kompo
 | Anggota | `nexus-member-server.ts` | `GET /members`, `GET /members/:id` |
 | Publikasi | `nexus-publication-server.ts` | `GET /publications`, `GET /publications/:id` |
 | Kegiatan & Pengabdian | `nexus-activity-server.ts` | `GET /activities`, `GET /activities/:id` |
+| Kekayaan Intelektual, Kontrak & Proposal, Akademik | `api-house-records.ts`, `nexus-house-records.ts`, dan penerjemah `*-server.ts` tiap rumah | `GET /intellectual-properties`, `GET /contracts-proposals`, `GET /academics` (dengan `memberPublicId` untuk saringan anggota), rinciannya pada `/:id`, serta `POST /:id/completion-request` |
+| Dashboard | `nexus-dashboard-overview-server.ts` | `GET /dashboard/overview`, `GET /dashboard/announcements` |
+| Monitoring KM | `nexus-official-records-hooks.ts` | membaca seluruh rekam resmi kelima rumah data lalu menghitung realisasi di klien |
 | Pengumpulan | `nexus-scraper-search.tsx` | `GET /jobs`, `POST /jobs`, `GET /jobs/:id`, `GET /jobs/:id/attempts`, `POST /jobs/:id/retry`, `POST /reviews/cases/sync-from-job/:id` |
 | Tinjauan | `nexus-review-server.ts` | `GET /reviews/cases`, rincian, pembanding, `PATCH` kandidat, keputusan, dan pemulihan pada `/reviews/cases/:id` |
-| Pengajuan manual | `nexus-manual-submission-server.ts` | `POST /submissions/manual` (saat ini Publikasi) |
+| Pengajuan manual | `nexus-manual-submission-server.ts` | `POST /submissions/manual` untuk kelima rumah Data Resmi |
 | Administrasi | `nexus-administration-server.tsx`, `nexus-account-server.ts` | `GET /admin/accounts`, `POST /admin/accounts/invite`, `PATCH /admin/accounts/:id/role`, `DELETE /users/:id/roles/:roleId`, `PATCH /admin/accounts/:id/status`, `PATCH /admin/accounts/:id/link-member` |
 | Akses khusus | `nexus-user-access-server.tsx`, `nexus-account-special-access.ts` | `GET /admin/accounts/:id/permissions`, `PUT /admin/accounts/:id/permissions/override` |
 | Peran & Hak Akses | `nexus-role-server.ts` | `GET/POST /roles`, `PATCH/DELETE /roles/:id`, `GET/POST /roles/:id/permissions`, `DELETE /roles/:id/permissions/:permissionId`, `POST /roles/:id/reset`, `GET /permissions` |
@@ -27,7 +30,7 @@ Bacaan pelengkap yang boleh ditolak server, misalnya direktori Anggota bagi akun
 
 ## Adapter data pratinjau
 
-Bagian yang sudah tersambung ke server tidak lagi mengambil datanya dari adapter di bawah ini. Bentuk data dan komponennya tetap dipakai bersama, sedangkan Monitoring KM, Broadcast / Newsletter, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Dokumen, dan Dashboard masih berjalan sepenuhnya di atas adapter ini.
+Bagian yang sudah tersambung ke server tidak lagi mengambil datanya dari adapter di bawah ini. Bentuk data dan komponennya tetap dipakai bersama, sedangkan target periode Monitoring KM, Broadcast / Newsletter, dan Dokumen masih berjalan di atas adapter ini.
 
 | Area | Adapter frontend | Perilaku lokal |
 |---|---|---|

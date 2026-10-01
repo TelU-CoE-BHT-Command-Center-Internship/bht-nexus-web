@@ -17,14 +17,17 @@ Ringkasan sumber data per bagian ruang kerja. Rincian adapter dan endpoint-nya a
 | Masuk, sesi, identitas header | Server | Masuk dengan email dan kata sandi. Akun undangan diaktifkan dengan kode OTP yang dikirim ke email, dan akun yang memakai verifikasi dua langkah memasukkan kode dari aplikasi autentikator. Keluar menunggu jawaban server. |
 | Menu dan tombol | Server | Dibentuk dari izin efektif akun pada `GET /profile/me`, termasuk akses khusus per akun. Setiap rumah Data Resmi mengikuti izin baca rumahnya sendiri. Bila server belum menjawab izin, web memakai cermin izin bawaan tiap peran. |
 | Anggota | Server | Direktori, rincian, tambah dan ubah anggota, serta tautan ke Administrasi untuk memberi atau mengelola akun anggota. |
-| Publikasi, Kegiatan & Pengabdian | Server | Daftar dan rincian rekam resmi. |
+| Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Kegiatan & Pengabdian | Server | Daftar dan rincian rekam resmi, saringan per anggota lewat `?member=`, serta usulan pelengkapan metadata ke Tinjauan. Pelengkapan yang disetujui diterapkan server ke rekam resminya. |
 | Pengumpulan | Server | Pekerjaan pengumpulan, riwayat percobaan, ajukan ulang, dan kirim ke Tinjauan. |
 | Tinjauan | Server | Antrean, rincian, pembanding, keputusan, dan pemulihan kandidat. |
-| Pengajuan manual | Server untuk Publikasi | Kekayaan Intelektual, Kontrak & Proposal, Akademik, dan Kegiatan masih bertanda **Segera** sampai rumah datanya tersedia di server. |
+| Pengajuan manual | Server | Kelima rumah Data Resmi. Pengajuan masuk antrean Tinjauan dan menjadi rekam resmi beserta tautan buktinya setelah disetujui. |
 | Administrasi | Server | Daftar akun, undangan, ubah peran, tangguhkan dan pulihkan, hubungan anggota, akses khusus, serta Penolakan Akses. |
 | Peran & Hak Akses | Server | Peran, katalog izin, jumlah akun per peran, simpan hak akses, pulihkan ke bawaan, tambah, duplikasi, dan nonaktifkan peran kustom. |
 | Profil Saya | Server | Informasi pribadi akun non-anggota dan pengenal SINTA, Scopus, serta Google Scholar anggota yang tertaut. |
-| Monitoring KM, Broadcast / Newsletter, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Dokumen, Dashboard | Data pratinjau | Tetap dapat ditinjau tampilannya; angka dan rekamnya belum berasal dari server. |
+| Dashboard | Server | Kartu ringkasan, aktivitas terkini, dan pengumuman dari `GET /dashboard/overview` serta `GET /dashboard/announcements`. |
+| Monitoring KM | Server untuk rekam | Realisasi dihitung dari rekam resmi server. Target per periode masih mengikuti workbook KM 2026 karena server belum menyimpan target, sehingga Kelola target belum ditampilkan. |
+| Broadcast / Newsletter | Belum tersedia | Layanan pengirimannya belum ada di server, sehingga menunya tidak dibuka untuk peran mana pun. |
+| Dokumen, Tanya jawab, Ekstraksi | Data pratinjau | Tetap dapat ditinjau tampilannya; dokumen dan jawabannya belum berasal dari server. |
 
 ## Landing page dan halaman institusional
 
@@ -310,9 +313,7 @@ Route workspace Inggris yang pernah tersedia tetap dipertahankan sebagai pengara
 
 Hal-hal berikut belum menjadi kemampuan produksi pada repository web:
 
-- data server untuk Monitoring KM, Broadcast / Newsletter, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Dokumen, dan Dashboard;
-- pengajuan manual selain Publikasi;
-- menambah dan mengubah anggota dari halaman Anggota;
+- target per periode Monitoring KM, serta data server untuk Broadcast / Newsletter dan Dokumen;
 - penyimpanan mandiri informasi pribadi, profil anggota, bidang keahlian, foto, ORCID iD, dan ResearcherID bagi anggota yang tertaut;
 - kirim ulang dan batalkan undangan akun;
 - pengiriman email broadcast, unggah gambarnya, dan riwayat pengiriman;
@@ -328,8 +329,7 @@ Pada bagian yang masih memakai data pratinjau, memuat ulang penuh layout ruang k
 
 - melengkapi dan mengonfirmasi daftar mitra;
 - menyempurnakan berita, kegiatan, tautan, dan bagian landing page lanjutan;
-- menyambungkan Kekayaan Intelektual, Kontrak & Proposal, Akademik, beserta pengajuannya ketika rumah datanya tersedia di server;
-- menyambungkan Monitoring KM, Dashboard, Dokumen, dan Broadcast ke layanan server masing-masing;
+- menyambungkan target Monitoring KM, Dokumen, dan Broadcast ke layanan server masing-masing;
 - membuka penyuntingan anggota dan profil anggota setelah jalur penyimpanannya disepakati dengan server;
 - menjaga pemeriksaan aksesibilitas, responsivitas, kontras, dan regresi pada setiap pengembangan fitur.
 

@@ -49,10 +49,11 @@ Gunakan komponen di `src/components/nexus-workspace-ui` untuk struktur lintas-fi
 - `NexusWorkspaceTabs` untuk tab domain atau sumber bergaris bawah;
 - `NexusWorkspaceSearch` dan `NexusWorkspaceSelect` untuk kontrol filter yang seragam;
 - `NexusWorkspaceTableSection` untuk judul, keterangan, dan batas tabel;
-- `NexusWorkspaceRecordTable` untuk tabel desktop, kartu mobile, empty state, dan loading baris;
+- `NexusWorkspaceRecordTable` untuk tabel desktop, kartu mobile, keadaan gagal, keadaan kosong, dan loading baris;
+- `NexusWorkspaceEmptyState` dan `NexusWorkspaceLoadError` untuk daftar yang belum berisi, tidak cocok dengan filter, atau gagal dimuat;
 - `NexusTablePagination` untuk ringkasan rentang, nomor halaman, dan jumlah data per halaman;
 - `NexusWorkspaceDrawer` untuk rincian dan keputusan yang tidak memecah konteks antrean;
-- `NexusWorkspaceState` untuk keadaan sesi hilang atau batas kemampuan yang tetap memberi penjelasan dan jalan keluar;
+- `NexusWorkspaceState` untuk keadaan satu halaman—gagal dimuat, tidak ditemukan, belum tersedia, atau akses dibatasi—yang tetap memberi penjelasan dan jalan keluar;
 - `NexusWorkspaceCard`, `NexusWorkspaceField`, `NexusWorkspaceButton`, dan `NexusWorkspaceNotice` untuk formulir serta umpan balik;
 - `NexusWorkspaceLoading` untuk skeleton halaman penuh yang menyerupai struktur halaman akhir.
 
@@ -210,6 +211,7 @@ Setiap fitur harus mempunyai keadaan yang dapat diverifikasi:
 
 - **loading**: route workspace memakai `loading.tsx` dengan judul, kartu metrik, tab, filter, dan baris skeleton; indikator putar generik tidak dipakai sebagai seluruh isi halaman;
 - **empty**: pencarian dan filter memperlihatkan pesan serta aksi reset bila relevan;
+- **satu keadaan per daftar**: daftar menampilkan tepat satu dari kerangka memuat, keadaan gagal, keadaan kosong, atau baris data. Kepala tabel dan navigasi halaman hanya tampil bila ada baris; saat gagal dimuat, kartu ringkasan menampilkan tanda "–" alih-alih nol, dan jumlah hasil disembunyikan;
 - **success**: unggahan lokal, pengajuan pekerjaan, kirim ekstraksi, koreksi, dan keputusan memberi umpan balik;
 - **failure**: validasi berkas, URL, atau pertanyaan menggunakan pesan yang terhubung ke kontrol; kegagalan render route memakai `error.tsx` dengan keterangan aman dan tindakan coba lagi;
 - **no access**: kelak berasal dari keputusan server; jangan mengarang hak akses di browser.
