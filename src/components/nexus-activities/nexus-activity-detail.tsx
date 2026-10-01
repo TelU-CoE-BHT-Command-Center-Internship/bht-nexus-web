@@ -32,17 +32,13 @@ import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-offi
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
-import { NexusWorkspacePlannedButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusActivityDetailProps = {
   /** Antrean Tinjauan dapat dibuka oleh akun ini. */
   canOpenReviews?: boolean;
   onClose: () => void;
-  /**
-   * Pengajuan pelengkapan metadata. Selama belum tersedia, bagian pengajuan
-   * tampil sebagai tindakan yang segera tersedia.
-   */
+  /** Pengajuan pelengkapan metadata; tanpa ini bagian pengajuan tidak tampil. */
   onSubmitProposal?: (
     recordId: string,
     resolutions: MetadataCompletionResolutions,
@@ -489,35 +485,15 @@ export function NexusActivityDetail({
         ) : null}
       </section>
 
-      {record.missingFields.length > 0 ? (
-        onSubmitProposal ? (
-          <NexusMetadataCompletionForm
-            missingFields={record.missingFields}
-            onClose={onClose}
-            onSubmitProposal={onSubmitProposal}
-            proposal={proposal}
-            recordId={record.id}
-            sectionIndex="06"
-          />
-        ) : (
-          <section
-            aria-labelledby="activity-completion-title"
-            className={detail.detailSection}
-          >
-            <div className={detail.sectionHeading}>
-              <div>
-                <span className={detail.sectionIndex}>06</span>
-                <h3 id="activity-completion-title">
-                  Ajukan pelengkapan metadata
-                </h3>
-              </div>
-              <p>Usulan pelengkapan diperiksa melalui Tinjauan</p>
-            </div>
-            <NexusWorkspacePlannedButton tone="primary">
-              Ajukan pelengkapan
-            </NexusWorkspacePlannedButton>
-          </section>
-        )
+      {record.missingFields.length > 0 && onSubmitProposal ? (
+        <NexusMetadataCompletionForm
+          missingFields={record.missingFields}
+          onClose={onClose}
+          onSubmitProposal={onSubmitProposal}
+          proposal={proposal}
+          recordId={record.id}
+          sectionIndex="06"
+        />
       ) : null}
     </NexusWorkspaceDrawer>
   );

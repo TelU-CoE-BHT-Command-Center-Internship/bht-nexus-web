@@ -26,7 +26,6 @@ import {
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
 import { manualSubmissionRoutes } from "@/components/nexus-manual-submission/nexus-manual-submission-routes";
 import {
-  manualSubmissionAvailable,
   manualSubmissionFieldErrors,
   submitNexusManualSubmission,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-server";
@@ -35,15 +34,11 @@ import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-r
 import {
   NexusWorkspaceBackLink,
   NexusWorkspaceButton,
-  NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
-import {
-  NexusWorkspaceNoAccess,
-  NexusWorkspaceState,
-} from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { apiErrorMessage } from "@/lib/api-client";
 
 type NexusManualSubmissionPageProps = {
@@ -515,28 +510,6 @@ export function NexusManualSubmissionPage({
     }
   }
 
-  if (!manualSubmissionAvailable(domain)) {
-    return (
-      <NexusWorkspacePage
-        description={definition.description}
-        descriptionId="manual-submission-planned-description"
-        title={definition.title}
-        titleId="manual-submission-planned-title"
-      >
-        <NexusWorkspaceState
-          actions={
-            <NexusWorkspaceLinkButton href={route.officialHref}>
-              Kembali ke {route.officialLabel}
-            </NexusWorkspaceLinkButton>
-          }
-          description={`Pengajuan ${definition.noun} lewat formulir sedang disiapkan. Data yang sudah tercatat tetap dapat dilihat pada halaman ${route.officialLabel}.`}
-          eyebrow="Segera"
-          title={`Pengajuan ${definition.noun} segera tersedia`}
-        />
-      </NexusWorkspacePage>
-    );
-  }
-
   if (!capabilities.canSubmitRecord) {
     return (
       <NexusWorkspacePage
@@ -549,7 +522,7 @@ export function NexusManualSubmissionPage({
           description="Akun Anda belum dapat mengirim pengajuan ke Tinjauan. Hubungi pengurus CoE BHT bila capaian Anda perlu dicatat."
           returnHref={route.officialHref}
           returnLabel={`Kembali ke ${route.officialLabel}`}
-          title="Pengajuan belum tersedia untuk akun Anda"
+          title="Pengajuan tidak tersedia untuk akun Anda"
         />
       </NexusWorkspacePage>
     );

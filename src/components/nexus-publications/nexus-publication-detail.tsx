@@ -36,10 +36,7 @@ import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-offi
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
-import {
-  NexusWorkspaceButton,
-  NexusWorkspacePlannedButton,
-} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusPublicationDetailProps = {
@@ -49,10 +46,7 @@ type NexusPublicationDetailProps = {
   canOpenReviews?: boolean;
   onClose: () => void;
   onRetryAuthors?: () => void;
-  /**
-   * Pengajuan pelengkapan metadata. Selama belum tersedia, bagian pengajuan
-   * tampil sebagai tindakan yang segera tersedia.
-   */
+  /** Pengajuan pelengkapan metadata; tanpa ini bagian pengajuan tidak tampil. */
   onSubmitCompletionProposal?: (
     publicationId: string,
     resolutions: PublicationCompletionResolutions,
@@ -721,35 +715,15 @@ export function NexusPublicationDetail({
         ) : null}
       </section>
 
-      {publication.missingFields.length > 0 ? (
-        onSubmitCompletionProposal ? (
-          <NexusMetadataCompletionForm
-            missingFields={publication.missingFields}
-            onClose={onClose}
-            onSubmitProposal={onSubmitCompletionProposal}
-            proposal={proposal}
-            recordId={publication.id}
-            sectionIndex="07"
-          />
-        ) : (
-          <section
-            aria-labelledby="publication-completion-title"
-            className={detail.detailSection}
-          >
-            <div className={detail.sectionHeading}>
-              <div>
-                <span className={detail.sectionIndex}>07</span>
-                <h3 id="publication-completion-title">
-                  Ajukan pelengkapan metadata
-                </h3>
-              </div>
-              <p>Usulan pelengkapan diperiksa melalui Tinjauan</p>
-            </div>
-            <NexusWorkspacePlannedButton tone="primary">
-              Ajukan pelengkapan
-            </NexusWorkspacePlannedButton>
-          </section>
-        )
+      {publication.missingFields.length > 0 && onSubmitCompletionProposal ? (
+        <NexusMetadataCompletionForm
+          missingFields={publication.missingFields}
+          onClose={onClose}
+          onSubmitProposal={onSubmitCompletionProposal}
+          proposal={proposal}
+          recordId={publication.id}
+          sectionIndex="07"
+        />
       ) : null}
     </NexusWorkspaceDrawer>
   );

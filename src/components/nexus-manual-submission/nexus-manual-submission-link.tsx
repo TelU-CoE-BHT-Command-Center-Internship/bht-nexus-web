@@ -3,10 +3,7 @@ import type { ManualSubmissionDomain } from "@/components/nexus-manual-submissio
 import { manualSubmissionRoutes } from "@/components/nexus-manual-submission/nexus-manual-submission-routes";
 import { manualSubmissionAvailable } from "@/components/nexus-manual-submission/nexus-manual-submission-server";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
-import {
-  NexusWorkspaceLinkButton,
-  NexusWorkspacePlannedButton,
-} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 
 function PlusIcon() {
   return (
@@ -17,9 +14,8 @@ function PlusIcon() {
 }
 
 /**
- * Tombol menuju formulir pengajuan. Bila pengajuan jenis data ini belum
- * tersedia, atau akun belum dapat mengirim pengajuan, tombolnya tetap tampil
- * dengan penanda "Segera".
+ * Tombol menuju formulir pengajuan. Tombol hanya tampil bagi akun yang dapat
+ * mengirim pengajuan ke Tinjauan untuk jenis data ini.
  */
 export function NexusManualSubmissionLink({
   domain,
@@ -31,14 +27,7 @@ export function NexusManualSubmissionLink({
   const { capabilities } = useNexusReviewSession();
 
   if (!capabilities.canSubmitRecord || !manualSubmissionAvailable(domain)) {
-    return (
-      <NexusWorkspacePlannedButton tone="primary">
-        <span className={styles.triggerIcon}>
-          <PlusIcon />
-        </span>
-        {label}
-      </NexusWorkspacePlannedButton>
-    );
+    return null;
   }
 
   return (
