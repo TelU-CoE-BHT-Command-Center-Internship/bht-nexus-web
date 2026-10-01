@@ -97,6 +97,18 @@ export type OfficialIntellectualProperty = {
   year?: number;
 };
 
+/**
+ * Rekam kekayaan intelektual sebagaimana ditampilkan halamannya. Rekam yang
+ * dibaca dari server belum membawa keputusan tinjauannya, sehingga bagian itu
+ * boleh kosong dan ditampilkan apa adanya.
+ */
+export type NexusIntellectualPropertyView = Omit<
+  OfficialIntellectualProperty,
+  "review"
+> & {
+  review?: OfficialIntellectualProperty["review"];
+};
+
 export type NexusIntellectualPropertyContent = {
   description: string;
   officialNote: string;
@@ -296,9 +308,9 @@ const records: OfficialIntellectualProperty[] = seeds.map(createRecord);
  * Pengecualian atas nomor registrasi tetap menyelesaikan metadata, tetapi tidak
  * cukup untuk menyatakan rekam memenuhi bukti indikator.
  */
-export function normalizeProjectedIntellectualProperty(
-  record: OfficialIntellectualProperty,
-): OfficialIntellectualProperty {
+export function normalizeProjectedIntellectualProperty<
+  Record extends NexusIntellectualPropertyView,
+>(record: Record): Record {
   if (record.kmLinks.length > 0) return record;
   if (
     record.protection === "Belum diklasifikasikan" ||
@@ -323,13 +335,13 @@ export function normalizeProjectedIntellectualProperty(
 }
 
 export function intellectualPropertyCreatorNames(
-  record: OfficialIntellectualProperty,
+  record: NexusIntellectualPropertyView,
 ) {
   return record.creators.map((creator) => creator.name).join("; ");
 }
 
 export function intellectualPropertyKmLabel(
-  record: OfficialIntellectualProperty,
+  record: NexusIntellectualPropertyView,
 ) {
   if (record.kmLinks.length === 0)
     return officialKpiEmptyCopy(record.kpiResolutionStatus).label;

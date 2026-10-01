@@ -6,7 +6,7 @@ import {
   type IntellectualPropertyProposal,
   intellectualPropertyCreatorNames,
   intellectualPropertyFieldLabels,
-  type OfficialIntellectualProperty,
+  type NexusIntellectualPropertyView,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
 import {
@@ -27,14 +27,17 @@ import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.modul
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 
 type NexusIntellectualPropertyDetailProps = {
+  /** Keadaan pemuatan daftar pencipta dari rincian rekam. */
+  creatorsState?: "error" | "loading" | "ready";
   onClose: () => void;
-  onSubmitProposal: (
+  /** Pengajuan pelengkapan; tanpa pengaju, bagian ini tidak ditampilkan. */
+  onSubmitProposal?: (
     recordId: string,
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => void;
   proposal?: IntellectualPropertyProposal;
-  record: OfficialIntellectualProperty;
+  record: NexusIntellectualPropertyView;
 };
 
 type MetadataItem = NexusMetadataCompletenessItem & {
@@ -54,7 +57,7 @@ function ArrowIcon() {
   );
 }
 
-function documentValue(record: OfficialIntellectualProperty) {
+function documentValue(record: NexusIntellectualPropertyView) {
   if (record.documentAccess !== "internal" && record.documentUrl) {
     return record.documentUrl;
   }
@@ -62,8 +65,20 @@ function documentValue(record: OfficialIntellectualProperty) {
   return "Belum tercatat";
 }
 
+function creatorsValue(
+  record: NexusIntellectualPropertyView,
+  creatorsState: NexusIntellectualPropertyDetailProps["creatorsState"],
+) {
+  const names = intellectualPropertyCreatorNames(record);
+  if (names) return names;
+  if (creatorsState === "loading") return "Memuat pencipta…";
+  if (creatorsState === "error") return "Pencipta belum dapat dimuat";
+  return "Belum tercatat";
+}
+
 function getMetadataItems(
-  record: OfficialIntellectualProperty,
+  record: NexusIntellectualPropertyView,
+  creatorsState: NexusIntellectualPropertyDetailProps["creatorsState"],
 ): MetadataItem[] {
   const isMissing = (key: IntellectualPropertyCompletionFieldKey) =>
     record.missingFields.includes(key);
@@ -83,7 +98,7 @@ function getMetadataItems(
     {
       key: "creators",
       label: "Pencipta / inventor",
-      value: intellectualPropertyCreatorNames(record),
+      value: creatorsValue(record, creatorsState),
       wide: true,
     },
     {
@@ -155,12 +170,13 @@ function getMetadataItems(
 }
 
 export function NexusIntellectualPropertyDetail({
+  creatorsState,
   onClose,
   onSubmitProposal,
   proposal,
   record,
 }: NexusIntellectualPropertyDetailProps) {
-  const metadataItems = getMetadataItems(record);
+  const metadataItems = getMetadataItems(record, creatorsState);
 
   return (
     <NexusWorkspaceDrawer
@@ -195,7 +211,7 @@ export function NexusIntellectualPropertyDetail({
           <time>Diperbarui {record.updatedAt}</time>
         </div>
         <h3 id="intellectual-property-overview-title">{record.title}</h3>
-        <p>{intellectualPropertyCreatorNames(record)}</p>
+        <p>{creatorsValue(record, creatorsState)}</p>
 
         <dl className={detail.metaGrid}>
           <div className={detail.metaItem}>
@@ -364,6 +380,11 @@ export function NexusIntellectualPropertyDetail({
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
+        {record.provenance.length === 0 ? (
+          <p className={detail.explanation}>
+            Jejak sumber pembentuk rekam ini belum tersedia di halaman ini.
+          </p>
+        ) : null}
         <div className={detail.provenanceGrid}>
           {record.provenance.map((source) => (
             <article className={detail.provenanceCard} key={source.identifier}>
@@ -407,19 +428,25 @@ export function NexusIntellectualPropertyDetail({
           </div>
           <p>Riwayat keputusan tersimpan</p>
         </div>
-        <div className={detail.reviewDecision}>
-          <span className={detail.reviewCheck}>
-            <NexusIntellectualPropertyIcon name="check" />
-          </span>
-          <div>
-            <strong>{record.review.decision}</strong>
-            <p>{record.review.note}</p>
-            <small>
-              {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
-              {record.review.candidateId}
-            </small>
+        {record.review ? (
+          <div className={detail.reviewDecision}>
+            <span className={detail.reviewCheck}>
+              <NexusIntellectualPropertyIcon name="check" />
+            </span>
+            <div>
+              <strong>{record.review.decision}</strong>
+              <p>{record.review.note}</p>
+              <small>
+                {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
+                {record.review.candidateId}
+              </small>
+            </div>
           </div>
-        </div>
+        ) : (
+          <p className={detail.explanation}>
+            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+          </p>
+        )}
         <Link
           className={detail.reviewLink}
           href="/nexus/tinjauan"
@@ -429,7 +456,7 @@ export function NexusIntellectualPropertyDetail({
         </Link>
       </section>
 
-      {record.missingFields.length > 0 ? (
+      {record.missingFields.length > 0 && onSubmitProposal ? (
         <NexusMetadataCompletionForm
           missingFields={record.missingFields}
           onClose={onClose}

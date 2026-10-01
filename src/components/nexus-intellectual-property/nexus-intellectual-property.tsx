@@ -4,23 +4,24 @@ import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import styles from "@/components/nexus-intellectual-property/nexus-intellectual-property.module.css";
 import {
-  type IntellectualPropertyProposal,
   intellectualPropertyCreatorNames,
   intellectualPropertyKmLabel,
   type NexusIntellectualPropertyContent,
-  type OfficialIntellectualProperty,
+  type NexusIntellectualPropertyView,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { NexusIntellectualPropertyIcon } from "@/components/nexus-intellectual-property/nexus-intellectual-property-icons";
+import {
+  useNexusIntellectualPropertyCatalog,
+  useNexusIntellectualPropertyDetail,
+} from "@/components/nexus-intellectual-property/nexus-intellectual-property-server";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import {
   type MetadataCompletionResolutions,
   metadataCompletionAvailabilityLabel,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import { projectNexusIntellectualProperties } from "@/components/nexus-official-records/nexus-official-records";
-import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
-import { createIntellectualPropertyCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
-import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
+import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
@@ -28,10 +29,15 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
+  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatPageUpdatedLabel,
+  normalizeWorkspaceSearch,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -54,7 +60,10 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
+import { requestActivityCompletion } from "@/lib/api-activities";
+import { apiErrorMessage } from "@/lib/api-client";
 
 const NexusIntellectualPropertyDetail = dynamic(() =>
   import(
@@ -123,7 +132,7 @@ const pageSizeConfig: NexusSelectConfig = {
 };
 
 /** Dokumen internal bukan metadata yang hilang, jadi nadanya bukan peringatan. */
-function documentLabel(record: OfficialIntellectualProperty) {
+function documentLabel(record: NexusIntellectualPropertyView) {
   const availableLabel =
     record.documentAccess === "internal"
       ? "Penyimpanan internal"
@@ -136,7 +145,7 @@ function documentLabel(record: OfficialIntellectualProperty) {
   );
 }
 
-function searchableText(record: OfficialIntellectualProperty) {
+function searchableText(record: NexusIntellectualPropertyView) {
   return normalizeWorkspaceSearch(
     [
       record.title,
@@ -155,7 +164,7 @@ function searchableText(record: OfficialIntellectualProperty) {
 }
 
 function createIndicatorConfig(
-  records: readonly OfficialIntellectualProperty[],
+  records: readonly NexusIntellectualPropertyView[],
 ): NexusSelectConfig {
   const indicators = records
     .flatMap((record) => record.kmLinks)
@@ -186,7 +195,7 @@ function createIndicatorConfig(
 }
 
 function createProtectionConfig(
-  records: readonly OfficialIntellectualProperty[],
+  records: readonly NexusIntellectualPropertyView[],
 ): NexusSelectConfig {
   const protections = Array.from(
     new Set(records.map((record) => record.protection)),
@@ -211,18 +220,12 @@ export function NexusIntellectualProperty({
   content,
   initialMemberId,
 }: NexusIntellectualPropertyProps) {
-  const reviewSession = useNexusReviewSession();
-  const officialRecordSession = useNexusOfficialRecordSession();
-  const records = useMemo(
-    () =>
-      projectNexusIntellectualProperties(
-        content.records,
-        officialRecordSession,
-      ),
-    [content.records, officialRecordSession],
-  );
+  const catalog = useNexusIntellectualPropertyCatalog();
+  const reviewSession = useOptionalNexusReviewSession();
+  const [completionError, setCompletionError] = useState("");
+  const records = catalog.records;
+  const isCatalogLoading = catalog.state === "loading";
   const [currentPage, setCurrentPage] = useState(1);
-  const proposals = reviewSession.completionProposals;
   const [filterValues, setFilterValues] =
     useState<FilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
@@ -231,17 +234,9 @@ export function NexusIntellectualProperty({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-  const contextRecords = useMemo(
-    () =>
-      initialMemberId
-        ? records.filter((record) =>
-            record.creators.some(
-              (creator) => creator.memberId === initialMemberId,
-            ),
-          )
-        : records,
-    [initialMemberId, records],
-  );
+  /* Daftar server belum dapat disaring per anggota; kartu filter
+     menjelaskannya dan daftar tetap memuat seluruh rekam resmi. */
+  const contextRecords = records;
 
   const indicatorConfig = useMemo(
     () => createIndicatorConfig(contextRecords),
@@ -299,7 +294,11 @@ export function NexusIntellectualProperty({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = contextRecords.find((record) => record.id === selectedId);
+  const recordDetail = useNexusIntellectualPropertyDetail(selectedId);
+  const selectedSummary = contextRecords.find(
+    (record) => record.id === selectedId,
+  );
+  const selected = recordDetail.record ?? selectedSummary;
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
@@ -333,19 +332,25 @@ export function NexusIntellectualProperty({
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => {
-    const record = records.find((item) => item.id === recordId);
-    if (!record) return;
-
-    const proposal: IntellectualPropertyProposal =
-      reviewSession.createCompletionProposal(
-        "PLG-KI-2026",
-        recordId,
-        resolutions,
-        note,
-      );
-    reviewSession.submitRecord(
-      createIntellectualPropertyCompletionReviewRecord(record, proposal),
-    );
+    if (!reviewSession) return;
+    setCompletionError("");
+    requestActivityCompletion(recordId, {
+      note,
+      proposals: toCompletionProposals(resolutions),
+    })
+      .then(() => {
+        reviewSession.createCompletionProposal(
+          "PLG-KI-2026",
+          recordId,
+          resolutions,
+          note,
+        );
+      })
+      .catch((error: unknown) => {
+        setCompletionError(
+          apiErrorMessage(error, "Usulan pelengkapan belum dapat dikirim."),
+        );
+      });
   };
 
   const rows = visible.map((record) => {
@@ -464,13 +469,21 @@ export function NexusIntellectualProperty({
       }
       description={content.description}
       descriptionId="intellectual-property-description"
-      meta={content.updatedAt}
+      meta={
+        catalog.loadedAt ? formatPageUpdatedLabel(catalog.loadedAt) : undefined
+      }
       title={content.title}
       titleId="intellectual-property-title"
     >
+      {completionError ? (
+        <NexusWorkspaceNotice tone="danger">
+          {completionError}
+        </NexusWorkspaceNotice>
+      ) : null}
       <NexusMemberContextFilter
         clearHref="/nexus/kekayaan-intelektual"
         memberId={initialMemberId}
+        unsupportedDescription="Kekayaan intelektual belum dapat disaring per anggota, sehingga daftar di bawah memuat seluruh rekam resmi."
       />
       <NexusWorkspaceMetrics
         metrics={[
@@ -480,7 +493,7 @@ export function NexusIntellectualProperty({
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: contextRecords.length,
+            value: isCatalogLoading ? null : contextRecords.length,
           },
           {
             icon: <NexusIntellectualPropertyIcon name="certificate" />,
@@ -488,7 +501,7 @@ export function NexusIntellectualProperty({
             label: "Bernomor Registrasi",
             tone: "waiting",
             unit: "data",
-            value: registeredCount,
+            value: isCatalogLoading ? null : registeredCount,
           },
           {
             icon: <NexusIntellectualPropertyIcon name="alert" />,
@@ -496,7 +509,7 @@ export function NexusIntellectualProperty({
             label: "Perlu Dilengkapi",
             tone: "needs-fix",
             unit: "data",
-            value: needsCompletionCount,
+            value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
       />
@@ -556,6 +569,22 @@ export function NexusIntellectualProperty({
           title="Daftar kekayaan intelektual resmi"
           titleId="official-intellectual-property-title"
         >
+          {catalog.state === "error" ? (
+            <NexusWorkspaceState
+              actions={
+                <NexusWorkspaceButton onClick={catalog.retry} type="button">
+                  Coba lagi
+                </NexusWorkspaceButton>
+              }
+              description={
+                catalog.errorMessage ??
+                "Kekayaan intelektual resmi belum dapat dimuat."
+              }
+              eyebrow="Gagal memuat"
+              title="Kekayaan intelektual resmi belum dapat dimuat"
+              tone="danger"
+            />
+          ) : null}
           <NexusWorkspaceRecordTable
             caption="Kekayaan intelektual resmi CoE BHT beserta nomor pencatatan dan keterkaitan indikator KM"
             columns={columns}
@@ -574,7 +603,7 @@ export function NexusIntellectualProperty({
                 }
               />
             }
-            isLoading={isSearchUpdating}
+            isLoading={isSearchUpdating || isCatalogLoading}
             pagination={
               <NexusTablePagination
                 currentPage={safePage}
@@ -601,9 +630,16 @@ export function NexusIntellectualProperty({
 
       {selected ? (
         <NexusIntellectualPropertyDetail
+          creatorsState={
+            recordDetail.state === "error"
+              ? "error"
+              : recordDetail.record
+                ? "ready"
+                : "loading"
+          }
           onClose={() => setSelectedId(null)}
-          onSubmitProposal={submitProposal}
-          proposal={proposals[selected.id]}
+          onSubmitProposal={reviewSession ? submitProposal : undefined}
+          proposal={reviewSession?.completionProposals[selected.id]}
           record={selected}
         />
       ) : null}
