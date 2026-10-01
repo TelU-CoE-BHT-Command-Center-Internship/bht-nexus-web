@@ -17,7 +17,7 @@ Ringkasan sumber data per bagian ruang kerja. Rincian adapter dan endpoint-nya a
 | Masuk, sesi, identitas header | Server | Masuk dengan email dan kata sandi. Akun undangan diaktifkan dengan kode OTP yang dikirim ke email, dan akun yang memakai verifikasi dua langkah memasukkan kode dari aplikasi autentikator. Keluar menunggu jawaban server. |
 | Menu dan tombol | Server | Dibentuk dari izin efektif akun pada `GET /profile/me`, termasuk akses khusus per akun. Setiap rumah Data Resmi mengikuti izin baca rumahnya sendiri. Bila server belum menjawab izin, web memakai cermin izin bawaan tiap peran. |
 | Anggota | Server | Direktori, rincian, tambah dan ubah anggota, serta tautan ke Administrasi untuk memberi atau mengelola akun anggota. |
-| Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Kegiatan & Pengabdian | Server | Daftar dan rincian rekam resmi, saringan per anggota lewat `?member=`, serta usulan pelengkapan metadata ke Tinjauan. Pelengkapan yang disetujui diterapkan server ke rekam resminya. |
+| Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Kegiatan & Pengabdian | Server | Daftar dan rincian rekam resmi, sumber pembentuk serta keputusan tinjauan tiap rekam, saringan per anggota lewat `?member=`, dan usulan pelengkapan metadata ke Tinjauan. Pelengkapan yang disetujui diterapkan server ke rekam resminya. |
 | Pengumpulan | Server | Pekerjaan pengumpulan, riwayat percobaan, ajukan ulang, dan kirim ke Tinjauan. |
 | Tinjauan | Server | Antrean, rincian, pembanding, keputusan, dan pemulihan kandidat. |
 | Pengajuan manual | Server | Kelima rumah Data Resmi. Pengajuan masuk antrean Tinjauan dan menjadi rekam resmi beserta tautan buktinya setelah disetujui. |

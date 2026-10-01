@@ -15,6 +15,7 @@ Setiap adapter menerjemahkan jawaban API ke bentuk data yang sudah dipakai kompo
 | Publikasi | `nexus-publication-server.ts` | `GET /publications`, `GET /publications/:id` |
 | Kegiatan & Pengabdian | `nexus-activity-server.ts` | `GET /activities`, `GET /activities/:id` |
 | Kekayaan Intelektual, Kontrak & Proposal, Akademik | `api-house-records.ts`, `nexus-house-records.ts`, dan penerjemah `*-server.ts` tiap rumah | `GET /intellectual-properties`, `GET /contracts-proposals`, `GET /academics` (dengan `memberPublicId` untuk saringan anggota), rinciannya pada `/:id`, serta `POST /:id/completion-request` |
+| Jejak rekam resmi | `api-record-trail.ts`, `nexus-record-trail.ts` | `GET /publications/:id/trail`, `GET /activities/:id/trail`, `GET /intellectual-properties/:id/trail`, `GET /contracts-proposals/:id/trail`, `GET /academics/:id/trail` untuk sumber pembentuk dan keputusan tinjauan pada rincian rekam |
 | Dashboard | `nexus-dashboard-overview-server.ts` | `GET /dashboard/overview`, `GET /dashboard/announcements` |
 | Monitoring KM | `nexus-official-records-hooks.ts` | membaca seluruh rekam resmi kelima rumah data lalu menghitung realisasi di klien |
 | Pengumpulan | `nexus-scraper-search.tsx` | `GET /jobs`, `POST /jobs`, `GET /jobs/:id`, `GET /jobs/:id/attempts`, `POST /jobs/:id/retry`, `POST /reviews/cases/sync-from-job/:id` |
