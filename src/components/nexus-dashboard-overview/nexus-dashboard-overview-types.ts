@@ -7,10 +7,11 @@ export type DashboardMetricIconName =
   | "researchers";
 
 export type DashboardMetric = {
-  changeLabel: string;
-  changeDescription: string;
-  changeDirection: "down" | "steady" | "up";
-  comparisonLabel: string;
+  /** Perubahan terhadap periode lain; kosong bila server belum menyajikannya. */
+  changeLabel?: string;
+  changeDescription?: string;
+  changeDirection?: "down" | "steady" | "up";
+  comparisonLabel?: string;
   detail: string;
   icon: DashboardMetricIconName;
   id: string;
@@ -20,11 +21,11 @@ export type DashboardMetric = {
 };
 
 export type DashboardAnnouncement = {
-  actionLabel: string;
-  deadlineAt: string;
-  deadlineLabel: string;
-  expiresAt: string;
-  href: string;
+  actionLabel?: string;
+  deadlineAt?: string;
+  deadlineLabel?: string;
+  expiresAt?: string;
+  href?: string;
   id: string;
   summary: string;
   title: string;

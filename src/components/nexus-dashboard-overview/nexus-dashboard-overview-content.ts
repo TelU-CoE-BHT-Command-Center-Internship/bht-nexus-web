@@ -3,44 +3,10 @@ import ultrasonographyTrainingImage from "@/assets/news-highlights/ultrasonograp
 import type {
   DashboardAnnouncement,
   DashboardFeaturedProgram,
+  DashboardMetric,
+  DashboardRecentActivity,
   NexusDashboardOverviewContent,
 } from "@/components/nexus-dashboard-overview/nexus-dashboard-overview-types";
-
-const announcements: DashboardAnnouncement[] = [
-  {
-    actionLabel: "Lihat data anggota",
-    deadlineAt: "2026-08-14T16:00:00+07:00",
-    deadlineLabel: "Batas konfirmasi: 14 Agustus 2026",
-    expiresAt: "2026-08-14T23:59:59+07:00",
-    href: "https://coe-bht.telkomuniversity.ac.id/#staf",
-    id: "research-data-refresh-2026-08",
-    summary:
-      "Mohon peneliti memverifikasi profil, publikasi, dataset, dan proyek agar ringkasan BHT Nexus tetap akurat.",
-    title: "Pemutakhiran Data Riset CoE BHT 2026",
-  },
-  {
-    actionLabel: "Lihat fokus riset",
-    deadlineAt: "2026-08-18T09:00:00+07:00",
-    deadlineLabel: "Selasa, 18 Agustus 2026 · 09.00 WIB",
-    expiresAt: "2026-08-18T23:59:59+07:00",
-    href: "https://coe-bht.telkomuniversity.ac.id/#riset",
-    id: "digital-health-coordination-2026-08",
-    summary:
-      "Agenda membahas progres riset, kebutuhan dataset, dan peluang kolaborasi antaranggota CoE BHT.",
-    title: "Koordinasi Riset Digital Health Semester Ganjil",
-  },
-  {
-    actionLabel: "Lihat program",
-    deadlineAt: "2026-08-28T16:00:00+07:00",
-    deadlineLabel: "Batas pendaftaran minat: 28 Agustus 2026",
-    expiresAt: "2026-08-28T23:59:59+07:00",
-    href: "https://coe-bht.telkomuniversity.ac.id/#pelatihan_seminar",
-    id: "ultrasonography-training-interest-2026",
-    summary:
-      "Anggota dapat mendaftarkan minat awal untuk pelatihan ultrasonografi dan diagnostik pencitraan.",
-    title: "Pendaftaran Minat Basic Training Ultrasonography",
-  },
-];
 
 const featuredPrograms: DashboardFeaturedProgram[] = [
   {
@@ -133,27 +99,30 @@ function formatDashboardIsoDate(now: Date) {
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
+/** Bagian dashboard yang dibaca dari server; kosong bila server menolaknya. */
+export type NexusDashboardLiveContent = {
+  announcements: DashboardAnnouncement[];
+  metrics: DashboardMetric[];
+  recentActivities: DashboardRecentActivity[];
+};
+
 /**
- * Announcements and featured programs are real static content. Metrics,
- * activity feed, activity chart, and recent projects have no backend
- * source yet, so they stay empty rather than showing invented numbers
- * under a real signed-in identity.
+ * Featured programs are real static content. Metrics, announcements, and the
+ * activity feed come from the server. The activity chart and recent projects
+ * have no backend source yet, so they stay empty rather than showing invented
+ * numbers under a real signed-in identity.
  */
 export function getNexusDashboardOverviewContent(
   viewerName: string,
   now = new Date(),
+  live: NexusDashboardLiveContent = {
+    announcements: [],
+    metrics: [],
+    recentActivities: [],
+  },
 ): NexusDashboardOverviewContent {
   return {
-    announcements: announcements
-      .filter(
-        (announcement) =>
-          new Date(announcement.expiresAt).getTime() >= now.getTime(),
-      )
-      .sort(
-        (first, second) =>
-          new Date(first.deadlineAt).getTime() -
-          new Date(second.deadlineAt).getTime(),
-      ),
+    announcements: live.announcements,
     activityPeriodLabel: "6 bulan terakhir",
     activitySeries: [],
     activitySubtitle: "Perkembangan data yang telah lolos peninjauan",
@@ -165,8 +134,8 @@ export function getNexusDashboardOverviewContent(
     greeting: `Selamat datang kembali, ${viewerName}`,
     intro:
       "Memajukan riset dan inovasi biomedis serta teknologi kesehatan bersama.",
-    metrics: [],
-    recentActivities: [],
+    metrics: live.metrics,
+    recentActivities: live.recentActivities,
     recentActivitiesActionLabel: "Lihat semua",
     recentActivitiesTitle: "Aktivitas Terkini",
     recentProjects: [],

@@ -55,7 +55,7 @@ export function NexusDashboardAnnouncement({
       (announcement) => announcement.id === activeAnnouncement.id,
     ) + 1;
   const positionLabel = `${activePosition} dari ${announcements.length}`;
-  const isExternalLink = activeAnnouncement.href.startsWith("http");
+  const isExternalLink = activeAnnouncement.href?.startsWith("http") ?? false;
 
   return (
     <section
@@ -83,26 +83,30 @@ export function NexusDashboardAnnouncement({
           </span>
         </div>
         <p className={styles.summary}>{activeAnnouncement.summary}</p>
-        <p className={styles.deadline}>
-          <span aria-hidden="true" />
-          <time dateTime={activeAnnouncement.deadlineAt}>
-            {activeAnnouncement.deadlineLabel}
-          </time>
-        </p>
+        {activeAnnouncement.deadlineLabel ? (
+          <p className={styles.deadline}>
+            <span aria-hidden="true" />
+            <time dateTime={activeAnnouncement.deadlineAt}>
+              {activeAnnouncement.deadlineLabel}
+            </time>
+          </p>
+        ) : null}
       </div>
 
-      <a
-        className={styles.action}
-        href={activeAnnouncement.href}
-        rel={isExternalLink ? "noreferrer" : undefined}
-        target={isExternalLink ? "_blank" : undefined}
-      >
-        {activeAnnouncement.actionLabel}
-        {isExternalLink ? (
-          <span className={styles.visuallyHidden}> (dibuka di tab baru)</span>
-        ) : null}
-        <ArrowIcon />
-      </a>
+      {activeAnnouncement.href && activeAnnouncement.actionLabel ? (
+        <a
+          className={styles.action}
+          href={activeAnnouncement.href}
+          rel={isExternalLink ? "noreferrer" : undefined}
+          target={isExternalLink ? "_blank" : undefined}
+        >
+          {activeAnnouncement.actionLabel}
+          {isExternalLink ? (
+            <span className={styles.visuallyHidden}> (dibuka di tab baru)</span>
+          ) : null}
+          <ArrowIcon />
+        </a>
+      ) : null}
 
       <button
         aria-label={`Tutup pengumuman ${positionLabel}: ${activeAnnouncement.title}`}

@@ -171,6 +171,17 @@ export const getServerSession = cache(async (): Promise<NexusServerSession> => {
   };
 });
 
+/**
+ * Isi `data` dari jawaban server untuk akun yang sedang masuk, atau `null`
+ * bila server menolak atau tidak dapat dihubungi.
+ */
+export async function getServerData<T>(path: string): Promise<T | null> {
+  const result = await fetchJson(path, await cookieHeader());
+  if (result === null || result.status !== 200) return null;
+  const data = (result.body as { data?: T } | null)?.data;
+  return data ?? null;
+}
+
 /** Halaman ruang kerja yang sedang diminta, bila aman dipakai sebagai tujuan kembali. */
 export async function getRequestPath(): Promise<string | undefined> {
   return safeWorkspaceReturnPath(

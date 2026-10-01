@@ -66,31 +66,37 @@ export function NexusDashboardOverview({
                 <p>{metric.label}</p>
                 <div className={styles.metricValueRow}>
                   <strong>{metric.value}</strong>
-                  <span
-                    aria-hidden="true"
-                    className={styles.metricChange}
-                    data-direction={metric.changeDirection}
-                    title={metric.changeDescription}
-                  >
-                    <NexusDashboardOverviewIcon
-                      name={
-                        metric.changeDirection === "up"
-                          ? "arrow-up"
-                          : metric.changeDirection === "down"
-                            ? "arrow-down"
-                            : "steady"
-                      }
-                    />
-                    {metric.changeLabel}
-                  </span>
-                  <span className={styles.visuallyHidden}>
-                    {metric.changeDescription}
-                  </span>
+                  {metric.changeLabel ? (
+                    <>
+                      <span
+                        aria-hidden="true"
+                        className={styles.metricChange}
+                        data-direction={metric.changeDirection}
+                        title={metric.changeDescription}
+                      >
+                        <NexusDashboardOverviewIcon
+                          name={
+                            metric.changeDirection === "up"
+                              ? "arrow-up"
+                              : metric.changeDirection === "down"
+                                ? "arrow-down"
+                                : "steady"
+                          }
+                        />
+                        {metric.changeLabel}
+                      </span>
+                      <span className={styles.visuallyHidden}>
+                        {metric.changeDescription}
+                      </span>
+                    </>
+                  ) : null}
                 </div>
                 <span className={styles.metricDetail}>{metric.detail}</span>
-                <span className={styles.metricComparison}>
-                  {metric.comparisonLabel}
-                </span>
+                {metric.comparisonLabel ? (
+                  <span className={styles.metricComparison}>
+                    {metric.comparisonLabel}
+                  </span>
+                ) : null}
               </div>
               <span className={styles.metricIcon}>
                 <NexusDashboardOverviewIcon name={metric.icon} />
