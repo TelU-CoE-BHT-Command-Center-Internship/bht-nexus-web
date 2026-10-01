@@ -59,7 +59,7 @@ import {
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
-import { apiErrorMessage } from "@/lib/api-client";
+import { ApiRequestError, apiErrorMessage } from "@/lib/api-client";
 import {
   createJob,
   getJob,
@@ -70,6 +70,7 @@ import {
   retryJob,
   syncReviewCasesFromJob,
 } from "@/lib/api-jobs";
+import { WORKER_UNAVAILABLE_CODE } from "@/lib/worker-unavailable";
 
 const pageSizeConfig: NexusSelectConfig = {
   defaultValue: "10",
@@ -691,6 +692,14 @@ export function NexusScraperSearch({
             : "The job could not be submitted.",
           content.locale,
         );
+        setFeedback({ message, tone: "danger" });
+        if (
+          error instanceof ApiRequestError &&
+          error.code === WORKER_UNAVAILABLE_CODE
+        ) {
+          setJobs((current) => current.filter((job) => job.id !== id));
+          return;
+        }
         setJobs((current) =>
           current.map((job) =>
             job.id === id

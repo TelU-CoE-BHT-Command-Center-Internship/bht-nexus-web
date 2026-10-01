@@ -260,6 +260,7 @@ function sourceOf(summary: ReviewCaseRecord, payload?: Payload) {
   }
   const source = text(payload?.source).toLowerCase();
   if (source === "manual") return "manual" as const;
+  if (source === "spreadsheet_import") return "spreadsheet" as const;
   if (source === "google_scholar" || source === "scholar") {
     return "scholar" as const;
   }
