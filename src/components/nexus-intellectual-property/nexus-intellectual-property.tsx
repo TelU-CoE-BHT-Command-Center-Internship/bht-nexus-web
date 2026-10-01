@@ -30,8 +30,8 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
-  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceLoadError,
   NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -61,7 +61,6 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 import { apiErrorMessage } from "@/lib/api-client";
 import { requestHouseRecordCompletion } from "@/lib/api-house-records";
@@ -317,7 +316,7 @@ export function NexusIntellectualProperty({
     .toSorted()
     .join(", ");
   const resultSummary = [
-    `Periode evaluasi ${evaluationPeriods}`,
+    ...(evaluationPeriods ? [`Periode evaluasi ${evaluationPeriods}`] : []),
     `${filtered.length} dari ${contextRecords.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
@@ -515,6 +514,7 @@ export function NexusIntellectualProperty({
             value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
+        unavailable={catalog.state === "error"}
       />
 
       <NexusWorkspaceCatalog
@@ -559,52 +559,54 @@ export function NexusIntellectualProperty({
           ))}
         </NexusWorkspaceToolbar>
 
-        <NexusWorkspaceResultMeta
-          isUpdating={isSearchUpdating}
-          onResetFilters={hasActiveFilters ? resetFilters : undefined}
-          resultLabel={`${filtered.length} rekam ditemukan`}
-          updatingLabel="Memperbarui hasil pencarian"
-        />
+        {catalog.state === "error" ? null : (
+          <NexusWorkspaceResultMeta
+            isUpdating={isSearchUpdating}
+            onResetFilters={hasActiveFilters ? resetFilters : undefined}
+            resultLabel={`${filtered.length} rekam ditemukan`}
+            updatingLabel="Memperbarui hasil pencarian"
+          />
+        )}
 
         <NexusWorkspaceTableSection
           guidance={content.officialNote}
-          summary={resultSummary}
+          summary={catalog.state === "error" ? undefined : resultSummary}
           title="Daftar kekayaan intelektual resmi"
           titleId="official-intellectual-property-title"
         >
-          {catalog.state === "error" ? (
-            <NexusWorkspaceState
-              actions={
-                <NexusWorkspaceButton onClick={catalog.retry} type="button">
-                  Coba lagi
-                </NexusWorkspaceButton>
-              }
-              description={
-                catalog.errorMessage ??
-                "Kekayaan intelektual resmi belum dapat dimuat."
-              }
-              eyebrow="Gagal memuat"
-              title="Kekayaan intelektual resmi belum dapat dimuat"
-              tone="danger"
-            />
-          ) : null}
           <NexusWorkspaceRecordTable
             caption="Kekayaan intelektual resmi CoE BHT beserta nomor pencatatan dan keterkaitan indikator KM"
             columns={columns}
             empty={
               <NexusWorkspaceEmptyState
                 description={
-                  records.length === 0
-                    ? "Rekam akan muncul setelah pengajuan disetujui melalui proses Tinjauan."
-                    : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
+                  records.length > 0
+                    ? "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
+                    : initialMemberId
+                      ? "Anggota ini belum tercatat sebagai pencipta pada kekayaan intelektual resmi."
+                      : "Rekam akan muncul setelah pengajuan disetujui melalui proses Tinjauan."
                 }
                 onResetFilters={hasActiveFilters ? resetFilters : undefined}
                 title={
-                  records.length === 0
-                    ? "Belum ada kekayaan intelektual resmi"
-                    : "Tidak ada rekam yang cocok"
+                  records.length > 0
+                    ? "Tidak ada rekam yang cocok"
+                    : initialMemberId
+                      ? "Belum ada kekayaan intelektual untuk anggota ini"
+                      : "Belum ada kekayaan intelektual resmi"
                 }
               />
+            }
+            error={
+              catalog.state === "error" ? (
+                <NexusWorkspaceLoadError
+                  description={
+                    catalog.errorMessage ??
+                    "Kekayaan intelektual resmi belum dapat dimuat."
+                  }
+                  onRetry={catalog.retry}
+                  title="Kekayaan intelektual resmi belum dapat dimuat"
+                />
+              ) : undefined
             }
             isLoading={isSearchUpdating || isCatalogLoading}
             pagination={

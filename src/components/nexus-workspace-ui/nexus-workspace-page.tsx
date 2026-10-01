@@ -23,6 +23,8 @@ type NexusWorkspacePageProps = {
 
 type NexusWorkspaceMetricsProps = {
   metrics: readonly NexusWorkspaceMetric[];
+  /** Data sumber gagal dimuat: angka ditampilkan kosong, bukan nol. */
+  unavailable?: boolean;
 };
 
 export function NexusWorkspacePage({
@@ -53,16 +55,21 @@ export function NexusWorkspacePage({
   );
 }
 
-export function NexusWorkspaceMetrics({ metrics }: NexusWorkspaceMetricsProps) {
+export function NexusWorkspaceMetrics({
+  metrics,
+  unavailable = false,
+}: NexusWorkspaceMetricsProps) {
   return (
     <div className={styles.summaryGrid}>
       {metrics.map((metric) => (
         <article
-          aria-busy={metric.value === null || undefined}
+          aria-busy={(!unavailable && metric.value === null) || undefined}
           aria-label={
-            metric.value === null
-              ? `${metric.label}: sedang dimuat`
-              : `${metric.label}: ${metric.value} ${metric.unit}`
+            unavailable
+              ? `${metric.label}: belum tersedia`
+              : metric.value === null
+                ? `${metric.label}: sedang dimuat`
+                : `${metric.label}: ${metric.value} ${metric.unit}`
           }
           className={styles.summaryCard}
           data-tone={metric.tone}
@@ -74,7 +81,7 @@ export function NexusWorkspaceMetrics({ metrics }: NexusWorkspaceMetricsProps) {
           <div className={styles.cardCopy}>
             <h3>{metric.label}</h3>
             <p>
-              <strong>{metric.value ?? "–"}</strong>
+              <strong>{unavailable ? "–" : (metric.value ?? "–")}</strong>
               <span>{metric.unit}</span>
             </p>
           </div>

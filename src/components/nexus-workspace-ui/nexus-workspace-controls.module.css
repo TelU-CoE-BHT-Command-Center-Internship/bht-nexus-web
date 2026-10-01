@@ -231,6 +231,14 @@
 }
 
 /*
+ * Bila baris jumlah hasil tidak tampil (misalnya daftar gagal dimuat), bagian
+ * tabel tetap berjarak dari baris filter.
+ */
+.toolbar + section {
+  margin-top: 1.1rem;
+}
+
+/*
  * Di bawah lebar ini satu kolom pencarian dan satu kolom filter tidak lagi
  * muat berdampingan, sehingga kolomnya ditumpuk daripada dibiarkan meluber.
  */

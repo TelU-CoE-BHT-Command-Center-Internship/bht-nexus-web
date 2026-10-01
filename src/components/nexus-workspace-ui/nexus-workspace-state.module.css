@@ -1,77 +1,92 @@
 .state {
-  display: grid;
-  width: min(100%, 48rem);
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
+  width: 100%;
+  min-width: 0;
   align-items: center;
-  gap: 1rem;
-  margin-top: clamp(1.5rem, 3vw, 2.5rem);
-  padding: clamp(1rem, 2vw, 1.35rem);
-  border: 1px solid #dbe3ef;
-  border-left: 0.2rem solid #7398cc;
-  border-radius: 0.8rem;
-  background: #fff;
-  box-shadow: 0 0.25rem 0.8rem rgb(33 52 79 / 5%);
+  flex-direction: column;
+  padding: clamp(2rem, 5vw, 3rem) 1rem;
+  text-align: center;
 }
 
-.state[data-tone="danger"] {
-  border-color: #f2c8ce;
-  border-left-color: #c92f43;
-  background: #fffafb;
+.state[data-framed] {
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  padding: clamp(2.25rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 2.5rem);
+  border: 1px solid var(--color-nexus-border-soft);
+  border-radius: 0.875rem;
+  background: var(--color-nexus-surface);
+  box-shadow: 0 1px 3px rgb(16 24 40 / 4%);
 }
 
 .icon {
   display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
   background: #eaf2fd;
+  box-shadow: 0 0 0 0.45rem #f4f8fe;
   color: #315f9d;
-  font-weight: 800;
 }
 
 .state[data-tone="danger"] .icon {
   background: #fdebed;
+  box-shadow: 0 0 0 0.45rem #fef5f6;
   color: #b32b3d;
 }
 
-.copy {
-  min-width: 0;
+.icon svg {
+  width: 1.45rem;
+  height: 1.45rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
-.copy > span {
+.eyebrow {
+  margin-top: 1.1rem;
   color: #6757d8;
   font-size: 0.65rem;
   font-weight: 800;
-  letter-spacing: 0.035em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.copy h3 {
-  margin: 0.2rem 0 0;
-  color: var(--color-nexus-text-strong);
-  font-size: 1rem;
+.state[data-tone="danger"] .eyebrow {
+  color: #b32b3d;
 }
 
-.copy p {
+.state h3 {
+  max-width: 40rem;
   margin: 0.35rem 0 0;
+  color: var(--color-nexus-text-strong);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.state p {
+  max-width: 36rem;
+  margin: 0.45rem 0 0;
   color: var(--color-nexus-text-muted);
-  font-size: 0.78rem;
-  line-height: 1.55;
+  font-size: 0.8rem;
+  line-height: 1.6;
 }
 
 .actions {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
 }
 
-@media (max-width: 42rem) {
-  .state {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
+@media (max-width: 36rem) {
   .actions {
-    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .actions > a,

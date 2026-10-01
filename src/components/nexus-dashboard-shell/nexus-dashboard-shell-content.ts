@@ -106,6 +106,7 @@ export type NexusDashboardShellContent = {
   }>;
   notificationLabel: string;
   notifications: DashboardNotification[];
+  notificationsEmptyDescription: string;
   notificationsEmptyLabel: string;
   notificationsTitle: string;
   openMenuLabel: string;
@@ -496,9 +497,12 @@ export function getNexusDashboardShellPreviewContent(
     routeAccess,
     notificationLabel: isId ? "Buka notifikasi" : "Open notifications",
     notifications: [],
+    notificationsEmptyDescription: isId
+      ? "Pemberitahuan untuk akun Anda akan tampil di sini."
+      : "Notices for your account will appear here.",
     notificationsEmptyLabel: isId
-      ? "Belum ada notifikasi baru."
-      : "No new notifications.",
+      ? "Belum ada notifikasi"
+      : "No notifications yet",
     notificationsTitle: isId ? "Notifikasi" : "Notifications",
     openMenuLabel: isId ? "Buka navigasi" : "Open navigation",
     plannedBadgeLabel: isId ? "Segera" : "Coming soon",

@@ -35,7 +35,9 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
+  NexusWorkspaceEmptyState,
   NexusWorkspaceLinkButton,
+  NexusWorkspaceLoadError,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -633,6 +635,7 @@ export function NexusAuditReview({
             value: isQueueLoading ? null : counts.completed,
           },
         ]}
+        unavailable={queue.state === "error"}
       />
 
       <section aria-labelledby="audit-queue-title" className={styles.queue}>
@@ -702,20 +705,22 @@ export function NexusAuditReview({
           ))}
         </NexusWorkspaceToolbar>
 
-        <div aria-live="polite" className={styles.resultMeta}>
-          <p className={styles.resultMetaCopy}>
-            {isQueueLoading
-              ? "Memuat antrean tinjauan"
-              : query !== deferredQuery
-                ? "Memperbarui hasil"
-                : `${filtered.length} data ditemukan`}
-          </p>
-          {hasActiveFilters ? (
-            <button onClick={resetFilters} type="button">
-              Atur ulang filter
-            </button>
-          ) : null}
-        </div>
+        {queue.state === "error" ? null : (
+          <div aria-live="polite" className={styles.resultMeta}>
+            <p className={styles.resultMetaCopy}>
+              {isQueueLoading
+                ? "Memuat antrean tinjauan"
+                : query !== deferredQuery
+                  ? "Memperbarui hasil"
+                  : `${filtered.length} data ditemukan`}
+            </p>
+            {hasActiveFilters ? (
+              <button onClick={resetFilters} type="button">
+                Atur ulang filter
+              </button>
+            ) : null}
+          </div>
+        )}
 
         {selectedDetail?.state === "error" ? (
           <NexusWorkspaceState
@@ -747,48 +752,41 @@ export function NexusAuditReview({
 
         <NexusWorkspaceTableSection
           guidance="Sinyal hanya membantu memusatkan perhatian. Reviewer tetap memeriksa identitas, periode, bukti, dan data pembanding."
-          summary={`${sourceTabs.find((tab) => tab.id === source)?.label ?? "Semua sumber"}: ${filtered.length} data sesuai filter`}
+          summary={
+            queue.state === "error"
+              ? undefined
+              : `${sourceTabs.find((tab) => tab.id === source)?.label ?? "Semua sumber"}: ${filtered.length} data sesuai filter`
+          }
           title="Antrean tinjauan"
           titleId="audit-review-queue-table-title"
         >
-          {queue.state === "error" ? (
-            <NexusWorkspaceState
-              actions={
-                <NexusWorkspaceButton onClick={queue.retry} type="button">
-                  Coba lagi
-                </NexusWorkspaceButton>
-              }
-              description={
-                queue.errorMessage ?? "Antrean tinjauan belum dapat dimuat."
-              }
-              eyebrow="Gagal memuat"
-              title="Antrean tinjauan belum dapat dimuat"
-              tone="danger"
-            />
-          ) : null}
           <NexusWorkspaceRecordTable
             caption="Daftar kandidat lintas-domain untuk ditinjau oleh Audit KM"
             columns={columns}
             empty={
               hasActiveFilters ? (
-                <div className={styles.emptyState}>
-                  <strong>Tidak ada data yang cocok</strong>
-                  <p className={styles.emptyCopy}>
-                    Ubah kata kunci atau filter untuk melihat kandidat lainnya.
-                  </p>
-                  <NexusWorkspaceButton onClick={resetFilters} type="button">
-                    Atur ulang filter
-                  </NexusWorkspaceButton>
-                </div>
+                <NexusWorkspaceEmptyState
+                  description="Ubah kata kunci atau filter untuk melihat kandidat lainnya."
+                  onResetFilters={resetFilters}
+                  title="Tidak ada data yang cocok"
+                />
               ) : (
-                <div className={styles.emptyState}>
-                  <strong>Belum ada kandidat untuk ditinjau</strong>
-                  <p className={styles.emptyCopy}>
-                    Kandidat dari pengumpulan, impor, atau pengajuan manual akan
-                    muncul di sini.
-                  </p>
-                </div>
+                <NexusWorkspaceEmptyState
+                  description="Kandidat dari pengumpulan, impor, atau pengajuan manual akan muncul di sini."
+                  title="Belum ada kandidat untuk ditinjau"
+                />
               )
+            }
+            error={
+              queue.state === "error" ? (
+                <NexusWorkspaceLoadError
+                  description={
+                    queue.errorMessage ?? "Antrean tinjauan belum dapat dimuat."
+                  }
+                  onRetry={queue.retry}
+                  title="Antrean tinjauan belum dapat dimuat"
+                />
+              ) : undefined
             }
             isLoading={isQueueLoading || query !== deferredQuery}
             pagination={

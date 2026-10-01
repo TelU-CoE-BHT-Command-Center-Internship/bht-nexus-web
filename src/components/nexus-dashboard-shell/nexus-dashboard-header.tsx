@@ -316,7 +316,13 @@ export function NexusDashboardHeader({
                   </Link>
                 ))
               ) : (
-                <p>{content.notificationsEmptyLabel}</p>
+                <div className={styles.notificationEmpty}>
+                  <span aria-hidden="true">
+                    <DashboardShellIcon name="bell" />
+                  </span>
+                  <strong>{content.notificationsEmptyLabel}</strong>
+                  <p>{content.notificationsEmptyDescription}</p>
+                </div>
               )}
             </section>
           ) : null}

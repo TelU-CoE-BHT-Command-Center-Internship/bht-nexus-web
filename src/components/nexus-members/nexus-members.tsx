@@ -306,28 +306,26 @@ export function NexusMembers({
   }
 
   function renderDetail() {
+    /* Status muat dan galat direktori sudah tampil di daftar anggota; panel
+       rincian tidak mengulanginya. */
     if (directory.state === "loading") {
       return (
         <article
           aria-busy="true"
           className={`${styles.detail} ${styles.detailEmpty}`}
-        >
-          <div className={styles.detailEmptyContent}>
-            <h2>Memuat direktori anggota…</h2>
-          </div>
-        </article>
+        />
       );
     }
 
     if (directory.state === "error") {
       return (
         <article className={`${styles.detail} ${styles.detailEmpty}`}>
-          <div className={styles.detailEmptyContent} role="alert">
-            <h2>Direktori anggota belum dapat dimuat</h2>
-            <p>{directory.errorMessage}</p>
-            <NexusWorkspaceButton onClick={directory.retry} type="button">
-              Coba lagi
-            </NexusWorkspaceButton>
+          <div className={styles.detailEmptyContent}>
+            <h2>Rincian anggota belum tersedia</h2>
+            <p>
+              Rincian akan tampil di sini setelah direktori anggota berhasil
+              dimuat.
+            </p>
           </div>
         </article>
       );

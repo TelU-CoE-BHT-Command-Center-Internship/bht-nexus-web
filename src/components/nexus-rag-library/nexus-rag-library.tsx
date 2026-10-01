@@ -23,6 +23,7 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
+  NexusWorkspaceEmptyState,
   NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -490,18 +491,19 @@ export function NexusRagLibrary({
             caption={content.title}
             columns={columns}
             empty={
-              <div className={styles.emptyState}>
-                <strong>
-                  {content.locale === "id"
-                    ? "Tidak ada dokumen yang cocok"
-                    : "No matching documents"}
-                </strong>
-                <p>
-                  {content.locale === "id"
+              <NexusWorkspaceEmptyState
+                description={
+                  content.locale === "id"
                     ? "Ubah kata kunci atau filter status untuk melihat dokumen lain."
-                    : "Change the keyword or status filter to see other documents."}
-                </p>
-              </div>
+                    : "Change the keyword or status filter to see other documents."
+                }
+                title={
+                  content.locale === "id"
+                    ? "Tidak ada dokumen yang cocok"
+                    : "No matching documents"
+                }
+                tone="search"
+              />
             }
             isLoading={query !== deferredQuery}
             pagination={

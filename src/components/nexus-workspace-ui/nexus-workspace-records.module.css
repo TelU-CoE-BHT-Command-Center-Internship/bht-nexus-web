@@ -418,6 +418,12 @@
     padding: 0.75rem;
   }
 
+  /* Kartu terakhir yang tidak berpasangan memenuhi baris, sehingga daftar
+     berisi satu kartu tidak menyisakan separuh panel kosong. */
+  .mobileList > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
   .mobileLoading > span {
     height: 13rem;
   }

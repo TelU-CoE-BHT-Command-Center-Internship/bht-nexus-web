@@ -38,8 +38,8 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
-  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceLoadError,
   NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -69,7 +69,6 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 import { apiErrorMessage } from "@/lib/api-client";
 import { requestPublicationCompletion } from "@/lib/api-publications";
@@ -735,6 +734,7 @@ export function NexusPublications({
             value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
+        unavailable={catalog.state === "error"}
       />
 
       <NexusWorkspaceCatalog
@@ -788,51 +788,54 @@ export function NexusPublications({
           ))}
         </NexusWorkspaceToolbar>
 
-        <NexusWorkspaceResultMeta
-          isUpdating={isSearchUpdating}
-          onResetFilters={hasActiveFilters ? resetFilters : undefined}
-          resultLabel={`${filteredPublications.length} publikasi ditemukan`}
-          updatingLabel="Memperbarui hasil pencarian"
-        />
+        {catalog.state === "error" ? null : (
+          <NexusWorkspaceResultMeta
+            isUpdating={isSearchUpdating}
+            onResetFilters={hasActiveFilters ? resetFilters : undefined}
+            resultLabel={`${filteredPublications.length} publikasi ditemukan`}
+            updatingLabel="Memperbarui hasil pencarian"
+          />
+        )}
 
         <NexusWorkspaceTableSection
           guidance={content.officialNote}
-          summary={resultSummary}
+          summary={catalog.state === "error" ? undefined : resultSummary}
           title="Daftar publikasi resmi"
           titleId="official-publications-title"
         >
-          {catalog.state === "error" ? (
-            <NexusWorkspaceState
-              actions={
-                <NexusWorkspaceButton onClick={catalog.retry} type="button">
-                  Coba lagi
-                </NexusWorkspaceButton>
-              }
-              description={
-                catalog.errorMessage ?? "Publikasi resmi belum dapat dimuat."
-              }
-              eyebrow="Gagal memuat"
-              title="Publikasi resmi belum dapat dimuat"
-              tone="danger"
-            />
-          ) : null}
           <NexusWorkspaceRecordTable
             caption="Publikasi resmi CoE BHT beserta metadata karya, kuartil, dan keterkaitan indikator KM"
             columns={columns}
             empty={
               <NexusWorkspaceEmptyState
                 description={
-                  records.length === 0
-                    ? "Publikasi akan muncul setelah kandidat disetujui melalui proses Tinjauan."
-                    : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
+                  records.length > 0
+                    ? "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
+                    : initialMemberId
+                      ? "Anggota ini belum tercatat sebagai penulis pada publikasi resmi."
+                      : "Publikasi akan muncul setelah kandidat disetujui melalui proses Tinjauan."
                 }
                 onResetFilters={hasActiveFilters ? resetFilters : undefined}
                 title={
-                  records.length === 0
-                    ? "Belum ada publikasi resmi"
-                    : "Tidak ada publikasi yang cocok"
+                  records.length > 0
+                    ? "Tidak ada publikasi yang cocok"
+                    : initialMemberId
+                      ? "Belum ada publikasi untuk anggota ini"
+                      : "Belum ada publikasi resmi"
                 }
               />
+            }
+            error={
+              catalog.state === "error" ? (
+                <NexusWorkspaceLoadError
+                  description={
+                    catalog.errorMessage ??
+                    "Publikasi resmi belum dapat dimuat."
+                  }
+                  onRetry={catalog.retry}
+                  title="Publikasi resmi belum dapat dimuat"
+                />
+              ) : undefined
             }
             isLoading={isSearchUpdating || isCatalogLoading}
             pagination={

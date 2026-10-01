@@ -27,8 +27,8 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
-  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceLoadError,
   NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -58,7 +58,6 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 import { apiErrorMessage } from "@/lib/api-client";
 import { requestHouseRecordCompletion } from "@/lib/api-house-records";
@@ -295,7 +294,7 @@ export function NexusContractProposals({
     .toSorted()
     .join(", ");
   const resultSummary = [
-    `Periode evaluasi ${evaluationPeriods}`,
+    ...(evaluationPeriods ? [`Periode evaluasi ${evaluationPeriods}`] : []),
     `${filtered.length} dari ${contextRecords.length} rekam sesuai filter`,
     activeFilterCount > 0
       ? `${activeFilterCount} filter aktif`
@@ -511,6 +510,7 @@ export function NexusContractProposals({
             value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
+        unavailable={catalog.state === "error"}
       />
 
       <NexusWorkspaceCatalog
@@ -554,52 +554,54 @@ export function NexusContractProposals({
           )}
         </NexusWorkspaceToolbar>
 
-        <NexusWorkspaceResultMeta
-          isUpdating={isSearchUpdating}
-          onResetFilters={hasActiveFilters ? resetFilters : undefined}
-          resultLabel={`${filtered.length} rekam ditemukan`}
-          updatingLabel="Memperbarui hasil pencarian"
-        />
+        {catalog.state === "error" ? null : (
+          <NexusWorkspaceResultMeta
+            isUpdating={isSearchUpdating}
+            onResetFilters={hasActiveFilters ? resetFilters : undefined}
+            resultLabel={`${filtered.length} rekam ditemukan`}
+            updatingLabel="Memperbarui hasil pencarian"
+          />
+        )}
 
         <NexusWorkspaceTableSection
           guidance={content.officialNote}
-          summary={resultSummary}
+          summary={catalog.state === "error" ? undefined : resultSummary}
           title="Daftar kontrak dan proposal resmi"
           titleId="official-contract-proposals-title"
         >
-          {catalog.state === "error" ? (
-            <NexusWorkspaceState
-              actions={
-                <NexusWorkspaceButton onClick={catalog.retry} type="button">
-                  Coba lagi
-                </NexusWorkspaceButton>
-              }
-              description={
-                catalog.errorMessage ??
-                "Kontrak dan proposal resmi belum dapat dimuat."
-              }
-              eyebrow="Gagal memuat"
-              title="Kontrak dan proposal resmi belum dapat dimuat"
-              tone="danger"
-            />
-          ) : null}
           <NexusWorkspaceRecordTable
             caption="Kontrak dan proposal resmi CoE BHT beserta skema, pihak terkait, bukti, dan indikator KM"
             columns={columns}
             empty={
               <NexusWorkspaceEmptyState
                 description={
-                  records.length === 0
-                    ? "Rekam akan muncul setelah kontrak atau proposal disetujui melalui proses Tinjauan."
-                    : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
+                  records.length > 0
+                    ? "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
+                    : initialMemberId
+                      ? "Anggota ini belum tercatat pada kontrak atau proposal resmi."
+                      : "Rekam akan muncul setelah kontrak atau proposal disetujui melalui proses Tinjauan."
                 }
                 onResetFilters={hasActiveFilters ? resetFilters : undefined}
                 title={
-                  records.length === 0
-                    ? "Belum ada kontrak atau proposal resmi"
-                    : "Tidak ada rekam yang cocok"
+                  records.length > 0
+                    ? "Tidak ada rekam yang cocok"
+                    : initialMemberId
+                      ? "Belum ada kontrak atau proposal untuk anggota ini"
+                      : "Belum ada kontrak atau proposal resmi"
                 }
               />
+            }
+            error={
+              catalog.state === "error" ? (
+                <NexusWorkspaceLoadError
+                  description={
+                    catalog.errorMessage ??
+                    "Kontrak dan proposal resmi belum dapat dimuat."
+                  }
+                  onRetry={catalog.retry}
+                  title="Kontrak dan proposal resmi belum dapat dimuat"
+                />
+              ) : undefined
             }
             isLoading={isSearchUpdating || isCatalogLoading}
             pagination={

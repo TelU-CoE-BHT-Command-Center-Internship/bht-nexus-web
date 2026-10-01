@@ -30,8 +30,8 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
-  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceLoadError,
   NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -61,7 +61,6 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 import { requestActivityCompletion } from "@/lib/api-activities";
 import { apiErrorMessage } from "@/lib/api-client";
@@ -506,6 +505,7 @@ export function NexusActivities({
             value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
+        unavailable={catalog.state === "error"}
       />
 
       <NexusWorkspaceCatalog
@@ -549,51 +549,53 @@ export function NexusActivities({
           )}
         </NexusWorkspaceToolbar>
 
-        <NexusWorkspaceResultMeta
-          isUpdating={isSearchUpdating}
-          onResetFilters={hasActiveFilters ? resetFilters : undefined}
-          resultLabel={`${filtered.length} rekam ditemukan`}
-          updatingLabel="Memperbarui hasil pencarian"
-        />
+        {catalog.state === "error" ? null : (
+          <NexusWorkspaceResultMeta
+            isUpdating={isSearchUpdating}
+            onResetFilters={hasActiveFilters ? resetFilters : undefined}
+            resultLabel={`${filtered.length} rekam ditemukan`}
+            updatingLabel="Memperbarui hasil pencarian"
+          />
+        )}
 
         <NexusWorkspaceTableSection
           guidance={content.officialNote}
-          summary={resultSummary}
+          summary={catalog.state === "error" ? undefined : resultSummary}
           title="Daftar kegiatan dan pengabdian resmi"
           titleId="official-activities-title"
         >
-          {catalog.state === "error" ? (
-            <NexusWorkspaceState
-              actions={
-                <NexusWorkspaceButton onClick={catalog.retry} type="button">
-                  Coba lagi
-                </NexusWorkspaceButton>
-              }
-              description={
-                catalog.errorMessage ?? "Kegiatan resmi belum dapat dimuat."
-              }
-              eyebrow="Gagal memuat"
-              title="Kegiatan resmi belum dapat dimuat"
-              tone="danger"
-            />
-          ) : null}
           <NexusWorkspaceRecordTable
             caption="Kegiatan dan pengabdian resmi CoE BHT beserta pihak, konteks, bukti, dan indikator KM"
             columns={columns}
             empty={
               <NexusWorkspaceEmptyState
                 description={
-                  records.length === 0
-                    ? "Rekam akan muncul setelah kegiatan atau program disetujui melalui proses Tinjauan."
-                    : "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
+                  records.length > 0
+                    ? "Ubah kata kunci atau filter untuk melihat rekam resmi lain."
+                    : initialMemberId
+                      ? "Anggota ini belum tercatat pada kegiatan atau pengabdian resmi."
+                      : "Rekam akan muncul setelah kegiatan atau program disetujui melalui proses Tinjauan."
                 }
                 onResetFilters={hasActiveFilters ? resetFilters : undefined}
                 title={
-                  records.length === 0
-                    ? "Belum ada kegiatan atau pengabdian resmi"
-                    : "Tidak ada rekam yang cocok"
+                  records.length > 0
+                    ? "Tidak ada rekam yang cocok"
+                    : initialMemberId
+                      ? "Belum ada kegiatan atau pengabdian untuk anggota ini"
+                      : "Belum ada kegiatan atau pengabdian resmi"
                 }
               />
+            }
+            error={
+              catalog.state === "error" ? (
+                <NexusWorkspaceLoadError
+                  description={
+                    catalog.errorMessage ?? "Kegiatan resmi belum dapat dimuat."
+                  }
+                  onRetry={catalog.retry}
+                  title="Kegiatan resmi belum dapat dimuat"
+                />
+              ) : undefined
             }
             isLoading={isSearchUpdating || isCatalogLoading}
             pagination={

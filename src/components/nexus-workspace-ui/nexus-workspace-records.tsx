@@ -17,6 +17,8 @@ type NexusWorkspaceRecordTableProps = {
   caption: string;
   columns: readonly NexusWorkspaceRecordColumn[];
   empty: ReactNode;
+  /** Bila daftar gagal dimuat, hanya keadaan ini yang ditampilkan. */
+  error?: ReactNode;
   isLoading?: boolean;
   pagination: ReactNode;
   rows: readonly NexusWorkspaceRecordRow[];
@@ -220,14 +222,23 @@ export function NexusWorkspaceMobileAction({
   );
 }
 
+/**
+ * Tabel rekam beserta kartu ringkasnya untuk layar sempit. Tepat satu keadaan
+ * yang tampil: kerangka saat memuat, keadaan gagal, keadaan kosong, atau baris
+ * data. Kepala tabel dan navigasi halaman hanya tampil bila ada baris.
+ */
 export function NexusWorkspaceRecordTable({
   caption,
   columns,
   empty,
+  error,
   isLoading = false,
   pagination,
   rows,
 }: NexusWorkspaceRecordTableProps) {
+  if (error && !isLoading) return <>{error}</>;
+  if (!isLoading && rows.length === 0) return <>{empty}</>;
+
   return (
     <>
       <div className={styles.desktopTable}>
@@ -287,7 +298,6 @@ export function NexusWorkspaceRecordTable({
         </div>
       )}
 
-      {!isLoading && rows.length === 0 ? empty : null}
       {pagination}
     </>
   );

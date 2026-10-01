@@ -288,20 +288,64 @@
   display: flex;
   align-items: center;
   flex-direction: column;
-  padding: 4rem 1.5rem;
+  padding: clamp(2.5rem, 6vw, 3.75rem) 1.5rem;
   text-align: center;
 }
 
+.emptyStateIcon {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin-bottom: 0.95rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #eaf2fd;
+  box-shadow: 0 0 0 0.45rem #f4f8fe;
+  color: #315f9d;
+}
+
+.emptyState[data-tone="search"] .emptyStateIcon {
+  background: #efedfd;
+  box-shadow: 0 0 0 0.45rem #f7f6fe;
+  color: #5b4bc4;
+}
+
+.emptyState[data-tone="danger"] .emptyStateIcon {
+  background: #fdebed;
+  box-shadow: 0 0 0 0.45rem #fef5f6;
+  color: #b32b3d;
+}
+
+.emptyStateIcon svg {
+  width: 1.45rem;
+  height: 1.45rem;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
 .emptyState strong {
-  color: var(--color-nexus-text);
-  font-size: 0.9rem;
+  color: var(--color-nexus-text-strong);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .emptyState p {
-  margin: 0.3rem 0 0.85rem;
+  max-width: 34rem;
+  margin: 0.4rem 0 0;
   color: var(--color-nexus-text-muted);
   font-size: 0.78rem;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.emptyStateActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.15rem;
 }
 
 @media (max-width: 36rem) {

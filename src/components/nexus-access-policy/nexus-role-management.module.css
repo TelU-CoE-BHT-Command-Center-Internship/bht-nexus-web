@@ -399,28 +399,6 @@
   font-weight: 600;
 }
 
-.usersEmpty {
-  display: grid;
-  justify-items: center;
-  gap: 0.45rem;
-  padding: 2rem 1rem;
-  text-align: center;
-}
-
-.usersEmpty strong {
-  color: var(--color-nexus-text-strong);
-  font-size: 0.85rem;
-  font-weight: 660;
-}
-
-.usersEmpty p {
-  max-width: 26rem;
-  margin: 0;
-  color: var(--color-nexus-text-muted);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-
 .infoPanel {
   display: grid;
   gap: 1rem;

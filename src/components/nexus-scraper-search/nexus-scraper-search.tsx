@@ -29,8 +29,10 @@ import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-work
 import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
+  NexusWorkspaceEmptyState,
   NexusWorkspaceField,
   NexusWorkspaceLinkButton,
+  NexusWorkspaceLoadError,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -255,6 +257,7 @@ export function NexusScraperSearch({
   const [jobsTotal, setJobsTotal] = useState<number | null>(null);
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
   const [loadJobsError, setLoadJobsError] = useState<string | null>(null);
+  const [jobsRequest, setJobsRequest] = useState(0);
   const [reviewSyncs, setReviewSyncs] = useState<
     Record<string, CollectionReviewSync>
   >({});
@@ -271,7 +274,7 @@ export function NexusScraperSearch({
   }, []);
   const reviewHref = canOpenReviews ? content.reviewHref : undefined;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: content is stable per locale, refetching on it would just repeat the same request
+  // biome-ignore lint/correctness/useExhaustiveDependencies: content is stable per locale; jobsRequest only changes when the user retries
   useEffect(() => {
     let cancelled = false;
     listJobs({ limit: 50 })
@@ -285,6 +288,7 @@ export function NexusScraperSearch({
           ...fetched,
         ]);
         setJobsTotal(result.meta.total);
+        setLoadJobsError(null);
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -304,7 +308,17 @@ export function NexusScraperSearch({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [jobsRequest]);
+  const retryLoadJobs = () => {
+    setIsLoadingJobs(true);
+    setJobsRequest((request) => request + 1);
+  };
+  const resetHistoryFilters = () => {
+    setHistoryQuery("");
+    setHistorySource("all");
+    setHistoryStatus("all");
+    setCurrentPage(1);
+  };
   const requestedMemberName = initialRequest?.memberName?.trim() || undefined;
   const initialMemberName = initialRequest?.memberId
     ? (knownMemberName(initialRequest.memberId) ?? requestedMemberName)
@@ -882,12 +896,10 @@ export function NexusScraperSearch({
       title={content.title}
       titleId="collection-title"
     >
-      {loadJobsError !== null ? (
-        <NexusWorkspaceNotice tone="danger">
-          {loadJobsError}
-        </NexusWorkspaceNotice>
-      ) : null}
-      <NexusWorkspaceMetrics metrics={metrics} />
+      <NexusWorkspaceMetrics
+        metrics={metrics}
+        unavailable={loadJobsError !== null}
+      />
       <div className={styles.workspace}>
         <NexusWorkspaceCard
           description={
@@ -1008,13 +1020,15 @@ export function NexusScraperSearch({
             value={historyStatus}
           />
         </div>
-        <div aria-live="polite" className={styles.historyResultMeta}>
-          {historyQuery !== deferredHistoryQuery
-            ? content.locale === "id"
-              ? "Memperbarui hasil pencarian..."
-              : "Updating search results..."
-            : `${filteredJobs.length} ${content.locale === "id" ? "pekerjaan ditemukan" : "jobs found"}`}
-        </div>
+        {loadJobsError === null ? (
+          <div aria-live="polite" className={styles.historyResultMeta}>
+            {historyQuery !== deferredHistoryQuery
+              ? content.locale === "id"
+                ? "Memperbarui hasil pencarian..."
+                : "Updating search results..."
+              : `${filteredJobs.length} ${content.locale === "id" ? "pekerjaan ditemukan" : "jobs found"}`}
+          </div>
+        ) : null}
 
         <NexusWorkspaceTableSection
           guidance={
@@ -1022,7 +1036,11 @@ export function NexusScraperSearch({
               ? "Pekerjaan otomatis tidak pernah menulis langsung ke data resmi; kandidat harus diputuskan oleh reviewer."
               : "Automated jobs never write directly to official data. Use the Indonesian workspace for candidate review."
           }
-          summary={`${filteredJobs.length} ${content.locale === "id" ? "sesuai filter dari" : "matching of"} ${jobs.length} ${content.locale === "id" ? "pekerjaan" : "jobs"} · ${completedCount} ${content.locale === "id" ? "selesai" : "completed"}`}
+          summary={
+            loadJobsError === null
+              ? `${filteredJobs.length} ${content.locale === "id" ? "sesuai filter dari" : "matching of"} ${jobs.length} ${content.locale === "id" ? "pekerjaan" : "jobs"} · ${completedCount} ${content.locale === "id" ? "selesai" : "completed"}`
+              : undefined
+          }
           title={
             content.locale === "id"
               ? "Riwayat pengumpulan"
@@ -1033,18 +1051,53 @@ export function NexusScraperSearch({
           <NexusWorkspaceRecordTable
             caption={content.tableCaption}
             columns={columns}
-            isLoading={isLoadingJobs}
             empty={
-              <p className={styles.noAction}>
-                {isHistoryFiltered
-                  ? content.locale === "id"
-                    ? "Tidak ada pekerjaan yang cocok dengan pencarian atau filter."
-                    : "No jobs match the current search or filters."
-                  : content.locale === "id"
-                    ? "Belum ada pekerjaan pengumpulan."
-                    : "No collection jobs yet."}
-              </p>
+              isHistoryFiltered ? (
+                <NexusWorkspaceEmptyState
+                  description={
+                    content.locale === "id"
+                      ? "Ubah kata kunci atau filter untuk melihat pekerjaan lainnya."
+                      : "Change the keyword or filters to see other jobs."
+                  }
+                  onResetFilters={resetHistoryFilters}
+                  title={
+                    content.locale === "id"
+                      ? "Tidak ada pekerjaan yang cocok"
+                      : "No matching jobs"
+                  }
+                />
+              ) : (
+                <NexusWorkspaceEmptyState
+                  description={
+                    content.locale === "id"
+                      ? "Isi formulir di atas untuk mulai mengumpulkan data dari profil SINTA dan Google Scholar seorang peneliti."
+                      : "Fill in the form above to start collecting data from a researcher's SINTA and Google Scholar profiles."
+                  }
+                  title={
+                    content.locale === "id"
+                      ? "Belum ada pekerjaan pengumpulan"
+                      : "No collection jobs yet"
+                  }
+                />
+              )
             }
+            error={
+              loadJobsError === null ? undefined : (
+                <NexusWorkspaceLoadError
+                  description={loadJobsError}
+                  onRetry={retryLoadJobs}
+                  retryLabel={
+                    content.locale === "id" ? "Coba lagi" : "Try again"
+                  }
+                  title={
+                    content.locale === "id"
+                      ? "Riwayat pengumpulan belum dapat dimuat"
+                      : "The collection history could not be loaded"
+                  }
+                />
+              )
+            }
+            isLoading={isLoadingJobs}
             pagination={
               <NexusTablePagination
                 currentPage={safePage}

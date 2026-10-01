@@ -41,8 +41,18 @@ type NexusWorkspaceNoticeProps = {
 };
 
 type NexusWorkspaceEmptyStateProps = {
+  actions?: ReactNode;
   description: string;
   onResetFilters?: () => void;
+  title: string;
+  /** Bawaan: `search` bila ada filter yang bisa diatur ulang, selain itu `empty`. */
+  tone?: "danger" | "empty" | "search";
+};
+
+type NexusWorkspaceLoadErrorProps = {
+  description: string;
+  onRetry?: () => void;
+  retryLabel?: string;
   title: string;
 };
 
@@ -52,6 +62,31 @@ type NexusWorkspaceResultMetaProps = {
   resultLabel: string;
   updatingLabel?: string;
 };
+
+function EmptyStateIcon({ tone }: { tone: "danger" | "empty" | "search" }) {
+  if (tone === "danger") {
+    return (
+      <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+        <path d="M12 8v4.5M12 16h.01" />
+        <path d="M10.3 3.9 2.6 17.2A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      </svg>
+    );
+  }
+  if (tone === "search") {
+    return (
+      <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+        <circle cx="10.5" cy="10.5" r="6.5" />
+        <path d="m15.5 15.5 5 5M8.5 8.5l4 4M12.5 8.5l-4 4" />
+      </svg>
+    );
+  }
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      <path d="M3.5 13.5 6 5.8A2 2 0 0 1 7.9 4.5h8.2A2 2 0 0 1 18 5.8l2.5 7.7" />
+      <path d="M3.5 13.5h4.6l1.4 2.5h5l1.4-2.5h4.6V18a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18Z" />
+    </svg>
+  );
+}
 
 function ArrowBackIcon() {
   return (
@@ -234,22 +269,63 @@ export function NexusWorkspaceResultMeta({
   );
 }
 
-/** Keadaan kosong untuk tabel ruang kerja. */
+/**
+ * Keadaan sebuah daftar yang tidak menampilkan baris: belum ada data, tidak ada
+ * yang cocok dengan filter, atau gagal dimuat. Satu tampilan untuk ketiganya,
+ * sehingga setiap ruang kerja terasa sama ketika daftarnya kosong.
+ */
 export function NexusWorkspaceEmptyState({
+  actions,
   description,
   onResetFilters,
   title,
+  tone = onResetFilters ? "search" : "empty",
 }: NexusWorkspaceEmptyStateProps) {
   return (
-    <div className={styles.emptyState}>
+    <div
+      className={styles.emptyState}
+      data-tone={tone}
+      role={tone === "danger" ? "alert" : "status"}
+    >
+      <span aria-hidden="true" className={styles.emptyStateIcon}>
+        <EmptyStateIcon tone={tone} />
+      </span>
       <strong>{title}</strong>
       <p>{description}</p>
-      {onResetFilters ? (
-        <NexusWorkspaceButton onClick={onResetFilters} type="button">
-          Atur ulang filter
-        </NexusWorkspaceButton>
+      {actions || onResetFilters ? (
+        <div className={styles.emptyStateActions}>
+          {onResetFilters ? (
+            <NexusWorkspaceButton onClick={onResetFilters} type="button">
+              Atur ulang filter
+            </NexusWorkspaceButton>
+          ) : null}
+          {actions}
+        </div>
       ) : null}
     </div>
+  );
+}
+
+/** Daftar yang gagal dimuat, dengan tombol untuk mencoba lagi. */
+export function NexusWorkspaceLoadError({
+  description,
+  onRetry,
+  retryLabel = "Coba lagi",
+  title,
+}: NexusWorkspaceLoadErrorProps) {
+  return (
+    <NexusWorkspaceEmptyState
+      actions={
+        onRetry ? (
+          <NexusWorkspaceButton onClick={onRetry} type="button">
+            {retryLabel}
+          </NexusWorkspaceButton>
+        ) : undefined
+      }
+      description={description}
+      title={title}
+      tone="danger"
+    />
   );
 }
 

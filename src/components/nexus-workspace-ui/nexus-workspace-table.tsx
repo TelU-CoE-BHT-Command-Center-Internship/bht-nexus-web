@@ -4,7 +4,8 @@ import styles from "@/components/nexus-workspace-ui/nexus-workspace-table.module
 type NexusWorkspaceTableSectionProps = {
   children: ReactNode;
   guidance: string;
-  summary: ReactNode;
+  /** Ringkasan hasil; dikosongkan selama daftar belum dapat dimuat. */
+  summary?: ReactNode;
   title: string;
   titleId: string;
 };
@@ -21,7 +22,7 @@ export function NexusWorkspaceTableSection({
       <header className={styles.header}>
         <div>
           <h3 id={titleId}>{title}</h3>
-          <p>{summary}</p>
+          {summary ? <p>{summary}</p> : null}
         </div>
         <p className={styles.guidance}>{guidance}</p>
       </header>

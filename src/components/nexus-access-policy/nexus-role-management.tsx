@@ -35,6 +35,7 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
+  NexusWorkspaceEmptyState,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -849,19 +850,18 @@ export function NexusRoleManagement({
                     caption={`Akun yang memakai peran ${selectedRole.label}`}
                     columns={userColumns}
                     empty={
-                      <div className={styles.usersEmpty}>
-                        <strong>Belum ada akun pada peran ini</strong>
-                        <p>
-                          Peran ini dapat dipilih ketika mengundang akun baru
-                          atau ketika mengubah akses akun yang sudah ada.
-                        </p>
-                        <NexusWorkspaceButton
-                          onClick={() => navigate(ADMINISTRATION_HREF)}
-                          type="button"
-                        >
-                          Buka daftar akun
-                        </NexusWorkspaceButton>
-                      </div>
+                      <NexusWorkspaceEmptyState
+                        actions={
+                          <NexusWorkspaceButton
+                            onClick={() => navigate(ADMINISTRATION_HREF)}
+                            type="button"
+                          >
+                            Buka daftar akun
+                          </NexusWorkspaceButton>
+                        }
+                        description="Peran ini dapat dipilih ketika mengundang akun baru atau ketika mengubah akses akun yang sudah ada."
+                        title="Belum ada akun pada peran ini"
+                      />
                     }
                     pagination={null}
                     rows={userRows}
@@ -869,14 +869,10 @@ export function NexusRoleManagement({
                 ) : null}
 
                 {activeTab === "users" && !accountsKnown ? (
-                  <div className={styles.usersEmpty}>
-                    <strong>Daftar akun tidak dapat dibaca</strong>
-                    <p>
-                      Akun Anda belum berwenang membaca daftar akun, sehingga
-                      akun yang memakai peran {selectedRole.label} tidak
-                      ditampilkan.
-                    </p>
-                  </div>
+                  <NexusWorkspaceEmptyState
+                    description={`Akun Anda belum berwenang membaca daftar akun, sehingga akun yang memakai peran ${selectedRole.label} tidak ditampilkan.`}
+                    title="Daftar akun tidak dapat dibaca"
+                  />
                 ) : null}
 
                 {activeTab === "info" ? (
@@ -1022,6 +1018,7 @@ export function NexusRoleManagement({
             <NexusWorkspaceState
               description="Pilih salah satu peran pada daftar untuk meninjau dan menyetel hak aksesnya."
               eyebrow="Belum ada peran terpilih"
+              framed={false}
               title="Pilih peran lebih dahulu"
             />
           )}

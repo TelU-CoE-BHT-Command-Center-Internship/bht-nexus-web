@@ -21,8 +21,8 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
-  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceLoadError,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import {
@@ -48,7 +48,6 @@ import {
   type NexusSelectConfig,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
 import {
   listPermissionDenials,
@@ -264,6 +263,7 @@ export function NexusAuditDenials({
             value: isReady ? highestCount : null,
           },
         ]}
+        unavailable={state === "error"}
       />
 
       <NexusWorkspaceCatalog
@@ -289,16 +289,14 @@ export function NexusAuditDenials({
           />
         </NexusWorkspaceToolbar>
 
-        <NexusWorkspaceResultMeta
-          isUpdating={isSearchUpdating}
-          onResetFilters={hasActiveFilters ? resetFilters : undefined}
-          resultLabel={
-            state === "error"
-              ? "Catatan penolakan belum terbaca"
-              : `${filtered.length} hak akses ditemukan`
-          }
-          updatingLabel="Memperbarui hasil pencarian"
-        />
+        {state === "error" ? null : (
+          <NexusWorkspaceResultMeta
+            isUpdating={isSearchUpdating}
+            onResetFilters={hasActiveFilters ? resetFilters : undefined}
+            resultLabel={`${filtered.length} hak akses ditemukan`}
+            updatingLabel="Memperbarui hasil pencarian"
+          />
+        )}
 
         <NexusWorkspaceTableSection
           guidance={content.guidance}
@@ -311,19 +309,10 @@ export function NexusAuditDenials({
           titleId="audit-denials-table-title"
         >
           {state === "error" ? (
-            <NexusWorkspaceState
-              actions={
-                <NexusWorkspaceButton
-                  onClick={() => load(minutes)}
-                  type="button"
-                >
-                  Coba lagi
-                </NexusWorkspaceButton>
-              }
+            <NexusWorkspaceLoadError
               description={errorMessage ?? content.errorLabel}
-              eyebrow="Gagal memuat"
+              onRetry={() => load(minutes)}
               title="Catatan penolakan akses belum dapat dimuat"
-              tone="danger"
             />
           ) : (
             <NexusWorkspaceRecordTable

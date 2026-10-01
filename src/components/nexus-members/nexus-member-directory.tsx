@@ -15,6 +15,7 @@ import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-tabl
 import { NexusWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
   NexusWorkspaceButton,
+  NexusWorkspaceLoadError,
   NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
@@ -179,7 +180,7 @@ export function NexusMemberDirectory({
             role="tab"
             type="button"
           >
-            {tab.label} <span>{isLoading ? "–" : tab.count}</span>
+            {tab.label} <span>{isLoading || loadError ? "–" : tab.count}</span>
           </button>
         ))}
       </div>
@@ -194,17 +195,11 @@ export function NexusMemberDirectory({
             <strong>Memuat direktori anggota…</strong>
           </div>
         ) : loadError ? (
-          <div className={styles.emptyList} role="alert">
-            <strong>Direktori anggota belum dapat dimuat</strong>
-            <p>{loadError}</p>
-            <NexusWorkspaceButton
-              className={styles.emptyListAction}
-              onClick={onRetry}
-              type="button"
-            >
-              Coba lagi
-            </NexusWorkspaceButton>
-          </div>
+          <NexusWorkspaceLoadError
+            description={loadError}
+            onRetry={onRetry}
+            title="Direktori anggota belum dapat dimuat"
+          />
         ) : visibleMembers.length > 0 ? (
           visibleMembers.map((member) => (
             <button
@@ -258,18 +253,20 @@ export function NexusMemberDirectory({
         )}
       </div>
 
-      <NexusTablePagination
-        currentPage={currentPage}
-        itemCount={filteredCount}
-        navigationLabel="Navigasi halaman anggota"
-        nextPageLabel="Halaman anggota berikutnya"
-        onPageChange={onPageChange}
-        pageLabel="Halaman"
-        pageSizeValue={String(pageSize)}
-        previousPageLabel="Halaman anggota sebelumnya"
-        rangePrefix="Menampilkan"
-        totalUnit="anggota"
-      />
+      {!isLoading && !loadError && filteredCount > 0 ? (
+        <NexusTablePagination
+          currentPage={currentPage}
+          itemCount={filteredCount}
+          navigationLabel="Navigasi halaman anggota"
+          nextPageLabel="Halaman anggota berikutnya"
+          onPageChange={onPageChange}
+          pageLabel="Halaman"
+          pageSizeValue={String(pageSize)}
+          previousPageLabel="Halaman anggota sebelumnya"
+          rangePrefix="Menampilkan"
+          totalUnit="anggota"
+        />
+      ) : null}
     </aside>
   );
 }
