@@ -1,22 +1,38 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ActivityDetail, ActivitySummary } from "@/lib/api-activities";
-import {
-  type ActivityHouse,
-  getHouseRecord,
-  listAllHouseRecords,
-} from "@/lib/api-activity-houses";
 import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
-import { resolveMemberNames } from "@/lib/member-names";
+import {
+  type AcademicDetail,
+  type AcademicSummary,
+  type ContractProposalDetail,
+  type ContractProposalSummary,
+  getHouseRecord,
+  type IntellectualPropertyDetail,
+  type IntellectualPropertySummary,
+  listAllHouseRecords,
+  type OfficialHouse,
+} from "@/lib/api-house-records";
 import { useLoadEffect } from "@/lib/use-load-effect";
 
 export type NexusLoadState = "error" | "loading" | "ready";
 
+type HouseRecordShapes = {
+  academics: { detail: AcademicDetail; summary: AcademicSummary };
+  "contracts-proposals": {
+    detail: ContractProposalDetail;
+    summary: ContractProposalSummary;
+  };
+  "intellectual-properties": {
+    detail: IntellectualPropertyDetail;
+    summary: IntellectualPropertySummary;
+  };
+};
+
 /** Katalog satu rumah data dari server, dibaca sekali saat halaman dibuka. */
-export function useNexusHouseCatalog<View>(
-  house: ActivityHouse,
-  toView: (summary: ActivitySummary) => View,
+export function useNexusHouseCatalog<House extends OfficialHouse, View>(
+  house: House,
+  toView: (summary: HouseRecordShapes[House]["summary"]) => View,
   errorFallback: string,
 ) {
   const [records, setRecords] = useState<View[]>([]);
@@ -47,11 +63,11 @@ export function useNexusHouseCatalog<View>(
   return { errorMessage, loadedAt, records, retry: load, state };
 }
 
-/** Rincian satu rekam beserta nama anggota yang terlibat. */
-export function useNexusHouseDetail<View>(
-  house: ActivityHouse,
+/** Rincian satu rekam beserta pihak yang terlibat. */
+export function useNexusHouseDetail<House extends OfficialHouse, View>(
+  house: House,
   publicId: string | null,
-  toView: (detail: ActivityDetail, names: ReadonlyMap<string, string>) => View,
+  toView: (detail: HouseRecordShapes[House]["detail"]) => View,
   errorFallback: string,
 ) {
   const cache = useRef(new Map<string, View>());
@@ -77,14 +93,9 @@ export function useNexusHouseDetail<View>(
       }
       setDetail({ state: "loading" });
       getHouseRecord(house, id)
-        .then(async (record) => {
-          const names = await resolveMemberNames(
-            record.participants.flatMap((participant) =>
-              participant.memberPublicId ? [participant.memberPublicId] : [],
-            ),
-          );
+        .then((record) => {
           if (request !== latestRequest.current) return;
-          const view = toView(record, names);
+          const view = toView(record);
           cache.current.set(id, view);
           setDetail({ record: view, state: "ready" });
         })

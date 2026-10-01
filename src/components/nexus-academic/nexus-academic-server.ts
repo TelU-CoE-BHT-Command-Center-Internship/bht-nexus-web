@@ -8,88 +8,67 @@ import {
   useNexusHouseCatalog,
   useNexusHouseDetail,
 } from "@/components/nexus-official-records/nexus-house-records";
-import {
-  kmLinksFromCodes,
-  metadataText,
-  recordYear,
-} from "@/components/nexus-official-records/nexus-record-metadata";
+import { kmLinksFromCodes } from "@/components/nexus-official-records/nexus-record-metadata";
 import {
   formatAuditTimestamp,
   personInitials,
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
-import type { ActivityDetail, ActivitySummary } from "@/lib/api-activities";
+import type { AcademicDetail, AcademicSummary } from "@/lib/api-house-records";
 
 /**
  * Satu-satunya penerjemah kegiatan akademik server ke bentuk halamannya.
- * Bentuk kegiatan mengikuti indikator KM yang tercatat; tanpa indikator,
- * magang mengikuti tipe kegiatan dan lainnya masuk kegiatan akademik lain.
- * Hanya peserta berperan pembimbing yang ditampilkan sebagai pembimbing;
- * identitas mahasiswa tidak ditampilkan dan diganti penanda netral.
+ * Server menyajikan jenis kegiatan, kode peserta, program studi, durasi,
+ * tahun, tautan bukti, dan pembimbing sebagai bidang tersendiri. Identitas
+ * mahasiswa tidak ditampilkan dan diganti kode peserta dari server.
  */
 
 type Activity = NexusAcademicView["activity"];
 
-const activityByIndicator: Record<string, Activity> = {
-  "KM-28": "Bimbingan Doktor",
-  "KM-29": "Bimbingan Magister",
-  "KM-30": "Magang Mahasiswa",
-  "KM-31": "Riset Tugas Akhir",
-  "KM-32": "Kompetisi Mahasiswa",
+const activityLabels: Record<AcademicSummary["activityType"], Activity> = {
+  doctoral_supervision: "Bimbingan Doktor",
+  masters_supervision: "Bimbingan Magister",
+  other_academic_activity: "Kegiatan Akademik Lainnya",
+  student_competition: "Kompetisi Mahasiswa",
+  student_internship: "Magang Mahasiswa",
+  thesis_research: "Riset Tugas Akhir",
+};
+
+const indicatorByActivity: Partial<
+  Record<AcademicSummary["activityType"], string>
+> = {
+  doctoral_supervision: "KM-28",
+  masters_supervision: "KM-29",
+  student_competition: "KM-32",
+  student_internship: "KM-30",
+  thesis_research: "KM-31",
 };
 
 const evidenceNotes = {
-  internal:
-    "Dokumen sumber tersimpan secara internal dan hanya dapat dibuka oleh pengguna yang berwenang.",
   public: "Dokumen sumber dapat dibuka melalui tautan yang tercatat.",
   unrecorded:
     "Sumber belum mencatat tautan atau lokasi dokumen untuk rekam ini.",
 } as const;
 
-const mentorRole = /pembimbing|mentor|supervisor|promotor/i;
-
 export function nexusAcademicFromServer(
-  summary: ActivitySummary,
-  detail?: ActivityDetail,
-  names: ReadonlyMap<string, string> = new Map(),
+  summary: AcademicSummary,
+  detail?: AcademicDetail,
 ): NexusAcademicView {
-  const metadata = summary.metadata ?? {};
-  const kmLinks = kmLinksFromCodes(summary.kmIndicators);
-  const indicatorId = kmLinks.find(
-    (link) => activityByIndicator[link.indicator.id],
-  )?.indicator.id;
-  const activity: Activity =
-    (indicatorId ? activityByIndicator[indicatorId] : undefined) ??
-    (summary.type === "internship"
-      ? "Magang Mahasiswa"
-      : "Kegiatan Akademik Lainnya");
+  const activity = activityLabels[summary.activityType];
   const isInternship = activity === "Magang Mahasiswa";
-  const year = recordYear(summary.periodStart);
+  const year = summary.year ?? undefined;
   const title = summary.title.trim();
-  const programStudy = metadataText(metadata, "programStudy");
-  const duration = metadataText(metadata, "duration");
-  const evidenceUrl =
-    metadataText(metadata, "evidenceUrl") ??
-    metadataText(metadata, "documentUrl");
-  const evidenceStatus = !evidenceUrl
-    ? "unrecorded"
-    : metadataText(metadata, "evidenceAccess") === "internal"
-      ? "internal"
-      : "public";
-  const mentors = (detail?.participants ?? []).flatMap((participant, index) => {
-    const name = participant.memberPublicId
-      ? names.get(participant.memberPublicId)
-      : undefined;
-    return name && mentorRole.test(participant.roleInActivity)
-      ? [
-          {
-            id: `${summary.publicId}-mentor-${index + 1}`,
-            initials: personInitials(name),
-            memberId: participant.memberPublicId ?? undefined,
-            name,
-          },
-        ]
-      : [];
-  });
+  const programStudy = summary.programStudy ?? undefined;
+  const duration = summary.duration ?? undefined;
+  const evidenceUrl = summary.evidenceUrl ?? undefined;
+  const evidenceStatus = evidenceUrl ? "public" : "unrecorded";
+  const mentors = [...(detail?.mentors ?? [])]
+    .sort((a, b) => a.mentorOrder - b.mentorOrder)
+    .map((mentor) => ({
+      id: `${summary.publicId}-mentor-${mentor.mentorOrder}`,
+      initials: personInitials(mentor.mentorNameRaw),
+      memberId: mentor.memberPublicId ?? undefined,
+      name: mentor.mentorNameRaw,
+    }));
   const missingFields: AcademicCompletionFieldKey[] = [
     ...(title ? [] : (["title"] as const)),
     ...(programStudy ? [] : (["programStudy"] as const)),
@@ -106,11 +85,15 @@ export function nexusAcademicFromServer(
     evidenceStatus,
     evidenceUrl,
     id: summary.publicId,
-    kmLinks,
+    kmLinks: kmLinksFromCodes(
+      summary.kmIndicators.length > 0
+        ? summary.kmIndicators
+        : [indicatorByActivity[summary.activityType] ?? ""],
+    ),
     mentors,
     mentorsKnown: detail !== undefined,
     missingFields,
-    participantCode: `MHS-${summary.publicId.slice(0, 4).toUpperCase()}`,
+    participantCode: summary.participantCode,
     programStudy,
     provenance: [],
     publicId: summary.publicId,
@@ -121,15 +104,12 @@ export function nexusAcademicFromServer(
   };
 }
 
-function fromSummary(summary: ActivitySummary) {
+function fromSummary(summary: AcademicSummary) {
   return nexusAcademicFromServer(summary);
 }
 
-function fromDetail(
-  detail: ActivityDetail,
-  names: ReadonlyMap<string, string>,
-) {
-  return nexusAcademicFromServer(detail, detail, names);
+function fromDetail(detail: AcademicDetail) {
+  return nexusAcademicFromServer(detail, detail);
 }
 
 const catalogError = "Kegiatan akademik resmi belum dapat dimuat.";

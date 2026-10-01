@@ -8,114 +8,94 @@ import {
   useNexusHouseCatalog,
   useNexusHouseDetail,
 } from "@/components/nexus-official-records/nexus-house-records";
-import {
-  kmLinksFromCodes,
-  metadataText,
-  recordYear,
-} from "@/components/nexus-official-records/nexus-record-metadata";
+import { kmLinksFromCodes } from "@/components/nexus-official-records/nexus-record-metadata";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
-import type { ActivityDetail, ActivitySummary } from "@/lib/api-activities";
+import type {
+  ContractProposalDetail,
+  ContractProposalSummary,
+} from "@/lib/api-house-records";
 
 /**
  * Satu-satunya penerjemah kontrak dan proposal server ke bentuk halamannya.
- * Jenis rekam mengikuti indikator KM yang tercatat; tanpa indikator, jenisnya
- * belum diklasifikasikan. Pihak, skema, pendana, masa kontrak, dan bukti
- * dibaca dari metadata rekam dengan nama kunci yang sama dengan nama bidang
- * halaman.
+ * Server menyajikan kelompok, jenis, status, pihak, skema, pendana, masa
+ * kontrak, tanggal pengajuan, dan tautan bukti sebagai bidang tersendiri.
  */
 
 type Kind = NexusContractProposalView["kind"];
 type Group = NexusContractProposalView["group"];
+type RecordStatus = NexusContractProposalView["recordStatus"];
 
-const shapeByIndicator: Record<string, { group: Group; kind: Kind }> = {
-  "KM-17": { group: "Kontrak", kind: "Kontrak Riset Nasional" },
-  "KM-18": { group: "Kontrak", kind: "Kontrak Riset Internasional" },
-  "KM-19": { group: "Kontrak", kind: "Kontrak Bisnis Komersialisasi" },
-  "KM-37": { group: "Proposal", kind: "Proposal Riset Nasional" },
-  "KM-38": { group: "Proposal", kind: "Proposal Riset Internasional" },
-  "KM-39": { group: "Proposal", kind: "Proposal Non-Riset" },
+const kindLabels: Record<ContractProposalSummary["kind"], Kind> = {
+  commercialization_business_contract: "Kontrak Bisnis Komersialisasi",
+  international_research_contract: "Kontrak Riset Internasional",
+  international_research_proposal: "Proposal Riset Internasional",
+  national_research_contract: "Kontrak Riset Nasional",
+  national_research_proposal: "Proposal Riset Nasional",
+  non_research_proposal: "Proposal Non-Riset",
+};
+
+const indicatorByKind: Record<ContractProposalSummary["kind"], string> = {
+  commercialization_business_contract: "KM-19",
+  international_research_contract: "KM-18",
+  international_research_proposal: "KM-38",
+  national_research_contract: "KM-17",
+  national_research_proposal: "KM-37",
+  non_research_proposal: "KM-39",
+};
+
+const groupLabels: Record<ContractProposalSummary["group"], Group> = {
+  contract: "Kontrak",
+  proposal: "Proposal",
+};
+
+const statusLabels: Record<
+  ContractProposalSummary["recordStatus"],
+  RecordStatus
+> = {
+  active: "Aktif",
+  recorded: "Tercatat",
+  submitted: "Diajukan",
 };
 
 const evidenceNotes = {
-  internal:
-    "Dokumen sumber tersimpan secara internal dan hanya dapat dibuka oleh pengguna yang berwenang.",
   public: "Dokumen sumber dapat dibuka melalui tautan yang tercatat.",
   unrecorded:
     "Sumber belum mencatat tautan atau lokasi dokumen untuk rekam ini.",
 } as const;
 
-const statusByActivity: Record<
-  ActivitySummary["status"],
-  NexusContractProposalView["recordStatus"]
-> = {
-  cancelled: "Tercatat",
-  closed: "Tercatat",
-  ongoing: "Aktif",
-  planned: "Diajukan",
-};
-
-function isProposal(metadata: Record<string, unknown>) {
-  const marker =
-    metadataText(metadata, "category") ?? metadataText(metadata, "domain");
-  return marker === "proposal";
-}
-
-function recordDate(metadata: Record<string, unknown>, key: string) {
-  const value = metadataText(metadata, key);
-  return value && /^\d{4}-\d{2}-\d{2}/.test(value)
-    ? value.slice(0, 10)
-    : undefined;
-}
-
 export function nexusContractProposalFromServer(
-  summary: ActivitySummary,
-  detail?: ActivityDetail,
+  summary: ContractProposalSummary,
+  detail?: ContractProposalDetail,
 ): NexusContractProposalView {
-  const metadata = summary.metadata ?? {};
-  const kmLinks = kmLinksFromCodes(summary.kmIndicators);
-  const indicatorId = kmLinks.find(
-    (link) => shapeByIndicator[link.indicator.id],
-  )?.indicator.id;
-  const shaped = indicatorId ? shapeByIndicator[indicatorId] : undefined;
-  const kind: Kind = shaped?.kind ?? "Belum diklasifikasikan";
-  const group: Group =
-    shaped?.group ?? (isProposal(metadata) ? "Proposal" : "Kontrak");
-  const classified = shaped !== undefined;
+  const kind = kindLabels[summary.kind];
+  const group = groupLabels[summary.group];
   const title = summary.title.trim();
-  const applicant = metadataText(metadata, "applicant");
-  const scheme = metadataText(metadata, "scheme");
-  const funder = metadataText(metadata, "funder");
-  const contractStart = recordDate(metadata, "contractStart");
-  const contractEnd = recordDate(metadata, "contractEnd");
-  const evidenceUrl =
-    metadataText(metadata, "evidenceUrl") ??
-    metadataText(metadata, "documentUrl");
-  const evidenceStatus = !evidenceUrl
-    ? "unrecorded"
-    : metadataText(metadata, "evidenceAccess") === "internal"
-      ? "internal"
-      : "public";
+  const applicant = summary.applicant ?? undefined;
+  const scheme = summary.scheme ?? undefined;
+  const funder = summary.funder ?? undefined;
+  const contractStart = summary.contractStart ?? undefined;
+  const contractEnd = summary.contractEnd ?? undefined;
+  const evidenceUrl = summary.evidenceUrl ?? undefined;
+  const evidenceStatus = evidenceUrl ? "public" : "unrecorded";
   const isBusiness = kind === "Kontrak Bisnis Komersialisasi";
   const missingFields: ContractProposalCompletionFieldKey[] = [
     ...(title ? [] : (["title"] as const)),
-    ...(classified && !isBusiness && !applicant
-      ? (["applicant"] as const)
-      : []),
-    ...(classified && !isBusiness && !scheme ? (["scheme"] as const) : []),
-    ...(classified && group === "Proposal" && !funder
-      ? (["funder"] as const)
-      : []),
+    ...(!isBusiness && !applicant ? (["applicant"] as const) : []),
+    ...(!isBusiness && !scheme ? (["scheme"] as const) : []),
+    ...(group === "Proposal" && !funder ? (["funder"] as const) : []),
     ...(isBusiness && !contractStart ? (["contractStart"] as const) : []),
     ...(isBusiness && !contractEnd ? (["contractEnd"] as const) : []),
     ...(evidenceStatus === "unrecorded" ? (["evidenceUrl"] as const) : []),
   ];
-  const year = recordYear(summary.periodStart);
+  const yearSource =
+    summary.contractStart ?? summary.submittedOn ?? summary.createdAt;
+  const year = Number(yearSource.slice(0, 4));
 
   return {
     applicant,
     contractEnd,
     contractStart,
-    evaluationPeriod: year ? String(year) : "",
+    evaluationPeriod: Number.isInteger(year) ? String(year) : "",
     evidenceNote: evidenceNotes[evidenceStatus],
     evidenceStatus,
     evidenceUrl,
@@ -123,30 +103,34 @@ export function nexusContractProposalFromServer(
     group,
     id: summary.publicId,
     kind,
-    kmLinks,
+    kmLinks: kmLinksFromCodes(
+      summary.kmIndicators.length > 0
+        ? summary.kmIndicators
+        : [indicatorByKind[summary.kind]],
+    ),
     missingFields,
-    ownerUnit: "CoE BHT",
-    partner: metadataText(metadata, "partner"),
+    ownerUnit: summary.ownerUnit,
+    partner: summary.partner ?? undefined,
     provenance: [],
     publicId: summary.publicId,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
-    recordStatus: statusByActivity[summary.status],
-    referenceNumber: metadataText(metadata, "referenceNumber"),
-    relatedMemberIds: (detail?.participants ?? []).flatMap((participant) =>
-      participant.memberPublicId ? [participant.memberPublicId] : [],
+    recordStatus: statusLabels[summary.recordStatus],
+    referenceNumber: summary.referenceNumber ?? undefined,
+    relatedMemberIds: (detail?.relatedMembers ?? []).map(
+      (member) => member.memberPublicId,
     ),
     scheme,
-    submittedOn: recordDate(metadata, "submittedOn"),
+    submittedOn: summary.submittedOn ?? undefined,
     title: summary.title,
     updatedAt: formatAuditTimestamp(summary.createdAt),
   };
 }
 
-function fromSummary(summary: ActivitySummary) {
+function fromSummary(summary: ContractProposalSummary) {
   return nexusContractProposalFromServer(summary);
 }
 
-function fromDetail(detail: ActivityDetail) {
+function fromDetail(detail: ContractProposalDetail) {
   return nexusContractProposalFromServer(detail, detail);
 }
 
