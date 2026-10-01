@@ -112,16 +112,25 @@ const resourceCopy: Record<
   string,
   { description: string; icon: DashboardShellIconName; label: string }
 > = {
+  academic: {
+    description: "Bimbingan, kapasitas magang, dan luaran akademik.",
+    icon: "academic",
+    label: "Akademik",
+  },
   activity: {
-    description:
-      "Kegiatan & Pengabdian beserta Kekayaan Intelektual, Kontrak & Proposal, dan Akademik.",
+    description: "Kegiatan riset, pengabdian masyarakat, dan bukti kegiatan.",
     icon: "activities",
-    label: "Kegiatan & data resmi lain",
+    label: "Kegiatan & Pengabdian",
   },
   audit: {
     description: "Jejak aktivitas dan statistik penolakan akses.",
     icon: "administration",
     label: "Log audit",
+  },
+  contract: {
+    description: "Kontrak riset, kontrak non-riset, dan proposal.",
+    icon: "contracts",
+    label: "Kontrak & Proposal",
   },
   dashboard: {
     description: "Ringkasan capaian dan pengumuman ruang kerja.",
@@ -133,6 +142,11 @@ const resourceCopy: Record<
       "Mengundang akun, mengubah status, menautkan anggota, dan menyetel akses khusus.",
     icon: "administration",
     label: "Identitas & akses",
+  },
+  intellectual_property: {
+    description: "Hak cipta, paten, dan pencatatan kekayaan intelektual.",
+    icon: "intellectualProperty",
+    label: "Kekayaan Intelektual",
   },
   job: {
     description: "Pekerjaan pengumpulan profil publik dan riwayatnya.",
@@ -192,6 +206,9 @@ const resourceOrder = [
   "job",
   "review",
   "publication",
+  "intellectual_property",
+  "contract",
+  "academic",
   "activity",
   "member",
   "user",

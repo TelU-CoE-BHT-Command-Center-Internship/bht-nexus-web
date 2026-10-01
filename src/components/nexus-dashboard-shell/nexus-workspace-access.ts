@@ -144,10 +144,13 @@ export type NexusServerRoleName =
   | "officer";
 
 type NexusServerPermission =
+  | "academic.read"
   | "activity.read"
   | "audit.read"
+  | "contract.read"
   | "dashboard.read"
   | "iam.manage"
+  | "intellectual_property.read"
   | "job.create"
   | "job.read"
   | "kpi.read"
@@ -185,12 +188,16 @@ const serverRolePermissions: Record<
     "publication.read",
     "member.read",
     "activity.read",
+    "intellectual_property.read",
+    "contract.read",
+    "academic.read",
     "audit.read",
     "kpi.read",
     "dashboard.read",
   ],
   auditor: [
     "iam.manage",
+    "member.read",
     "user.read",
     "user_role.read",
     "user_role.manage",
@@ -209,6 +216,9 @@ const serverRolePermissions: Record<
     "publication.read",
     "member.read",
     "activity.read",
+    "intellectual_property.read",
+    "contract.read",
+    "academic.read",
   ],
   director: [
     "review.read",
@@ -217,11 +227,23 @@ const serverRolePermissions: Record<
     "publication.read",
     "member.read",
     "activity.read",
+    "intellectual_property.read",
+    "contract.read",
+    "academic.read",
+    "kpi.read",
+    "dashboard.read",
     "audit.read",
   ],
   external_partner: ["publication.read"],
   intern: ["publication.read"],
-  member: ["member.read", "publication.read", "activity.read"],
+  member: [
+    "member.read",
+    "publication.read",
+    "activity.read",
+    "intellectual_property.read",
+    "contract.read",
+    "academic.read",
+  ],
   officer: [
     "job.create",
     "job.read",
@@ -230,6 +252,11 @@ const serverRolePermissions: Record<
     "publication.read",
     "member.read",
     "activity.read",
+    "intellectual_property.read",
+    "contract.read",
+    "academic.read",
+    "kpi.read",
+    "dashboard.read",
   ],
 };
 
@@ -280,12 +307,12 @@ function accessFromPermissions(
   }
   if (has("review.read")) navigation.add("reviews");
   if (has("publication.read")) navigation.add("publications");
-  if (has("activity.read")) {
+  if (has("intellectual_property.read")) {
     navigation.add("intellectual-property");
-    navigation.add("contracts");
-    navigation.add("academic");
-    navigation.add("activities");
   }
+  if (has("contract.read")) navigation.add("contracts");
+  if (has("academic.read")) navigation.add("academic");
+  if (has("activity.read")) navigation.add("activities");
   if (has("member.read")) navigation.add("members");
   if (
     has("user.read") ||
