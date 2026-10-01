@@ -50,6 +50,8 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import { apiErrorMessage } from "@/lib/api-client";
+import { downloadDashboardExport } from "@/lib/api-dashboard-export";
 
 /**
  * Menyelaraskan alamat dengan periode dan domain yang sedang dilihat tanpa
@@ -310,26 +312,20 @@ function NexusMonitoringLandingContent({
     <NexusWorkspacePage
       actions={
         <NexusMonitoringHeaderActions
-          downloadLabel="Unduh Excel"
+          downloadLabel="Unduh CSV"
           manageLabel="Kelola target"
           onDownload={
-            isKnownPeriod
+            isKnownPeriod && capabilities.canExport
               ? async () => {
                   setExportError("");
                   try {
-                    const {
-                      downloadNexusWorkbook,
-                      nexusMonitoringPeriodWorkbook,
-                    } = await import(
-                      "@/components/nexus-monitoring/nexus-monitoring-export"
-                    );
-                    await downloadNexusWorkbook(
-                      `monitoring-km-${periodId}.xlsx`,
-                      nexusMonitoringPeriodWorkbook(input),
-                    );
-                  } catch {
+                    await downloadDashboardExport(Number(period.year));
+                  } catch (error) {
                     setExportError(
-                      "Berkas Excel belum dapat dibuat. Silakan coba lagi.",
+                      apiErrorMessage(
+                        error,
+                        "Berkas CSV belum dapat dibuat. Silakan coba lagi.",
+                      ),
                     );
                   }
                 }

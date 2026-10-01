@@ -56,6 +56,7 @@ export type NexusCollectionCapabilities = {
  */
 export type NexusMonitoringCapabilities = {
   canCorrectRecords: boolean;
+  canExport: boolean;
   canManageTargets: boolean;
 };
 
@@ -123,6 +124,7 @@ export const nexusPreviewWorkspaceAccess = {
   },
   monitoringCapabilities: {
     canCorrectRecords: true,
+    canExport: false,
     canManageTargets: false,
   },
   reviewCapabilities: {
@@ -148,8 +150,11 @@ type NexusServerPermission =
   | "activity.read"
   | "audit.read"
   | "contract.read"
+  | "dashboard.export"
   | "dashboard.read"
   | "iam.manage"
+  | "import.create"
+  | "import.read"
   | "intellectual_property.read"
   | "job.create"
   | "job.read"
@@ -194,6 +199,9 @@ const serverRolePermissions: Record<
     "audit.read",
     "kpi.read",
     "dashboard.read",
+    "dashboard.export",
+    "import.create",
+    "import.read",
   ],
   auditor: [
     "iam.manage",
@@ -208,6 +216,9 @@ const serverRolePermissions: Record<
     "role_permission.read",
     "role_permission.manage",
     "audit.read",
+    "intellectual_property.read",
+    "contract.read",
+    "academic.read",
   ],
   cluster_head: [
     "job.read",
@@ -219,6 +230,8 @@ const serverRolePermissions: Record<
     "intellectual_property.read",
     "contract.read",
     "academic.read",
+    "kpi.read",
+    "dashboard.read",
   ],
   director: [
     "review.read",
@@ -233,6 +246,7 @@ const serverRolePermissions: Record<
     "kpi.read",
     "dashboard.read",
     "audit.read",
+    "import.read",
   ],
   external_partner: ["publication.read"],
   intern: ["publication.read"],
@@ -352,6 +366,7 @@ function accessFromPermissions(
     },
     monitoringCapabilities: {
       canCorrectRecords: has("kpi.read"),
+      canExport: has("dashboard.export"),
       canManageTargets: false,
     },
     reviewCapabilities: {
