@@ -16,6 +16,8 @@ export type ReviewDecisionKind = "approve" | "reject" | "request_revision";
 export type ReviewCaseRecord = {
   candidateType: ReviewCandidateType;
   createdAt: string;
+  /** Isi kandidat; cukup untuk baris antrean tanpa membaca rincian. */
+  payload?: Record<string, unknown>;
   publicId: string;
   status: ReviewCaseStatus;
   targetEntityType: string;
