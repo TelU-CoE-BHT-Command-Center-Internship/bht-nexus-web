@@ -14,8 +14,8 @@ import { belongsToActivityHouse } from "@/components/nexus-official-records/nexu
 import { nexusPublicationFromServer } from "@/components/nexus-publications/nexus-publication-server";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { listAllActivities } from "@/lib/api-activities";
-import { listAllHouseRecords } from "@/lib/api-activity-houses";
 import { apiErrorMessage } from "@/lib/api-client";
+import { listAllHouseRecords } from "@/lib/api-house-records";
 import { listAllPublications } from "@/lib/api-publications";
 import { useLoadEffect } from "@/lib/use-load-effect";
 

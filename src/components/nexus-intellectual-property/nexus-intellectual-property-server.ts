@@ -12,89 +12,57 @@ import {
 import {
   formatRecordDate,
   kmLinksFromCodes,
-  metadataText,
-  recordYear,
 } from "@/components/nexus-official-records/nexus-record-metadata";
 import {
   formatAuditTimestamp,
   personInitials,
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
-import type { ActivityDetail, ActivitySummary } from "@/lib/api-activities";
+import type {
+  IntellectualPropertyDetail,
+  IntellectualPropertySummary,
+} from "@/lib/api-house-records";
 
 /**
  * Satu-satunya penerjemah kekayaan intelektual server ke bentuk halamannya.
- * Server menyajikan HKI sebagai kegiatan berlabel domain; jenis perlindungan,
- * nomor pencatatan, tanggal pengajuan, dokumen, dan registri dibaca dari
- * metadata rekam dengan nama kunci yang sama dengan nama bidang halaman.
+ * Server menyajikan jenis perlindungan, nomor pencatatan, tanggal pengajuan,
+ * registri, tautan dokumen, dan pencipta sebagai bidang tersendiri.
  */
 
 type Protection = NexusIntellectualPropertyView["protection"];
 
-const protectionByCategory: Record<string, Protection> = {
+const protectionLabels: Record<
+  IntellectualPropertySummary["protection"],
+  Protection
+> = {
   copyright: "Hak Cipta",
   industrial_design: "Desain Industri",
   patent: "Paten",
   trademark: "Merek",
+  unclassified: "Belum diklasifikasikan",
 };
 
-const protectionLabels: ReadonlySet<string> = new Set([
-  "Desain Industri",
-  "Hak Cipta",
-  "Merek",
-  "Paten",
-]);
-
 const documentNotes = {
-  internal:
-    "Dokumen pendaftaran tersimpan pada penyimpanan internal dan hanya tersedia untuk pengguna yang berwenang.",
-  public: "Dokumen pendaftaran dapat dibuka melalui tautan publik.",
+  public: "Dokumen pendaftaran dapat dibuka melalui tautan yang tercatat.",
   unrecorded: "Sumber belum mencatat dokumen pendaftaran untuk rekam ini.",
 } as const;
 
-function protectionOf(metadata: Record<string, unknown>): Protection {
-  const declared = metadataText(metadata, "protection");
-  if (declared && protectionLabels.has(declared)) return declared as Protection;
-  const category = metadataText(metadata, "category");
-  return (
-    (category && protectionByCategory[category]) || "Belum diklasifikasikan"
-  );
-}
-
 export function nexusIntellectualPropertyFromServer(
-  summary: ActivitySummary,
-  detail?: ActivityDetail,
-  names: ReadonlyMap<string, string> = new Map(),
+  summary: IntellectualPropertySummary,
+  detail?: IntellectualPropertyDetail,
 ): NexusIntellectualPropertyView {
-  const metadata = summary.metadata ?? {};
-  const year = recordYear(summary.periodStart);
-  const protection = protectionOf(metadata);
-  const registrationNumber = metadataText(metadata, "registrationNumber");
-  const documentUrl =
-    metadataText(metadata, "documentUrl") ??
-    metadataText(metadata, "evidenceUrl");
-  const documentAccess = !documentUrl
-    ? "unrecorded"
-    : metadataText(metadata, "documentAccess") === "public"
-      ? "public"
-      : "internal";
-  const filedOn = metadataText(metadata, "filedOn");
-  const creators = (detail?.participants ?? []).flatMap(
-    (participant, index) => {
-      const name = participant.memberPublicId
-        ? names.get(participant.memberPublicId)
-        : undefined;
-      return name
-        ? [
-            {
-              id: `${summary.publicId}-creator-${index + 1}`,
-              initials: personInitials(name),
-              memberId: participant.memberPublicId ?? undefined,
-              name,
-            },
-          ]
-        : [];
-    },
-  );
+  const protection = protectionLabels[summary.protection];
+  const year = summary.year ?? undefined;
+  const registrationNumber = summary.registrationNumber ?? undefined;
+  const documentUrl = summary.evidenceUrl ?? undefined;
+  const documentAccess = documentUrl ? "public" : "unrecorded";
+  const creators = [...(detail?.creators ?? [])]
+    .sort((a, b) => a.creatorOrder - b.creatorOrder)
+    .map((creator) => ({
+      id: `${summary.publicId}-creator-${creator.creatorOrder}`,
+      initials: personInitials(creator.creatorNameRaw),
+      memberId: creator.memberPublicId ?? undefined,
+      name: creator.creatorNameRaw,
+    }));
   const missingFields: IntellectualPropertyCompletionFieldKey[] = [
     ...(protection === "Belum diklasifikasikan"
       ? (["protectionType"] as const)
@@ -110,7 +78,7 @@ export function nexusIntellectualPropertyFromServer(
     documentNote: documentNotes[documentAccess],
     documentUrl,
     evaluationPeriod: year ? String(year) : "",
-    filedOn: filedOn ? formatRecordDate(filedOn) : undefined,
+    filedOn: summary.filedOn ? formatRecordDate(summary.filedOn) : undefined,
     id: summary.publicId,
     kmLinks: kmLinksFromCodes(summary.kmIndicators),
     missingFields,
@@ -119,22 +87,19 @@ export function nexusIntellectualPropertyFromServer(
     publicId: summary.publicId,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     registrationNumber,
-    registry: metadataText(metadata, "registry") ?? "Belum tercatat",
+    registry: summary.registry || "Belum tercatat",
     title: summary.title,
     updatedAt: formatAuditTimestamp(summary.createdAt),
     year,
   });
 }
 
-function fromSummary(summary: ActivitySummary) {
+function fromSummary(summary: IntellectualPropertySummary) {
   return nexusIntellectualPropertyFromServer(summary);
 }
 
-function fromDetail(
-  detail: ActivityDetail,
-  names: ReadonlyMap<string, string>,
-) {
-  return nexusIntellectualPropertyFromServer(detail, detail, names);
+function fromDetail(detail: IntellectualPropertyDetail) {
+  return nexusIntellectualPropertyFromServer(detail, detail);
 }
 
 const catalogError = "Kekayaan intelektual resmi belum dapat dimuat.";
