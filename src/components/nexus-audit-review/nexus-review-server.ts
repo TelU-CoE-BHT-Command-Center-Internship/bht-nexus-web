@@ -75,11 +75,10 @@ type ComparisonEntry = {
 };
 
 /**
- * Daftar kasus dari server belum membawa judul kandidat, sehingga rincian
- * dibaca per kasus. Jumlahnya dibatasi agar satu kunjungan tidak menghabiskan
- * batas permintaan server; kasus lain dibaca ketika tampil atau dibuka.
+ * Daftar kasus dari server sudah membawa isi kandidat, sehingga baris antrean
+ * tidak membaca rincian. Rincian (riwayat, keputusan, perbaikan) hanya dibaca
+ * ketika sebuah kasus dibuka.
  */
-const DETAIL_PREFETCH_LIMIT = 40;
 const DETAIL_CONCURRENCY = 4;
 
 const reviewStatuses: readonly ReviewCaseStatus[] = [
@@ -398,23 +397,24 @@ function evidenceOf(
 
 function signalOf(
   detail: ReviewCaseDetail | undefined,
+  payload: Payload | undefined,
   evidence: readonly AuditReviewEvidence[],
 ): AuditReviewSignal {
-  if (!detail) {
+  if (!payload) {
     return {
       primary: "Rincian belum dimuat",
       secondary: "Sinyal tampil setelah rincian terbaca",
       tone: "neutral",
     };
   }
-  if (detail.duplicateOfPublicId) {
+  if (detail?.duplicateOfPublicId) {
     return {
       primary: "Kemungkinan duplikat",
       secondary: "Kandidat serupa sudah ada di antrean",
       tone: "danger",
     };
   }
-  const doi = text(detail.payload.doi);
+  const doi = text(payload.doi);
   if (doi) return { primary: "DOI tercatat", secondary: doi, tone: "info" };
   if (evidence.length === 0) {
     return {
@@ -536,11 +536,12 @@ export function reviewRecordFromServer(
   detail: ReviewCaseDetail | undefined,
   context: RecordContext,
 ): AuditReviewRecord {
-  const payload = detail?.payload ?? {};
+  const knownPayload = detail?.payload ?? summary.payload;
+  const payload = knownPayload ?? {};
   const target = summary.targetEntityType;
-  const source = sourceOf(summary, detail?.payload);
+  const source = sourceOf(summary, knownPayload);
   const sourceLabel = sourceLabels[source];
-  const category = categoryOf(target, detail?.payload);
+  const category = categoryOf(target, knownPayload);
   const specs = target === "publication" ? publicationFields : activityFields;
   const sharedFields: AuditReviewField[] = specs.map((spec) => ({
     ...spec,
@@ -558,7 +559,7 @@ export function reviewRecordFromServer(
   const status = statusFromServer[detail?.status ?? summary.status];
   const title =
     fields.find((field) => field.id === "title")?.value ||
-    (detail ? "Kandidat tanpa judul" : "Memuat rincian kandidat");
+    (knownPayload ? "Kandidat tanpa judul" : "Memuat rincian kandidat");
   const authors = people(payload.authors);
   const owner =
     text(payload.owner_name) ||
@@ -683,17 +684,17 @@ export function reviewRecordFromServer(
       sourceKey:
         text(payload.external_id) || text(payload.receipt_number) || undefined,
     },
-    signal: signalOf(detail, evidence),
+    signal: signalOf(detail, knownPayload, evidence),
     source,
     sourceLabel,
     status,
     statusLabel: statusLabels[status],
     submittedBy: sourceSubmitters[source],
-    subtitle: detail
+    subtitle: knownPayload
       ? subtitle || sourceLabel
       : "Rincian kandidat sedang dimuat",
     title,
-    typeLabel: typeLabelOf(target, detail?.payload),
+    typeLabel: typeLabelOf(target, knownPayload),
     version,
   };
 }
@@ -911,7 +912,7 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
     setQueueState("loading");
     setQueueError(undefined);
     Promise.all(reviewStatuses.map((status) => listAllReviewCases(status)))
-      .then(async (lists) => {
+      .then((lists) => {
         if (current !== generation.current) return;
         const cases = lists
           .flat()
@@ -919,13 +920,6 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
             compareTimestamps(first.createdAt, second.createdAt, "descending"),
           );
         setSummaries(cases);
-        await loadDetails(
-          cases
-            .slice(0, DETAIL_PREFETCH_LIMIT)
-            .map((reviewCase) => reviewCase.publicId),
-          current,
-        );
-        if (current !== generation.current) return;
         setLoadedAt(new Date());
         setQueueState("ready");
       })
@@ -936,7 +930,7 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
         );
         setQueueState("error");
       });
-  }, [loadDetails]);
+  }, []);
 
   useLoadEffect(load);
 

@@ -363,7 +363,6 @@ export function NexusAuditReview({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const visibleIds = visible.map((record) => record.id).join(",");
   const selected = records.find((record) => record.id === openId);
   const selectedState = selected ? stateFor(selected) : undefined;
   const selectedDetail = openId ? queue.details[openId] : undefined;
@@ -379,11 +378,8 @@ export function NexusAuditReview({
     sort !== "newest" ||
     query.length > 0;
 
-  // Rincian kasus yang tampil dan kasus yang dibuka dibaca bila belum ada.
-  useEffect(() => {
-    if (visibleIds) ensureDetails(visibleIds.split(","));
-  }, [ensureDetails, visibleIds]);
-
+  // Rincian hanya dibaca untuk kasus yang dibuka; baris antrean memakai isi
+  // kandidat yang sudah dibawa daftar.
   useEffect(() => {
     if (!openId) return;
     ensureDetails([openId]);
