@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -34,6 +35,7 @@ import {
   nexusMonitoringPeriodHref,
 } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusMonitoringRecentUpdates } from "@/components/nexus-monitoring/nexus-monitoring-recent-updates";
+import { NexusMonitoringRecordsGate } from "@/components/nexus-monitoring/nexus-monitoring-records-gate";
 import { NexusMonitoringSummaryAnalytics } from "@/components/nexus-monitoring/nexus-monitoring-summary-analytics";
 import { NexusMonitoringTargetDrawer } from "@/components/nexus-monitoring/nexus-monitoring-target-drawer";
 import { NexusMonitoringToast } from "@/components/nexus-monitoring/nexus-monitoring-toast";
@@ -231,7 +233,7 @@ function useDomainScroller() {
   };
 }
 
-export function NexusMonitoringLanding({
+function NexusMonitoringLandingContent({
   capabilities,
   initialDomain = NEXUS_ALL_DOMAINS,
   requestedPeriodId = NEXUS_DEFAULT_MONITORING_PERIOD_ID,
@@ -538,5 +540,15 @@ export function NexusMonitoringLanding({
         />
       ) : null}
     </NexusWorkspacePage>
+  );
+}
+
+export function NexusMonitoringLanding(
+  props: ComponentProps<typeof NexusMonitoringLandingContent>,
+) {
+  return (
+    <NexusMonitoringRecordsGate>
+      <NexusMonitoringLandingContent {...props} />
+    </NexusMonitoringRecordsGate>
   );
 }

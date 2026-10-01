@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { publicationKmCodes } from "@/components/nexus-official-records/nexus-record-metadata";
 import type {
   NexusPublicationView,
   PublicationCompletionFieldKey,
@@ -76,10 +77,15 @@ export function nexusPublicationFromServer(
       })),
     citations: summary.citationCount,
     doi,
-    evaluationPeriod: "",
+    evaluationPeriod: summary.year > 0 ? String(summary.year) : "",
     id: summary.publicId,
     identifier: detail?.issnL ?? undefined,
-    kmLinks: kmLinks(summary.kmIndicators),
+    kmLinks: kmLinks([
+      ...new Set([
+        ...(summary.kmIndicators ?? []),
+        ...publicationKmCodes(summary),
+      ]),
+    ]),
     missingFields: missing,
     provenance: [],
     publicId: summary.publicId,

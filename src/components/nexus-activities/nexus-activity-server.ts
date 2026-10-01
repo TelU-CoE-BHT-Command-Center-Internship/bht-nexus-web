@@ -7,6 +7,7 @@ import type {
   ActivityKind,
   NexusActivityView,
 } from "@/components/nexus-activities/nexus-activities-content";
+import { belongsToActivityHouse } from "@/components/nexus-official-records/nexus-record-metadata";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { nexusKmIndicators } from "@/content/nexus-km-indicators";
 import {
@@ -108,7 +109,8 @@ export function nexusActivityFromServer(
   ];
 
   return {
-    evaluationPeriod: "",
+    evaluationPeriod: String(new Date(summary.periodStart).getUTCFullYear()),
+    eventDate: summary.periodStart.slice(0, 10),
     evidenceNote:
       "Sumber belum mencatat tautan atau lokasi dokumen untuk rekam ini.",
     evidenceStatus: "unrecorded",
@@ -151,7 +153,11 @@ export function useNexusActivityCatalog() {
       .then((activities) => {
         if (request !== latestRequest.current) return;
         setRecords(
-          activities.map((activity) => nexusActivityFromServer(activity)),
+          activities
+            .filter(
+              (activity) => !belongsToActivityHouse(activity.metadata ?? {}),
+            )
+            .map((activity) => nexusActivityFromServer(activity)),
         );
         setLoadedAt(new Date());
         setState("ready");

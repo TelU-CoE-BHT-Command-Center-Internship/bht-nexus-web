@@ -1,20 +1,20 @@
 import {
   academicDisplayTitle,
   academicEvidenceLabel,
-  type OfficialAcademicRecord,
+  type NexusAcademicView,
 } from "@/components/nexus-academic/nexus-academic-content";
 import {
   activityDisplayTitle,
   activityEvidenceLabel,
-  type OfficialActivityRecord,
+  type NexusActivityView,
 } from "@/components/nexus-activities/nexus-activities-content";
 import {
   contractProposalDisplayTitle,
   contractProposalEvidenceLabel,
   contractProposalPrimaryParty,
-  type OfficialContractProposalRecord,
+  type NexusContractProposalView,
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
-import type { OfficialIntellectualProperty } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
+import type { NexusIntellectualPropertyView } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import { metadataCompletionAvailabilityLabel } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import {
   type NexusMonitoringSourceFamily,
@@ -29,7 +29,7 @@ import {
 import { activityUsesSubmissionDate } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import type { NexusOfficialRecordSet } from "@/components/nexus-official-records/nexus-official-records";
 import {
-  type OfficialPublication,
+  type NexusPublicationView,
   publicationDisplayTitle,
 } from "@/components/nexus-publications/nexus-publications-content";
 import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
@@ -182,24 +182,24 @@ type NexusMonitoringRecordCore = {
  */
 export type NexusMonitoringRecord =
   | (NexusMonitoringRecordCore & {
-      academic: OfficialAcademicRecord;
+      academic: NexusAcademicView;
       family: "academic";
     })
   | (NexusMonitoringRecordCore & {
-      activity: OfficialActivityRecord;
+      activity: NexusActivityView;
       family: "activities";
     })
   | (NexusMonitoringRecordCore & {
-      contract: OfficialContractProposalRecord;
+      contract: NexusContractProposalView;
       family: "contracts";
     })
   | (NexusMonitoringRecordCore & {
       family: "intellectual-property";
-      intellectualProperty: OfficialIntellectualProperty;
+      intellectualProperty: NexusIntellectualPropertyView;
     })
   | (NexusMonitoringRecordCore & {
       family: "publications";
-      publication: OfficialPublication;
+      publication: NexusPublicationView;
     });
 
 const evidenceStateLabels: Record<NexusMonitoringEvidenceState, string> = {
@@ -247,7 +247,7 @@ function resolveBusinessDate(
 }
 
 function publicationRecord(
-  publication: OfficialPublication,
+  publication: NexusPublicationView,
 ): NexusMonitoringRecord {
   return {
     businessDate: resolveBusinessDate(
@@ -284,9 +284,7 @@ function publicationRecord(
   };
 }
 
-function activityRecord(
-  activity: OfficialActivityRecord,
-): NexusMonitoringRecord {
+function activityRecord(activity: NexusActivityView): NexusMonitoringRecord {
   return {
     activity,
     businessDate: activityUsesSubmissionDate(activity)
@@ -322,7 +320,7 @@ function activityRecord(
 }
 
 function intellectualPropertyRecord(
-  record: OfficialIntellectualProperty,
+  record: NexusIntellectualPropertyView,
 ): NexusMonitoringRecord {
   return {
     businessDate: resolveBusinessDate(
@@ -367,7 +365,7 @@ function intellectualPropertyRecord(
  * Proposal diukur dari tanggal pengajuannya—sebuah proposal belum mempunyai
  * kontrak yang dimulai—sedangkan kontrak diukur dari tanggal mulainya.
  */
-function contractBusinessDate(contract: OfficialContractProposalRecord) {
+function contractBusinessDate(contract: NexusContractProposalView) {
   if (contract.group === "Proposal") {
     return resolveBusinessDate(
       "Tanggal pengajuan",
@@ -384,7 +382,7 @@ function contractBusinessDate(contract: OfficialContractProposalRecord) {
 }
 
 function contractRecord(
-  contract: OfficialContractProposalRecord,
+  contract: NexusContractProposalView,
 ): NexusMonitoringRecord {
   const party = contractProposalPrimaryParty(contract);
 
@@ -410,9 +408,7 @@ function contractRecord(
   };
 }
 
-function academicRecord(
-  academic: OfficialAcademicRecord,
-): NexusMonitoringRecord {
+function academicRecord(academic: NexusAcademicView): NexusMonitoringRecord {
   return {
     academic,
     businessDate: unavailableDate(

@@ -475,18 +475,24 @@ export function MonitoringRecordDetail({
           <p>Riwayat keputusan tersimpan</p>
         </div>
 
-        <div className={detail.reviewDecision}>
-          <span className={detail.reviewCheck}>
-            <MonitoringIcon name="check" />
-          </span>
-          <div>
-            <strong>{record.review.decision}</strong>
-            <p>{record.review.note}</p>
-            <small>
-              {record.review.reviewer} · {record.review.reviewedAt}
-            </small>
+        {record.review ? (
+          <div className={detail.reviewDecision}>
+            <span className={detail.reviewCheck}>
+              <MonitoringIcon name="check" />
+            </span>
+            <div>
+              <strong>{record.review.decision}</strong>
+              <p>{record.review.note}</p>
+              <small>
+                {record.review.reviewer} · {record.review.reviewedAt}
+              </small>
+            </div>
           </div>
-        </div>
+        ) : (
+          <p className={detail.explanation}>
+            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+          </p>
+        )}
 
         <Link
           className={detail.reviewLink}

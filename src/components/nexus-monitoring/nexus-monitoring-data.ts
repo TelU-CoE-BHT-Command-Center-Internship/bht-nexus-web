@@ -14,11 +14,16 @@ import { nexusTargetLookup } from "@/components/nexus-monitoring/nexus-monitorin
 import { useNexusOfficialRecords } from "@/components/nexus-official-records/nexus-official-records-hooks";
 
 export type NexusMonitoringData = {
+  /** Pesan kegagalan pemuatan rekam resmi dari server. */
+  errorMessage?: string;
   input: NexusMonitoringInput;
   /** `false` ketika periode pada alamat belum terdaftar. */
   isKnownPeriod: boolean;
+  /** Keadaan pemuatan rekam resmi; angka baru bermakna setelah `ready`. */
+  loadState: "error" | "loading" | "ready";
   period: NexusMonitoringPeriod;
   periodOptions: readonly NexusMonitoringPeriod[];
+  retry: () => void;
 };
 
 /**
@@ -29,11 +34,11 @@ export type NexusMonitoringData = {
 export function useNexusMonitoringData(
   requestedPeriodId: string = NEXUS_DEFAULT_MONITORING_PERIOD_ID,
 ): NexusMonitoringData {
-  const officialRecords = useNexusOfficialRecords();
+  const official = useNexusOfficialRecords();
   const { periods, targetVersions } = useNexusMonitoringSession();
   const records = useMemo(
-    () => nexusMonitoringRecordsFrom(officialRecords),
-    [officialRecords],
+    () => nexusMonitoringRecordsFrom(official.records),
+    [official.records],
   );
   const periodOptions = useMemo(
     () => nexusMonitoringPeriodOptions(periods),
@@ -56,9 +61,12 @@ export function useNexusMonitoringData(
   );
 
   return {
+    errorMessage: official.errorMessage,
     input,
     isKnownPeriod: Boolean(knownPeriod),
+    loadState: official.state,
     period,
     periodOptions,
+    retry: official.retry,
   };
 }

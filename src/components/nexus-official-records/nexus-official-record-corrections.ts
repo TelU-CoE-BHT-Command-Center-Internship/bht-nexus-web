@@ -1,10 +1,10 @@
-import type { OfficialAcademicRecord } from "@/components/nexus-academic/nexus-academic-content";
-import type { OfficialActivityRecord } from "@/components/nexus-activities/nexus-activities-content";
-import type { OfficialContractProposalRecord } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
-import type { OfficialIntellectualProperty } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
+import type { NexusAcademicView } from "@/components/nexus-academic/nexus-academic-content";
+import type { NexusActivityView } from "@/components/nexus-activities/nexus-activities-content";
+import type { NexusContractProposalView } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
+import type { NexusIntellectualPropertyView } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import type { MetadataCompletionFieldKey } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import type { NexusMonitoringSourceFamily } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import type { OfficialPublication } from "@/components/nexus-publications/nexus-publications-content";
+import type { NexusPublicationView } from "@/components/nexus-publications/nexus-publications-content";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   kmIndicator,
@@ -25,9 +25,9 @@ export type OfficialRecordCorrectionValues = {
   /** Tanggal bisnis `YYYY-MM-DD` pada bidang tanggal milik rumah datanya. */
   businessDate?: string;
   kmIds?: NexusKmIndicatorId[];
-  protection?: OfficialIntellectualProperty["protection"];
-  publicationType?: OfficialPublication["type"];
-  quartile?: NonNullable<OfficialPublication["quartile"]> | null;
+  protection?: NexusIntellectualPropertyView["protection"];
+  publicationType?: NexusPublicationView["type"];
+  quartile?: NonNullable<NexusPublicationView["quartile"]> | null;
   registrationNumber?: string;
   reportedQuarter?: OfficialRecordQuarter | null;
   year?: number | null;
@@ -79,11 +79,11 @@ export const officialRecordCorrectionLabels: Record<
 };
 
 type CorrectableRecord =
-  | OfficialAcademicRecord
-  | OfficialActivityRecord
-  | OfficialContractProposalRecord
-  | OfficialIntellectualProperty
-  | OfficialPublication;
+  | NexusAcademicView
+  | NexusActivityView
+  | NexusContractProposalView
+  | NexusIntellectualPropertyView
+  | NexusPublicationView;
 
 function kmLinksFrom<T extends CorrectableRecord>(
   record: T,
@@ -133,9 +133,9 @@ function applyCommon<T extends CorrectableRecord>(
 }
 
 function correctPublication(
-  record: OfficialPublication,
+  record: NexusPublicationView,
   correction: OfficialRecordCorrection,
-): OfficialPublication {
+): NexusPublicationView {
   const { values } = correction;
   const next = applyCommon(record, correction);
 
@@ -170,9 +170,9 @@ function correctPublication(
 }
 
 function correctIntellectualProperty(
-  record: OfficialIntellectualProperty,
+  record: NexusIntellectualPropertyView,
   correction: OfficialRecordCorrection,
-): OfficialIntellectualProperty {
+): NexusIntellectualPropertyView {
   const { values } = correction;
   const next = applyCommon(record, correction);
 
@@ -202,9 +202,9 @@ function correctIntellectualProperty(
 }
 
 function correctContract(
-  record: OfficialContractProposalRecord,
+  record: NexusContractProposalView,
   correction: OfficialRecordCorrection,
-): OfficialContractProposalRecord {
+): NexusContractProposalView {
   const { values } = correction;
   const next = applyCommon(record, correction);
   if (values.businessDate === undefined) return next;
@@ -224,14 +224,14 @@ function correctContract(
 }
 
 /** Proposal abdimas mencatat tanggal pengajuan, kegiatan lain tanggal pelaksanaan. */
-export function activityUsesSubmissionDate(activity: OfficialActivityRecord) {
+export function activityUsesSubmissionDate(activity: NexusActivityView) {
   return activity.kind.startsWith("Proposal");
 }
 
 function correctActivity(
-  record: OfficialActivityRecord,
+  record: NexusActivityView,
   correction: OfficialRecordCorrection,
-): OfficialActivityRecord {
+): NexusActivityView {
   const { values } = correction;
   const next = applyCommon(record, correction);
   if (values.businessDate === undefined) return next;
@@ -251,9 +251,9 @@ function correctActivity(
 }
 
 function correctAcademic(
-  record: OfficialAcademicRecord,
+  record: NexusAcademicView,
   correction: OfficialRecordCorrection,
-): OfficialAcademicRecord {
+): NexusAcademicView {
   const next = applyCommon(record, correction);
   if (correction.values.year !== undefined) {
     next.year = correction.values.year ?? undefined;
@@ -262,11 +262,11 @@ function correctAcademic(
 }
 
 type CorrectionByFamily = {
-  academic: OfficialAcademicRecord;
-  activities: OfficialActivityRecord;
-  contracts: OfficialContractProposalRecord;
-  "intellectual-property": OfficialIntellectualProperty;
-  publications: OfficialPublication;
+  academic: NexusAcademicView;
+  activities: NexusActivityView;
+  contracts: NexusContractProposalView;
+  "intellectual-property": NexusIntellectualPropertyView;
+  publications: NexusPublicationView;
 };
 
 const correctors: {

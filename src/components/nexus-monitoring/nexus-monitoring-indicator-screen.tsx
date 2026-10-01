@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentProps } from "react";
 import { useMemo, useState } from "react";
 import type { NexusMonitoringCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
@@ -14,6 +15,7 @@ import {
   NEXUS_DEFAULT_MONITORING_PERIOD_ID,
   nexusMonitoringPeriodHref,
 } from "@/components/nexus-monitoring/nexus-monitoring-period";
+import { NexusMonitoringRecordsGate } from "@/components/nexus-monitoring/nexus-monitoring-records-gate";
 import { NexusMonitoringTargetDrawer } from "@/components/nexus-monitoring/nexus-monitoring-target-drawer";
 import { NexusMonitoringToast } from "@/components/nexus-monitoring/nexus-monitoring-toast";
 import { buildIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
@@ -31,7 +33,7 @@ import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
  * target versi terbaru periode terpilih. Target dapat diubah dan rekam dapat
  * dikoreksi langsung dari halaman ini tanpa berpindah halaman.
  */
-export function NexusMonitoringIndicatorScreen({
+function NexusMonitoringIndicatorScreenContent({
   capabilities,
   indicatorId,
   requestedPeriodId = NEXUS_DEFAULT_MONITORING_PERIOD_ID,
@@ -177,5 +179,15 @@ export function NexusMonitoringIndicatorScreen({
         />
       ) : null}
     </NexusWorkspacePage>
+  );
+}
+
+export function NexusMonitoringIndicatorScreen(
+  props: ComponentProps<typeof NexusMonitoringIndicatorScreenContent>,
+) {
+  return (
+    <NexusMonitoringRecordsGate>
+      <NexusMonitoringIndicatorScreenContent {...props} />
+    </NexusMonitoringRecordsGate>
   );
 }

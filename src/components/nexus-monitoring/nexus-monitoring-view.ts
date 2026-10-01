@@ -1,15 +1,15 @@
 import {
   academicMentorNames,
-  type OfficialAcademicRecord,
+  type NexusAcademicView,
 } from "@/components/nexus-academic/nexus-academic-content";
-import type { OfficialActivityRecord } from "@/components/nexus-activities/nexus-activities-content";
+import type { NexusActivityView } from "@/components/nexus-activities/nexus-activities-content";
 import {
   contractProposalPrimaryParty,
-  type OfficialContractProposalRecord,
+  type NexusContractProposalView,
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import {
   intellectualPropertyCreatorNames,
-  type OfficialIntellectualProperty,
+  type NexusIntellectualPropertyView,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-content";
 import {
   type NexusEvaluationPeriodId,
@@ -47,7 +47,7 @@ import {
 } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import type { MonitoringTone } from "@/components/nexus-monitoring/nexus-monitoring-ui";
 import {
-  type OfficialPublication,
+  type NexusPublicationView,
   publicationAuthorNames,
   publicationQuartileLabel,
 } from "@/components/nexus-publications/nexus-publications-content";
@@ -486,9 +486,9 @@ export type MonitoringRecordCorrectionSnapshot = {
   businessDateNote: string | null;
   family: NexusMonitoringSourceFamily;
   kmIds: readonly NexusKmIndicatorId[];
-  protection?: OfficialIntellectualProperty["protection"];
-  publicationType?: OfficialPublication["type"];
-  quartile?: NonNullable<OfficialPublication["quartile"]> | null;
+  protection?: NexusIntellectualPropertyView["protection"];
+  publicationType?: NexusPublicationView["type"];
+  quartile?: NonNullable<NexusPublicationView["quartile"]> | null;
   registrationNumber?: string;
   reportedQuarter: NexusEvaluationQuarter | null;
   year: number | null;
@@ -523,7 +523,8 @@ export type MonitoringRecordView = {
     capturedAt: string;
     note?: string;
   }[];
-  review: {
+  /** Kosong ketika server belum menyajikan keputusan tinjauan rekam. */
+  review?: {
     decision: string;
     note: string;
     reviewedAt: string;
@@ -655,7 +656,7 @@ function requiredField(
 }
 
 function publicationFields(
-  publication: OfficialPublication,
+  publication: NexusPublicationView,
 ): readonly MonitoringRecordField[] {
   return [
     requiredField("Penulis", publicationAuthorNames(publication), true),
@@ -678,7 +679,7 @@ function publicationFields(
 }
 
 function activityFields(
-  activity: OfficialActivityRecord,
+  activity: NexusActivityView,
 ): readonly MonitoringRecordField[] {
   return [
     requiredField("Jenis kegiatan", activity.kind),
@@ -694,7 +695,7 @@ function activityFields(
 }
 
 function intellectualPropertyFields(
-  record: OfficialIntellectualProperty,
+  record: NexusIntellectualPropertyView,
 ): readonly MonitoringRecordField[] {
   return [
     requiredField("Jenis perlindungan", record.protection),
@@ -706,7 +707,7 @@ function intellectualPropertyFields(
 }
 
 function contractFields(
-  contract: OfficialContractProposalRecord,
+  contract: NexusContractProposalView,
 ): readonly MonitoringRecordField[] {
   const period =
     contract.contractStart && contract.contractEnd
@@ -731,7 +732,7 @@ function contractFields(
 }
 
 function academicFields(
-  academic: OfficialAcademicRecord,
+  academic: NexusAcademicView,
 ): readonly MonitoringRecordField[] {
   return [
     requiredField("Kegiatan", academic.activity),
