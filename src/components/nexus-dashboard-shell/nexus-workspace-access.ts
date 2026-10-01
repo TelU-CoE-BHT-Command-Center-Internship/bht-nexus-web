@@ -56,6 +56,7 @@ export type NexusCollectionCapabilities = {
  */
 export type NexusMonitoringCapabilities = {
   canCorrectRecords: boolean;
+  canExport: boolean;
   canManageTargets: boolean;
 };
 
@@ -123,6 +124,7 @@ export const nexusPreviewWorkspaceAccess = {
   },
   monitoringCapabilities: {
     canCorrectRecords: true,
+    canExport: false,
     canManageTargets: false,
   },
   reviewCapabilities: {
@@ -228,6 +230,8 @@ const serverRolePermissions: Record<
     "intellectual_property.read",
     "contract.read",
     "academic.read",
+    "kpi.read",
+    "dashboard.read",
   ],
   director: [
     "review.read",
@@ -362,6 +366,7 @@ function accessFromPermissions(
     },
     monitoringCapabilities: {
       canCorrectRecords: has("kpi.read"),
+      canExport: has("dashboard.export"),
       canManageTargets: false,
     },
     reviewCapabilities: {

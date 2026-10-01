@@ -3,7 +3,6 @@
 import type { ComponentProps } from "react";
 import { useMemo, useState } from "react";
 import type { NexusMonitoringCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
-import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import { useNexusMonitoringData } from "@/components/nexus-monitoring/nexus-monitoring-data";
 import {
   nexusIndicatorEvaluation,
@@ -20,10 +19,7 @@ import { NexusMonitoringTargetDrawer } from "@/components/nexus-monitoring/nexus
 import { NexusMonitoringToast } from "@/components/nexus-monitoring/nexus-monitoring-toast";
 import { buildIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
-import {
-  NexusWorkspaceButton,
-  NexusWorkspaceNotice,
-} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
@@ -48,7 +44,6 @@ function NexusMonitoringIndicatorScreenContent({
   const [notice, setNotice] = useState<{ id: number; message: string } | null>(
     null,
   );
-  const [exportError, setExportError] = useState("");
   const { input, isKnownPeriod, period, periodOptions } =
     useNexusMonitoringData(periodId);
   const view = useMemo(
@@ -73,31 +68,8 @@ function NexusMonitoringIndicatorScreenContent({
     <NexusWorkspacePage
       actions={
         <NexusMonitoringHeaderActions
-          downloadLabel="Unduh Excel"
+          downloadLabel="Unduh CSV"
           manageLabel="Ubah target"
-          onDownload={
-            isKnownPeriod
-              ? async () => {
-                  setExportError("");
-                  try {
-                    const {
-                      downloadNexusWorkbook,
-                      nexusMonitoringIndicatorWorkbook,
-                    } = await import(
-                      "@/components/nexus-monitoring/nexus-monitoring-export"
-                    );
-                    await downloadNexusWorkbook(
-                      `monitoring-km-${periodId}-${indicatorId.toLocaleLowerCase("id-ID")}-rekam.xlsx`,
-                      nexusMonitoringIndicatorWorkbook(view),
-                    );
-                  } catch {
-                    setExportError(
-                      "Berkas Excel belum dapat dibuat. Silakan coba lagi.",
-                    );
-                  }
-                }
-              : undefined
-          }
           onManageTargets={
             capabilities.canManageTargets && isKnownPeriod
               ? () => setTargetDrawerOpen(true)
@@ -114,13 +86,6 @@ function NexusMonitoringIndicatorScreenContent({
       title={`${view.id} · ${view.label}`}
       titleId="monitoring-indicator-title"
     >
-      {exportError ? (
-        <div className={styles.pageNotice}>
-          <NexusWorkspaceNotice tone="danger">
-            {exportError}
-          </NexusWorkspaceNotice>
-        </div>
-      ) : null}
       {notice ? (
         <NexusMonitoringToast
           key={notice.id}
