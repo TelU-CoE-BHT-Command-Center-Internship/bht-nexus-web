@@ -336,6 +336,7 @@ export function NexusMembers({
     if (selectedMember && detail.state === "ready" && detail.record) {
       return (
         <NexusMemberDetail
+          accountManagementAvailable
           activeTab={activeDetailTab}
           canStartCollection={canStartCollection}
           capabilities={capabilities}
