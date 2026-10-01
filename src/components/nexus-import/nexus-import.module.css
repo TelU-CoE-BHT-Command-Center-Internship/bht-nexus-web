@@ -1,0 +1,82 @@
+.uploadRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.summary div {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--color-nexus-border-soft);
+  border-radius: 0.6rem;
+  background: var(--color-nexus-surface);
+}
+
+.summary dt {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.summary dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.submitRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.submitRow p {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.table th,
+.table td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--color-nexus-border-soft);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.table tr[data-action="skip"] td:nth-child(2) {
+  color: #b3261e;
+  font-weight: 650;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+  font-size: 0.8rem;
+}
