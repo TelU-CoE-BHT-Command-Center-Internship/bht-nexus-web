@@ -28,10 +28,7 @@ export type AuditReviewMatching = {
  * sebagai tindakan yang segera tersedia dan tidak menjadi syarat keputusan.
  */
 export type AuditReviewPlannedParts = {
-  correctionEvidenceNote?: boolean;
   kpiResolution?: boolean;
-  /** Menghubungkan kandidat hanya tersedia ke rekam resmi ber-DOI sama. */
-  mergeRequiresSameIdentifier?: boolean;
 };
 
 export type AuditReviewDrawerProps = {

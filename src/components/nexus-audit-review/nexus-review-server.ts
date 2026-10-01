@@ -55,8 +55,7 @@ import { useLoadEffect } from "@/lib/use-load-effect";
  * Satu-satunya penerjemah kasus tinjauan server ke bentuk ruang Tinjauan.
  * Status, riwayat, keputusan, dan perbaikan dibaca dari server; tampilan hanya
  * berubah setelah server mengonfirmasi tindakan. Bagian yang belum dicatat
- * server (pemetaan orang, keputusan indikator KM, catatan dasar perbaikan)
- * tidak pernah dikarang.
+ * server (pemetaan orang dan keputusan indikator KM) tidak pernah dikarang.
  */
 
 type Payload = Record<string, unknown>;
@@ -456,7 +455,7 @@ function correctionOf(detail: ReviewCaseDetail): AuditCorrection | undefined {
         return [fieldId, text(firstEdit?.previousValueJson[fieldId])];
       }),
     ),
-    evidenceNote: "",
+    evidenceNote: edits.at(-1)?.reason ?? "",
     fieldIds,
     version: edits.length + 1,
   };
@@ -515,9 +514,14 @@ type RecordContext = {
   promotion?: ReviewPromotionResult;
 };
 
-function promotionNote(promotion: ReviewPromotionResult | undefined) {
+function promotionNote(
+  promotion: ReviewPromotionResult | undefined,
+  targetEntityPublicId: string | null | undefined,
+) {
   if (promotion === undefined) {
-    return "Keputusan tercatat pada riwayat tinjauan. Rekam resmi yang terbentuk dapat diperiksa pada halaman Publikasi atau Kegiatan & Pengabdian.";
+    return targetEntityPublicId
+      ? "Keputusan tercatat dan kandidat sudah tercermin pada rekam resmi di bawah."
+      : "Keputusan tercatat pada riwayat tinjauan. Rekam resmi yang terbentuk dapat diperiksa pada halaman Data Resmi.";
   }
   if (promotion === null) {
     return "Keputusan tercatat, tetapi Data Resmi belum terbentuk karena metadata kandidat belum memenuhi syarat promosi.";
@@ -592,6 +596,7 @@ export function reviewRecordFromServer(
         id: edit.publicId,
         kind: "correction_submitted" as const,
         label: `Kandidat versi ${index + 2} disimpan`,
+        note: edit.reason ?? undefined,
         occurredAt: edit.editedAt,
         version: index + 2,
       })),
@@ -623,13 +628,16 @@ export function reviewRecordFromServer(
         actorId: finalDecision.decidedByPublicId,
         appliedNote:
           finalDecision.decision === "approve"
-            ? promotionNote(context.promotion)
+            ? promotionNote(context.promotion, detail?.targetEntityPublicId)
             : undefined,
         kind: decisionKinds[finalDecision.decision],
         label: decisionLabels[finalDecision.decision],
         note: finalDecision.reason ?? "",
         occurredAt: finalDecision.decidedAt,
-        targetRecordId: context.promotion?.targetEntityPublicId,
+        targetRecordId:
+          context.promotion?.targetEntityPublicId ??
+          detail?.targetEntityPublicId ??
+          undefined,
       }
     : undefined;
   const revisionRequest =
@@ -731,20 +739,22 @@ export function serverReviewCapabilities(
 }
 
 /**
- * Keputusan server untuk pilihan reviewer. Menghubungkan ke rekam resmi hanya
- * didukung bila DOI identik, karena persetujuan server menautkan kandidat ke
- * rekam ber-DOI sama; pilihan lain belum tersedia.
+ * Keputusan server untuk pilihan reviewer. Menghubungkan ke rekam resmi
+ * adalah persetujuan yang menyebut rekam tujuan, sehingga server menautkan
+ * kandidat ke rekam itu alih-alih membuat rekam baru.
  */
 export function serverDecisionFor(
   kind: AuditDecisionKind,
   target?: AuditOfficialMatch,
-): ReviewDecisionKind | undefined {
-  if (kind === "approved_new") return "approve";
+): { decision: ReviewDecisionKind; linkTargetPublicId?: string } | undefined {
+  if (kind === "approved_new") return { decision: "approve" };
   if (kind === "merged") {
-    return target?.verdict === "same_identifier" ? "approve" : undefined;
+    return target
+      ? { decision: "approve", linkTargetPublicId: target.id }
+      : undefined;
   }
-  if (kind === "changes_requested") return "request_revision";
-  if (kind === "rejected") return "reject";
+  if (kind === "changes_requested") return { decision: "request_revision" };
+  if (kind === "rejected") return { decision: "reject" };
   return undefined;
 }
 
@@ -795,6 +805,18 @@ function reviewActionError(error: unknown, action: "correction" | "decision") {
       /sudah memberikan keputusan/i.test(error.message)
     ) {
       return "Anda sudah memberikan keputusan untuk kandidat ini. Keputusan berikutnya perlu ditetapkan pemeriksa lain yang berwenang.";
+    }
+    if (error.status === 409 && /DOI kandidat berbeda/i.test(error.message)) {
+      return "DOI kandidat berbeda dengan DOI rekam tujuan, sehingga keduanya bukan karya yang sama. Pilih rekam lain, terima sebagai rekam baru, atau minta perbaikan DOI.";
+    }
+    if (
+      error.status === 409 &&
+      /judul dan tahun yang sama/i.test(error.message)
+    ) {
+      return "Sudah ada publikasi resmi berjudul dan bertahun sama dengan DOI berbeda. Periksa DOI kandidat lalu minta perbaikan, atau tautkan ke rekam yang benar.";
+    }
+    if (error.status === 404 && /rekam publikasi tujuan/i.test(error.message)) {
+      return "Rekam tujuan sudah tidak ada pada Data Resmi. Perbarui pencocokan lalu pilih rekam lain.";
     }
     if (error.status === 409 || error.status === 404) {
       return "Status kandidat sudah berubah sejak rincian dibuka. Rincian dimuat ulang dengan keadaan terbaru.";
@@ -982,7 +1004,11 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
   const decide = useCallback(
     async (
       id: string,
-      input: { decision: ReviewDecisionKind; reason: string },
+      input: {
+        decision: ReviewDecisionKind;
+        linkTargetPublicId?: string;
+        reason: string;
+      },
     ): Promise<string | undefined> => {
       try {
         const result = await decideReviewCase(id, input);
@@ -1042,6 +1068,7 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
     async (
       record: AuditReviewRecord,
       values: Record<string, string>,
+      evidenceNote: string,
     ): Promise<string | undefined> => {
       const detail = details[record.id]?.detail;
       if (!detail) return "Rincian kandidat belum dimuat. Coba lagi.";
@@ -1049,8 +1076,14 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
       if (Object.keys(changes).length === 0) {
         return "Belum ada bidang yang berubah.";
       }
+      const reason = evidenceNote.trim();
+      if (!reason)
+        return "Tuliskan catatan bukti yang menjadi dasar perbaikan.";
       try {
-        applyDetail(record.id, await submitReviewEdit(record.id, changes));
+        applyDetail(
+          record.id,
+          await submitReviewEdit(record.id, changes, reason),
+        );
         loadComparison(record.id, true);
         return undefined;
       } catch (error) {

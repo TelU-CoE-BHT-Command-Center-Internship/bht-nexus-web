@@ -28,6 +28,8 @@ export type ReviewCaseEdit = {
   nextValueJson: Record<string, unknown>;
   previousValueJson: Record<string, unknown>;
   publicId: string;
+  /** Catatan bukti yang menjadi dasar perbaikan; kosong pada versi lama. */
+  reason: string | null;
 };
 
 export type ReviewCaseDecisionEntry = {
@@ -46,6 +48,8 @@ export type ReviewCaseDetail = {
   payload: Record<string, unknown>;
   publicId: string;
   status: ReviewCaseStatus;
+  /** Rekam resmi yang dibentuk, ditautkan, atau dilengkapi kasus ini. */
+  targetEntityPublicId?: string | null;
 };
 
 export type ReviewPromotionResult = {
@@ -131,9 +135,17 @@ export function getReviewComparison(
   return apiFetch(`/reviews/cases/${encodeURIComponent(publicId)}/comparison`);
 }
 
+/**
+ * Keputusan pemeriksa. `linkTargetPublicId` menautkan kandidat publikasi ke
+ * rekam resmi pilihan pemeriksa alih-alih membuat rekam baru.
+ */
 export function decideReviewCase(
   publicId: string,
-  input: { decision: ReviewDecisionKind; reason?: string },
+  input: {
+    decision: ReviewDecisionKind;
+    linkTargetPublicId?: string;
+    reason?: string;
+  },
 ): Promise<ReviewDecisionResult> {
   return apiFetch(`/reviews/cases/${encodeURIComponent(publicId)}/decision`, {
     body: JSON.stringify(input),
@@ -144,9 +156,10 @@ export function decideReviewCase(
 export function submitReviewEdit(
   publicId: string,
   fieldChanges: Record<string, unknown>,
+  reason: string,
 ): Promise<ReviewCaseDetail> {
   return apiFetch(`/reviews/cases/${encodeURIComponent(publicId)}/candidate`, {
-    body: JSON.stringify({ fieldChanges }),
+    body: JSON.stringify({ fieldChanges, reason }),
     method: "PATCH",
   });
 }

@@ -119,12 +119,7 @@ export function AuditReviewDecisionSection({
   const matchingIsPending =
     matching !== undefined && matching.state !== "ready";
   const matchingIsStale = matchingIsPending || !auditMatchingIsCurrent(state);
-  const mergeIsPlanned = Boolean(
-    planned?.mergeRequiresSameIdentifier &&
-      selectedMatch?.verdict !== "same_identifier",
-  );
   const kpiResolutionIsPlanned = Boolean(planned?.kpiResolution);
-  const evidenceNoteIsPlanned = Boolean(planned?.correctionEvidenceNote);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string>();
   const [actionNotice, setActionNotice] = useState<string>();
@@ -582,7 +577,6 @@ export function AuditReviewDecisionSection({
       targetPersonBindingReady &&
       personMappingsReady &&
       kpiResolutionReady &&
-      !(decisionChoice === "merged" && mergeIsPlanned) &&
       !(
         matchingIsStale &&
         ["approved_new", "approved_update", "merged"].includes(decisionChoice)
@@ -941,32 +935,18 @@ export function AuditReviewDecisionSection({
             );
           })}
         </div>
-        {evidenceNoteIsPlanned ? (
-          <label className={drawerStyles.reviewTextField}>
-            <span className={drawerStyles.reviewPlannedLabel}>
-              Catatan bukti perbaikan <NexusWorkspacePlannedBadge />
-            </span>
-            <textarea
-              disabled
-              placeholder="Catatan dasar perbaikan akan disimpan bersama perubahan setelah layanan tersedia"
-              rows={3}
-              value=""
-            />
-          </label>
-        ) : (
-          <label className={drawerStyles.reviewTextField}>
-            <span>
-              Catatan bukti perbaikan <b>WAJIB</b>
-            </span>
-            <textarea
-              maxLength={600}
-              onChange={(event) => setEvidenceNote(event.currentTarget.value)}
-              placeholder="Jelaskan dokumen atau sumber yang menjadi dasar perubahan"
-              rows={4}
-              value={evidenceNote}
-            />
-          </label>
-        )}
+        <label className={drawerStyles.reviewTextField}>
+          <span>
+            Catatan bukti perbaikan <b>WAJIB</b>
+          </span>
+          <textarea
+            maxLength={600}
+            onChange={(event) => setEvidenceNote(event.currentTarget.value)}
+            placeholder="Jelaskan dokumen atau sumber yang menjadi dasar perubahan"
+            rows={4}
+            value={evidenceNote}
+          />
+        </label>
         {actionError ? (
           <div className={drawerStyles.reviewActionError} role="alert">
             <NexusWorkspaceNotice tone="danger">
@@ -984,7 +964,7 @@ export function AuditReviewDecisionSection({
               isSubmitting ||
               !correctionChanged ||
               !correctionComplete ||
-              (!evidenceNoteIsPlanned && evidenceNote.trim().length === 0)
+              evidenceNote.trim().length === 0
             }
             onClick={() => {
               if (isCompletionCorrection) {
@@ -1414,32 +1394,22 @@ export function AuditReviewDecisionSection({
         {record.candidateKind === "new_record" && selectedMatch ? (
           <label
             data-disabled={
-              matchingIsStale ||
-              mergeIsPlanned ||
-              !capabilities.canApprove ||
-              undefined
+              matchingIsStale || !capabilities.canApprove || undefined
             }
             data-selected={decisionChoice === "merged" || undefined}
           >
             <input
               checked={decisionChoice === "merged"}
-              disabled={
-                matchingIsStale || mergeIsPlanned || !capabilities.canApprove
-              }
+              disabled={matchingIsStale || !capabilities.canApprove}
               name={`decision-${record.id}`}
               onChange={() => selectDecision("merged")}
               type="radio"
             />
             <span className={drawerStyles.reviewRadio} />
             <span>
-              <strong className={drawerStyles.reviewPlannedLabel}>
-                Hubungkan ke {auditRecordLabel(selectedMatch.id)}
-                {mergeIsPlanned ? <NexusWorkspacePlannedBadge /> : null}
-              </strong>
+              <strong>Hubungkan ke {auditRecordLabel(selectedMatch.id)}</strong>
               <small>
-                {mergeIsPlanned
-                  ? "Menghubungkan ke rekam pilihan segera tersedia. Saat ini hanya rekam dengan DOI yang sama yang dapat dihubungkan."
-                  : "Pilih jika bukti menunjukkan karya atau entitas yang sama."}
+                Pilih jika bukti menunjukkan karya atau entitas yang sama.
               </small>
             </span>
           </label>
