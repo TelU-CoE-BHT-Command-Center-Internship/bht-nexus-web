@@ -114,11 +114,11 @@ Per 1 Oktober 2026 web sudah memakai butir 1 sampai 7, 11, dan 13, ditambah cata
 
 ### Kontrak integrasi Anggota
 
-Kontrak yang dipakai web pada `bht-nexus-server` branch `dev` (commit `2905b59`, 30 September 2026):
+Kontrak yang dipakai web pada `bht-nexus-server` branch `dev` (commit `4f10226`, 1 Oktober 2026):
 
 - rekam `member` menyimpan nama, nama panggilan, kontak, unit, penugasan CoE, bidang keahlian, pengenal akademik (SINTA, Scopus, Google Scholar, ORCID, ResearcherID), foto, status keanggotaan, dan visibilitas publik. Anggota boleh belum mempunyai akun;
-- membaca direktori dan rinciannya membutuhkan izin `member.read`. Menambah, mengubah, mengubah status, dan mengunggah foto anggota membutuhkan `iam.manage`, sehingga tindakan kelola anggota di web masih bertanda **Segera** sampai alurnya disepakati;
-- hubungan akun ke anggota diatur dari Administrasi lewat `PATCH /admin/accounts/:id/link-member` dan bersifat satu akun untuk satu anggota. Kemiripan nama atau email tidak pernah dipakai untuk menebak hubungan.
+- membaca direktori dan rinciannya membutuhkan izin `member.read`. Menambah, mengubah, mengubah status, dan mengunggah foto anggota membutuhkan `iam.manage`. Pada izin bawaan server keduanya dipegang Auditor;
+- hubungan akun ke anggota diatur dari Administrasi lewat `PATCH /admin/accounts/:id/link-member` dan bersifat satu akun untuk satu anggota. Kemiripan nama atau email tidak pernah dipakai untuk menebak hubungan. Dari rincian anggota, **Beri akses BHT Nexus** membuka undangan Administrasi dengan anggota itu sudah terpilih (`?inviteMember=`), dan **Kelola akun** membuka akun tertautnya (`?account=`).
 
 ### Kontrak integrasi Profil Saya
 
@@ -134,7 +134,8 @@ Kelengkapan profil hanya mensyaratkan nama lengkap dan nomor HP. Hubungan akun d
 ### Kontrak integrasi Peran dan Hak Akses
 
 - Izin server bernama `sumber_daya.tindakan`. Izin efektif satu akun adalah gabungan izin dari seluruh perannya, lalu disesuaikan penyesuaian khusus akun: tambahan, pembatasan, atau mengikuti peran.
-- Pada izin bawaan server, peran Auditor memegang pengelolaan akun, peran, izin, dan penetapan peran, sedangkan Admin memegang data operasional serta pembacaan log. Rancangan antarmuka lama menempatkan pengelolaan akun pada Admin; pembagian ini masih menunggu keputusan tim.
+- Pada izin bawaan server, peran Auditor memegang pengelolaan akun, peran, izin, dan penetapan peran, serta membaca direktori Anggota untuk menautkan akun, sedangkan Admin memegang data operasional serta pembacaan log. Rancangan antarmuka lama menempatkan pengelolaan akun pada Admin; pembagian ini masih menunggu keputusan tim.
+- Rumah Data Resmi mengikuti izin bacanya masing-masing: Publikasi `publication.read`, Kekayaan Intelektual `intellectual_property.read`, Kontrak & Proposal `contract.read`, Akademik `academic.read`, serta Kegiatan & Pengabdian `activity.read`. Pengajuan ke setiap rumah data membutuhkan `job.create`.
 - `PATCH /admin/accounts/:id/role` menambahkan peran, tidak mengganti. Web mengganti peran dengan menambah peran baru lebih dahulu, lalu mencabut peran lama lewat `DELETE /users/:id/roles/:roleId`. Server tidak menerima perubahan peran dan status untuk akun sendiri, dan menolak mencabut pemegang terakhir izin kelola peran akun.
 - `DELETE /roles/:id` hanya berhasil untuk peran kustom yang tidak dipakai akun dan tidak lagi memegang izin; tidak ada pemulihan peran yang sudah dikeluarkan. `POST /roles/:id/reset` memulihkan hak akses peran bawaan dan membutuhkan `iam.manage`.
 - Nama dan deskripsi peran disimpan dwibahasa. Deskripsi yang sudah tersimpan tidak dapat dikosongkan kembali, sehingga web meminta deskripsi pengganti.
