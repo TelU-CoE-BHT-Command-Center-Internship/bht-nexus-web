@@ -148,8 +148,11 @@ type NexusServerPermission =
   | "activity.read"
   | "audit.read"
   | "contract.read"
+  | "dashboard.export"
   | "dashboard.read"
   | "iam.manage"
+  | "import.create"
+  | "import.read"
   | "intellectual_property.read"
   | "job.create"
   | "job.read"
@@ -194,6 +197,9 @@ const serverRolePermissions: Record<
     "audit.read",
     "kpi.read",
     "dashboard.read",
+    "dashboard.export",
+    "import.create",
+    "import.read",
   ],
   auditor: [
     "iam.manage",
@@ -208,6 +214,9 @@ const serverRolePermissions: Record<
     "role_permission.read",
     "role_permission.manage",
     "audit.read",
+    "intellectual_property.read",
+    "contract.read",
+    "academic.read",
   ],
   cluster_head: [
     "job.read",
@@ -233,6 +242,7 @@ const serverRolePermissions: Record<
     "kpi.read",
     "dashboard.read",
     "audit.read",
+    "import.read",
   ],
   external_partner: ["publication.read"],
   intern: ["publication.read"],

@@ -96,6 +96,11 @@ function roleAccountDirectory(
 
 type LoadState = "error" | "loading" | "ready";
 
+/** Tindakan izin yang tidak punya kolom sendiri pada matriks hak akses. */
+const separateSuffixLabels: Record<string, string> = {
+  export: "ekspor",
+};
+
 const actionBySuffix: Record<string, NexusAccessActionId> = {
   approve: "approve",
   create: "create",
@@ -142,6 +147,11 @@ const resourceCopy: Record<
       "Mengundang akun, mengubah status, menautkan anggota, dan menyetel akses khusus.",
     icon: "administration",
     label: "Identitas & akses",
+  },
+  import: {
+    description: "Impor berkas data yang hasilnya masuk ke antrean Tinjauan.",
+    icon: "documents",
+    label: "Impor data",
   },
   intellectual_property: {
     description: "Hak cipta, paten, dan pencatatan kekayaan intelektual.",
@@ -204,6 +214,7 @@ const resourceOrder = [
   "dashboard",
   "kpi",
   "job",
+  "import",
   "review",
   "publication",
   "intellectual_property",
@@ -238,12 +249,17 @@ export function nexusServerPermissionLabel(name: string): {
 } {
   const separator = name.lastIndexOf(".");
   const resource = separator > 0 ? name.slice(0, separator) : name;
-  const action = actionBySuffix[separator > 0 ? name.slice(separator + 1) : ""];
+  const suffix = separator > 0 ? name.slice(separator + 1) : "";
+  const action = actionBySuffix[suffix];
   const copy = resourceCopy[resource];
+  const separateLabel = separateSuffixLabels[suffix];
   return {
     action: action ? nexusAccessActionLabels[action] : undefined,
     description: copy?.description,
-    module: copy?.label ?? name,
+    module:
+      copy && separateLabel
+        ? `${copy.label} (${separateLabel})`
+        : (copy?.label ?? name),
   };
 }
 
@@ -271,6 +287,7 @@ export function permissionMatrixModules(
     let moduleId = resource;
     // Izin yang tidak cocok dengan sel yang tersedia mendapat barisnya sendiri.
     if (
+      separateSuffixLabels[suffix] ||
       modules
         .get(moduleId)
         ?.permissions.some((candidate) => candidate.action === action)
@@ -284,7 +301,7 @@ export function permissionMatrixModules(
       label:
         moduleId === resource
           ? (copy?.label ?? resource)
-          : `${copy?.label ?? resource} (${suffix})`,
+          : `${copy?.label ?? resource} (${separateSuffixLabels[suffix] ?? suffix})`,
       permissions: [],
     };
     module.permissions.push({ action, id: permission.name });
