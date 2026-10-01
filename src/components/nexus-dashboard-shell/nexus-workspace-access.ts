@@ -123,7 +123,7 @@ export const nexusPreviewWorkspaceAccess = {
   },
   monitoringCapabilities: {
     canCorrectRecords: true,
-    canManageTargets: true,
+    canManageTargets: false,
   },
   reviewCapabilities: {
     canReview: true,
@@ -271,8 +271,8 @@ const serverRoleLabels: Record<NexusServerRoleName, string> = {
   officer: "Pengurus",
 };
 
-/** Broadcast / Newsletter belum punya izin server; Meeting Minggu 12 membatasinya untuk pengurus dan admin. */
-const broadcastRoles: readonly NexusServerRoleName[] = ["admin", "officer"];
+/** Broadcast / Newsletter belum punya layanan server, sehingga tidak dibuka untuk peran mana pun. */
+const broadcastRoles: readonly NexusServerRoleName[] = [];
 
 function isServerRoleName(value: string): value is NexusServerRoleName {
   return Object.hasOwn(serverRolePermissions, value);
@@ -352,7 +352,7 @@ function accessFromPermissions(
     },
     monitoringCapabilities: {
       canCorrectRecords: has("kpi.read"),
-      canManageTargets: has("kpi.read"),
+      canManageTargets: false,
     },
     reviewCapabilities: {
       canReview: has("review.decide"),

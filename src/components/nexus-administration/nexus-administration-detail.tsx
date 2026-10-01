@@ -27,7 +27,6 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
-  NexusWorkspacePlannedButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
@@ -316,11 +315,7 @@ function AccountAction({
     >
       {children}
     </NexusWorkspaceButton>
-  ) : (
-    <NexusWorkspacePlannedButton tone={tone}>
-      {children}
-    </NexusWorkspacePlannedButton>
-  );
+  ) : null;
 }
 
 export function NexusAdministrationDetail({
