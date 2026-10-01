@@ -11,6 +11,12 @@ import type {
   OfficialRecordCorrectionChange,
   OfficialRecordCorrectionValues,
 } from "@/components/nexus-official-records/nexus-official-record-corrections";
+import {
+  nexusRecordTrailHouse,
+  nexusRecordTrailReviewMessage,
+  nexusRecordTrailSourcesMessage,
+  useNexusRecordTrail,
+} from "@/components/nexus-official-records/nexus-record-trail";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
@@ -108,6 +114,14 @@ export function MonitoringRecordDetail({
   }) => void;
   record: MonitoringRecordView;
 }) {
+  const trail = useNexusRecordTrail(
+    nexusRecordTrailHouse(record.houseHref),
+    record.publicId,
+  );
+  const provenance: typeof record.provenance =
+    trail.state === "ready" ? trail.provenance : record.provenance;
+  const review: typeof record.review =
+    trail.state === "ready" ? trail.review : record.review;
   const isComplete = record.quality === "Lengkap";
   const [mode, setMode] = useState<"correct" | "read">("read");
   const [correctionDirty, setCorrectionDirty] = useState(false);
@@ -383,17 +397,17 @@ export function MonitoringRecordDetail({
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
 
-        {record.provenance.length === 0 ? (
+        {provenance.length === 0 ? (
           <dl aria-label="Asal data rekam" className={detail.metadataDetails}>
             <DetailField
               label="Asal data"
-              value="Belum tercatat pada rekam resmi"
+              value={nexusRecordTrailSourcesMessage(trail)}
               wide
             />
           </dl>
         ) : (
           <div className={detail.provenanceGrid}>
-            {record.provenance.map((source) => (
+            {provenance.map((source) => (
               <article
                 className={detail.provenanceCard}
                 key={`${source.source}-${source.identifier}`}
@@ -475,22 +489,22 @@ export function MonitoringRecordDetail({
           <p>Riwayat keputusan tersimpan</p>
         </div>
 
-        {record.review ? (
+        {review ? (
           <div className={detail.reviewDecision}>
             <span className={detail.reviewCheck}>
               <MonitoringIcon name="check" />
             </span>
             <div>
-              <strong>{record.review.decision}</strong>
-              <p>{record.review.note}</p>
+              <strong>{review.decision}</strong>
+              <p>{review.note}</p>
               <small>
-                {record.review.reviewer} · {record.review.reviewedAt}
+                {review.reviewer} · {review.reviewedAt}
               </small>
             </div>
           </div>
         ) : (
           <p className={detail.explanation}>
-            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+            {nexusRecordTrailReviewMessage(trail)}
           </p>
         )}
 

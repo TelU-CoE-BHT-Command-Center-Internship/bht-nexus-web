@@ -14,6 +14,11 @@ import {
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { parseBusinessDate } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
+import {
+  nexusRecordTrailReviewMessage,
+  nexusRecordTrailSourcesMessage,
+  useNexusRecordTrail,
+} from "@/components/nexus-official-records/nexus-record-trail";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
 import {
   type NexusPublicationView,
@@ -244,6 +249,11 @@ export function NexusPublicationDetail({
   proposal,
   publication,
 }: NexusPublicationDetailProps) {
+  const trail = useNexusRecordTrail("publications", publication.publicId);
+  const provenance: typeof publication.provenance =
+    trail.state === "ready" ? trail.provenance : publication.provenance;
+  const review: typeof publication.review =
+    trail.state === "ready" ? trail.review : publication.review;
   const metadataItems = getMetadataItems(publication);
   const displayTitle = publicationDisplayTitle(publication);
   const isTopQuartile =
@@ -608,13 +618,13 @@ export function NexusPublicationDetail({
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
-        {publication.provenance.length === 0 ? (
+        {provenance.length === 0 ? (
           <p className={detail.explanation}>
-            Jejak sumber pembentuk rekam ini belum tersedia di halaman ini.
+            {nexusRecordTrailSourcesMessage(trail)}
           </p>
         ) : null}
         <div className={detail.provenanceGrid}>
-          {publication.provenance.map((source) => (
+          {provenance.map((source) => (
             <article
               className={detail.provenanceCard}
               key={`${source.source}-${source.identifier}`}
@@ -682,23 +692,22 @@ export function NexusPublicationDetail({
           </div>
           <p>Riwayat keputusan tersimpan</p>
         </div>
-        {publication.review ? (
+        {review ? (
           <div className={detail.reviewDecision}>
             <span className={detail.reviewCheck}>
               <NexusPublicationsIcon name="check" />
             </span>
             <div>
-              <strong>{publication.review.decision}</strong>
-              <p>{publication.review.note}</p>
+              <strong>{review.decision}</strong>
+              <p>{review.note}</p>
               <small>
-                {publication.review.reviewer} · {publication.review.reviewedAt}{" "}
-                · {publication.review.candidateId}
+                {review.reviewer} · {review.reviewedAt} · {review.candidateId}
               </small>
             </div>
           </div>
         ) : (
           <p className={detail.explanation}>
-            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+            {nexusRecordTrailReviewMessage(trail)}
           </p>
         )}
         {canOpenReviews ? (

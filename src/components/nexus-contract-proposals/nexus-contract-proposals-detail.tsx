@@ -24,6 +24,11 @@ import {
   metadataCompletionResolvedValue,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
+import {
+  nexusRecordTrailReviewMessage,
+  nexusRecordTrailSourcesMessage,
+  useNexusRecordTrail,
+} from "@/components/nexus-official-records/nexus-record-trail";
 import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
@@ -198,6 +203,11 @@ export function NexusContractProposalDetail({
   proposal,
   record,
 }: NexusContractProposalDetailProps) {
+  const trail = useNexusRecordTrail("contracts-proposals", record.publicId);
+  const provenance: typeof record.provenance =
+    trail.state === "ready" ? trail.provenance : record.provenance;
+  const review: typeof record.review =
+    trail.state === "ready" ? trail.review : record.review;
   const metadataItems = getMetadataItems(record);
   const displayTitle = contractProposalDisplayTitle(record);
 
@@ -393,13 +403,13 @@ export function NexusContractProposalDetail({
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
-        {record.provenance.length === 0 ? (
+        {provenance.length === 0 ? (
           <p className={detail.explanation}>
-            Jejak sumber pembentuk rekam ini belum tersedia di halaman ini.
+            {nexusRecordTrailSourcesMessage(trail)}
           </p>
         ) : null}
         <div className={detail.provenanceGrid}>
-          {record.provenance.map((source) => (
+          {provenance.map((source) => (
             <article className={detail.provenanceCard} key={source.identifier}>
               <header>
                 <span className={detail.sourceIcon}>
@@ -441,23 +451,22 @@ export function NexusContractProposalDetail({
           </div>
           <p>Riwayat keputusan tersimpan</p>
         </div>
-        {record.review ? (
+        {review ? (
           <div className={detail.reviewDecision}>
             <span className={detail.reviewCheck}>
               <NexusContractProposalIcon name="check" />
             </span>
             <div>
-              <strong>{record.review.decision}</strong>
-              <p>{record.review.note}</p>
+              <strong>{review.decision}</strong>
+              <p>{review.note}</p>
               <small>
-                {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
-                {record.review.candidateId}
+                {review.reviewer} · {review.reviewedAt} · {review.candidateId}
               </small>
             </div>
           </div>
         ) : (
           <p className={detail.explanation}>
-            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+            {nexusRecordTrailReviewMessage(trail)}
           </p>
         )}
         <Link
