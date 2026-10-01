@@ -108,6 +108,17 @@ export type OfficialAcademicRecord = {
   year?: number;
 };
 
+/**
+ * Rekam akademik sebagaimana ditampilkan halamannya. Rekam yang dibaca dari
+ * server belum membawa keputusan tinjauannya, sehingga bagian itu boleh kosong
+ * dan ditampilkan apa adanya.
+ */
+export type NexusAcademicView = Omit<OfficialAcademicRecord, "review"> & {
+  /** `false` bila rekam dibaca dari daftar server yang belum memuat peserta. */
+  mentorsKnown?: boolean;
+  review?: OfficialAcademicRecord["review"];
+};
+
 export type NexusAcademicContent = {
   description: string;
   officialNote: string;
@@ -363,12 +374,14 @@ function createRecord(seed: AcademicSeed): OfficialAcademicRecord {
 
 const records: OfficialAcademicRecord[] = seeds.map(createRecord);
 
-export function academicMentorNames(record: OfficialAcademicRecord) {
-  if (record.mentors.length === 0) return "Pembimbing belum tercatat";
+export function academicMentorNames(record: NexusAcademicView) {
+  if (record.mentors.length === 0) {
+    return record.mentorsKnown === false ? "" : "Pembimbing belum tercatat";
+  }
   return record.mentors.map((mentor) => mentor.name).join("; ");
 }
 
-export function academicEvidenceLabel(record: OfficialAcademicRecord) {
+export function academicEvidenceLabel(record: NexusAcademicView) {
   const availableLabel =
     record.evidenceStatus === "internal"
       ? "Tersimpan internal"
@@ -381,11 +394,11 @@ export function academicEvidenceLabel(record: OfficialAcademicRecord) {
   );
 }
 
-export function academicDisplayTitle(record: OfficialAcademicRecord) {
+export function academicDisplayTitle(record: NexusAcademicView) {
   return record.title || `${record.activity} · nama kegiatan belum tercatat`;
 }
 
-export function academicKmLabel(record: OfficialAcademicRecord) {
+export function academicKmLabel(record: NexusAcademicView) {
   if (record.kmLinks.length === 0)
     return officialKpiEmptyCopy(record.kpiResolutionStatus).label;
   return record.kmLinks.map((link) => link.indicator.id).join(", ");

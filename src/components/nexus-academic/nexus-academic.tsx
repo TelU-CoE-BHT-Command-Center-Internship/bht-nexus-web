@@ -4,23 +4,24 @@ import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import styles from "@/components/nexus-academic/nexus-academic.module.css";
 import {
-  type AcademicProposal,
   academicDisplayTitle,
   academicEvidenceLabel,
   academicIndicatorScope,
   academicKmLabel,
   academicMentorNames,
   type NexusAcademicContent,
-  type OfficialAcademicRecord,
+  type NexusAcademicView,
 } from "@/components/nexus-academic/nexus-academic-content";
 import { NexusAcademicIcon } from "@/components/nexus-academic/nexus-academic-icons";
+import {
+  useNexusAcademicCatalog,
+  useNexusAcademicDetail,
+} from "@/components/nexus-academic/nexus-academic-server";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import { projectNexusAcademics } from "@/components/nexus-official-records/nexus-official-records";
-import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
-import { createAcademicCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
-import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
+import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
@@ -28,10 +29,15 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
+  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatPageUpdatedLabel,
+  normalizeWorkspaceSearch,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -54,7 +60,10 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
+import { requestActivityCompletion } from "@/lib/api-activities";
+import { apiErrorMessage } from "@/lib/api-client";
 
 const NexusAcademicDetail = dynamic(() =>
   import("@/components/nexus-academic/nexus-academic-detail").then(
@@ -136,7 +145,7 @@ const pageSizeConfig: NexusSelectConfig = {
   ],
 };
 
-function searchableText(record: OfficialAcademicRecord) {
+function searchableText(record: NexusAcademicView) {
   return normalizeWorkspaceSearch(
     [
       record.title,
@@ -156,7 +165,7 @@ function searchableText(record: OfficialAcademicRecord) {
 }
 
 function createIndicatorConfig(
-  records: readonly OfficialAcademicRecord[],
+  records: readonly NexusAcademicView[],
 ): NexusSelectConfig {
   const indicators = records
     .flatMap((record) => record.kmLinks)
@@ -187,7 +196,7 @@ function createIndicatorConfig(
 }
 
 function createActivityConfig(
-  records: readonly OfficialAcademicRecord[],
+  records: readonly NexusAcademicView[],
 ): NexusSelectConfig {
   const activities = Array.from(
     new Set(records.map((record) => record.activity)),
@@ -212,14 +221,12 @@ export function NexusAcademic({
   content,
   initialMemberId,
 }: NexusAcademicProps) {
-  const reviewSession = useNexusReviewSession();
-  const officialRecordSession = useNexusOfficialRecordSession();
-  const records = useMemo(
-    () => projectNexusAcademics(content.records, officialRecordSession),
-    [content.records, officialRecordSession],
-  );
+  const catalog = useNexusAcademicCatalog();
+  const reviewSession = useOptionalNexusReviewSession();
+  const [completionError, setCompletionError] = useState("");
+  const records = catalog.records;
+  const isCatalogLoading = catalog.state === "loading";
   const [currentPage, setCurrentPage] = useState(1);
-  const proposals = reviewSession.completionProposals;
   const [filterValues, setFilterValues] =
     useState<FilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
@@ -228,17 +235,9 @@ export function NexusAcademic({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-  const contextRecords = useMemo(
-    () =>
-      initialMemberId
-        ? records.filter((record) =>
-            record.mentors.some(
-              (mentor) => mentor.memberId === initialMemberId,
-            ),
-          )
-        : records,
-    [initialMemberId, records],
-  );
+  /* Daftar server belum dapat disaring per anggota; kartu filter
+     menjelaskannya dan daftar tetap memuat seluruh rekam resmi. */
+  const contextRecords = records;
 
   const indicatorConfig = useMemo(
     () => createIndicatorConfig(contextRecords),
@@ -306,7 +305,11 @@ export function NexusAcademic({
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
-  const selected = contextRecords.find((record) => record.id === selectedId);
+  const recordDetail = useNexusAcademicDetail(selectedId);
+  const selectedSummary = contextRecords.find(
+    (record) => record.id === selectedId,
+  );
+  const selected = recordDetail.record ?? selectedSummary;
   const activeFilterCount = Object.entries(defaultFilterValues).filter(
     ([filterId, defaultValue]) =>
       filterValues[filterId as FilterId] !== defaultValue,
@@ -340,18 +343,25 @@ export function NexusAcademic({
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => {
-    const record = records.find((item) => item.id === recordId);
-    if (!record) return;
-
-    const proposal: AcademicProposal = reviewSession.createCompletionProposal(
-      "PLG-AKD-2026",
-      recordId,
-      resolutions,
+    if (!reviewSession) return;
+    setCompletionError("");
+    requestActivityCompletion(recordId, {
       note,
-    );
-    reviewSession.submitRecord(
-      createAcademicCompletionReviewRecord(record, proposal),
-    );
+      proposals: toCompletionProposals(resolutions),
+    })
+      .then(() => {
+        reviewSession.createCompletionProposal(
+          "PLG-AKD-2026",
+          recordId,
+          resolutions,
+          note,
+        );
+      })
+      .catch((error: unknown) => {
+        setCompletionError(
+          apiErrorMessage(error, "Usulan pelengkapan belum dapat dikirim."),
+        );
+      });
   };
 
   const rows = visible.map((record) => {
@@ -471,13 +481,21 @@ export function NexusAcademic({
       }
       description={content.description}
       descriptionId="academic-description"
-      meta={content.updatedAt}
+      meta={
+        catalog.loadedAt ? formatPageUpdatedLabel(catalog.loadedAt) : undefined
+      }
       title={content.title}
       titleId="academic-title"
     >
+      {completionError ? (
+        <NexusWorkspaceNotice tone="danger">
+          {completionError}
+        </NexusWorkspaceNotice>
+      ) : null}
       <NexusMemberContextFilter
         clearHref="/nexus/akademik"
         memberId={initialMemberId}
+        unsupportedDescription="Kegiatan akademik belum dapat disaring per anggota, sehingga daftar di bawah memuat seluruh rekam resmi."
       />
       <NexusWorkspaceMetrics
         metrics={[
@@ -487,7 +505,7 @@ export function NexusAcademic({
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: contextRecords.length,
+            value: isCatalogLoading ? null : contextRecords.length,
           },
           {
             icon: <NexusAcademicIcon name="indicator" />,
@@ -495,7 +513,7 @@ export function NexusAcademic({
             label: "Indikator Terisi",
             tone: "waiting",
             unit: `dari ${academicIndicatorScope.length} indikator akademik`,
-            value: coveredIndicatorCount,
+            value: isCatalogLoading ? null : coveredIndicatorCount,
           },
           {
             icon: <NexusAcademicIcon name="alert" />,
@@ -503,7 +521,7 @@ export function NexusAcademic({
             label: "Perlu Dilengkapi",
             tone: "needs-fix",
             unit: "data",
-            value: needsCompletionCount,
+            value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
       />
@@ -563,6 +581,22 @@ export function NexusAcademic({
           title="Daftar kegiatan akademik resmi"
           titleId="official-academic-title"
         >
+          {catalog.state === "error" ? (
+            <NexusWorkspaceState
+              actions={
+                <NexusWorkspaceButton onClick={catalog.retry} type="button">
+                  Coba lagi
+                </NexusWorkspaceButton>
+              }
+              description={
+                catalog.errorMessage ??
+                "Kegiatan akademik resmi belum dapat dimuat."
+              }
+              eyebrow="Gagal memuat"
+              title="Kegiatan akademik resmi belum dapat dimuat"
+              tone="danger"
+            />
+          ) : null}
           <NexusWorkspaceRecordTable
             caption="Kegiatan akademik resmi CoE BHT beserta pembimbing, bukti kegiatan, dan keterkaitan indikator KM"
             columns={columns}
@@ -581,7 +615,7 @@ export function NexusAcademic({
                 }
               />
             }
-            isLoading={isSearchUpdating}
+            isLoading={isSearchUpdating || isCatalogLoading}
             pagination={
               <NexusTablePagination
                 currentPage={safePage}
@@ -608,9 +642,16 @@ export function NexusAcademic({
 
       {selected ? (
         <NexusAcademicDetail
+          mentorsState={
+            recordDetail.state === "error"
+              ? "error"
+              : recordDetail.record
+                ? "ready"
+                : "loading"
+          }
           onClose={() => setSelectedId(null)}
-          onSubmitProposal={submitProposal}
-          proposal={proposals[selected.id]}
+          onSubmitProposal={reviewSession ? submitProposal : undefined}
+          proposal={reviewSession?.completionProposals[selected.id]}
           record={selected}
         />
       ) : null}

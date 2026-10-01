@@ -4,23 +4,21 @@ import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
 import styles from "@/components/nexus-contract-proposals/nexus-contract-proposals.module.css";
 import {
-  type ContractProposalProposal,
   contractProposalDisplayTitle,
   contractProposalEvidenceLabel,
   contractProposalIndicatorScope,
   contractProposalKmLabel,
   contractProposalPrimaryParty,
   type NexusContractProposalContent,
-  type OfficialContractProposalRecord,
+  type NexusContractProposalView,
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
+import { useNexusContractProposalCatalog } from "@/components/nexus-contract-proposals/nexus-contract-proposals-server";
 import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
-import { projectNexusContractProposals } from "@/components/nexus-official-records/nexus-official-records";
-import { useNexusOfficialRecordSession } from "@/components/nexus-official-records/nexus-official-records-hooks";
-import { createContractProposalCompletionReviewRecord } from "@/components/nexus-review-session/nexus-review-record-factory";
-import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
+import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
+import { useOptionalNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { officialKpiTableSignal } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
@@ -28,10 +26,15 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
+  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
+  NexusWorkspaceNotice,
   NexusWorkspaceResultMeta,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { normalizeWorkspaceSearch } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import {
+  formatPageUpdatedLabel,
+  normalizeWorkspaceSearch,
+} from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -54,7 +57,10 @@ import {
   type NexusSelectOption,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
+import { requestActivityCompletion } from "@/lib/api-activities";
+import { apiErrorMessage } from "@/lib/api-client";
 
 const NexusContractProposalDetail = dynamic(() =>
   import(
@@ -141,7 +147,7 @@ const pageSizeConfig: NexusSelectConfig = {
   ],
 };
 
-function searchableText(record: OfficialContractProposalRecord) {
+function searchableText(record: NexusContractProposalView) {
   return normalizeWorkspaceSearch(
     [
       record.title,
@@ -163,7 +169,7 @@ function searchableText(record: OfficialContractProposalRecord) {
 }
 
 function createIndicatorConfig(
-  records: readonly OfficialContractProposalRecord[],
+  records: readonly NexusContractProposalView[],
 ): NexusSelectConfig {
   const indicators = records
     .flatMap((record) => record.kmLinks)
@@ -193,31 +199,23 @@ export function NexusContractProposals({
   content,
   initialMemberId,
 }: NexusContractProposalsProps) {
-  const reviewSession = useNexusReviewSession();
-  const officialRecordSession = useNexusOfficialRecordSession();
-  const records = useMemo(
-    () => projectNexusContractProposals(content.records, officialRecordSession),
-    [content.records, officialRecordSession],
-  );
+  const catalog = useNexusContractProposalCatalog();
+  const reviewSession = useOptionalNexusReviewSession();
+  const [completionError, setCompletionError] = useState("");
+  const records = catalog.records;
+  const isCatalogLoading = catalog.state === "loading";
   const [currentPage, setCurrentPage] = useState(1);
   const [filterValues, setFilterValues] =
     useState<FilterValues>(defaultFilterValues);
   const [openFilterId, setOpenFilterId] = useState<string | null>(null);
   const [pageSizeValue, setPageSizeValue] = useState("10");
-  const proposals = reviewSession.completionProposals;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const isSearchUpdating = searchQuery !== deferredSearchQuery;
-  const contextRecords = useMemo(
-    () =>
-      initialMemberId
-        ? records.filter((record) =>
-            record.relatedMemberIds.includes(initialMemberId),
-          )
-        : records,
-    [initialMemberId, records],
-  );
+  /* Daftar server belum dapat disaring per anggota; kartu filter
+     menjelaskannya dan daftar tetap memuat seluruh rekam resmi. */
+  const contextRecords = records;
 
   const indicatorConfig = useMemo(
     () => createIndicatorConfig(contextRecords),
@@ -312,19 +310,25 @@ export function NexusContractProposals({
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => {
-    const record = records.find((item) => item.id === recordId);
-    if (!record) return;
-
-    const proposal: ContractProposalProposal =
-      reviewSession.createCompletionProposal(
-        "PLG-KPR-2026",
-        recordId,
-        resolutions,
-        note,
-      );
-    reviewSession.submitRecord(
-      createContractProposalCompletionReviewRecord(record, proposal),
-    );
+    if (!reviewSession) return;
+    setCompletionError("");
+    requestActivityCompletion(recordId, {
+      note,
+      proposals: toCompletionProposals(resolutions),
+    })
+      .then(() => {
+        reviewSession.createCompletionProposal(
+          "PLG-KPR-2026",
+          recordId,
+          resolutions,
+          note,
+        );
+      })
+      .catch((error: unknown) => {
+        setCompletionError(
+          apiErrorMessage(error, "Usulan pelengkapan belum dapat dikirim."),
+        );
+      });
   };
 
   const rows = visible.map((record) => {
@@ -461,13 +465,21 @@ export function NexusContractProposals({
       }
       description={content.description}
       descriptionId="contract-proposals-description"
-      meta={content.updatedAt}
+      meta={
+        catalog.loadedAt ? formatPageUpdatedLabel(catalog.loadedAt) : undefined
+      }
       title={content.title}
       titleId="contract-proposals-title"
     >
+      {completionError ? (
+        <NexusWorkspaceNotice tone="danger">
+          {completionError}
+        </NexusWorkspaceNotice>
+      ) : null}
       <NexusMemberContextFilter
         clearHref="/nexus/kontrak-proposal"
         memberId={initialMemberId}
+        unsupportedDescription="Kontrak dan proposal belum dapat disaring per anggota, sehingga daftar di bawah memuat seluruh rekam resmi."
       />
       <NexusWorkspaceMetrics
         metrics={[
@@ -477,7 +489,7 @@ export function NexusContractProposals({
             label: "Rekam Resmi",
             tone: "completed",
             unit: "data",
-            value: contextRecords.length,
+            value: isCatalogLoading ? null : contextRecords.length,
           },
           {
             icon: <NexusContractProposalIcon name="indicator" />,
@@ -485,7 +497,7 @@ export function NexusContractProposals({
             label: "Indikator Terisi",
             tone: "waiting",
             unit: `dari ${contractProposalIndicatorScope.length} indikator`,
-            value: coveredIndicatorCount,
+            value: isCatalogLoading ? null : coveredIndicatorCount,
           },
           {
             icon: <NexusContractProposalIcon name="alert" />,
@@ -493,7 +505,7 @@ export function NexusContractProposals({
             label: "Perlu Dilengkapi",
             tone: "needs-fix",
             unit: "data",
-            value: needsCompletionCount,
+            value: isCatalogLoading ? null : needsCompletionCount,
           },
         ]}
       />
@@ -552,6 +564,22 @@ export function NexusContractProposals({
           title="Daftar kontrak dan proposal resmi"
           titleId="official-contract-proposals-title"
         >
+          {catalog.state === "error" ? (
+            <NexusWorkspaceState
+              actions={
+                <NexusWorkspaceButton onClick={catalog.retry} type="button">
+                  Coba lagi
+                </NexusWorkspaceButton>
+              }
+              description={
+                catalog.errorMessage ??
+                "Kontrak dan proposal resmi belum dapat dimuat."
+              }
+              eyebrow="Gagal memuat"
+              title="Kontrak dan proposal resmi belum dapat dimuat"
+              tone="danger"
+            />
+          ) : null}
           <NexusWorkspaceRecordTable
             caption="Kontrak dan proposal resmi CoE BHT beserta skema, pihak terkait, bukti, dan indikator KM"
             columns={columns}
@@ -570,7 +598,7 @@ export function NexusContractProposals({
                 }
               />
             }
-            isLoading={isSearchUpdating}
+            isLoading={isSearchUpdating || isCatalogLoading}
             pagination={
               <NexusTablePagination
                 currentPage={safePage}
@@ -598,8 +626,8 @@ export function NexusContractProposals({
       {selected ? (
         <NexusContractProposalDetail
           onClose={() => setSelectedId(null)}
-          onSubmitProposal={submitProposal}
-          proposal={proposals[selected.id]}
+          onSubmitProposal={reviewSession ? submitProposal : undefined}
+          proposal={reviewSession?.completionProposals[selected.id]}
           record={selected}
         />
       ) : null}

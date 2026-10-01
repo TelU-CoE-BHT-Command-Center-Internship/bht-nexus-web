@@ -9,7 +9,7 @@ import {
   contractProposalFieldLabels,
   contractProposalPrimaryParty,
   formatContractProposalDate,
-  type OfficialContractProposalRecord,
+  type NexusContractProposalView,
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
 import {
@@ -31,13 +31,14 @@ import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-work
 
 type NexusContractProposalDetailProps = {
   onClose: () => void;
-  onSubmitProposal: (
+  /** Pengajuan pelengkapan; tanpa pengaju, bagian ini tidak ditampilkan. */
+  onSubmitProposal?: (
     recordId: string,
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => void;
   proposal?: ContractProposalProposal;
-  record: OfficialContractProposalRecord;
+  record: NexusContractProposalView;
 };
 
 type MetadataItem = NexusMetadataCompletenessItem & {
@@ -57,9 +58,7 @@ function ArrowIcon() {
   );
 }
 
-function getMetadataItems(
-  record: OfficialContractProposalRecord,
-): MetadataItem[] {
+function getMetadataItems(record: NexusContractProposalView): MetadataItem[] {
   const isMissing = (key: ContractProposalCompletionFieldKey) =>
     record.missingFields.includes(key);
   const resolved = (
@@ -394,6 +393,11 @@ export function NexusContractProposalDetail({
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
+        {record.provenance.length === 0 ? (
+          <p className={detail.explanation}>
+            Jejak sumber pembentuk rekam ini belum tersedia di halaman ini.
+          </p>
+        ) : null}
         <div className={detail.provenanceGrid}>
           {record.provenance.map((source) => (
             <article className={detail.provenanceCard} key={source.identifier}>
@@ -437,19 +441,25 @@ export function NexusContractProposalDetail({
           </div>
           <p>Riwayat keputusan tersimpan</p>
         </div>
-        <div className={detail.reviewDecision}>
-          <span className={detail.reviewCheck}>
-            <NexusContractProposalIcon name="check" />
-          </span>
-          <div>
-            <strong>{record.review.decision}</strong>
-            <p>{record.review.note}</p>
-            <small>
-              {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
-              {record.review.candidateId}
-            </small>
+        {record.review ? (
+          <div className={detail.reviewDecision}>
+            <span className={detail.reviewCheck}>
+              <NexusContractProposalIcon name="check" />
+            </span>
+            <div>
+              <strong>{record.review.decision}</strong>
+              <p>{record.review.note}</p>
+              <small>
+                {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
+                {record.review.candidateId}
+              </small>
+            </div>
           </div>
-        </div>
+        ) : (
+          <p className={detail.explanation}>
+            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+          </p>
+        )}
         <Link
           className={detail.reviewLink}
           href="/nexus/tinjauan"
@@ -459,7 +469,7 @@ export function NexusContractProposalDetail({
         </Link>
       </section>
 
-      {record.missingFields.length > 0 ? (
+      {record.missingFields.length > 0 && onSubmitProposal ? (
         <NexusMetadataCompletionForm
           missingFields={record.missingFields}
           onClose={onClose}

@@ -8,7 +8,7 @@ import {
   academicEvidenceLabel,
   academicFieldLabels,
   academicMentorNames,
-  type OfficialAcademicRecord,
+  type NexusAcademicView,
 } from "@/components/nexus-academic/nexus-academic-content";
 import { NexusAcademicIcon } from "@/components/nexus-academic/nexus-academic-icons";
 import {
@@ -29,14 +29,17 @@ import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.modul
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
 
 type NexusAcademicDetailProps = {
+  /** Keadaan pemuatan daftar pembimbing dari rincian rekam. */
+  mentorsState?: "error" | "loading" | "ready";
   onClose: () => void;
-  onSubmitProposal: (
+  /** Pengajuan pelengkapan; tanpa pengaju, bagian ini tidak ditampilkan. */
+  onSubmitProposal?: (
     recordId: string,
     resolutions: MetadataCompletionResolutions,
     note: string,
   ) => void;
   proposal?: AcademicProposal;
-  record: OfficialAcademicRecord;
+  record: NexusAcademicView;
 };
 
 type MetadataItem = NexusMetadataCompletenessItem & {
@@ -56,7 +59,23 @@ function ArrowIcon() {
   );
 }
 
-function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
+function mentorsValue(
+  record: NexusAcademicView,
+  mentorsState: NexusAcademicDetailProps["mentorsState"],
+) {
+  if (record.mentors.length === 0 && mentorsState === "loading") {
+    return "Memuat pembimbing…";
+  }
+  if (record.mentors.length === 0 && mentorsState === "error") {
+    return "Pembimbing belum dapat dimuat";
+  }
+  return academicMentorNames(record);
+}
+
+function getMetadataItems(
+  record: NexusAcademicView,
+  mentorsState: NexusAcademicDetailProps["mentorsState"],
+): MetadataItem[] {
   const isMissing = (key: AcademicCompletionFieldKey) =>
     record.missingFields.includes(key);
   const resolved = (key: AcademicCompletionFieldKey, fallback: string) =>
@@ -73,7 +92,7 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
     {
       key: "mentors",
       label: "Pembimbing",
-      value: academicMentorNames(record),
+      value: mentorsValue(record, mentorsState),
       wide: true,
     },
     {
@@ -154,12 +173,13 @@ function getMetadataItems(record: OfficialAcademicRecord): MetadataItem[] {
 }
 
 export function NexusAcademicDetail({
+  mentorsState,
   onClose,
   onSubmitProposal,
   proposal,
   record,
 }: NexusAcademicDetailProps) {
-  const metadataItems = getMetadataItems(record);
+  const metadataItems = getMetadataItems(record, mentorsState);
   const displayTitle = academicDisplayTitle(record);
 
   return (
@@ -195,7 +215,7 @@ export function NexusAcademicDetail({
           <time>Diperbarui {record.updatedAt}</time>
         </div>
         <h3 id="academic-overview-title">{displayTitle}</h3>
-        <p>{academicMentorNames(record)}</p>
+        <p>{mentorsValue(record, mentorsState)}</p>
 
         <dl className={detail.metaGrid}>
           <div className={detail.metaItem}>
@@ -359,6 +379,11 @@ export function NexusAcademicDetail({
           </div>
           <p>Asal-usul rekam tetap dapat diaudit</p>
         </div>
+        {record.provenance.length === 0 ? (
+          <p className={detail.explanation}>
+            Jejak sumber pembentuk rekam ini belum tersedia di halaman ini.
+          </p>
+        ) : null}
         <div className={detail.provenanceGrid}>
           {record.provenance.map((source) => (
             <article className={detail.provenanceCard} key={source.identifier}>
@@ -402,19 +427,25 @@ export function NexusAcademicDetail({
           </div>
           <p>Riwayat keputusan tersimpan</p>
         </div>
-        <div className={detail.reviewDecision}>
-          <span className={detail.reviewCheck}>
-            <NexusAcademicIcon name="check" />
-          </span>
-          <div>
-            <strong>{record.review.decision}</strong>
-            <p>{record.review.note}</p>
-            <small>
-              {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
-              {record.review.candidateId}
-            </small>
+        {record.review ? (
+          <div className={detail.reviewDecision}>
+            <span className={detail.reviewCheck}>
+              <NexusAcademicIcon name="check" />
+            </span>
+            <div>
+              <strong>{record.review.decision}</strong>
+              <p>{record.review.note}</p>
+              <small>
+                {record.review.reviewer} · {record.review.reviewedAt} ·{" "}
+                {record.review.candidateId}
+              </small>
+            </div>
           </div>
-        </div>
+        ) : (
+          <p className={detail.explanation}>
+            Riwayat keputusan tinjauan rekam ini belum tersedia di halaman ini.
+          </p>
+        )}
         <Link
           className={detail.reviewLink}
           href="/nexus/tinjauan"
@@ -424,7 +455,7 @@ export function NexusAcademicDetail({
         </Link>
       </section>
 
-      {record.missingFields.length > 0 ? (
+      {record.missingFields.length > 0 && onSubmitProposal ? (
         <NexusMetadataCompletionForm
           missingFields={record.missingFields}
           onClose={onClose}

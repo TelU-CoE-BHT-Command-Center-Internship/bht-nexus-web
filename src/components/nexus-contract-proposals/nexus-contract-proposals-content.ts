@@ -27,7 +27,8 @@ export type ContractProposalKind =
   | "Kontrak Bisnis Komersialisasi"
   | "Proposal Riset Nasional"
   | "Proposal Riset Internasional"
-  | "Proposal Non-Riset";
+  | "Proposal Non-Riset"
+  | "Belum diklasifikasikan";
 
 type ContractProposalQuality = "Lengkap" | "Perlu dilengkapi";
 type ContractProposalEvidenceStatus = "internal" | "public" | "unrecorded";
@@ -99,6 +100,18 @@ export type OfficialContractProposalRecord = {
   submittedOn?: string;
   title: string;
   updatedAt: string;
+};
+
+/**
+ * Rekam kontrak atau proposal sebagaimana ditampilkan halamannya. Rekam yang
+ * dibaca dari server belum membawa keputusan tinjauannya, sehingga bagian itu
+ * boleh kosong dan ditampilkan apa adanya.
+ */
+export type NexusContractProposalView = Omit<
+  OfficialContractProposalRecord,
+  "review"
+> & {
+  review?: OfficialContractProposalRecord["review"];
 };
 
 export type NexusContractProposalContent = {
@@ -342,13 +355,13 @@ function createRecord(
 const records = seeds.map(createRecord);
 
 export function contractProposalDisplayTitle(
-  record: OfficialContractProposalRecord,
+  record: NexusContractProposalView,
 ) {
   return record.title || `${record.kind} · judul belum tercatat`;
 }
 
 export function contractProposalEvidenceLabel(
-  record: OfficialContractProposalRecord,
+  record: NexusContractProposalView,
 ) {
   const availableLabel =
     record.evidenceStatus === "internal"
@@ -362,14 +375,12 @@ export function contractProposalEvidenceLabel(
   );
 }
 
-export function contractProposalKmLabel(
-  record: OfficialContractProposalRecord,
-) {
+export function contractProposalKmLabel(record: NexusContractProposalView) {
   return record.kmLinks.map((link) => link.indicator.id).join(", ");
 }
 
 export function contractProposalPrimaryParty(
-  record: OfficialContractProposalRecord,
+  record: NexusContractProposalView,
 ) {
   return record.applicant || record.partner || record.ownerUnit;
 }
