@@ -149,9 +149,7 @@ const sourceOrder: AuditReviewSource[] = [
  * yang segera tersedia dan tidak menjadi syarat keputusan.
  */
 const plannedReviewParts = {
-  correctionEvidenceNote: true,
   kpiResolution: true,
-  mergeRequiresSameIdentifier: true,
 } as const;
 
 function ReviewIcon({ name }: { name: "completed" | "fix" | "waiting" }) {
@@ -427,12 +425,14 @@ export function NexusAuditReview({
       kind,
       currentState.matches.find((match) => match.id === targetRecordId),
     );
-    if (!decision) return "Keputusan ini belum tersedia.";
+    if (!decision) {
+      return "Keputusan ini tidak dapat diterapkan pada kandidat ini.";
+    }
     const fieldLabels = record.fields
       .filter((field) => fieldIds.includes(field.id))
       .map((field) => field.label);
     const error = await queue.decide(record.id, {
-      decision,
+      ...decision,
       reason:
         kind === "changes_requested" ? revisionReason(note, fieldLabels) : note,
     });
@@ -443,6 +443,7 @@ export function NexusAuditReview({
   const resubmit = async (
     record: AuditReviewRecord,
     values: Record<string, string>,
+    evidenceNote: string,
   ) => {
     if (
       !serverReviewCapabilities(reviewSession.capabilities, stateFor(record))
@@ -450,7 +451,7 @@ export function NexusAuditReview({
     ) {
       return "Akun ini tidak dapat mengirim perbaikan untuk kandidat ini.";
     }
-    const error = await queue.correct(record, values);
+    const error = await queue.correct(record, values, evidenceNote);
     if (!error) setCurrentPage(1);
     return error;
   };
@@ -829,7 +830,9 @@ export function NexusAuditReview({
           onDecide={(kind, note, fieldIds, targetRecordId) =>
             decide(selected, kind, note, fieldIds, targetRecordId)
           }
-          onResubmit={(values) => resubmit(selected, values)}
+          onResubmit={(values, evidenceNote) =>
+            resubmit(selected, values, evidenceNote)
+          }
           planned={plannedReviewParts}
           record={selected}
           state={selectedState}

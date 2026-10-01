@@ -19,7 +19,7 @@ Setiap adapter menerjemahkan jawaban API ke bentuk data yang sudah dipakai kompo
 | Dashboard | `nexus-dashboard-overview-server.ts` | `GET /dashboard/overview`, `GET /dashboard/announcements` |
 | Monitoring KM | `nexus-official-records-hooks.ts` | membaca seluruh rekam resmi kelima rumah data lalu menghitung realisasi di klien |
 | Pengumpulan | `nexus-scraper-search.tsx` | `GET /jobs`, `POST /jobs`, `GET /jobs/:id`, `GET /jobs/:id/attempts`, `POST /jobs/:id/retry`, `POST /reviews/cases/sync-from-job/:id` |
-| Tinjauan | `nexus-review-server.ts` | `GET /reviews/cases`, rincian, pembanding, `PATCH` kandidat, keputusan, dan pemulihan pada `/reviews/cases/:id` |
+| Tinjauan | `nexus-review-server.ts` | `GET /reviews/cases`, rincian (termasuk rekam tujuan `targetEntityPublicId`), pembanding, `PATCH` kandidat dengan catatan bukti `reason`, keputusan dengan rekam tujuan opsional `linkTargetPublicId`, dan pemulihan pada `/reviews/cases/:id` |
 | Pengajuan manual | `nexus-manual-submission-server.ts` | `POST /submissions/manual` untuk kelima rumah Data Resmi |
 | Administrasi | `nexus-administration-server.tsx`, `nexus-account-server.ts` | `GET /admin/accounts`, `POST /admin/accounts/invite`, `PATCH /admin/accounts/:id/role`, `DELETE /users/:id/roles/:roleId`, `PATCH /admin/accounts/:id/status`, `PATCH /admin/accounts/:id/link-member` |
 | Akses khusus | `nexus-user-access-server.tsx`, `nexus-account-special-access.ts` | `GET /admin/accounts/:id/permissions`, `PUT /admin/accounts/:id/permissions/override` |
