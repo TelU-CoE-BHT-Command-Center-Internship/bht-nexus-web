@@ -9,6 +9,7 @@ export type NexusWorkspaceNavigationId =
   | "contracts"
   | "dashboard"
   | "documents"
+  | "import"
   | "intellectual-property"
   | "members"
   | "monitoring"
@@ -24,6 +25,7 @@ export type NexusWorkspaceAccess = {
   allowedNavigationIds: readonly NexusWorkspaceNavigationId[];
   broadcastCapabilities: NexusBroadcastCapabilities;
   collectionCapabilities: NexusCollectionCapabilities;
+  importCapabilities: NexusImportCapabilities;
   memberCapabilities: NexusMemberCapabilities;
   monitoringCapabilities: NexusMonitoringCapabilities;
   reviewCapabilities: NexusReviewCapabilities;
@@ -47,6 +49,11 @@ export type NexusBroadcastCapabilities = {
 export type NexusCollectionCapabilities = {
   canCreateJob: boolean;
   canSendToReview: boolean;
+};
+
+/** Mengunggah impor spreadsheet (`import.create`) terpisah dari melihatnya (`import.read`). */
+export type NexusImportCapabilities = {
+  canUpload: boolean;
 };
 
 /**
@@ -99,6 +106,7 @@ export const nexusPreviewWorkspaceAccess = {
     "monitoring",
     "broadcast",
     "collection",
+    "import",
     "documents",
     "reviews",
     "publications",
@@ -115,6 +123,9 @@ export const nexusPreviewWorkspaceAccess = {
   collectionCapabilities: {
     canCreateJob: true,
     canSendToReview: true,
+  },
+  importCapabilities: {
+    canUpload: true,
   },
   memberCapabilities: {
     canCreateMember: true,
@@ -319,6 +330,7 @@ function accessFromPermissions(
     navigation.add("collection");
     navigation.add("documents");
   }
+  if (has("import.read")) navigation.add("import");
   if (has("review.read")) navigation.add("reviews");
   if (has("publication.read")) navigation.add("publications");
   if (has("intellectual_property.read")) {
@@ -357,6 +369,9 @@ function accessFromPermissions(
     collectionCapabilities: {
       canCreateJob: has("job.create"),
       canSendToReview: has("review.edit"),
+    },
+    importCapabilities: {
+      canUpload: has("import.create"),
     },
     memberCapabilities: {
       canCreateMember: has("iam.manage"),

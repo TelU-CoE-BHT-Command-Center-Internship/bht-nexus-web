@@ -190,6 +190,14 @@ const navigationDefinitions: NavigationDefinition[] = [
     label: { en: "Collection", id: "Pengumpulan" },
   },
   {
+    implemented: { en: false, id: true },
+    group: "pipeline",
+    href: { en: "/en/nexus/import", id: "/nexus/impor" },
+    icon: "documents",
+    id: "import",
+    label: { en: "Spreadsheet Import", id: "Impor Spreadsheet" },
+  },
+  {
     activeHrefs: {
       en: [
         "/en/nexus/documents",
