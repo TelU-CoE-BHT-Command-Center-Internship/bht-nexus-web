@@ -1,3 +1,8 @@
+import {
+  announceWorkerUnavailable,
+  WORKER_UNAVAILABLE_CODE,
+} from "@/lib/worker-unavailable";
+
 export const DEFAULT_API_BASE_URL = "http://localhost:3000/api";
 
 const API_BASE_URL =
@@ -256,6 +261,9 @@ async function requestEnvelope<T>(
   if (!body.success) {
     if (body.statusCode === 401) {
       redirectToSignIn();
+    }
+    if (body.code === WORKER_UNAVAILABLE_CODE) {
+      announceWorkerUnavailable(body.errors);
     }
     throw new ApiRequestError(
       body.statusCode,
