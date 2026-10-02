@@ -30,11 +30,11 @@ const libraryCopy = {
     },
     description:
       "Kelola dokumen yang diizinkan untuk pencarian bersitasi dan ekstraksi kandidat.",
-    fileErrorLabel: "Pilih berkas PDF atau DOCX berukuran maksimal 10 MB.",
+    fileErrorLabel: "Pilih berkas PDF atau DOCX berukuran maksimal 50 MB.",
     loadErrorTitle: "Dokumen belum dapat dimuat",
     title: "Dokumen",
     uploadLabel: "Pilih dokumen",
-    uploadNote: "PDF atau DOCX, maksimal 10 MB",
+    uploadNote: "PDF atau DOCX, maksimal 50 MB",
     uploadSuccessLabel: "tersimpan di server dan menunggu pemrosesan.",
   },
   en: {
@@ -46,11 +46,11 @@ const libraryCopy = {
     },
     description:
       "Manage documents authorised for cited search and candidate extraction.",
-    fileErrorLabel: "Choose a PDF or DOCX file up to 10 MB.",
+    fileErrorLabel: "Choose a PDF or DOCX file up to 50 MB.",
     loadErrorTitle: "Documents could not be loaded",
     title: "Documents",
     uploadLabel: "Choose document",
-    uploadNote: "PDF or DOCX, up to 10 MB",
+    uploadNote: "PDF or DOCX, up to 50 MB",
     uploadSuccessLabel:
       "was stored on the server and is waiting to be processed.",
   },

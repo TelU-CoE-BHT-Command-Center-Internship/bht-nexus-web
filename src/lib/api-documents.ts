@@ -1,6 +1,6 @@
 import { apiFetch, apiFetchPaginated } from "@/lib/api-client";
 
-export const DOCUMENT_UPLOAD_LIMIT_BYTES = 10 * 1024 * 1024;
+export const DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024;
 
 export type DocumentClassification =
   | "confidential"
