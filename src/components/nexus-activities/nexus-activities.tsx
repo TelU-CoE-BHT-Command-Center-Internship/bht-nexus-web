@@ -17,7 +17,7 @@ import {
   useNexusActivityCatalog,
   useNexusActivityDetail,
 } from "@/components/nexus-activities/nexus-activity-server";
-import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
+import { NexusHouseRecordActions } from "@/components/nexus-import/nexus-house-record-actions";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
@@ -455,7 +455,7 @@ export function NexusActivities({
     <NexusWorkspacePage
       clusterScope
       actions={
-        <NexusManualSubmissionLink
+        <NexusHouseRecordActions
           domain="activity"
           label="Ajukan kegiatan / pengabdian"
         />

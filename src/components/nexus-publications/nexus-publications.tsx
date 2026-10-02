@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
-import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
+import { NexusHouseRecordActions } from "@/components/nexus-import/nexus-house-record-actions";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
 import {
@@ -685,7 +685,7 @@ export function NexusPublications({
     <NexusWorkspacePage
       clusterScope
       actions={
-        <NexusManualSubmissionLink
+        <NexusHouseRecordActions
           domain="publication"
           label="Ajukan publikasi"
         />
