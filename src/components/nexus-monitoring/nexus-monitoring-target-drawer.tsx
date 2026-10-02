@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useMemo, useState } from "react";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import {
   nexusCategoryEvaluations,
@@ -23,6 +24,7 @@ import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-w
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
+import { apiErrorMessage } from "@/lib/api-client";
 
 type TargetDrawerMode = "period" | "targets";
 
@@ -30,7 +32,7 @@ const NO_COPY = "none";
 
 function parseTarget(value: string, composite: boolean) {
   const trimmed = value.trim();
-  if (!trimmed) return { empty: true as const };
+  if (!trimmed) return { empty: true as const, literal: null, value: null };
   if (composite) {
     const match = /^(\d+)\s*\/\s*(\d+)M$/i.exec(trimmed);
     const count = match ? Number(match[1]) : Number.NaN;
@@ -98,6 +100,12 @@ export function NexusMonitoringTargetDrawer({
   const [submitted, setSubmitted] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [saveError, setSaveError] = useState<string>();
+  const { activeDivision } = useNexusClusterScope();
+  const targetScopeLabel = activeDivision
+    ? `klaster ${activeDivision.name}`
+    : "seluruh CoE";
   const latestPeriod = [...periods].sort((a, b) => b.year - a.year)[0];
   const [newYear, setNewYear] = useState(
     suggestedYear
@@ -182,9 +190,7 @@ export function NexusMonitoringTargetDrawer({
     (count, group) => count + group.evaluations.length,
     0,
   );
-  const targetsDirty =
-    Object.values(drafts).some((value) => value.trim() !== "") ||
-    reason.trim() !== "";
+  const targetsDirty = Object.keys(drafts).length > 0 || reason.trim() !== "";
   const periodDirty =
     periodReason.trim() !== "" ||
     newYear !== periodBaseline.year ||
@@ -192,11 +198,11 @@ export function NexusMonitoringTargetDrawer({
   const isDirty = targetsDirty || periodDirty;
 
   const yearNumber = Number(newYear);
-  const maxYear = new Date().getFullYear() + 2;
+  const maxYear = 2100;
   const yearError = !Number.isInteger(yearNumber)
     ? "Isi tahun evaluasi dengan empat angka."
-    : yearNumber < 2000 || yearNumber > maxYear
-      ? `Tahun evaluasi harus antara 2000 dan ${maxYear}.`
+    : yearNumber < 1900 || yearNumber > maxYear
+      ? `Tahun evaluasi harus antara 1900 dan ${maxYear}.`
       : periods.some((item) => item.id === String(yearNumber))
         ? `Periode ${yearNumber} sudah terdaftar.`
         : "";
@@ -216,6 +222,7 @@ export function NexusMonitoringTargetDrawer({
   );
 
   function requestClose() {
+    if (pending) return;
     if (isDirty) {
       setDiscardOpen(true);
       return;
@@ -231,22 +238,30 @@ export function NexusMonitoringTargetDrawer({
     setConfirmOpen(true);
   }
 
-  function submitPeriod(event: FormEvent<HTMLFormElement>) {
+  async function submitPeriod(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
-    if (yearError || !periodReason.trim()) return;
-    const period = addPeriod({
-      copyFromPeriodId: copyFrom === NO_COPY ? undefined : copyFrom,
-      reason: periodReason.trim(),
-      year: yearNumber,
-    });
-    setMode("targets");
-    setNewYear(String(period.year + 1));
-    setCopyFrom(period.id);
-    setPeriodBaseline({ year: String(period.year + 1), copyFrom: period.id });
-    setPeriodReason("");
-    setSubmitted(false);
-    onPeriodAdded(period.id);
+    if (pending || yearError || !periodReason.trim()) return;
+    setPending(true);
+    setSaveError(undefined);
+    try {
+      const period = await addPeriod({
+        copyFromPeriodId: copyFrom === NO_COPY ? undefined : copyFrom,
+        reason: periodReason.trim(),
+        year: yearNumber,
+      });
+      setMode("targets");
+      setNewYear(String(period.year + 1));
+      setCopyFrom(period.id);
+      setPeriodBaseline({ year: String(period.year + 1), copyFrom: period.id });
+      setPeriodReason("");
+      setSubmitted(false);
+      onPeriodAdded(period.id);
+    } catch (error: unknown) {
+      setSaveError(apiErrorMessage(error, "Periode belum dapat disimpan."));
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -256,7 +271,7 @@ export function NexusMonitoringTargetDrawer({
         description={
           mode === "period"
             ? "Periode baru mendapat target sendiri. Target periode yang sudah ada tidak berubah."
-            : `Target berlaku untuk periode ${periodId}. Setiap perubahan disimpan sebagai versi baru dan versi sebelumnya tetap tercatat.`
+            : `Target ${targetScopeLabel} untuk periode ${periodId}. Setiap perubahan disimpan sebagai versi baru dan versi sebelumnya tetap tercatat.`
         }
         eyebrow="Monitoring KM"
         footer={
@@ -267,11 +282,18 @@ export function NexusMonitoringTargetDrawer({
                 : `${effectiveChanges.length} dari ${indicatorCount} target berubah`}
             </span>
             <div>
-              <NexusWorkspaceButton onClick={requestClose} type="button">
+              <NexusWorkspaceButton
+                disabled={pending}
+                onClick={requestClose}
+                type="button"
+              >
                 Batal
               </NexusWorkspaceButton>
               <NexusWorkspaceButton
-                disabled={mode === "targets" && effectiveChanges.length === 0}
+                disabled={
+                  pending ||
+                  (mode === "targets" && effectiveChanges.length === 0)
+                }
                 form={
                   mode === "period"
                     ? "monitoring-period-form"
@@ -280,7 +302,11 @@ export function NexusMonitoringTargetDrawer({
                 tone="primary"
                 type="submit"
               >
-                {mode === "period" ? "Tambah periode" : "Simpan target"}
+                {pending
+                  ? "Menyimpan…"
+                  : mode === "period"
+                    ? "Tambah periode"
+                    : "Simpan target"}
               </NexusWorkspaceButton>
             </div>
           </div>
@@ -294,6 +320,16 @@ export function NexusMonitoringTargetDrawer({
               : `Kelola target ${periodId}`
         }
       >
+        {saveError ? (
+          <NexusWorkspaceNotice tone="danger">
+            {saveError} Isian Anda tetap tersedia untuk diperiksa kembali.
+          </NexusWorkspaceNotice>
+        ) : null}
+        {pending ? (
+          <NexusWorkspaceNotice>
+            Perubahan sedang disimpan. Tunggu sampai selesai.
+          </NexusWorkspaceNotice>
+        ) : null}
         {mode === "period" ? (
           <form
             className={styles.targetForm}
@@ -313,7 +349,7 @@ export function NexusMonitoringTargetDrawer({
               hint="Satu periode mewakili satu tahun evaluasi, Januari–Desember."
               id="monitoring-period-year"
               label="Tahun evaluasi"
-              min="2000"
+              min="1900"
               name="year"
               onChange={(event) => setNewYear(event.currentTarget.value)}
               required
@@ -611,16 +647,27 @@ export function NexusMonitoringTargetDrawer({
           confirmLabel="Simpan target"
           description={`${effectiveChanges.length} target periode ${periodId} akan memakai nilai baru. Versi sebelumnya tetap tercatat pada riwayat.`}
           onCancel={() => setConfirmOpen(false)}
-          onConfirm={() => {
-            const saved = saveTargets({
-              changes: effectiveChanges,
-              periodId,
-              reason: reason.trim(),
-            });
+          onConfirm={async () => {
+            if (pending) return;
             setConfirmOpen(false);
-            onSaved(
-              `${saved} target periode ${periodId} diperbarui. Angka capaian sudah dihitung ulang.`,
-            );
+            setPending(true);
+            setSaveError(undefined);
+            try {
+              const saved = await saveTargets({
+                changes: effectiveChanges,
+                periodId,
+                reason: reason.trim(),
+              });
+              onSaved(
+                `${saved} target periode ${periodId} diperbarui. Angka capaian sudah dihitung ulang.`,
+              );
+            } catch (error: unknown) {
+              setSaveError(
+                apiErrorMessage(error, "Target belum dapat disimpan."),
+              );
+            } finally {
+              setPending(false);
+            }
           }}
           title={`Simpan ${effectiveChanges.length} target baru?`}
           tone="primary"

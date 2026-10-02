@@ -16,10 +16,6 @@ import { NexusWorkspaceUnavailable } from "@/components/nexus-dashboard-shell/ne
 import { NexusMemberSessionProvider } from "@/components/nexus-member-session/nexus-member-session";
 import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
 import { NexusMonitoringSessionProvider } from "@/components/nexus-monitoring/nexus-monitoring-session";
-import {
-  nexusWorkbookPeriods,
-  nexusWorkbookTargetVersions,
-} from "@/components/nexus-monitoring/nexus-monitoring-targets";
 import { NexusCurrentUserReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusWorkerNotice } from "@/components/nexus-workspace-ui/nexus-worker-notice";
 import { NexusWorkspaceUnsavedChangesProvider } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
@@ -91,8 +87,9 @@ export default async function NexusWorkspaceLayout({
               capabilities={content.reviewCapabilities}
             >
               <NexusMonitoringSessionProvider
-                initialPeriods={nexusWorkbookPeriods}
-                initialTargetVersions={nexusWorkbookTargetVersions}
+                canReadTargets={access.allowedNavigationIds.includes(
+                  "monitoring",
+                )}
               >
                 <NexusWorkspaceUnsavedChangesProvider>
                   <NexusDashboardShell content={content}>
