@@ -87,15 +87,15 @@ export function nexusContractProposalFromServer(
     ...(isBusiness && !contractEnd ? (["contractEnd"] as const) : []),
     ...(evidenceStatus === "unrecorded" ? (["evidenceUrl"] as const) : []),
   ];
-  const yearSource =
-    summary.contractStart ?? summary.submittedOn ?? summary.createdAt;
-  const year = Number(yearSource.slice(0, 4));
+  const businessDate =
+    summary.group === "proposal" ? summary.submittedOn : summary.contractStart;
+  const year = businessDate ? Number(businessDate.slice(0, 4)) : summary.year;
 
   return {
     applicant,
     contractEnd,
     contractStart,
-    evaluationPeriod: Number.isInteger(year) ? String(year) : "",
+    evaluationPeriod: year && Number.isInteger(year) ? String(year) : "",
     evidenceNote: evidenceNotes[evidenceStatus],
     evidenceStatus,
     evidenceUrl,
