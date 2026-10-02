@@ -53,7 +53,7 @@ function missingFields(
     ...(summary.title.trim() === "" ? (["title"] as const) : []),
     ...(type === "Belum diklasifikasikan" ? (["type"] as const) : []),
     ...(quartileApplies && !summary.quartile ? (["quartile"] as const) : []),
-    ...(summary.doi ? [] : (["publisherUrl"] as const)),
+    ...(summary.doi || summary.evidenceUrl ? [] : (["publisherUrl"] as const)),
   ];
 }
 
@@ -65,6 +65,7 @@ export function nexusPublicationFromServer(
   const quartileApplies = type === "Artikel Jurnal";
   const missing = missingFields(summary, type);
   const doi = summary.doi?.trim() || undefined;
+  const evidenceUrl = summary.evidenceUrl?.trim() || undefined;
 
   return {
     authors: (detail?.authors ?? [])
@@ -89,11 +90,13 @@ export function nexusPublicationFromServer(
     missingFields: missing,
     provenance: [],
     publicId: summary.publicId,
-    publisherUrl: doi ? `https://doi.org/${doi}` : undefined,
+    publishedOn: summary.publishedOn ?? undefined,
+    publisherUrl: doi ? `https://doi.org/${doi}` : evidenceUrl,
     quality: missing.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     quartile: quartileApplies ? (summary.quartile ?? undefined) : undefined,
     quartileApplies,
     recordedAt: formatAuditTimestamp(summary.createdAt),
+    reportedQuarter: summary.reportedQuarter ?? undefined,
     sourceReportedQuartile: summary.quartile ?? undefined,
     title: summary.title,
     type,
