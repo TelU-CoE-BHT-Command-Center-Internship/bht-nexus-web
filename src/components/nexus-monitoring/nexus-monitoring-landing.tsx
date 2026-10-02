@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import type { NexusMonitoringCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import { NexusMonitoringCategoryProgress } from "@/components/nexus-monitoring/nexus-monitoring-category-progress";
@@ -246,6 +247,7 @@ function NexusMonitoringLandingContent({
   /** Periode dari alamat `?periode=`; kosong berarti periode bawaan. */
   requestedPeriodId?: string;
 }) {
+  const { divisionPublicId } = useNexusClusterScope();
   const [periodId, setPeriodId] = useState(requestedPeriodId);
   const [domainId, setDomainId] =
     useState<NexusMonitoringDomainId>(initialDomain);
@@ -310,6 +312,7 @@ function NexusMonitoringLandingContent({
 
   return (
     <NexusWorkspacePage
+      clusterScope
       actions={
         <NexusMonitoringHeaderActions
           downloadLabel="Unduh CSV"
@@ -319,7 +322,10 @@ function NexusMonitoringLandingContent({
               ? async () => {
                   setExportError("");
                   try {
-                    await downloadDashboardExport(Number(period.year));
+                    await downloadDashboardExport(
+                      Number(period.year),
+                      divisionPublicId,
+                    );
                   } catch (error) {
                     setExportError(
                       apiErrorMessage(

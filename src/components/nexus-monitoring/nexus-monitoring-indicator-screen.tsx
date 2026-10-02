@@ -2,6 +2,7 @@
 
 import type { ComponentProps } from "react";
 import { useMemo, useState } from "react";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import type { NexusMonitoringCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { useNexusMonitoringData } from "@/components/nexus-monitoring/nexus-monitoring-data";
 import {
@@ -19,10 +20,15 @@ import { NexusMonitoringTargetDrawer } from "@/components/nexus-monitoring/nexus
 import { NexusMonitoringToast } from "@/components/nexus-monitoring/nexus-monitoring-toast";
 import { buildIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
 import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
-import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import {
+  NexusWorkspaceButton,
+  NexusWorkspaceNotice,
+} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
+import { apiErrorMessage } from "@/lib/api-client";
+import { downloadDashboardExport } from "@/lib/api-dashboard-export";
 
 /**
  * Rincian satu indikator KM yang dihitung dari rekam resmi sesi berjalan dan
@@ -38,6 +44,8 @@ function NexusMonitoringIndicatorScreenContent({
   indicatorId: NexusKmIndicatorId;
   requestedPeriodId?: string;
 }) {
+  const { divisionPublicId } = useNexusClusterScope();
+  const [exportError, setExportError] = useState("");
   const reviewSession = useNexusReviewSession();
   const [periodId, setPeriodId] = useState(requestedPeriodId);
   const [targetDrawerOpen, setTargetDrawerOpen] = useState(false);
@@ -66,9 +74,30 @@ function NexusMonitoringIndicatorScreenContent({
 
   return (
     <NexusWorkspacePage
+      clusterScope
       actions={
         <NexusMonitoringHeaderActions
           downloadLabel="Unduh CSV"
+          onDownload={
+            capabilities.canExport && isKnownPeriod
+              ? async () => {
+                  setExportError("");
+                  try {
+                    await downloadDashboardExport(
+                      Number(period.year),
+                      divisionPublicId,
+                    );
+                  } catch (error) {
+                    setExportError(
+                      apiErrorMessage(
+                        error,
+                        "Berkas CSV belum dapat dibuat. Silakan coba lagi.",
+                      ),
+                    );
+                  }
+                }
+              : undefined
+          }
           manageLabel="Ubah target"
           onManageTargets={
             capabilities.canManageTargets && isKnownPeriod
@@ -86,6 +115,9 @@ function NexusMonitoringIndicatorScreenContent({
       title={`${view.id} · ${view.label}`}
       titleId="monitoring-indicator-title"
     >
+      {exportError ? (
+        <NexusWorkspaceNotice tone="danger">{exportError}</NexusWorkspaceNotice>
+      ) : null}
       {notice ? (
         <NexusMonitoringToast
           key={notice.id}

@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { cache } from "react";
 import { DEFAULT_API_BASE_URL } from "@/lib/api-client";
+import type { NexusDataScope } from "@/lib/api-divisions";
 import {
   NEXUS_REQUEST_PATH_HEADER,
   safeWorkspaceReturnPath,
@@ -24,13 +25,15 @@ export type NexusSessionUser = {
  * Hasil penyelesaian sesi di server. `unavailable` dan `rate-limited` berarti
  * server belum dapat menjawab, sehingga pengguna tidak boleh dianggap keluar.
  * `roles` bernilai null bila peran akun belum dapat dibaca; `permissions`
- * bernilai null bila server belum menjawab izin efektif akun.
+ * bernilai null bila server belum menjawab izin efektif akun. `dataScope`
+ * bernilai null bila server belum menjawab cakupan klaster akun.
  */
 export type NexusServerSession =
   | { kind: "anonymous" }
   | { kind: "rate-limited" }
   | { kind: "unavailable" }
   | {
+      dataScope: NexusDataScope | null;
       kind: "authenticated";
       permissions: readonly string[] | null;
       roles: readonly string[] | null;
@@ -67,6 +70,7 @@ function text(value: unknown): string | undefined {
 }
 
 type ProfileData = {
+  dataScope?: unknown;
   email?: unknown;
   image?: unknown;
   name?: unknown;
@@ -85,6 +89,24 @@ function rolesFrom(profile: ProfileData): readonly string[] | null {
   return profile.roles
     .map((role) => (role as { name?: unknown }).name)
     .filter((name): name is string => typeof name === "string");
+}
+
+function dataScopeFrom(profile: ProfileData): NexusDataScope | null {
+  const scope = profile.dataScope as {
+    division?: { code?: unknown; name?: unknown; publicId?: unknown } | null;
+    kind?: unknown;
+  } | null;
+  if (typeof scope !== "object" || scope === null) return null;
+  if (scope.kind === "all" || scope.kind === "none")
+    return { kind: scope.kind };
+  const division = scope.division;
+  const publicId = text(division?.publicId);
+  const name = text(division?.name);
+  if (scope.kind !== "division" || !publicId || !name) return null;
+  return {
+    division: { code: text(division?.code) ?? null, name, publicId },
+    kind: "division",
+  };
 }
 
 function permissionsFrom(profile: ProfileData): readonly string[] | null {
@@ -131,6 +153,7 @@ async function resolveFromSessionEndpoint(
 
   const email = text(body.user.email) ?? "";
   return {
+    dataScope: null,
     kind: "authenticated",
     permissions: null,
     roles: null,
@@ -159,6 +182,7 @@ export const getServerSession = cache(async (): Promise<NexusServerSession> => {
 
   const email = text(profile.email) ?? "";
   return {
+    dataScope: dataScopeFrom(profile),
     kind: "authenticated",
     permissions: permissionsFrom(profile),
     roles: rolesFrom(profile),

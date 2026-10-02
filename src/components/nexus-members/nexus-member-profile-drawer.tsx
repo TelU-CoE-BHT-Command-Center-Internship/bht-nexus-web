@@ -1,6 +1,7 @@
 "use client";
 
 import type { ChangeEvent, FormEvent } from "react";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import { NexusMemberProfilePhoto } from "@/components/nexus-members/nexus-member-profile-photo";
 import styles from "@/components/nexus-members/nexus-members.module.css";
 import type { NexusMemberStatus } from "@/components/nexus-members/nexus-members-content";
@@ -43,6 +44,7 @@ export function NexusMemberProfileDrawer({
   onSubmit,
   saveError,
 }: ProfileDrawerProps) {
+  const { divisions, directoryUnavailable } = useNexusClusterScope();
   const draft = editor.value;
   const isCreate = editor.mode === "create";
 
@@ -164,6 +166,27 @@ export function NexusMemberProfileDrawer({
                 value={draft.membershipStatus}
               />
             ) : null}
+            <NexusWorkspaceFormField
+              id="member-cluster"
+              label="Klaster"
+              name="divisionPublicId"
+              hint={
+                directoryUnavailable
+                  ? "Daftar klaster belum dapat dimuat. Muat ulang halaman sebelum mengubah klaster."
+                  : "Pilih klaster tempat anggota ini bergabung. Pengaturan ini menentukan cakupan data ketua klaster."
+              }
+              onChange={onChange}
+              options={[
+                { label: "Belum masuk klaster", value: "" },
+                ...divisions.map((division) => ({
+                  label: division.name,
+                  value: division.publicId,
+                })),
+              ]}
+              type="select"
+              value={draft.divisionPublicId}
+              disabled={directoryUnavailable || isSaving}
+            />
             <NexusWorkspaceFormField
               id="member-joined-at"
               label="Bergabung sejak"

@@ -37,6 +37,7 @@ export type DashboardShellIconName =
   | "monitoring"
   | "publications"
   | "reviews"
+  | "spreadsheet"
   | "search";
 
 export type DashboardNavigationItem = {
@@ -193,7 +194,7 @@ const navigationDefinitions: NavigationDefinition[] = [
     implemented: { en: false, id: true },
     group: "pipeline",
     href: { en: "/en/nexus/import", id: "/nexus/impor" },
-    icon: "documents",
+    icon: "spreadsheet",
     id: "import",
     label: { en: "Spreadsheet Import", id: "Impor Spreadsheet" },
   },

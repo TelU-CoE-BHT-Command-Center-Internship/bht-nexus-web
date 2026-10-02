@@ -1,5 +1,8 @@
 "use client";
 
+import { NexusClusterFilterBar } from "@/components/nexus-cluster-scope/nexus-cluster-filter-bar";
+import { NexusClusterManager } from "@/components/nexus-cluster-scope/nexus-cluster-manager";
+
 import {
   MemberAvatar,
   MemberIcon,
@@ -120,6 +123,13 @@ export function NexusMemberDirectory({
           ) : null}
         </div>
       </header>
+      <div className={styles.scopeControls}>
+        <NexusClusterFilterBar
+          compact
+          description="Direktori ini menampilkan ketua dan anggota klaster Anda."
+        />
+        {creationAvailable && canCreateMember ? <NexusClusterManager /> : null}
+      </div>
 
       <div className={styles.searchRow}>
         <NexusWorkspaceSearch

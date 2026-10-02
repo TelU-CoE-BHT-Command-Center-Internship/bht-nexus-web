@@ -12,6 +12,7 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 export type MemberProfileDraft = {
+  divisionPublicId: string;
   alternateEmail: string;
   avatarOriginalSrc?: NexusMemberRecord["avatarOriginalSrc"];
   avatarPosition: NexusMemberAvatarPosition;
@@ -62,6 +63,7 @@ export const statusLabels: Record<NexusMemberStatus, string> = {
 
 export function createEditDraft(member: NexusMemberRecord): MemberProfileDraft {
   return {
+    divisionPublicId: member.division?.publicId ?? "",
     alternateEmail: member.contact.alternateEmail ?? "",
     avatarPosition: {
       ...(member.avatarPosition ?? DEFAULT_MEMBER_AVATAR_POSITION),
@@ -91,6 +93,7 @@ export function createEditDraft(member: NexusMemberRecord): MemberProfileDraft {
 
 export function createNewMemberDraft(): MemberProfileDraft {
   return {
+    divisionPublicId: "",
     alternateEmail: "",
     avatarOriginalSrc: undefined,
     avatarPosition: { ...DEFAULT_MEMBER_AVATAR_POSITION },
@@ -314,6 +317,9 @@ export function memberRecordFromDraft(
 ): NexusMemberRecord {
   const draft = normalizedMemberDraft(draftValue);
   return {
+    division: draft.divisionPublicId
+      ? { publicId: draft.divisionPublicId }
+      : undefined,
     academic: {
       googleScholar: draft.googleScholar || undefined,
       orcid: draft.orcid || undefined,

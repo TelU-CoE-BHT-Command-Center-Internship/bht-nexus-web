@@ -31,6 +31,7 @@ export type NexusMemberAccountAccess =
   | { accountIds: readonly string[]; kind: "CONFLICT" };
 
 export type NexusMemberRecord = {
+  division?: { publicId: string; name?: string };
   academic: {
     googleScholar?: string;
     orcid?: string;

@@ -38,6 +38,7 @@ export type ActivityDetail = ActivitySummary & {
 };
 
 export type ListActivitiesParams = {
+  divisionPublicId?: string;
   isPublic?: boolean;
   limit?: number;
   page?: number;
@@ -66,10 +67,13 @@ export function listActivities(
 }
 
 /** Seluruh kegiatan resmi, dibaca per halaman sebanyak yang diizinkan server. */
-export async function listAllActivities(): Promise<ActivitySummary[]> {
+export async function listAllActivities(
+  params: Pick<ListActivitiesParams, "divisionPublicId"> = {},
+): Promise<ActivitySummary[]> {
   const activities: ActivitySummary[] = [];
   for (let page = 1; ; page += 1) {
     const result = await listActivities({
+      ...params,
       limit: 100,
       page,
       sortBy: "periodStart",

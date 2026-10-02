@@ -1,5 +1,6 @@
 import Image from "next/image";
 import biomedicalLabImage from "@/assets/nexus-dashboard-microscope-hero.webp";
+import { NexusClusterFilterBar } from "@/components/nexus-cluster-scope/nexus-cluster-filter-bar";
 import { NexusDashboardAnnouncement } from "@/components/nexus-dashboard-announcement/nexus-dashboard-announcement";
 import { NexusDashboardInsights } from "@/components/nexus-dashboard-insights/nexus-dashboard-insights";
 import styles from "@/components/nexus-dashboard-overview/nexus-dashboard-overview.module.css";
@@ -17,6 +18,7 @@ export function NexusDashboardOverview({
 }: NexusDashboardOverviewProps) {
   return (
     <div className={styles.page}>
+      <NexusClusterFilterBar />
       <section
         aria-labelledby="dashboard-welcome-title"
         className={styles.welcomePanel}

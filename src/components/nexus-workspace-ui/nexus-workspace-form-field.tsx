@@ -83,9 +83,11 @@ export function NexusWorkspaceFormField({
             {...(controlProps as SelectHTMLAttributes<HTMLSelectElement>)}
             className={styles.control}
           >
-            <option disabled value="">
-              {placeholder ?? `Pilih ${label.toLocaleLowerCase("id-ID")}`}
-            </option>
+            {options?.some((option) => option.value === "") ? null : (
+              <option disabled value="">
+                {placeholder ?? `Pilih ${label.toLocaleLowerCase("id-ID")}`}
+              </option>
+            )}
             {options?.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}

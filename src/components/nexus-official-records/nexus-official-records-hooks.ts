@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { nexusAcademicFromServer } from "@/components/nexus-academic/nexus-academic-server";
 import { nexusActivityFromServer } from "@/components/nexus-activities/nexus-activity-server";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import { nexusContractProposalFromServer } from "@/components/nexus-contract-proposals/nexus-contract-proposals-server";
 import { nexusIntellectualPropertyFromServer } from "@/components/nexus-intellectual-property/nexus-intellectual-property-server";
 import {
@@ -21,17 +22,23 @@ import { useLoadEffect } from "@/lib/use-load-effect";
 
 const CACHE_TTL_MS = 60_000;
 
-let cached: { at: number; records: NexusOfficialRecordSet } | undefined;
+let cached:
+  | { at: number; key: string; records: NexusOfficialRecordSet }
+  | undefined;
 
-async function loadOfficialRecords(): Promise<NexusOfficialRecordSet> {
-  if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.records;
+async function loadOfficialRecords(
+  key: string,
+  divisionPublicId?: string,
+): Promise<NexusOfficialRecordSet> {
+  if (cached?.key === key && Date.now() - cached.at < CACHE_TTL_MS)
+    return cached.records;
   const [publications, activities, properties, contracts, academics] =
     await Promise.all([
-      listAllPublications(),
-      listAllActivities(),
-      listAllHouseRecords("intellectual-properties"),
-      listAllHouseRecords("contracts-proposals"),
-      listAllHouseRecords("academics"),
+      listAllPublications({ divisionPublicId }),
+      listAllActivities({ divisionPublicId }),
+      listAllHouseRecords("intellectual-properties", { divisionPublicId }),
+      listAllHouseRecords("contracts-proposals", { divisionPublicId }),
+      listAllHouseRecords("academics", { divisionPublicId }),
     ]);
   const records: NexusOfficialRecordSet = {
     academic: academics.map((record) => nexusAcademicFromServer(record)),
@@ -48,7 +55,7 @@ async function loadOfficialRecords(): Promise<NexusOfficialRecordSet> {
       nexusPublicationFromServer(record),
     ),
   };
-  cached = { at: Date.now(), records };
+  cached = { at: Date.now(), key, records };
   return records;
 }
 
@@ -76,10 +83,15 @@ export function useNexusOfficialRecordSession(): NexusOfficialRecordSessionState
  * dengan halaman Data Resmi.
  */
 export function useNexusOfficialRecords() {
+  const { divisionPublicId, scopeKey } = useNexusClusterScope();
+  const { actor } = useNexusReviewSession();
+  const cacheKey = `${actor.id}:${scopeKey}`;
   const session = useNexusOfficialRecordSession();
-  const [base, setBase] = useState<NexusOfficialRecordSet>(emptyRecords);
+  const [base, setBase] = useState<NexusOfficialRecordSet>(() =>
+    cached?.key === cacheKey ? cached.records : emptyRecords,
+  );
   const [state, setState] = useState<"error" | "loading" | "ready">(
-    cached ? "ready" : "loading",
+    cached?.key === cacheKey ? "ready" : "loading",
   );
   const [errorMessage, setErrorMessage] = useState<string>();
   const latestRequest = useRef(0);
@@ -87,7 +99,7 @@ export function useNexusOfficialRecords() {
   const load = useCallback(() => {
     const request = ++latestRequest.current;
     setState("loading");
-    loadOfficialRecords()
+    loadOfficialRecords(cacheKey, divisionPublicId)
       .then((records) => {
         if (request !== latestRequest.current) return;
         setBase(records);
@@ -100,7 +112,7 @@ export function useNexusOfficialRecords() {
         );
         setState("error");
       });
-  }, []);
+  }, [cacheKey, divisionPublicId]);
 
   useLoadEffect(load);
 

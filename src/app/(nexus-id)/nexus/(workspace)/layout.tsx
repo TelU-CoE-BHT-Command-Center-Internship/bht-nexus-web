@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   getNexusRoleDirectory,
@@ -6,6 +7,8 @@ import {
 import { NexusAccessPolicySessionProvider } from "@/components/nexus-access-policy/nexus-access-policy-session";
 import { NexusAccountSessionProvider } from "@/components/nexus-account-session/nexus-account-session";
 import { getNexusAccountDirectory } from "@/components/nexus-accounts/nexus-account-directory";
+import { NEXUS_CLUSTER_COOKIE } from "@/components/nexus-cluster-scope/nexus-cluster-cookie";
+import { NexusClusterScopeProvider } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import { NexusDashboardShell } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell";
 import { getNexusDashboardShellPreviewContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
@@ -21,7 +24,12 @@ import { NexusCurrentUserReviewSessionProvider } from "@/components/nexus-review
 import { NexusWorkerNotice } from "@/components/nexus-workspace-ui/nexus-worker-notice";
 import { NexusWorkspaceUnsavedChangesProvider } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import { nexusSignInHref } from "@/lib/api-client";
-import { getRequestPath, getServerSession } from "@/lib/api-server";
+import type { NexusDivision } from "@/lib/api-divisions";
+import {
+  getRequestPath,
+  getServerData,
+  getServerSession,
+} from "@/lib/api-server";
 import { deriveDashboardViewer } from "@/lib/session-viewer";
 
 export default async function NexusWorkspaceLayout({
@@ -43,7 +51,18 @@ export default async function NexusWorkspaceLayout({
     );
   }
 
-  const access = await getNexusWorkspaceAccess();
+  const shouldLoadDivisions =
+    session.dataScope?.kind === "all" &&
+    session.permissions?.includes("member.read");
+  const [access, divisions] = await Promise.all([
+    getNexusWorkspaceAccess(),
+    shouldLoadDivisions
+      ? getServerData<NexusDivision[]>("/divisions")
+      : Promise.resolve([]),
+  ]);
+  const initialDivisionPublicId = (await cookies()).get(
+    NEXUS_CLUSTER_COOKIE,
+  )?.value;
   const content = getNexusDashboardShellPreviewContent("id", access);
   content.viewer = deriveDashboardViewer(session.user, session.roles);
   const actor = {
@@ -55,30 +74,37 @@ export default async function NexusWorkspaceLayout({
   const memberDirectory = getNexusMemberDirectory();
 
   return (
-    <NexusMemberSessionProvider initialRecords={memberDirectory}>
-      <NexusAccessPolicySessionProvider
-        initialOverrides={getNexusUserPermissionOverrides()}
-        initialRoles={getNexusRoleDirectory()}
-      >
-        <NexusAccountSessionProvider actor={actor} initialAccounts={accounts}>
-          <NexusCurrentUserReviewSessionProvider
-            actor={actor}
-            capabilities={content.reviewCapabilities}
-          >
-            <NexusMonitoringSessionProvider
-              initialPeriods={nexusWorkbookPeriods}
-              initialTargetVersions={nexusWorkbookTargetVersions}
+    <NexusClusterScopeProvider
+      divisions={divisions ?? []}
+      directoryUnavailable={Boolean(shouldLoadDivisions && divisions === null)}
+      initialDivisionPublicId={initialDivisionPublicId}
+      scope={session.dataScope}
+    >
+      <NexusMemberSessionProvider initialRecords={memberDirectory}>
+        <NexusAccessPolicySessionProvider
+          initialOverrides={getNexusUserPermissionOverrides()}
+          initialRoles={getNexusRoleDirectory()}
+        >
+          <NexusAccountSessionProvider actor={actor} initialAccounts={accounts}>
+            <NexusCurrentUserReviewSessionProvider
+              actor={actor}
+              capabilities={content.reviewCapabilities}
             >
-              <NexusWorkspaceUnsavedChangesProvider>
-                <NexusDashboardShell content={content}>
-                  {children}
-                </NexusDashboardShell>
-                <NexusWorkerNotice />
-              </NexusWorkspaceUnsavedChangesProvider>
-            </NexusMonitoringSessionProvider>
-          </NexusCurrentUserReviewSessionProvider>
-        </NexusAccountSessionProvider>
-      </NexusAccessPolicySessionProvider>
-    </NexusMemberSessionProvider>
+              <NexusMonitoringSessionProvider
+                initialPeriods={nexusWorkbookPeriods}
+                initialTargetVersions={nexusWorkbookTargetVersions}
+              >
+                <NexusWorkspaceUnsavedChangesProvider>
+                  <NexusDashboardShell content={content}>
+                    {children}
+                  </NexusDashboardShell>
+                  <NexusWorkerNotice />
+                </NexusWorkspaceUnsavedChangesProvider>
+              </NexusMonitoringSessionProvider>
+            </NexusCurrentUserReviewSessionProvider>
+          </NexusAccountSessionProvider>
+        </NexusAccessPolicySessionProvider>
+      </NexusMemberSessionProvider>
+    </NexusClusterScopeProvider>
   );
 }

@@ -475,6 +475,7 @@ export function NexusAcademic({
 
   return (
     <NexusWorkspacePage
+      clusterScope
       actions={
         <NexusManualSubmissionLink
           domain="academic"

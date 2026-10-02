@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { NexusAccountStatus } from "@/components/nexus-accounts/nexus-account-directory";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import { nexusServerRoleLabel } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import type {
   NexusMemberAccountAccess,
@@ -98,6 +99,7 @@ export function memberWriteBodyFromRecord(
 ): MemberWriteBody {
   const preferred = record.identity.preferredName.trim();
   return {
+    divisionPublicId: record.division?.publicId ?? null,
     alternateEmail: record.contact.alternateEmail ?? null,
     biography: record.biography || null,
     coeAssignment: record.coeAssignment || null,
@@ -124,6 +126,7 @@ export function nexusMemberFromSummary(
   summary: MemberSummary,
 ): NexusMemberViewRecord {
   return {
+    division: summary.division ?? undefined,
     academic: {
       googleScholar: googleScholarUrl(summary.googleScholarId),
       orcid: optional(summary.orcid),
@@ -162,6 +165,7 @@ export function nexusMemberFromDetail(
   detail: MemberDetail,
 ): NexusMemberViewRecord {
   return {
+    division: detail.division ?? undefined,
     academic: {
       googleScholar: googleScholarUrl(detail.academic.googleScholarId),
       orcid: optional(detail.academic.orcid),
@@ -207,28 +211,32 @@ export type NexusLoadState = "error" | "loading" | "ready";
 
 /** Direktori anggota dari server, dimuat sekali per kunjungan halaman. */
 export function useNexusMemberDirectory() {
+  const { divisionPublicId } = useNexusClusterScope();
   const [records, setRecords] = useState<NexusMemberViewRecord[]>([]);
   const [state, setState] = useState<NexusLoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>();
   const latestRequest = useRef(0);
 
-  const load = useCallback((silent = false) => {
-    const request = ++latestRequest.current;
-    if (!silent) setState("loading");
-    listAllMembers()
-      .then((members) => {
-        if (request !== latestRequest.current) return;
-        setRecords(members.map(nexusMemberFromSummary));
-        setState("ready");
-      })
-      .catch((error: unknown) => {
-        if (request !== latestRequest.current) return;
-        setErrorMessage(
-          apiErrorMessage(error, "Direktori anggota belum dapat dimuat."),
-        );
-        setState("error");
-      });
-  }, []);
+  const load = useCallback(
+    (silent = false) => {
+      const request = ++latestRequest.current;
+      if (!silent) setState("loading");
+      listAllMembers({ divisionPublicId })
+        .then((members) => {
+          if (request !== latestRequest.current) return;
+          setRecords(members.map(nexusMemberFromSummary));
+          setState("ready");
+        })
+        .catch((error: unknown) => {
+          if (request !== latestRequest.current) return;
+          setErrorMessage(
+            apiErrorMessage(error, "Direktori anggota belum dapat dimuat."),
+          );
+          setState("error");
+        });
+    },
+    [divisionPublicId],
+  );
 
   useLoadEffect(load);
 

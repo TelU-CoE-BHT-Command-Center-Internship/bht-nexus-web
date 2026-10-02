@@ -683,6 +683,7 @@ export function NexusPublications({
 
   return (
     <NexusWorkspacePage
+      clusterScope
       actions={
         <NexusManualSubmissionLink
           domain="publication"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import { publicationKmCodes } from "@/components/nexus-official-records/nexus-record-metadata";
 import type {
   NexusPublicationView,
@@ -110,6 +111,7 @@ export type NexusLoadState = "error" | "loading" | "ready";
 
 /** Katalog publikasi resmi dari server; filter anggota diterapkan oleh server. */
 export function useNexusPublicationCatalog(memberPublicId?: string) {
+  const { divisionPublicId } = useNexusClusterScope();
   const [records, setRecords] = useState<NexusPublicationView[]>([]);
   const [state, setState] = useState<NexusLoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -119,7 +121,7 @@ export function useNexusPublicationCatalog(memberPublicId?: string) {
   const load = useCallback(() => {
     const request = ++latestRequest.current;
     setState("loading");
-    listAllPublications({ memberPublicId })
+    listAllPublications({ divisionPublicId, memberPublicId })
       .then((publications) => {
         if (request !== latestRequest.current) return;
         setRecords(
@@ -137,7 +139,7 @@ export function useNexusPublicationCatalog(memberPublicId?: string) {
         );
         setState("error");
       });
-  }, [memberPublicId]);
+  }, [divisionPublicId, memberPublicId]);
 
   useLoadEffect(load);
 

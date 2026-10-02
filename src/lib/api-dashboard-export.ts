@@ -4,10 +4,15 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
 
 /** Mengunduh CSV ringkasan dashboard dan realisasi KPI yang dibuat dan dicatat oleh server. */
-export async function downloadDashboardExport(year: number): Promise<void> {
+export async function downloadDashboardExport(
+  year: number,
+  divisionPublicId?: string,
+): Promise<void> {
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}/dashboard/export?year=${year}`, {
+    const query = new URLSearchParams({ year: String(year) });
+    if (divisionPublicId) query.set("divisionPublicId", divisionPublicId);
+    response = await fetch(`${API_BASE_URL}/dashboard/export?${query}`, {
       credentials: "include",
       headers: { Accept: "text/csv" },
     });

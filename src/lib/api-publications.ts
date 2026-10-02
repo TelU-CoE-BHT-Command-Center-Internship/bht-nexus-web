@@ -38,6 +38,7 @@ export type PublicationDetail = PublicationSummary & {
 };
 
 export type ListPublicationsParams = {
+  divisionPublicId?: string;
   dateFrom?: string;
   dateTo?: string;
   kmIndicator?: string;
@@ -74,7 +75,10 @@ export function listPublications(
  * sebanyak yang diizinkan server supaya filter dan ringkasan halaman tetap utuh.
  */
 export async function listAllPublications(
-  params: Pick<ListPublicationsParams, "memberPublicId"> = {},
+  params: Pick<
+    ListPublicationsParams,
+    "divisionPublicId" | "memberPublicId"
+  > = {},
 ): Promise<PublicationSummary[]> {
   const publications: PublicationSummary[] = [];
   for (let page = 1; ; page += 1) {

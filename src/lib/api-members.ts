@@ -5,6 +5,7 @@ export type MembershipStatus = "active" | "inactive" | "on_leave";
 export type MemberAccountAccessKind = "CONFLICT" | "LINKED" | "NONE";
 
 export type MemberSummary = {
+  division?: { publicId: string; name: string } | null;
   academicTitle?: string | null;
   accountAccess?: {
     email?: string | null;
@@ -31,6 +32,7 @@ export type MemberSummary = {
 };
 
 export type MemberDetail = {
+  division?: { publicId: string; name: string } | null;
   academic: {
     googleScholarId: string | null;
     orcid: string | null;
@@ -79,6 +81,7 @@ export type MemberDetail = {
 };
 
 export type ListMembersParams = {
+  divisionPublicId?: string;
   isPublic?: boolean;
   limit?: number;
   page?: number;
@@ -112,10 +115,13 @@ export function listMembers(
  * Direktori CoE berukuran kecil sehingga pencarian dan filter dapat dilakukan
  * di halaman tanpa menghilangkan hitungan per status.
  */
-export async function listAllMembers(): Promise<MemberSummary[]> {
+export async function listAllMembers(
+  params: Pick<ListMembersParams, "divisionPublicId"> = {},
+): Promise<MemberSummary[]> {
   const members: MemberSummary[] = [];
   for (let page = 1; ; page += 1) {
     const result = await listMembers({
+      ...params,
       limit: MAX_PAGE_SIZE,
       page,
       sortBy: "name",
@@ -130,6 +136,7 @@ export async function listAllMembers(): Promise<MemberSummary[]> {
 
 /** Isian anggota yang diterima server saat membuat atau mengubah anggota. */
 export type MemberWriteBody = {
+  divisionPublicId?: string | null;
   alternateEmail?: string | null;
   biography?: string | null;
   coeAssignment?: string | null;
