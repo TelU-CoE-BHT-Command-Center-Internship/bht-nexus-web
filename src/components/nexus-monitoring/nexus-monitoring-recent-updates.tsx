@@ -13,6 +13,7 @@ import {
 import type { NexusMonitoringUpdate } from "@/components/nexus-monitoring/nexus-monitoring-updates";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import { NexusWorkspaceEmptyState } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMobileCard,
   NexusWorkspaceRecordTable,
@@ -161,8 +162,8 @@ export function NexusMonitoringRecentUpdates({
                   ),
                   record: (
                     <NexusWorkspaceTablePrimary
-                      subtitle={update.title}
-                      title={update.id}
+                      subtitle={`Kode ${displayRecordId(update.id)}`}
+                      title={update.title}
                     />
                   ),
                   source: sourceBadge,
@@ -200,7 +201,9 @@ export function NexusMonitoringRecentUpdates({
                     }
                     title={update.title}
                   >
-                    <p className={styles.summaryUpdateId}>{update.id}</p>
+                    <p className={styles.summaryUpdateId}>
+                      Kode {displayRecordId(update.id)}
+                    </p>
                   </NexusWorkspaceMobileCard>
                 ),
               };
