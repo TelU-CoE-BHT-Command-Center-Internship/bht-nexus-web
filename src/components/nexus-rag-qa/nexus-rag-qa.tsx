@@ -2,19 +2,15 @@
 
 import { type FormEvent, useState } from "react";
 import { NexusDocumentNav } from "@/components/nexus-document-workspace/nexus-document-nav";
+import { useNexusDocumentCatalog } from "@/components/nexus-document-workspace/nexus-document-server";
 import styles from "@/components/nexus-rag-qa/nexus-rag-qa.module.css";
-import type {
-  NexusRagQaContent,
-  RagExchange,
-} from "@/components/nexus-rag-qa/nexus-rag-qa-content";
+import type { NexusRagQaContent } from "@/components/nexus-rag-qa/nexus-rag-qa-content";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
   NexusWorkspaceField,
-  NexusWorkspaceLinkButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -24,7 +20,7 @@ import {
   type NexusSelectConfig,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import { announceWorkerUnavailable } from "@/lib/worker-unavailable";
 
 function QaIcon({ name }: { name: "answer" | "document" | "source" }) {
   if (name === "document")
@@ -46,34 +42,14 @@ function QaIcon({ name }: { name: "answer" | "document" | "source" }) {
   );
 }
 
-export function NexusRagQa({
-  content,
-  initialDocumentId,
-}: {
-  content: NexusRagQaContent;
-  initialDocumentId?: string;
-}) {
-  const initialDocumentIsSupported = content.supportedSources.some(
-    (source) => source.id === initialDocumentId,
+export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
+  const catalog = useNexusDocumentCatalog(content.locale);
+  const readyDocuments = catalog.documents.filter(
+    (document) => document.processingJob.status === "succeeded",
   );
   const [query, setQuery] = useState("");
-  const [exchanges, setExchanges] = useState(() =>
-    initialDocumentIsSupported && initialDocumentId
-      ? content.exchanges.filter(
-          (exchange) =>
-            exchange.sources.length > 0 &&
-            exchange.sources.every((source) => source.id === initialDocumentId),
-        )
-      : content.exchanges,
-  );
-  const [error, setError] = useState(() =>
-    initialDocumentId && !initialDocumentIsSupported
-      ? content.invalidDocumentLabel
-      : "",
-  );
-  const [scope, setScope] = useState(() =>
-    initialDocumentIsSupported ? (initialDocumentId ?? "all") : "all",
-  );
+  const [error, setError] = useState("");
+  const [scope, setScope] = useState("all");
   const [isScopeOpen, setIsScopeOpen] = useState(false);
   const scopeConfig: NexusSelectConfig = {
     defaultValue: "all",
@@ -87,12 +63,13 @@ export function NexusRagQa({
             : "All ready documents",
         value: "all",
       },
-      ...content.supportedSources.map((source) => ({
-        label: source.documentTitle,
-        value: source.id,
+      ...readyDocuments.map((document) => ({
+        label: document.title,
+        value: document.id,
       })),
     ],
   };
+  const exchanges = content.exchanges;
   const supportedCount = exchanges.filter(
     (exchange) => exchange.supported,
   ).length;
@@ -106,62 +83,14 @@ export function NexusRagQa({
     0,
   );
 
-  if (initialDocumentId && !initialDocumentIsSupported) {
-    return (
-      <NexusWorkspacePage
-        description={content.description}
-        descriptionId="qa-description"
-        title={content.title}
-        titleId="qa-title"
-      >
-        <NexusWorkspaceState
-          actions={
-            <NexusWorkspaceLinkButton href="/nexus/dokumen">
-              Kembali ke Dokumen
-            </NexusWorkspaceLinkButton>
-          }
-          description={content.invalidDocumentLabel}
-          eyebrow="Dokumen tidak siap"
-          title="Pertanyaan tidak dimulai"
-          tone="danger"
-        />
-      </NexusWorkspacePage>
-    );
-  }
-
   function ask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const question = query.trim();
-    if (!question) {
+    if (!query.trim()) {
       setError(content.emptyQuestionLabel);
       return;
     }
-    const normalized = question.toLocaleLowerCase();
-    const scopedSources =
-      scope === "all"
-        ? content.supportedSources
-        : content.supportedSources.filter((source) => source.id === scope);
-    const matchingSources = scopedSources.filter((source) =>
-      source.keywords.some((keyword) => normalized.includes(keyword)),
-    );
-    const supported = matchingSources.length > 0;
-    const now = new Date().toISOString();
-    const exchange: RagExchange = {
-      answer: supported
-        ? matchingSources.map((source) => source.answer).join(" ")
-        : content.unsupportedAnswer,
-      askedAt: now,
-      askedAtLabel: formatTimestamp(now),
-      id: `local-${Date.now()}`,
-      question,
-      questionLanguageLabel:
-        content.locale === "id" ? "Bahasa Indonesia" : "English",
-      sources: matchingSources,
-      supported,
-    };
-    setExchanges((current) => [exchange, ...current]);
-    setQuery("");
     setError("");
+    announceWorkerUnavailable({ worker: "rag" });
   }
 
   return (
@@ -179,7 +108,7 @@ export function NexusRagQa({
             label: content.locale === "id" ? "Dokumen Siap" : "Ready Documents",
             tone: "completed",
             unit: content.locale === "id" ? "data" : "files",
-            value: content.supportedSources.length,
+            value: readyDocuments.length,
           },
           {
             icon: <QaIcon name="answer" />,
@@ -272,6 +201,9 @@ export function NexusRagQa({
                 : "Check citations before using an answer as a decision basis."}
             </p>
           </header>
+          {exchanges.length === 0 ? (
+            <p className={styles.exchangeMeta}>{content.historyEmptyLabel}</p>
+          ) : null}
           <ol className={styles.exchangeList}>
             {exchanges.map((exchange) => (
               <li className={styles.exchange} key={exchange.id}>

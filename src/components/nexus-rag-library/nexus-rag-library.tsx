@@ -1,33 +1,26 @@
 "use client";
 
-import {
-  type ChangeEvent,
-  useDeferredValue,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ChangeEvent, useDeferredValue, useMemo, useState } from "react";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import { latestDocumentProcessingAttempt } from "@/components/nexus-document-workspace/nexus-document-content";
 import { NexusDocumentNav } from "@/components/nexus-document-workspace/nexus-document-nav";
+import { useNexusDocumentCatalog } from "@/components/nexus-document-workspace/nexus-document-server";
 import styles from "@/components/nexus-rag-library/nexus-rag-library.module.css";
 import type {
   NexusRagLibraryContent,
   RagDocument,
 } from "@/components/nexus-rag-library/nexus-rag-library-content";
-import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
 import {
   NexusWorkspaceSearch,
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
-  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
   NexusWorkspaceLinkButton,
+  NexusWorkspaceLoadError,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspaceIconPaths } from "@/components/nexus-workspace-ui/nexus-workspace-icons";
 import { NexusWorkspaceInfoHint } from "@/components/nexus-workspace-ui/nexus-workspace-info-hint";
 import {
@@ -46,6 +39,11 @@ import {
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
+import { apiErrorMessage } from "@/lib/api-client";
+import {
+  DOCUMENT_UPLOAD_LIMIT_BYTES,
+  uploadDocument,
+} from "@/lib/api-documents";
 
 const columns: readonly NexusWorkspaceRecordColumn[] = [
   { id: "primary", label: "Dokumen", primary: true },
@@ -82,8 +80,9 @@ export function NexusRagLibrary({
 }: {
   content: NexusRagLibraryContent;
 }) {
-  const reviewSession = useNexusReviewSession();
-  const [documents, setDocuments] = useState(content.documents);
+  const catalog = useNexusDocumentCatalog(content.locale);
+  const documents = catalog.documents;
+  const [isUploading, setIsUploading] = useState(false);
   const [feedback, setFeedback] = useState<{
     message: string;
     tone: "danger" | "success";
@@ -94,7 +93,6 @@ export function NexusRagLibrary({
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSizeValue, setPageSizeValue] = useState("10");
-  const submittedSourceJobs = useRef(new Set<string>());
   const statusConfig: NexusSelectConfig = {
     defaultValue: "all",
     id: "document-status",
@@ -182,96 +180,42 @@ export function NexusRagLibrary({
       document.processingJob.status === "retrying",
   ).length;
 
-  function submitNewProcessing(document: RagDocument) {
-    if (submittedSourceJobs.current.has(document.processingJob.id)) return;
-    submittedSourceJobs.current.add(document.processingJob.id);
-
-    const requestedAt = new Date().toISOString();
-    const documentKey = document.id.replace(/[^A-Za-z0-9]+/g, "-");
-    setDocuments((current) =>
-      current.map((item) =>
-        item.id === document.id
-          ? {
-              ...item,
-              processingHistory: [
-                item.processingJob,
-                ...item.processingHistory,
-              ],
-              processingJob: {
-                attempts: [
-                  {
-                    attemptedAt: requestedAt,
-                    number: 1,
-                    status: "queued",
-                  },
-                ],
-                correlationId: `DOC-CORR-${new Date(requestedAt).getTime()}-${documentKey}`,
-                id: `DOC-JOB-${new Date(requestedAt).getTime()}-${documentKey}`,
-                requestedAt,
-                requestedByActorId: reviewSession.actor.id,
-                status: "queued",
-              },
-              statusLabel: getAutomationStatusLabel(content.locale, "queued"),
-              updatedAt: requestedAt,
-              updatedLabel: formatTimestamp(requestedAt),
-            }
-          : item,
-      ),
-    );
-    setFeedback({
-      message:
-        content.locale === "id"
-          ? `${document.title} diajukan kembali ke antrean pemrosesan.`
-          : `${document.title} was submitted to the processing queue again.`,
-      tone: "success",
-    });
-  }
-
-  function addDocument(event: ChangeEvent<HTMLInputElement>) {
+  async function addDocument(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (!file || isUploading) return;
     const extension = file.name.split(".").pop()?.toLocaleLowerCase();
     if (
       (extension !== "pdf" && extension !== "docx") ||
-      file.size > 25 * 1024 * 1024
+      file.size > DOCUMENT_UPLOAD_LIMIT_BYTES
     ) {
       setFeedback({ message: content.fileErrorLabel, tone: "danger" });
       return;
     }
-    const now = new Date();
-    const next: RagDocument = {
-      capabilities: [],
-      fileLabel: `${extension.toLocaleUpperCase()} · ${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      id: `local-${now.getTime()}`,
-      ownerUnit:
-        content.locale === "id" ? "Pengelolaan Data" : "Data Management",
-      processingHistory: [],
-      processingJob: {
-        attempts: [
-          {
-            attemptedAt: now.toISOString(),
-            number: 1,
-            status: "queued",
-          },
-        ],
-        correlationId: `DOC-CORR-${now.getTime()}`,
-        id: `DOC-JOB-${now.getTime()}`,
-        requestedAt: now.toISOString(),
-        requestedByActorId: reviewSession.actor.id,
-        status: "queued",
-      },
-      statusLabel: getAutomationStatusLabel(content.locale, "queued"),
-      title: file.name.replace(/\.(pdf|docx)$/i, ""),
-      updatedAt: now.toISOString(),
-      updatedLabel: formatTimestamp(now.toISOString()),
-    };
-    setDocuments((current) => [next, ...current]);
-    setFeedback({
-      message: `${file.name} ${content.uploadSuccessLabel}`,
-      tone: "success",
-    });
-    setCurrentPage(1);
+    setIsUploading(true);
+    setFeedback(null);
+    try {
+      await uploadDocument(file);
+      catalog.reload();
+      setCurrentPage(1);
+      setFeedback({
+        message: `${file.name} ${content.uploadSuccessLabel}`,
+        tone: "success",
+      });
+    } catch (error) {
+      setFeedback({
+        message: apiErrorMessage(
+          error,
+          content.locale === "id"
+            ? "Dokumen belum dapat diunggah."
+            : "The document could not be uploaded.",
+          content.locale,
+        ),
+        tone: "danger",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   }
 
   const rows = visibleDocuments.map((document) => {
@@ -300,15 +244,6 @@ export function NexusRagLibrary({
             </NexusWorkspaceLinkButton>
           ) : null}
         </span>
-      ) : processingStatus === "failed" ||
-        processingStatus === "failed_permanently" ? (
-        <NexusWorkspaceButton
-          key={`${document.id}-action`}
-          onClick={() => submitNewProcessing(document)}
-          type="button"
-        >
-          {content.locale === "id" ? "Ajukan proses baru" : "Submit new job"}
-        </NexusWorkspaceButton>
       ) : (
         <span className={styles.noAction} key={`${document.id}-action`}>
           —
@@ -385,6 +320,7 @@ export function NexusRagLibrary({
           <label className={styles.uploadButton}>
             {content.uploadLabel}
             <input
+              disabled={isUploading}
               accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               className={styles.fileInput}
               onChange={addDocument}
@@ -491,21 +427,46 @@ export function NexusRagLibrary({
             caption={content.title}
             columns={columns}
             empty={
-              <NexusWorkspaceEmptyState
-                description={
-                  content.locale === "id"
-                    ? "Ubah kata kunci atau filter status untuk melihat dokumen lain."
-                    : "Change the keyword or status filter to see other documents."
-                }
-                title={
-                  content.locale === "id"
-                    ? "Tidak ada dokumen yang cocok"
-                    : "No matching documents"
-                }
-                tone="search"
-              />
+              documents.length === 0 ? (
+                <NexusWorkspaceEmptyState
+                  description={
+                    content.locale === "id"
+                      ? "Unggah dokumen PDF atau DOCX untuk memulainya."
+                      : "Upload a PDF or DOCX document to begin."
+                  }
+                  title={
+                    content.locale === "id"
+                      ? "Belum ada dokumen"
+                      : "No documents yet"
+                  }
+                  tone="search"
+                />
+              ) : (
+                <NexusWorkspaceEmptyState
+                  description={
+                    content.locale === "id"
+                      ? "Ubah kata kunci atau filter status untuk melihat dokumen lain."
+                      : "Change the keyword or status filter to see other documents."
+                  }
+                  title={
+                    content.locale === "id"
+                      ? "Tidak ada dokumen yang cocok"
+                      : "No matching documents"
+                  }
+                  tone="search"
+                />
+              )
             }
-            isLoading={query !== deferredQuery}
+            error={
+              catalog.state === "error" ? (
+                <NexusWorkspaceLoadError
+                  description={catalog.errorMessage ?? content.loadErrorTitle}
+                  onRetry={catalog.reload}
+                  title={content.loadErrorTitle}
+                />
+              ) : undefined
+            }
+            isLoading={query !== deferredQuery || catalog.state === "loading"}
             pagination={
               <NexusTablePagination
                 currentPage={safePage}

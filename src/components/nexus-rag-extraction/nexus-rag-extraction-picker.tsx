@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { NexusDocumentNav } from "@/components/nexus-document-workspace/nexus-document-nav";
-import type { ExtractionDocumentOption } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
+import { useNexusDocumentCatalog } from "@/components/nexus-document-workspace/nexus-document-server";
 import styles from "@/components/nexus-rag-extraction/nexus-rag-extraction-picker.module.css";
 import {
   NexusWorkspaceButton,
@@ -16,25 +15,41 @@ import {
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import type { Locale } from "@/i18n/locales";
+import { announceWorkerUnavailable } from "@/lib/worker-unavailable";
 
 type NexusRagExtractionPickerProps = {
   description: string;
-  documents: ExtractionDocumentOption[];
   locale: Locale;
   title: string;
 };
 
 export function NexusRagExtractionPicker({
   description,
-  documents,
   locale,
   title,
 }: NexusRagExtractionPickerProps) {
-  const router = useRouter();
   const isId = locale === "id";
   const libraryHref = isId ? "/nexus/dokumen" : "/en/nexus/documents";
-  const extractionHref = isId ? "/nexus/ekstraksi" : "/en/nexus/extraction";
-  const [selectedId, setSelectedId] = useState(documents[0]?.id ?? "");
+  const catalog = useNexusDocumentCatalog(locale);
+  const documents = useMemo(
+    () =>
+      catalog.documents
+        .filter(
+          (document) =>
+            document.processingJob.status === "succeeded" &&
+            document.capabilities.includes("extraction"),
+        )
+        .map((document) => ({
+          id: document.id,
+          label: document.title,
+          meta: `${document.fileLabel} · ${document.ownerUnit}`,
+        })),
+    [catalog.documents],
+  );
+  const [chosenId, setChosenId] = useState("");
+  const selectedId = documents.some((document) => document.id === chosenId)
+    ? chosenId
+    : (documents[0]?.id ?? "");
   const [isOpen, setIsOpen] = useState(false);
 
   const config = useMemo<NexusSelectConfig | null>(() => {
@@ -91,15 +106,11 @@ export function NexusRagExtractionPicker({
                   isOpen={isOpen}
                   name="extraction-document"
                   onOpenChange={setIsOpen}
-                  onValueChange={setSelectedId}
+                  onValueChange={setChosenId}
                   value={selectedId}
                 />
                 <NexusWorkspaceButton
-                  onClick={() =>
-                    router.push(
-                      `${extractionHref}?document=${encodeURIComponent(selectedId)}`,
-                    )
-                  }
+                  onClick={() => announceWorkerUnavailable({ worker: "rag" })}
                   tone="primary"
                   type="button"
                 >
@@ -107,9 +118,18 @@ export function NexusRagExtractionPicker({
                 </NexusWorkspaceButton>
               </div>
             ) : (
-              <NexusWorkspaceLinkButton href={libraryHref}>
-                {isId ? "Buka Pustaka dokumen" : "Open document library"}
-              </NexusWorkspaceLinkButton>
+              <div className={styles.picker}>
+                <NexusWorkspaceLinkButton href={libraryHref}>
+                  {isId ? "Buka Pustaka dokumen" : "Open document library"}
+                </NexusWorkspaceLinkButton>
+                <NexusWorkspaceButton
+                  onClick={() => announceWorkerUnavailable({ worker: "rag" })}
+                  tone="primary"
+                  type="button"
+                >
+                  {isId ? "Mulai ekstraksi" : "Start extraction"}
+                </NexusWorkspaceButton>
+              </div>
             )}
           </NexusWorkspaceCard>
           <p className={styles.hint}>

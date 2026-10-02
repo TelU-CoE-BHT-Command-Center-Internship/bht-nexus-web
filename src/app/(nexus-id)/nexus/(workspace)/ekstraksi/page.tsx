@@ -1,10 +1,5 @@
 import type { Metadata } from "next";
-import { NexusRagExtraction } from "@/components/nexus-rag-extraction/nexus-rag-extraction";
-import {
-  getExtractionDocumentOptions,
-  getExtractionPageCopy,
-  getNexusRagExtractionContent,
-} from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
+import { getExtractionPageCopy } from "@/components/nexus-rag-extraction/nexus-rag-extraction-content";
 import { NexusRagExtractionPicker } from "@/components/nexus-rag-extraction/nexus-rag-extraction-picker";
 
 export const metadata: Metadata = {
@@ -13,31 +8,13 @@ export const metadata: Metadata = {
   robots: { follow: false, index: false },
 };
 
-export default async function ExtractionPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ document?: string | string[] }>;
-}) {
-  const requestedDocument = (await searchParams).document;
-  const documentId = Array.isArray(requestedDocument)
-    ? requestedDocument[0]
-    : requestedDocument;
-
-  if (!documentId) {
-    const pageCopy = getExtractionPageCopy("id");
-    return (
-      <NexusRagExtractionPicker
-        description={pageCopy.description}
-        documents={getExtractionDocumentOptions("id")}
-        locale="id"
-        title={pageCopy.title}
-      />
-    );
-  }
-
+export default function ExtractionPage() {
+  const pageCopy = getExtractionPageCopy("id");
   return (
-    <NexusRagExtraction
-      content={getNexusRagExtractionContent("id", documentId)}
+    <NexusRagExtractionPicker
+      description={pageCopy.description}
+      locale="id"
+      title={pageCopy.title}
     />
   );
 }
