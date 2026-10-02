@@ -1,6 +1,7 @@
 import {
   announceWorkerUnavailable,
   WORKER_UNAVAILABLE_CODE,
+  workerUnavailableMessage,
 } from "@/lib/worker-unavailable";
 
 export const DEFAULT_API_BASE_URL = "http://localhost:3000/api";
@@ -130,6 +131,15 @@ export function apiErrorMessage(
   fallback: string,
   locale: "en" | "id" = "id",
 ): string {
+  if (
+    error instanceof ApiRequestError &&
+    error.code === WORKER_UNAVAILABLE_CODE
+  ) {
+    const worker = (error.errors as { worker?: unknown } | undefined)?.worker;
+    if (worker === "rag" || worker === "scraper") {
+      return workerUnavailableMessage(worker);
+    }
+  }
   const kind = apiErrorKind(error);
   if (kind === "unknown") return fallback;
   if (
