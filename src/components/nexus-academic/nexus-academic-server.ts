@@ -101,6 +101,7 @@ export function nexusAcademicFromServer(
     programStudy,
     provenance: [],
     publicId: summary.publicId,
+    reportedQuarter: summary.reportedQuarter ?? undefined,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     title: summary.title,
     updatedAt: formatAuditTimestamp(summary.createdAt),

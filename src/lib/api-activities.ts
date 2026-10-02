@@ -19,6 +19,7 @@ export type ActivitySummary = {
   periodEnd: string | null;
   periodStart: string;
   publicId: string;
+  reportedQuarter?: 1 | 2 | 3 | 4 | null;
   status: ActivityStatus;
   title: string;
   type: ActivityType;

@@ -113,6 +113,7 @@ export function nexusContractProposalFromServer(
     partner: summary.partner ?? undefined,
     provenance: [],
     publicId: summary.publicId,
+    reportedQuarter: summary.reportedQuarter ?? undefined,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     recordStatus: statusLabels[summary.recordStatus],
     referenceNumber: summary.referenceNumber ?? undefined,

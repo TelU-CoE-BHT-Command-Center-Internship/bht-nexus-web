@@ -85,6 +85,7 @@ export function nexusIntellectualPropertyFromServer(
     protection,
     provenance: [],
     publicId: summary.publicId,
+    reportedQuarter: summary.reportedQuarter ?? undefined,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     registrationNumber,
     registry: summary.registry || "Belum tercatat",

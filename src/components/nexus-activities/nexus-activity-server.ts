@@ -144,6 +144,7 @@ export function nexusActivityFromServer(
       text("primaryParty") ?? text("speakerName") ?? teamLeader ?? "",
     provenance: [],
     publicId: summary.publicId,
+    reportedQuarter: summary.reportedQuarter ?? undefined,
     publicationFrequency: text("publicationFrequency"),
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     recordStatus: statusLabels[summary.status],
