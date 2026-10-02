@@ -40,6 +40,11 @@ import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-w
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { apiErrorMessage } from "@/lib/api-client";
+import {
+  deleteManualSubmissionDraft,
+  getManualSubmissionDraft,
+  saveManualSubmissionDraft,
+} from "@/lib/api-submissions";
 
 type NexusManualSubmissionPageProps = {
   domain: ManualSubmissionDomain;
@@ -220,6 +225,11 @@ export function NexusManualSubmissionPage({
   const [submitError, setSubmitError] = useState<string>();
   const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [draftNotice, setDraftNotice] = useState<{
+    message: string;
+    tone: "danger" | "success";
+  }>();
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState(
     serializedValues(createEmptyManualSubmissionValues()),
@@ -338,6 +348,35 @@ export function NexusManualSubmissionPage({
   }, [domain]);
 
   useEffect(() => {
+    if (!storageReady) return;
+    if (sessionStorage.getItem(draftStorageKey(domain))) return;
+    let cancelled = false;
+    getManualSubmissionDraft(domain)
+      .then((draft) => {
+        if (cancelled || !draft) return;
+        const restoredValues = {
+          ...createEmptyManualSubmissionValues(),
+          ...draft.values,
+        };
+        const knownSubtype = manualSubtype(domain, restoredValues.recordType);
+        if (!knownSubtype && restoredValues.recordType !== "") return;
+        setValues(restoredValues);
+        setSavedSnapshot(serializedValues(restoredValues));
+        setDraftSavedAt(
+          `Draft dari server · ${new Intl.DateTimeFormat("id-ID", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }).format(new Date(draft.updatedAt))}`,
+        );
+        setDraftRestored(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [domain, storageReady]);
+
+  useEffect(() => {
     if (!storageReady || submittedRecord) return;
 
     const persist = (updateUi = true) => {
@@ -433,25 +472,46 @@ export function NexusManualSubmissionPage({
     });
   }
 
-  function saveDraft() {
-    const savedAt = `Tersimpan di perangkat ini · ${new Intl.DateTimeFormat(
-      "id-ID",
-      { hour: "2-digit", minute: "2-digit" },
-    ).format(new Date())}`;
-    sessionStorage.setItem(
-      draftStorageKey(domain),
-      JSON.stringify({ savedAt, values } satisfies StoredManualDraft),
-    );
-    setSavedSnapshot(serializedValues(values));
-    setDraftSavedAt(savedAt);
-    setDraftRestored(false);
+  async function saveDraft() {
+    if (isSavingDraft) return;
+    setIsSavingDraft(true);
+    setDraftNotice(undefined);
+    try {
+      const saved = await saveManualSubmissionDraft(domain, values);
+      const savedAt = `Tersimpan di server · ${new Intl.DateTimeFormat(
+        "id-ID",
+        { hour: "2-digit", minute: "2-digit" },
+      ).format(new Date(saved.updatedAt))}`;
+      sessionStorage.setItem(
+        draftStorageKey(domain),
+        JSON.stringify({ savedAt, values } satisfies StoredManualDraft),
+      );
+      setSavedSnapshot(serializedValues(values));
+      setDraftSavedAt(savedAt);
+      setDraftRestored(false);
+      setDraftNotice({
+        message:
+          "Draft tersimpan di server dan dapat dibuka dari perangkat lain.",
+        tone: "success",
+      });
+    } catch (error) {
+      setDraftNotice({
+        message: apiErrorMessage(
+          error,
+          "Draft belum dapat disimpan ke server.",
+        ),
+        tone: "danger",
+      });
+    } finally {
+      setIsSavingDraft(false);
+    }
   }
 
   function cancelSubmission() {
     if (
       isDirty &&
       !window.confirm(
-        "Pengajuan ini belum dikirim. Tetap kembali ke Data Resmi? Draft akan tetap tersimpan di perangkat ini.",
+        "Pengajuan ini belum dikirim. Tetap kembali ke Data Resmi? Perubahan yang belum disimpan sebagai draft akan hilang saat tab ditutup.",
       )
     ) {
       return;
@@ -488,6 +548,7 @@ export function NexusManualSubmissionPage({
       });
       submissionComplete.current = true;
       sessionStorage.removeItem(draftStorageKey(domain));
+      deleteManualSubmissionDraft(domain).catch(() => undefined);
       setSavedSnapshot(serializedValues(values));
       setReviewHref(result.reviewHref);
       setSubmittedRecord(result.record);
@@ -571,6 +632,12 @@ export function NexusManualSubmissionPage({
         <NexusWorkspaceNotice>
           Draft tersimpan telah dipulihkan. Periksa kembali isinya sebelum
           mengirim ke Tinjauan.
+        </NexusWorkspaceNotice>
+      ) : null}
+
+      {draftNotice ? (
+        <NexusWorkspaceNotice tone={draftNotice.tone}>
+          {draftNotice.message}
         </NexusWorkspaceNotice>
       ) : null}
 
@@ -878,8 +945,12 @@ export function NexusManualSubmissionPage({
             >
               Batal
             </button>
-            <NexusWorkspaceButton onClick={saveDraft} type="button">
-              Simpan draft
+            <NexusWorkspaceButton
+              disabled={isSavingDraft}
+              onClick={saveDraft}
+              type="button"
+            >
+              {isSavingDraft ? "Menyimpan..." : "Simpan draft"}
             </NexusWorkspaceButton>
             <NexusWorkspaceButton
               disabled={isSubmitting}
