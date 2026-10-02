@@ -139,6 +139,7 @@ export const nexusPreviewWorkspaceAccess = {
     canManageTargets: false,
   },
   reviewCapabilities: {
+    canImport: true,
     canReview: true,
     canSubmitCorrection: true,
     canSubmitRecord: true,
@@ -387,6 +388,7 @@ function accessFromPermissions(
       canManageTargets: has("kpi.target.manage"),
     },
     reviewCapabilities: {
+      canImport: has("import.create"),
       canReview: has("review.decide"),
       canSubmitCorrection: has("review.edit"),
       canSubmitRecord: has("job.create"),

@@ -10,10 +10,33 @@ const API_BASE_URL =
 
 export type ImportIssue = {
   column: string;
-  kind: "change" | "duplicate" | "error";
+  kind: "change" | "duplicate" | "error" | "warning";
   reason: string;
   suggestion: string;
   value: string | null;
+};
+
+export type ImportEntity =
+  | "publication"
+  | "intellectual-property"
+  | "contract"
+  | "academic"
+  | "activity";
+
+export type ImportOptions = {
+  targetEntity: ImportEntity | "auto";
+  reportYear?: number;
+};
+
+export type ImportSheetSummary = {
+  name: string;
+  status: "data" | "context" | "unsupported" | "empty";
+  headerRow: number | null;
+  total: number;
+  valid: number;
+  failed: number;
+  houses: ImportEntity[];
+  notes: string[];
 };
 
 export type ImportSummary = {
@@ -31,6 +54,7 @@ export type ImportBatch = {
   status: "failed" | "previewed" | "processing" | "promoted";
   summary: ImportSummary;
   targetEntity: string;
+  sheets?: ImportSheetSummary[] | null;
   uploadedAt: string;
 };
 
@@ -44,6 +68,10 @@ export type ImportRow = {
   action: ImportRowAction;
   issues: ImportIssue[];
   rowNumber: number;
+  targetEntity?: ImportEntity | null;
+  sheetName?: string | null;
+  sourceRowNumber?: number;
+  sourceValues?: Record<string, string> | null;
   values: Record<string, unknown>;
 };
 
@@ -53,22 +81,38 @@ export type ImportSubmitResult = {
   submitted: { changed: number; new: number };
 };
 
-export function uploadImport(file: File): Promise<ImportUpload> {
+export function uploadImport(
+  file: File,
+  options?: ImportOptions,
+): Promise<ImportUpload> {
   const body = new FormData();
   body.append("file", file);
+  if (options) {
+    body.append("targetEntity", options.targetEntity);
+    if (options.reportYear !== undefined)
+      body.append("reportYear", String(options.reportYear));
+  }
   return apiFetch("/imports", { body, method: "POST" });
 }
 
-export function listImportRows(
+const ALL_ROWS_PAGE_SIZE = 200;
+
+/** Seluruh baris pratinjau (maksimal 2.000) agar pencarian dan filter bekerja pada semua lembar. */
+export async function listAllImportRows(
   publicId: string,
-  action: ImportRowAction | undefined,
-  page: number,
-) {
-  const search = new URLSearchParams({ limit: "20", page: String(page) });
-  if (action) search.set("action", action);
-  return apiFetchPaginated<ImportRow>(
-    `/imports/${encodeURIComponent(publicId)}/rows?${search.toString()}`,
-  );
+): Promise<ImportRow[]> {
+  const rows: ImportRow[] = [];
+  for (let page = 1; ; page += 1) {
+    const search = new URLSearchParams({
+      limit: String(ALL_ROWS_PAGE_SIZE),
+      page: String(page),
+    });
+    const result = await apiFetchPaginated<ImportRow>(
+      `/imports/${encodeURIComponent(publicId)}/rows?${search.toString()}`,
+    );
+    rows.push(...result.data);
+    if (page >= (result.meta.totalPages ?? 1)) return rows;
+  }
 }
 
 export function submitImport(publicId: string): Promise<ImportSubmitResult> {
@@ -77,13 +121,16 @@ export function submitImport(publicId: string): Promise<ImportSubmitResult> {
   });
 }
 
-/** Mengunduh berkas CSV yang dibuat server, yaitu templat atau laporan kesalahan. */
-export async function downloadImportCsv(path: string, filename: string) {
+/** Mengunduh berkas yang dibuat server: templat Excel atau laporan kesalahan CSV. */
+export async function downloadImportFile(path: string, filename: string) {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       credentials: "include",
-      headers: { Accept: "text/csv" },
+      headers: {
+        Accept:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv",
+      },
     });
   } catch {
     throw new ApiRequestError(0, "NETWORK_ERROR", "Network request failed");
@@ -109,8 +156,8 @@ export async function downloadImportCsv(path: string, filename: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
-export function importTemplatePath() {
-  return "/imports/template";
+export function importTemplatePath(targetEntity: ImportEntity = "publication") {
+  return `/imports/template?targetEntity=${encodeURIComponent(targetEntity)}`;
 }
 
 export function importErrorsPath(publicId: string) {

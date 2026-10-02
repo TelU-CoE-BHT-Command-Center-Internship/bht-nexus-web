@@ -40,6 +40,8 @@ export type NexusReviewActor = {
 };
 
 export type NexusReviewCapabilities = {
+  /** Mengirim baris spreadsheet ke Tinjauan lewat Impor Spreadsheet. */
+  canImport: boolean;
   canReview: boolean;
   canSubmitCorrection: boolean;
   /** Mengajukan rekam baru ke Tinjauan lewat formulir pengajuan. */
@@ -48,7 +50,7 @@ export type NexusReviewCapabilities = {
 
 export type NexusRecordCapabilities = Omit<
   NexusReviewCapabilities,
-  "canSubmitRecord"
+  "canImport" | "canSubmitRecord"
 > & {
   canApprove: boolean;
   canReject: boolean;

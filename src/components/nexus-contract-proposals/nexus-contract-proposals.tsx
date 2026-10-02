@@ -14,7 +14,7 @@ import {
 } from "@/components/nexus-contract-proposals/nexus-contract-proposals-content";
 import { NexusContractProposalIcon } from "@/components/nexus-contract-proposals/nexus-contract-proposals-icons";
 import { useNexusContractProposalCatalog } from "@/components/nexus-contract-proposals/nexus-contract-proposals-server";
-import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
+import { NexusHouseRecordActions } from "@/components/nexus-import/nexus-house-record-actions";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
@@ -461,7 +461,7 @@ export function NexusContractProposals({
     <NexusWorkspacePage
       clusterScope
       actions={
-        <NexusManualSubmissionLink
+        <NexusHouseRecordActions
           domain="contract"
           label="Ajukan kontrak / proposal"
         />

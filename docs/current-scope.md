@@ -20,6 +20,7 @@ Ringkasan sumber data per bagian ruang kerja. Rincian adapter dan endpoint-nya a
 | Publikasi, Kekayaan Intelektual, Kontrak & Proposal, Akademik, Kegiatan & Pengabdian | Server | Daftar dan rincian rekam resmi, sumber pembentuk serta keputusan tinjauan tiap rekam, saringan per anggota lewat `?member=`, dan usulan pelengkapan metadata ke Tinjauan. Pelengkapan yang disetujui diterapkan server ke rekam resminya. |
 | Pengumpulan | Server | Pekerjaan pengumpulan, riwayat percobaan, ajukan ulang, dan kirim ke Tinjauan. |
 | Tinjauan | Server | Antrean, rincian, pembanding, keputusan, dan pemulihan kandidat. |
+| Impor Spreadsheet | Server | Workbook KM atau templat Excel per rumah data diperiksa server per lembar dan per baris; baris yang siap dikirim ke Tinjauan dengan isian yang sama seperti pengajuan manual. |
 | Pengajuan manual | Server | Kelima rumah Data Resmi. Pengajuan masuk antrean Tinjauan dan menjadi rekam resmi beserta tautan buktinya setelah disetujui. |
 | Administrasi | Server | Daftar akun, undangan, ubah peran, tangguhkan dan pulihkan, hubungan anggota, akses khusus, serta Penolakan Akses. |
 | Peran & Hak Akses | Server | Peran, katalog izin, jumlah akun per peran, simpan hak akses, pulihkan ke bawaan, tambah, duplikasi, dan nonaktifkan peran kustom. |
@@ -142,6 +143,15 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 - Usulan pelengkapan yang sudah terminal tidak menutup pekerjaan berikutnya. Jika proyeksi keputusan masih menyisakan bidang wajib—misalnya kuartil setelah jenis berubah menjadi artikel jurnal—pengguna dapat membuat usulan lanjutan khusus untuk bidang tersisa tanpa menghapus riwayat usulan sebelumnya.
 - Tautan rekam sesi yang sudah tidak tersedia menampilkan penjelasan dan jalan kembali ke antrean, bukan halaman kosong atau drawer tanpa isi.
 - Drawer rincian dimuat ketika diperlukan agar halaman antrean tetap ringan.
+
+### Impor Spreadsheet
+
+- Halaman `Impor Spreadsheet` menerima CSV atau XLSX hingga 5 MB dan 2.000 baris data. Workbook KM dibaca seluruh lembarnya; setiap lembar bernomor KM dipetakan ke rumah datanya, lembar ringkasan dicatat sebagai acuan, dan lembar yang tidak diimpor tetap tampil beserta alasannya.
+- Setiap rumah Data Resmi menyediakan tombol `Impor Excel` di samping `Ajukan …` bagi akun dengan izin `import.create`. Tombol membuka `/nexus/impor?rumah=…` dengan tujuan rumah data dan templatnya sudah terpilih.
+- Templat diunduh sebagai Excel per rumah data. Judul kolomnya sama dengan label formulir Ajukan, kolom wajib bertanda `*`, sel memuat daftar pilihan (jenis rekam, kuartil, peringkat SINTA, triwulan) dan format tanggal, serta disertai lembar Petunjuk.
+- Hasil pemeriksaan memakai komponen ruang kerja bersama: kartu metrik (siap dikirim, perlu diperbaiki, dilewati), tab Baris dan Lembar berupa tabel rekam dengan kartu ringkas di layar sempit, pencarian, filter hasil/rumah data/lembar, paginasi, dan drawer rincian berisi catatan pemeriksaan, isian yang akan dikirim, serta nilai asli pada lembar.
+- Baris yang sudah menjadi data resmi atau masih menunggu di Tinjauan ditandai dilewati sehingga unggahan ulang tidak menggandakan antrean. Pengunggah tidak dapat memutuskan kandidatnya sendiri; pemeriksa lain yang berwenang memutuskannya di Tinjauan.
+- Nilai dana dan NIDN yang tidak sah tidak ditampilkan apa adanya pada pratinjau.
 
 ### Pengajuan manual lintas-domain
 

@@ -5,21 +5,40 @@ import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexu
 import { NexusImport } from "@/components/nexus-import/nexus-import";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceNoAccess } from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import type { ImportEntity } from "@/lib/api-imports";
 
 export const metadata: Metadata = {
   title: "Impor Spreadsheet",
   description:
-    "Unggah spreadsheet publikasi, periksa hasilnya, lalu kirim ke Tinjauan.",
+    "Unggah workbook KM atau CSV lima rumah data, periksa hasilnya, lalu kirim ke Tinjauan.",
   robots: { follow: false, index: false },
 };
 
-export default async function NexusImportPage() {
+const importHouses = new Set<string>([
+  "publication",
+  "intellectual-property",
+  "contract",
+  "academic",
+  "activity",
+]);
+
+export default async function NexusImportPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const access = await getNexusWorkspaceAccess();
+  const { rumah } = await searchParams;
+  const requestedHouse = Array.isArray(rumah) ? rumah[0] : rumah;
+  const initialHouse =
+    requestedHouse && importHouses.has(requestedHouse)
+      ? (requestedHouse as ImportEntity)
+      : undefined;
 
   if (!nexusWorkspaceCanOpen(access, "import")) {
     return (
       <NexusWorkspacePage
-        description="Impor spreadsheet publikasi."
+        description="Impor spreadsheet lima rumah data."
         descriptionId="import-no-access-description"
         title="Impor Spreadsheet"
         titleId="import-no-access-title"
@@ -34,5 +53,10 @@ export default async function NexusImportPage() {
     );
   }
 
-  return <NexusImport canUpload={access.importCapabilities.canUpload} />;
+  return (
+    <NexusImport
+      canUpload={access.importCapabilities.canUpload}
+      initialHouse={initialHouse}
+    />
+  );
 }
