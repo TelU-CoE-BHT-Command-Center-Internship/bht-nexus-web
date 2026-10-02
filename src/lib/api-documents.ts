@@ -20,7 +20,7 @@ export type DocumentIndexStatus =
 export type DocumentSummary = {
   classification: DocumentClassification;
   createdAt: string;
-  indexStatus?: DocumentIndexStatus;
+  indexStatus: DocumentIndexStatus;
   latestVersionNo: number;
   mimeType: string;
   originalName: string;

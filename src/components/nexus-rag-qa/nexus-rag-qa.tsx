@@ -1,16 +1,20 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { NexusDocumentNav } from "@/components/nexus-document-workspace/nexus-document-nav";
 import { useNexusDocumentCatalog } from "@/components/nexus-document-workspace/nexus-document-server";
 import styles from "@/components/nexus-rag-qa/nexus-rag-qa.module.css";
-import type { NexusRagQaContent } from "@/components/nexus-rag-qa/nexus-rag-qa-content";
+import type {
+  NexusRagQaContent,
+  RagExchange,
+} from "@/components/nexus-rag-qa/nexus-rag-qa-content";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceCard,
   NexusWorkspaceField,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { formatTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMetrics,
   NexusWorkspacePage,
@@ -20,7 +24,13 @@ import {
   type NexusSelectConfig,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
-import { announceWorkerUnavailable } from "@/lib/worker-unavailable";
+import { apiErrorMessage } from "@/lib/api-client";
+import {
+  askDocuments,
+  listRagHistory,
+  type RagAnswer,
+  type RagHistoryItem,
+} from "@/lib/api-rag";
 
 function QaIcon({ name }: { name: "answer" | "document" | "source" }) {
   if (name === "document")
@@ -42,15 +52,93 @@ function QaIcon({ name }: { name: "answer" | "document" | "source" }) {
   );
 }
 
+function languageLabel(language: string) {
+  return language === "en" ? "English" : "Bahasa Indonesia";
+}
+
+function exchangeFromAnswer(
+  result: RagAnswer,
+  locale: NexusRagQaContent["locale"],
+): RagExchange {
+  const bySource = new Map<string, RagExchange["sources"][number]>();
+  for (const [index, citation] of result.citations.entries()) {
+    const source = bySource.get(citation.documentPublicId) ?? {
+      documentTitle: citation.documentTitle,
+      id: citation.documentPublicId,
+      passages: [],
+    };
+    source.passages.push({
+      id: `${citation.documentPublicId}-${index}`,
+      page: citation.pageNo,
+      quote: citation.quoteText,
+    });
+    bySource.set(citation.documentPublicId, source);
+  }
+  return {
+    answer: result.isRefused
+      ? (result.refusalReason?.[locale] ?? "")
+      : (result.answer ?? ""),
+    askedAt: result.generatedAt,
+    askedAtLabel: formatTimestamp(result.generatedAt),
+    citationCount: result.citations.length,
+    id: result.queryPublicId,
+    question: result.question,
+    questionLanguageLabel: languageLabel(result.language),
+    sources: [...bySource.values()],
+    supported: !result.isRefused,
+  };
+}
+
+function exchangeFromHistory(item: RagHistoryItem): RagExchange {
+  return {
+    answer: item.isRefused ? (item.refusalReason ?? "") : (item.answer ?? ""),
+    askedAt: item.askedAt,
+    askedAtLabel: formatTimestamp(item.askedAt),
+    citationCount: item.citationsCount,
+    id: item.queryPublicId,
+    question: item.question,
+    questionLanguageLabel: languageLabel(item.language),
+    sources: [],
+    supported: !item.isRefused,
+  };
+}
+
 export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
   const catalog = useNexusDocumentCatalog(content.locale);
   const readyDocuments = catalog.documents.filter(
     (document) => document.processingJob.status === "succeeded",
   );
   const [query, setQuery] = useState("");
+  const [exchanges, setExchanges] = useState<RagExchange[]>([]);
+  const [historyError, setHistoryError] = useState("");
   const [error, setError] = useState("");
+  const [isAsking, setIsAsking] = useState(false);
   const [scope, setScope] = useState("all");
   const [isScopeOpen, setIsScopeOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    listRagHistory()
+      .then((items) => {
+        if (cancelled) return;
+        setExchanges((current) => [
+          ...current,
+          ...items
+            .map(exchangeFromHistory)
+            .filter(
+              (item) => !current.some((existing) => existing.id === item.id),
+            ),
+        ]);
+      })
+      .catch((cause: unknown) => {
+        if (cancelled) return;
+        setHistoryError(apiErrorMessage(cause, content.historyLoadErrorLabel));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [content.historyLoadErrorLabel]);
+
   const scopeConfig: NexusSelectConfig = {
     defaultValue: "all",
     id: "qa-document-scope",
@@ -69,28 +157,48 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
       })),
     ],
   };
-  const exchanges = content.exchanges;
   const supportedCount = exchanges.filter(
     (exchange) => exchange.supported,
   ).length;
   const citationCount = exchanges.reduce(
-    (total, exchange) =>
-      total +
-      exchange.sources.reduce(
-        (sourceTotal, source) => sourceTotal + source.passages.length,
-        0,
-      ),
+    (total, exchange) => total + exchange.citationCount,
     0,
   );
 
-  function ask(event: FormEvent<HTMLFormElement>) {
+  async function ask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!query.trim()) {
+    const question = query.trim();
+    if (isAsking) return;
+    if (question.length < 3) {
       setError(content.emptyQuestionLabel);
       return;
     }
     setError("");
-    announceWorkerUnavailable({ worker: "rag" });
+    setIsAsking(true);
+    try {
+      const result = await askDocuments({
+        documentPublicIds: scope === "all" ? undefined : [scope],
+        language: content.locale,
+        question,
+      });
+      setExchanges((current) => [
+        exchangeFromAnswer(result, content.locale),
+        ...current,
+      ]);
+      setQuery("");
+    } catch (cause) {
+      setError(
+        apiErrorMessage(
+          cause,
+          content.locale === "id"
+            ? "Pertanyaan belum dapat dijawab."
+            : "The question could not be answered.",
+          content.locale,
+        ),
+      );
+    } finally {
+      setIsAsking(false);
+    }
   }
 
   return (
@@ -169,7 +277,11 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
                 value={scope}
               />
             </div>
-            <NexusWorkspaceButton tone="primary" type="submit">
+            <NexusWorkspaceButton
+              disabled={isAsking}
+              tone="primary"
+              type="submit"
+            >
               {content.askLabel}
             </NexusWorkspaceButton>
           </form>
@@ -190,9 +302,7 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
               <h3 id="qa-history-title">{content.historyTitle}</h3>
               <p>
                 {exchanges.length}{" "}
-                {content.locale === "id"
-                  ? "pertanyaan pada sesi ini"
-                  : "questions in this session"}
+                {content.locale === "id" ? "pertanyaan" : "questions"}
               </p>
             </div>
             <p>
@@ -201,7 +311,12 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
                 : "Check citations before using an answer as a decision basis."}
             </p>
           </header>
-          {exchanges.length === 0 ? (
+          {historyError ? (
+            <NexusWorkspaceNotice tone="danger">
+              {historyError}
+            </NexusWorkspaceNotice>
+          ) : null}
+          {exchanges.length === 0 && !historyError ? (
             <p className={styles.exchangeMeta}>{content.historyEmptyLabel}</p>
           ) : null}
           <ol className={styles.exchangeList}>
@@ -230,11 +345,14 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
                   <time dateTime={exchange.askedAt}>
                     {exchange.askedAtLabel}
                   </time>
+                  {exchange.sources.length === 0 && exchange.citationCount > 0
+                    ? ` · ${exchange.citationCount} ${content.locale === "id" ? "kutipan" : "citations"}`
+                    : ""}
                 </p>
                 {exchange.sources.length > 0 ? (
                   <details className={styles.citations}>
                     <summary>
-                      {content.citationsTitle} ({exchange.sources.length})
+                      {content.citationsTitle} ({exchange.citationCount})
                     </summary>
                     <ul>
                       {exchange.sources.map((source) => (
@@ -244,23 +362,8 @@ export function NexusRagQa({ content }: { content: NexusRagQaContent }) {
                             <blockquote key={passage.id}>
                               <span>
                                 {content.pageLabel} {passage.page}
-                                {passage.documentVersion
-                                  ? ` · V${passage.documentVersion}`
-                                  : ""}
-                                {passage.chunkId ? ` · ${passage.chunkId}` : ""}
                               </span>
                               <p>{passage.quote}</p>
-                              {passage.href ? (
-                                <a
-                                  href={passage.href}
-                                  rel="noreferrer"
-                                  target="_blank"
-                                >
-                                  {content.locale === "id"
-                                    ? "Buka dokumen"
-                                    : "Open document"}
-                                </a>
-                              ) : null}
                             </blockquote>
                           ))}
                         </li>

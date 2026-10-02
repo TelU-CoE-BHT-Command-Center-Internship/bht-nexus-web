@@ -1,19 +1,14 @@
 import type { Locale } from "@/i18n/locales";
 
 export type RagPassage = {
-  chunkId?: string;
-  documentVersion?: number;
-  href?: string;
   id: string;
   page: number;
   quote: string;
 };
 
 export type RagSource = {
-  answer: string;
   documentTitle: string;
   id: string;
-  keywords: string[];
   passages: RagPassage[];
 };
 
@@ -21,6 +16,7 @@ export type RagExchange = {
   answer: string;
   askedAt: string;
   askedAtLabel: string;
+  citationCount: number;
   id: string;
   question: string;
   questionLanguageLabel: string;
@@ -33,8 +29,8 @@ export type NexusRagQaContent = {
   citationsTitle: string;
   description: string;
   emptyQuestionLabel: string;
-  exchanges: RagExchange[];
   historyEmptyLabel: string;
+  historyLoadErrorLabel: string;
   historyTitle: string;
   locale: Locale;
   pageLabel: string;
@@ -52,6 +48,7 @@ const copy = {
       "Cari jawaban hanya dari dokumen yang sudah selesai diproses; setiap jawaban yang didukung menyertakan kutipan.",
     emptyQuestionLabel: "Tulis pertanyaan sebelum mengirim.",
     historyEmptyLabel: "Belum ada pertanyaan.",
+    historyLoadErrorLabel: "Riwayat pertanyaan belum dapat dimuat.",
     historyTitle: "Riwayat pertanyaan",
     pageLabel: "Halaman",
     queryLabel: "Pertanyaan dokumen",
@@ -66,6 +63,7 @@ const copy = {
       "Find answers only in processed documents; every supported answer includes quoted evidence.",
     emptyQuestionLabel: "Enter a question before submitting.",
     historyEmptyLabel: "No questions yet.",
+    historyLoadErrorLabel: "Question history could not be loaded.",
     historyTitle: "Question history",
     pageLabel: "Page",
     queryLabel: "Document question",
@@ -73,8 +71,8 @@ const copy = {
     title: "Document Q&A",
     unsupportedLabel: "Not supported by sources",
   },
-} satisfies Record<Locale, Omit<NexusRagQaContent, "exchanges" | "locale">>;
+} satisfies Record<Locale, Omit<NexusRagQaContent, "locale">>;
 
 export function getNexusRagQaContent(locale: Locale): NexusRagQaContent {
-  return { ...copy[locale], exchanges: [], locale };
+  return { ...copy[locale], locale };
 }

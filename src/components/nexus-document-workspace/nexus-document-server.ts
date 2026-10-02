@@ -10,11 +10,7 @@ import { apiErrorMessage } from "@/lib/api-client";
 import { type DocumentSummary, listAllDocuments } from "@/lib/api-documents";
 import { useLoadEffect } from "@/lib/use-load-effect";
 
-/**
- * Penerjemah dokumen server ke bentuk halaman Dokumen. Server belum selalu
- * melaporkan status pengindeksan; selama belum ada, dokumen berstatus antre,
- * yaitu keadaan sebenarnya tanpa worker RAG.
- */
+/** Penerjemah dokumen server ke bentuk halaman Dokumen; status indeks datang dari pekerjaan rag_index di server. */
 
 function processingStatus(document: DocumentSummary): AutomationJobStatus {
   if (document.indexStatus === "ready") return "succeeded";

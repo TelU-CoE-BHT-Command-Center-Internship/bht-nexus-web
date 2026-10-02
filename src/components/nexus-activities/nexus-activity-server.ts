@@ -151,7 +151,9 @@ export function nexusActivityFromServer(
     scheme: text("scheme"),
     submittedOn: text("submissionDate")?.slice(0, 10),
     targetGroup: text("targetGroup"),
-    team: memberNames.length > 0 ? memberNames.join("; ") : undefined,
+    team:
+      text("team") ??
+      (memberNames.length > 0 ? memberNames.join("; ") : undefined),
     title: summary.title,
     updatedAt: "",
   };
