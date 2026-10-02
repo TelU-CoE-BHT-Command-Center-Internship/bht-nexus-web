@@ -7,7 +7,10 @@ import type {
   ActivityKind,
   NexusActivityView,
 } from "@/components/nexus-activities/nexus-activities-content";
-import { belongsToActivityHouse } from "@/components/nexus-official-records/nexus-record-metadata";
+import {
+  belongsToActivityHouse,
+  metadataText,
+} from "@/components/nexus-official-records/nexus-record-metadata";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { nexusKmIndicators } from "@/content/nexus-km-indicators";
 import {
@@ -18,6 +21,7 @@ import {
   listAllActivities,
 } from "@/lib/api-activities";
 import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
+import { getMember } from "@/lib/api-members";
 import { useLoadEffect } from "@/lib/use-load-effect";
 
 /**
@@ -92,7 +96,11 @@ function funding(amount: number | null | undefined) {
 export function nexusActivityFromServer(
   summary: ActivitySummary,
   detail?: ActivityDetail,
+  memberNames: readonly string[] = [],
 ): NexusActivityView {
+  const metadata = summary.metadata ?? {};
+  const text = (key: string) => metadataText(metadata, key);
+  const evidenceUrl = text("evidenceUrl");
   const kmLinks = (summary.kmIndicators ?? []).flatMap((id) => {
     const indicator = nexusKmIndicators.find((item) => item.id === id);
     return indicator ? [{ indicator, note: "" }] : [];
@@ -105,38 +113,65 @@ export function nexusActivityFromServer(
       : "Kegiatan Lainnya");
   const missingFields: ActivityCompletionFieldKey[] = [
     ...(summary.title.trim() === "" ? (["title"] as const) : []),
-    "evidenceUrl",
+    ...(evidenceUrl ? [] : (["evidenceUrl"] as const)),
   ];
 
   return {
     evaluationPeriod: String(new Date(summary.periodStart).getUTCFullYear()),
-    eventDate: summary.periodStart.slice(0, 10),
-    evidenceNote:
-      "Sumber belum mencatat tautan atau lokasi dokumen untuk rekam ini.",
-    evidenceStatus: "unrecorded",
+    eventDate: (text("eventDate") ?? summary.periodStart).slice(0, 10),
+    evidenceNote: evidenceUrl
+      ? "Dokumen sumber dapat dibuka melalui tautan yang tercatat."
+      : "Sumber belum mencatat tautan atau lokasi dokumen untuk rekam ini.",
+    evidenceStatus: evidenceUrl ? "public" : "unrecorded",
+    evidenceUrl,
     funding: funding(summary.amount),
     group: groupByKind[kind],
     id: summary.publicId,
+    issn: text("issn"),
+    journalVolume: text("journalVolume"),
     kind,
     kmLinks,
+    location: text("location"),
     missingFields,
+    organization: text("organization") ?? text("institution"),
     ownerUnit: "",
     periodLabel: periodLabel(summary),
-    primaryParty: "",
+    primaryParty: text("primaryParty") ?? text("speakerName") ?? "",
     provenance: [],
     publicId: summary.publicId,
+    publicationFrequency: text("publicationFrequency"),
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     recordStatus: statusLabels[summary.status],
     recordedAt: formatAuditTimestamp(summary.createdAt),
+    referenceNumber: text("referenceNumber"),
     relatedMemberIds: (detail?.participants ?? []).flatMap((participant) =>
       participant.memberPublicId ? [participant.memberPublicId] : [],
     ),
+    role: text("role"),
+    scheme: text("scheme"),
+    submittedOn: text("submissionDate")?.slice(0, 10),
+    targetGroup: text("targetGroup"),
+    team:
+      text("team") ??
+      (memberNames.length > 0 ? memberNames.join("; ") : undefined),
     title: summary.title,
-    updatedAt: "",
+    updatedAt: formatAuditTimestamp(summary.createdAt),
   };
 }
 
 export type NexusLoadState = "error" | "loading" | "ready";
+
+/** Nama anggota yang tertaut sebagai peserta; kosong bila akun tidak boleh membaca anggota. */
+async function participantNames(activity: ActivityDetail) {
+  const results = await Promise.allSettled(
+    activity.participants.flatMap((participant) =>
+      participant.memberPublicId ? [getMember(participant.memberPublicId)] : [],
+    ),
+  );
+  return results.flatMap((result) =>
+    result.status === "fulfilled" ? [result.value.name] : [],
+  );
+}
 
 /** Katalog kegiatan resmi dari server. */
 export function useNexusActivityCatalog() {
@@ -200,9 +235,10 @@ export function useNexusActivityDetail(publicId: string | null) {
     }
     setDetail({ state: "loading" });
     getActivity(id)
-      .then((activity) => {
+      .then(async (activity) => {
+        const names = await participantNames(activity);
         if (request !== latestRequest.current) return;
-        const record = nexusActivityFromServer(activity, activity);
+        const record = nexusActivityFromServer(activity, activity, names);
         cache.current.set(id, record);
         setDetail({ record, state: "ready" });
       })

@@ -1,7 +1,4 @@
-import {
-  getNexusDocumentRecords,
-  type NexusDocumentRecord,
-} from "@/components/nexus-document-workspace/nexus-document-content";
+import type { NexusDocumentRecord } from "@/components/nexus-document-workspace/nexus-document-content";
 import type { Locale } from "@/i18n/locales";
 
 export type RagDocument = NexusDocumentRecord;
@@ -14,8 +11,8 @@ export type NexusRagLibraryContent = {
     updatedAt: string;
   };
   description: string;
-  documents: RagDocument[];
   fileErrorLabel: string;
+  loadErrorTitle: string;
   locale: Locale;
   title: string;
   uploadLabel: string;
@@ -27,44 +24,40 @@ const libraryCopy = {
   id: {
     columns: {
       document: "Dokumen",
-      owner: "Unit pemilik",
+      owner: "Pemilik",
       status: "Status pemrosesan",
-      updatedAt: "Diperbarui",
+      updatedAt: "Diunggah",
     },
     description:
       "Kelola dokumen yang diizinkan untuk pencarian bersitasi dan ekstraksi kandidat.",
-    fileErrorLabel: "Pilih berkas PDF atau DOCX berukuran maksimal 25 MB.",
+    fileErrorLabel: "Pilih berkas PDF atau DOCX berukuran maksimal 10 MB.",
+    loadErrorTitle: "Dokumen belum dapat dimuat",
     title: "Dokumen",
     uploadLabel: "Pilih dokumen",
-    uploadNote: "PDF atau DOCX, maksimal 25 MB",
-    uploadSuccessLabel: "ditambahkan ke antrean pemrosesan.",
+    uploadNote: "PDF atau DOCX, maksimal 10 MB",
+    uploadSuccessLabel: "tersimpan di server dan menunggu pemrosesan.",
   },
   en: {
     columns: {
       document: "Document",
-      owner: "Owning unit",
+      owner: "Owner",
       status: "Processing status",
-      updatedAt: "Updated",
+      updatedAt: "Uploaded",
     },
     description:
       "Manage documents authorised for cited search and candidate extraction.",
-    fileErrorLabel: "Choose a PDF or DOCX file up to 25 MB.",
+    fileErrorLabel: "Choose a PDF or DOCX file up to 10 MB.",
+    loadErrorTitle: "Documents could not be loaded",
     title: "Documents",
     uploadLabel: "Choose document",
-    uploadNote: "PDF or DOCX, up to 25 MB",
-    uploadSuccessLabel: "was added to the processing queue.",
+    uploadNote: "PDF or DOCX, up to 10 MB",
+    uploadSuccessLabel:
+      "was stored on the server and is waiting to be processed.",
   },
-} satisfies Record<
-  Locale,
-  Omit<NexusRagLibraryContent, "documents" | "locale">
->;
+} satisfies Record<Locale, Omit<NexusRagLibraryContent, "locale">>;
 
 export function getNexusRagLibraryContent(
   locale: Locale,
 ): NexusRagLibraryContent {
-  return {
-    ...libraryCopy[locale],
-    documents: getNexusDocumentRecords(locale),
-    locale,
-  };
+  return { ...libraryCopy[locale], locale };
 }

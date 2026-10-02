@@ -13,9 +13,12 @@ export type PublicationSummary = {
   citationCount: number;
   createdAt: string;
   doi: string | null;
+  evidenceUrl?: string | null;
   kmIndicators?: string[];
   publicId: string;
+  publishedOn?: string | null;
   quartile: Quartile | null;
+  reportedQuarter?: 1 | 2 | 3 | 4 | null;
   sjr: number | null;
   title: string;
   venue: string | null;

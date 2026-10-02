@@ -59,7 +59,7 @@ import {
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
 import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexus-workspace-table";
-import { ApiRequestError, apiErrorMessage } from "@/lib/api-client";
+import { apiErrorMessage } from "@/lib/api-client";
 import {
   createJob,
   getJob,
@@ -70,7 +70,6 @@ import {
   retryJob,
   syncReviewCasesFromJob,
 } from "@/lib/api-jobs";
-import { WORKER_UNAVAILABLE_CODE } from "@/lib/worker-unavailable";
 
 const pageSizeConfig: NexusSelectConfig = {
   defaultValue: "10",
@@ -341,6 +340,7 @@ export function NexusScraperSearch({
   )
     ? initialMemberBinding
     : undefined;
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{
     message: string;
     tone: "danger" | "success";
@@ -631,6 +631,7 @@ export function NexusScraperSearch({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
     const cleanName = name.trim();
     const cleanSintaUrl = sintaUrl.trim();
     const cleanScholarUrl = scholarUrl.trim();
@@ -643,78 +644,54 @@ export function NexusScraperSearch({
       return;
     }
 
-    const now = new Date();
-    const id = `local-${now.getTime()}`;
-    const queued: CollectionJob = {
-      candidates: [],
-      fullName: cleanName,
-      id,
-      memberBinding: activeMemberBinding,
-      profileUrl: cleanSintaUrl,
-      scholarUrl: cleanScholarUrl,
-      sintaUrl: cleanSintaUrl,
-      source: "sinta",
-      sourceLabel: "SINTA",
-      status: "queued",
-      statusLabel: content.waitingForServiceLabel,
-      submittedAt: now.toISOString(),
-      submittedAtLabel: formatTimestamp(now.toISOString()),
-    };
-
-    setJobs((current) => [queued, ...current]);
-    setFeedback({ message: content.queuedLabel, tone: "success" });
-    setName("");
-    setSintaUrl("");
-    setScholarUrl("");
-    setCurrentPage(1);
-
+    setIsSubmitting(true);
     createJob({
       name: cleanName,
       scholarUrl: cleanScholarUrl,
       sintaUrl: cleanSintaUrl,
     })
       .then((created) => {
+        if (!isMounted.current) return;
+        const now = new Date();
+        const queued: CollectionJob = {
+          candidates: [],
+          fullName: cleanName,
+          id: created.publicId,
+          memberBinding: activeMemberBinding,
+          profileUrl: cleanSintaUrl,
+          scholarUrl: cleanScholarUrl,
+          sintaUrl: cleanSintaUrl,
+          source: "sinta",
+          sourceLabel: "SINTA",
+          status: created.status,
+          statusLabel: getAutomationStatusLabel(content.locale, created.status),
+          submittedAt: now.toISOString(),
+          submittedAtLabel: formatTimestamp(now.toISOString()),
+        };
+        setJobs((current) => [queued, ...current]);
         setJobsTotal((total) => (total === null ? total : total + 1));
-        setJobs((current) =>
-          current.map((job) =>
-            job.id === id
-              ? { ...job, id: created.publicId, status: created.status }
-              : job,
-          ),
-        );
+        setFeedback({ message: content.queuedLabel, tone: "success" });
+        setName("");
+        setSintaUrl("");
+        setScholarUrl("");
+        setCurrentPage(1);
         void pollJob(created.publicId);
       })
       .catch((error: unknown) => {
-        const message = apiErrorMessage(
-          error,
-          content.locale === "id"
-            ? "Pekerjaan belum dapat diajukan."
-            : "The job could not be submitted.",
-          content.locale,
-        );
-        setFeedback({ message, tone: "danger" });
-        if (
-          error instanceof ApiRequestError &&
-          error.code === WORKER_UNAVAILABLE_CODE
-        ) {
-          setJobs((current) => current.filter((job) => job.id !== id));
-          return;
-        }
-        setJobs((current) =>
-          current.map((job) =>
-            job.id === id
-              ? {
-                  ...job,
-                  status: "failed_permanently",
-                  statusLabel: getAutomationStatusLabel(
-                    content.locale,
-                    "failed_permanently",
-                  ),
-                  failureReason: message,
-                }
-              : job,
+        if (!isMounted.current) return;
+        setFeedback({
+          message: apiErrorMessage(
+            error,
+            content.locale === "id"
+              ? "Pekerjaan belum dapat diajukan."
+              : "The job could not be submitted.",
+            content.locale,
           ),
-        );
+          tone: "danger",
+        });
+      })
+      .finally(() => {
+        if (isMounted.current) setIsSubmitting(false);
       });
   }
 
@@ -967,7 +944,11 @@ export function NexusScraperSearch({
                 type="url"
                 value={scholarUrl}
               />
-              <NexusWorkspaceButton tone="primary" type="submit">
+              <NexusWorkspaceButton
+                disabled={isSubmitting}
+                tone="primary"
+                type="submit"
+              >
                 {content.submitLabel}
               </NexusWorkspaceButton>
             </form>
