@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import type { NexusMonitoringInput } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
 import {
   NEXUS_DEFAULT_MONITORING_PERIOD_ID,
@@ -36,9 +35,8 @@ export function useNexusMonitoringData(
   requestedPeriodId: string = NEXUS_DEFAULT_MONITORING_PERIOD_ID,
 ): NexusMonitoringData {
   const official = useNexusOfficialRecords();
-  const { periods, targetVersions } = useNexusMonitoringSession();
-  const cluster = useNexusClusterScope();
-  const isAllCoe = cluster.scope?.kind === "all" && !cluster.divisionPublicId;
+  const targetsSession = useNexusMonitoringSession();
+  const { periods, targetVersions } = targetsSession;
   const records = useMemo(
     () => nexusMonitoringRecordsFrom(official.records),
     [official.records],
@@ -55,8 +53,8 @@ export function useNexusMonitoringData(
         year: Number(requestedPeriodId) || 0,
       });
   const targets = useMemo(
-    () => nexusTargetLookup(isAllCoe ? targetVersions : [], requestedPeriodId),
-    [isAllCoe, requestedPeriodId, targetVersions],
+    () => nexusTargetLookup(targetVersions, requestedPeriodId),
+    [requestedPeriodId, targetVersions],
   );
   const input = useMemo(
     () => ({ period: requestedPeriodId, records, targets }),
@@ -64,12 +62,20 @@ export function useNexusMonitoringData(
   );
 
   return {
-    errorMessage: official.errorMessage,
+    errorMessage: targetsSession.errorMessage ?? official.errorMessage,
     input,
     isKnownPeriod: Boolean(knownPeriod),
-    loadState: official.state,
+    loadState:
+      official.state === "error" || targetsSession.state === "error"
+        ? "error"
+        : official.state === "loading" || targetsSession.state === "loading"
+          ? "loading"
+          : "ready",
     period,
     periodOptions,
-    retry: official.retry,
+    retry: () => {
+      official.retry();
+      targetsSession.retry();
+    },
   };
 }

@@ -170,6 +170,7 @@ type NexusServerPermission =
   | "job.create"
   | "job.read"
   | "kpi.read"
+  | "kpi.target.manage"
   | "member.read"
   | "permission.manage"
   | "permission.read"
@@ -196,6 +197,7 @@ const serverRolePermissions: Record<
   readonly NexusServerPermission[]
 > = {
   admin: [
+    "kpi.target.manage",
     "job.create",
     "job.read",
     "review.read",
@@ -382,7 +384,7 @@ function accessFromPermissions(
     monitoringCapabilities: {
       canCorrectRecords: has("kpi.read"),
       canExport: has("dashboard.export"),
-      canManageTargets: false,
+      canManageTargets: has("kpi.target.manage"),
     },
     reviewCapabilities: {
       canReview: has("review.decide"),
