@@ -9,7 +9,6 @@ export type NexusWorkspaceNavigationId =
   | "contracts"
   | "dashboard"
   | "documents"
-  | "import"
   | "intellectual-property"
   | "members"
   | "monitoring"
@@ -25,7 +24,6 @@ export type NexusWorkspaceAccess = {
   allowedNavigationIds: readonly NexusWorkspaceNavigationId[];
   broadcastCapabilities: NexusBroadcastCapabilities;
   collectionCapabilities: NexusCollectionCapabilities;
-  importCapabilities: NexusImportCapabilities;
   memberCapabilities: NexusMemberCapabilities;
   monitoringCapabilities: NexusMonitoringCapabilities;
   reviewCapabilities: NexusReviewCapabilities;
@@ -49,11 +47,6 @@ export type NexusBroadcastCapabilities = {
 export type NexusCollectionCapabilities = {
   canCreateJob: boolean;
   canSendToReview: boolean;
-};
-
-/** Mengunggah impor spreadsheet (`import.create`) terpisah dari melihatnya (`import.read`). */
-export type NexusImportCapabilities = {
-  canUpload: boolean;
 };
 
 /**
@@ -106,7 +99,6 @@ export const nexusPreviewWorkspaceAccess = {
     "monitoring",
     "broadcast",
     "collection",
-    "import",
     "documents",
     "reviews",
     "publications",
@@ -124,9 +116,6 @@ export const nexusPreviewWorkspaceAccess = {
     canCreateJob: true,
     canSendToReview: true,
   },
-  importCapabilities: {
-    canUpload: true,
-  },
   memberCapabilities: {
     canCreateMember: true,
     canDeactivateMember: true,
@@ -139,7 +128,6 @@ export const nexusPreviewWorkspaceAccess = {
     canManageTargets: false,
   },
   reviewCapabilities: {
-    canImport: true,
     canReview: true,
     canSubmitCorrection: true,
     canSubmitRecord: true,
@@ -165,8 +153,6 @@ type NexusServerPermission =
   | "dashboard.export"
   | "dashboard.read"
   | "iam.manage"
-  | "import.create"
-  | "import.read"
   | "intellectual_property.read"
   | "job.create"
   | "job.read"
@@ -214,8 +200,6 @@ const serverRolePermissions: Record<
     "kpi.read",
     "dashboard.read",
     "dashboard.export",
-    "import.create",
-    "import.read",
   ],
   auditor: [
     "iam.manage",
@@ -260,7 +244,6 @@ const serverRolePermissions: Record<
     "kpi.read",
     "dashboard.read",
     "audit.read",
-    "import.read",
   ],
   external_partner: ["publication.read"],
   intern: ["publication.read"],
@@ -333,7 +316,6 @@ function accessFromPermissions(
     navigation.add("collection");
     navigation.add("documents");
   }
-  if (has("import.read")) navigation.add("import");
   if (has("review.read")) navigation.add("reviews");
   if (has("publication.read")) navigation.add("publications");
   if (has("intellectual_property.read")) {
@@ -373,9 +355,6 @@ function accessFromPermissions(
       canCreateJob: has("job.create"),
       canSendToReview: has("review.edit"),
     },
-    importCapabilities: {
-      canUpload: has("import.create"),
-    },
     memberCapabilities: {
       canCreateMember: has("iam.manage"),
       canDeactivateMember: has("iam.manage"),
@@ -388,7 +367,6 @@ function accessFromPermissions(
       canManageTargets: has("kpi.target.manage"),
     },
     reviewCapabilities: {
-      canImport: has("import.create"),
       canReview: has("review.decide"),
       canSubmitCorrection: has("review.edit"),
       canSubmitRecord: has("job.create"),

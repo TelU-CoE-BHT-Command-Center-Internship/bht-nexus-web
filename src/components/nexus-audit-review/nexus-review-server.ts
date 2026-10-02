@@ -252,7 +252,6 @@ function people(value: unknown) {
  * mengikuti bawaan server (SINTA) sampai rinciannya terbaca.
  */
 function sourceOf(summary: ReviewCaseRecord, payload?: Payload) {
-  if (summary.candidateType === "import_row") return "spreadsheet" as const;
   if (summary.candidateType === "rag_extraction_candidate") {
     return "document" as const;
   }

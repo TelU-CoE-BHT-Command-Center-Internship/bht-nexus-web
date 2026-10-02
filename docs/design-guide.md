@@ -28,6 +28,8 @@ Tujuan yang belum dibangun tetap terlihat sebagai penanda arah, dinyatakan belum
 
 Dokumen mempunyai navigasi lokal Pustaka, Tanya jawab, dan Ekstraksi. Ketiganya tidak menjadi tiga kategori teknologi terpisah di sidebar.
 
+Pengajuan data memakai tombol `Ajukan …` pada rumah Data Resmi. Setelah layanan Impor Spreadsheet dihapus, menu dan tombol impornya juga dihapus dari web. Ekspor laporan pada Monitoring tetap mengikuti izin ekspor dan berada pada halaman pelaporan.
+
 Monitoring KM juga memakai satu butir sidebar. Domain dipilih di dalam halaman, sedangkan setiap domain dan indikator terpantau mempunyai alamatnya sendiri di bawah `/nexus/monitoring/[domain]`. Sembilan domain dan empat puluh enam indikator tidak dipindahkan ke sidebar hanya karena masing-masing punya alamat.
 
 Pemilih domain pada Ringkasan berbentuk satu baris chip: ikon berwarna, nama domain, lalu jumlah indikatornya. Barisnya tidak memakai batang gulir karena batang abu-abu memotong tampilan kartu; penggeserannya disediakan langsung pada kartunya—diseret dengan tetikus, roda tetikus mendatar, sentuh, atau panah papan ketik—dan bayangan tipis di tepi menandakan masih ada domain di arah tersebut. Kunci pointer baru dipasang setelah kursor benar-benar bergeser; menguncinya sejak tombol ditekan membuat event klik pindah dari chip ke barisnya sehingga domain tidak pernah terpilih.

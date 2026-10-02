@@ -50,7 +50,7 @@ Bagian yang sudah tersambung ke server tidak lagi mengambil datanya dari adapter
 | Administrasi | `getNexusAdministrationContent` | daftar dan rincian akun, pencarian, filter status/role/hubungan anggota, satu alur undangan bertahap, editor hubungan, role tingkat tinggi, serta tindakan akses sesuai status |
 | Pengajuan manual Data Resmi | `manualSubmissionDefinitions`, `createManualSubmissionReviewRecord`, dan route `/nexus/ajukan/[domain]` | form penuh untuk lima domain, bidang subtype berdasarkan workbook, periode evaluasi yang terpisah dari tahun/tanggal entitas, validasi metadata/tanggal/angka/URL, saran KM berbasis aturan, pencocokan pengenal dan judul termasuk rekam yang telah disetujui, draft sesi browser otomatis, serta pengiriman kandidat manual ke Tinjauan |
 | Pengumpulan | `getNexusScraperSearchContent` dan `nexus-collection-identity` | validasi host serta pengenal orang pada profil publik, binding anggota yang dilepas ketika identitas sumber berubah, status pekerjaan, daftar kandidat individual, serta pengiriman kandidat ke sesi Tinjauan Indonesia |
-| Tinjauan Indonesia | `getNexusAuditReviewContent` | satu antrean lintas-domain termasuk impor lembar kerja, filter sumber dan jenis data, metadata adaptif, pembanding, bukti, keputusan, status koreksi, versi, dan riwayat |
+| Tinjauan Indonesia | `getNexusAuditReviewContent` | satu antrean lintas-domain, filter sumber dan jenis data, metadata adaptif, pembanding, bukti, keputusan, status koreksi, versi, dan riwayat |
 | Workspace Inggris | route `/en/nexus/coming-soon` | satu halaman status sampai seluruh alur Indonesia selesai; route workspace Inggris lama mengarah ke sini |
 | Metadata dokumen | `getNexusDocumentRecords` | satu status dan kemampuan dokumen untuk Pustaka, Tanya jawab, serta Ekstraksi |
 | Pustaka dokumen | `getNexusRagLibraryContent` | validasi PDF/DOCX hingga 25 MB, antrean pemrosesan, dan perpindahan dengan identitas dokumen |
@@ -94,6 +94,8 @@ Model Tinjauan sudah memisahkan `candidateKind`, sistem sumber, pengaju manusia,
 Hasil pelengkapan metadata memakai empat state bersama: `available`, `not-available`, `not-applicable`, dan `unresolved`. Karena itu pengecualian yang sudah disetujui tidak pernah diberi label “Tersedia” pada daftar, kartu, filter, maupun rincian. Proyeksi Publikasi menghitung ulang hubungan jenis karya dan kuartil, sedangkan proyeksi HKI baru membentuk kaitan KM setelah klasifikasi dan nomor registrasi tersedia. Pustaka memisahkan dokumen dari job, correlation ID, attempt, dan riwayat proses. Tanya Dokumen memfilter riwayat awal berdasarkan dokumen pada URL. Ekstraksi memakai `fieldIds` profil yang sama untuk render, hitungan, kesiapan kirim, candidate payload, serta evidence, lalu memakai extraction run sebagai kunci idempotensi kandidat.
 
 ## Kemampuan server yang dibutuhkan
+
+Impor Spreadsheet telah dihapus dari layanan server dan web. Tidak ada adapter impor, menu, templat, atau aksi unggah CSV/XLSX. Pengajuan manual dan kandidat hasil pengumpulan/ekstraksi tetap memakai jalur Tinjauan. Label asal spreadsheet pada rekam historis tetap menjadi catatan sumber; label tersebut tidak membuka kembali fitur impor.
 
 Arah hubungannya satu jalur: halaman yang dibuka pengguna berada di `bht-nexus-web`, sedangkan login, aturan bisnis, pemrosesan, dan pengelolaan data berada di `bht-nexus-server` beserta basis data dan layanan pendukungnya.
 
