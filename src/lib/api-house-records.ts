@@ -115,15 +115,21 @@ const sortByHouse: { [House in OfficialHouse]: HouseRecords[House]["sortBy"] } =
  */
 export async function listAllHouseRecords<House extends OfficialHouse>(
   house: House,
-  { memberPublicId }: { memberPublicId?: string } = {},
+  {
+    divisionPublicId,
+    memberPublicId,
+  }: { divisionPublicId?: string; memberPublicId?: string } = {},
 ): Promise<HouseRecords[House]["summary"][]> {
   const records: HouseRecords[House]["summary"][] = [];
   const memberFilter = memberPublicId
     ? `&memberPublicId=${encodeURIComponent(memberPublicId)}`
     : "";
+  const divisionFilter = divisionPublicId
+    ? `&divisionPublicId=${encodeURIComponent(divisionPublicId)}`
+    : "";
   for (let page = 1; ; page += 1) {
     const result = await apiFetchPaginated<HouseRecords[House]["summary"]>(
-      `/${house}?limit=${MAX_PAGE_SIZE}&page=${page}&sortBy=${sortByHouse[house]}&sortOrder=desc${memberFilter}`,
+      `/${house}?limit=${MAX_PAGE_SIZE}&page=${page}&sortBy=${sortByHouse[house]}&sortOrder=desc${memberFilter}${divisionFilter}`,
     );
     records.push(...result.data);
     if (result.data.length === 0 || records.length >= result.meta.total) {

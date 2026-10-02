@@ -885,6 +885,14 @@
   font-size: 0.56rem;
 }
 
+.reviewHistory li p {
+  margin: 0.2rem 0 0;
+  color: #455268;
+  font-size: 0.62rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .reviewDiffList {
   overflow: hidden;
   border: 1px solid #dfe4ec;
@@ -1128,6 +1136,11 @@
 
 .reviewTextField select {
   min-height: 2.65rem;
+  padding-right: 2.65rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E");
+  background-position: right 0.82rem center;
+  background-repeat: no-repeat;
 }
 
 .reviewTextField textarea {

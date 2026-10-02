@@ -6,6 +6,8 @@ import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-
 type NexusMemberContextProps = {
   action?: ReactNode;
   description?: string;
+  /** Ikon pengganti bila konteksnya bukan satu anggota, misalnya klaster. */
+  icon?: ReactNode;
   label: string;
   memberName: string;
   sourceLabel?: string;
@@ -31,6 +33,7 @@ function CloseIcon() {
 export function NexusMemberContext({
   action,
   description,
+  icon,
   label,
   memberName,
   sourceLabel,
@@ -38,7 +41,7 @@ export function NexusMemberContext({
   return (
     <section aria-label={label} className={styles.contextCard}>
       <span aria-hidden="true" className={styles.iconWrap}>
-        <MemberContextIcon />
+        {icon ?? <MemberContextIcon />}
       </span>
       <div className={styles.identity}>
         <span className={styles.label}>{label}</span>

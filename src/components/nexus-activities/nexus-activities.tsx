@@ -453,6 +453,7 @@ export function NexusActivities({
 
   return (
     <NexusWorkspacePage
+      clusterScope
       actions={
         <NexusManualSubmissionLink
           domain="activity"

@@ -1,5 +1,8 @@
 "use client";
 
+import { NexusClusterFilterBar } from "@/components/nexus-cluster-scope/nexus-cluster-filter-bar";
+import { NexusClusterManager } from "@/components/nexus-cluster-scope/nexus-cluster-manager";
+
 import {
   MemberAvatar,
   MemberIcon,
@@ -120,6 +123,8 @@ export function NexusMemberDirectory({
           ) : null}
         </div>
       </header>
+      <NexusClusterFilterBar />
+      {creationAvailable && canCreateMember ? <NexusClusterManager /> : null}
 
       <div className={styles.searchRow}>
         <NexusWorkspaceSearch

@@ -7,6 +7,7 @@ import type {
   ActivityKind,
   NexusActivityView,
 } from "@/components/nexus-activities/nexus-activities-content";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import {
   belongsToActivityHouse,
   metadataText,
@@ -179,6 +180,7 @@ async function participantNames(activity: ActivityDetail) {
 
 /** Katalog kegiatan resmi dari server. */
 export function useNexusActivityCatalog() {
+  const { divisionPublicId } = useNexusClusterScope();
   const [records, setRecords] = useState<NexusActivityView[]>([]);
   const [state, setState] = useState<NexusLoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -188,7 +190,7 @@ export function useNexusActivityCatalog() {
   const load = useCallback(() => {
     const request = ++latestRequest.current;
     setState("loading");
-    listAllActivities()
+    listAllActivities({ divisionPublicId })
       .then((activities) => {
         if (request !== latestRequest.current) return;
         setRecords(
@@ -208,7 +210,7 @@ export function useNexusActivityCatalog() {
         );
         setState("error");
       });
-  }, []);
+  }, [divisionPublicId]);
 
   useLoadEffect(load);
 

@@ -15,7 +15,6 @@ import { getServerData } from "@/lib/api-server";
 type OverviewResponse = {
   metrics: {
     activeResearchers: number;
-    totalContractValueIdr: number;
     totalIpr: number;
     totalPublications: number;
   };
@@ -92,14 +91,6 @@ function metrics(data: OverviewResponse["metrics"]): DashboardMetric[] {
       value: count.format(data.totalIpr),
     },
     {
-      detail: "Total nilai kontrak tercatat",
-      icon: "projects",
-      id: "contract-value",
-      label: "Nilai Kontrak",
-      tone: "green",
-      value: `Rp${count.format(data.totalContractValueIdr)}`,
-    },
-    {
       detail: "Anggota dengan status aktif",
       icon: "researchers",
       id: "active-researchers",
@@ -163,9 +154,13 @@ function announcements(
   });
 }
 
-export async function loadNexusDashboardLiveContent(): Promise<NexusDashboardLiveContent> {
+export async function loadNexusDashboardLiveContent(
+  divisionPublicId?: string,
+): Promise<NexusDashboardLiveContent> {
   const [overview, announcementList] = await Promise.all([
-    getServerData<OverviewResponse>("/dashboard/overview"),
+    getServerData<OverviewResponse>(
+      `/dashboard/overview${divisionPublicId ? `?divisionPublicId=${encodeURIComponent(divisionPublicId)}` : ""}`,
+    ),
     getServerData<AnnouncementsResponse>("/dashboard/announcements"),
   ]);
 

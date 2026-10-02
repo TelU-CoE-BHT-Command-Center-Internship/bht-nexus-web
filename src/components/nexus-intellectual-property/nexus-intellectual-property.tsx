@@ -463,6 +463,7 @@ export function NexusIntellectualProperty({
 
   return (
     <NexusWorkspacePage
+      clusterScope
       actions={
         <NexusManualSubmissionLink
           domain="intellectual-property"

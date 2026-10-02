@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
 import {
   type AcademicDetail,
@@ -39,6 +40,7 @@ export function useNexusHouseCatalog<House extends OfficialHouse, View>(
   errorFallback: string,
   memberPublicId?: string,
 ) {
+  const { divisionPublicId } = useNexusClusterScope();
   const [records, setRecords] = useState<View[]>([]);
   const [state, setState] = useState<NexusLoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -48,7 +50,7 @@ export function useNexusHouseCatalog<House extends OfficialHouse, View>(
   const load = useCallback(() => {
     const request = ++latestRequest.current;
     setState("loading");
-    listAllHouseRecords(house, { memberPublicId })
+    listAllHouseRecords(house, { divisionPublicId, memberPublicId })
       .then((summaries) => {
         if (request !== latestRequest.current) return;
         setRecords(summaries.map(toView));
@@ -60,7 +62,7 @@ export function useNexusHouseCatalog<House extends OfficialHouse, View>(
         setErrorMessage(apiErrorMessage(error, errorFallback));
         setState("error");
       });
-  }, [errorFallback, house, memberPublicId, toView]);
+  }, [divisionPublicId, errorFallback, house, memberPublicId, toView]);
 
   useLoadEffect(load);
 

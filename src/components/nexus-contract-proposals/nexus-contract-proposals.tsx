@@ -459,6 +459,7 @@ export function NexusContractProposals({
 
   return (
     <NexusWorkspacePage
+      clusterScope
       actions={
         <NexusManualSubmissionLink
           domain="contract"

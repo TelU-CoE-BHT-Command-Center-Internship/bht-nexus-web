@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { NexusClusterFilterBar } from "@/components/nexus-cluster-scope/nexus-cluster-filter-bar";
 import styles from "@/components/nexus-workspace-ui/nexus-workspace-page.module.css";
 
 export type NexusWorkspaceMetric = {
@@ -14,6 +15,7 @@ export type NexusWorkspaceMetric = {
 type NexusWorkspacePageProps = {
   actions?: ReactNode;
   children: ReactNode;
+  clusterScope?: boolean;
   description: string;
   descriptionId: string;
   meta?: string;
@@ -30,6 +32,7 @@ type NexusWorkspaceMetricsProps = {
 export function NexusWorkspacePage({
   actions,
   children,
+  clusterScope = false,
   description,
   descriptionId,
   meta,
@@ -50,6 +53,7 @@ export function NexusWorkspacePage({
         {actions ? <div className={styles.actions}>{actions}</div> : null}
         {meta ? <span className={styles.meta}>{meta}</span> : null}
       </header>
+      {clusterScope ? <NexusClusterFilterBar /> : null}
       {children}
     </section>
   );
