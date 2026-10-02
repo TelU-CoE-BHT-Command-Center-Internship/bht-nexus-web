@@ -155,7 +155,7 @@ export function nexusActivityFromServer(
       text("team") ??
       (memberNames.length > 0 ? memberNames.join("; ") : undefined),
     title: summary.title,
-    updatedAt: "",
+    updatedAt: formatAuditTimestamp(summary.createdAt),
   };
 }
 

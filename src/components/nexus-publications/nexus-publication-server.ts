@@ -100,7 +100,7 @@ export function nexusPublicationFromServer(
     sourceReportedQuartile: summary.quartile ?? undefined,
     title: summary.title,
     type,
-    updatedAt: "",
+    updatedAt: formatAuditTimestamp(summary.createdAt),
     venue: summary.venue?.trim() ?? "",
     year: summary.year,
   };
