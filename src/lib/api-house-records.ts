@@ -6,6 +6,7 @@ type HouseSummary = {
   evidenceUrl: string | null;
   kmIndicators: string[];
   publicId: string;
+  reportedQuarter?: 1 | 2 | 3 | 4 | null;
   title: string;
 };
 
