@@ -325,6 +325,10 @@ export function NexusMemberDetail({
                 { label: "Institusi", value: member.affiliation.institution },
                 { label: "Unit utama", value: member.affiliation.primaryUnit },
                 { label: "Penugasan CoE", value: member.coeAssignment },
+                {
+                  label: "Klaster riset",
+                  value: member.division?.name ?? "Belum ditetapkan",
+                },
                 { label: "Lokasi kerja", value: member.affiliation.office },
               ]}
               title="Afiliasi & unit"
@@ -378,6 +382,10 @@ export function NexusMemberDetail({
                 { label: "Institusi", value: member.affiliation.institution },
                 { label: "Unit utama", value: member.affiliation.primaryUnit },
                 { label: "Penugasan", value: member.coeAssignment },
+                {
+                  label: "Klaster riset",
+                  value: member.division?.name ?? "Belum ditetapkan",
+                },
               ]}
               title="Penempatan organisasi"
             />

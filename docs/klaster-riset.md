@@ -25,3 +25,5 @@ Daftar klaster yang gagal dimuat menampilkan pesan dan tombol mencoba kembali. A
 - `divisionPublicId` pada penulisan anggota: penetapan klaster, dengan nilai `null` untuk melepasnya.
 
 Rekam lintas klaster tersedia satu kali pada setiap klaster yang melibatkan anggota terkait, dan tetap satu kali pada seluruh CoE. Kelayakan indikator ditentukan oleh jenis dan metadata rekam. Pengujian hitungan dan batas akses tersedia pada tes integrasi server `data-scope.integration-spec.ts`.
+
+Target bawaan workbook adalah target seluruh CoE tahun 2026. Tampilan klaster menggunakan “Belum ditetapkan” sampai ada target khusus, sehingga realisasi klaster tidak dibandingkan otomatis dengan target seluruh organisasi.

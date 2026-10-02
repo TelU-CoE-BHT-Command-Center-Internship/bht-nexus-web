@@ -123,8 +123,13 @@ export function NexusMemberDirectory({
           ) : null}
         </div>
       </header>
-      <NexusClusterFilterBar />
-      {creationAvailable && canCreateMember ? <NexusClusterManager /> : null}
+      <div className={styles.scopeControls}>
+        <NexusClusterFilterBar
+          compact
+          description="Direktori ini menampilkan ketua dan anggota klaster Anda."
+        />
+        {creationAvailable && canCreateMember ? <NexusClusterManager /> : null}
+      </div>
 
       <div className={styles.searchRow}>
         <NexusWorkspaceSearch

@@ -73,13 +73,17 @@ export function NexusClusterSelect({
  * Penjelasan cakupan untuk ketua klaster: daftar dan angka di halaman hanya
  * memuat rekam yang melibatkan ketua atau anggota klasternya.
  */
-export function NexusClusterScopeNotice() {
+export function NexusClusterScopeNotice({
+  description = "Daftar dan angka di halaman ini hanya memuat rekam yang melibatkan ketua atau anggota klaster ini, termasuk rekam lintas klaster.",
+}: {
+  description?: string;
+}) {
   const { scope } = useNexusClusterScope();
 
   if (scope?.kind === "division") {
     return (
       <NexusMemberContext
-        description="Daftar dan angka di halaman ini hanya memuat rekam yang melibatkan ketua atau anggota klaster ini, termasuk rekam lintas klaster."
+        description={description}
         icon={<ClusterIcon />}
         label="Cakupan klaster Anda"
         memberName={scope.division.name}

@@ -10,7 +10,13 @@ import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-clu
 import { NexusWorkspaceLoadError } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { useNexusWorkspaceProceed } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
-export function NexusClusterFilterBar() {
+export function NexusClusterFilterBar({
+  compact = false,
+  description,
+}: {
+  compact?: boolean;
+  description?: string;
+}) {
   const cluster = useNexusClusterScope();
   const proceed = useNexusWorkspaceProceed();
   const [isOpen, setIsOpen] = useState(false);
@@ -32,8 +38,8 @@ export function NexusClusterFilterBar() {
     return null;
 
   return (
-    <div className={styles.bar}>
-      <NexusClusterScopeNotice />
+    <div className={styles.bar} data-compact={compact || undefined}>
+      <NexusClusterScopeNotice description={description} />
       {cluster.canChoose ? (
         <div className={styles.select}>
           <NexusClusterSelect

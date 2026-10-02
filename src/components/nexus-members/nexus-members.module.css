@@ -76,6 +76,20 @@
   padding: 0 1.15rem 0.95rem;
 }
 
+.scopeControls {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0 1.15rem 0.95rem;
+}
+
+.scopeControls:empty {
+  display: none;
+}
+
+.scopeControls > div {
+  margin-block: 0;
+}
+
 .filterButton {
   display: grid;
   width: 2.85rem;
@@ -1280,6 +1294,10 @@
   }
 
   .searchRow {
+    padding: 0 0.85rem 0.8rem;
+  }
+
+  .scopeControls {
     padding: 0 0.85rem 0.8rem;
   }
 

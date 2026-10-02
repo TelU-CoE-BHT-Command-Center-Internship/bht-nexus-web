@@ -16,3 +16,12 @@
   width: min(100%, 22rem);
   margin-inline-start: auto;
 }
+
+.bar[data-compact="true"] {
+  margin: 0;
+}
+
+.bar[data-compact="true"] .select {
+  width: 100%;
+  margin: 0;
+}

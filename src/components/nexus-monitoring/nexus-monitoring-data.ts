@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import type { NexusMonitoringInput } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
 import {
   NEXUS_DEFAULT_MONITORING_PERIOD_ID,
@@ -36,6 +37,8 @@ export function useNexusMonitoringData(
 ): NexusMonitoringData {
   const official = useNexusOfficialRecords();
   const { periods, targetVersions } = useNexusMonitoringSession();
+  const cluster = useNexusClusterScope();
+  const isAllCoe = cluster.scope?.kind === "all" && !cluster.divisionPublicId;
   const records = useMemo(
     () => nexusMonitoringRecordsFrom(official.records),
     [official.records],
@@ -52,8 +55,8 @@ export function useNexusMonitoringData(
         year: Number(requestedPeriodId) || 0,
       });
   const targets = useMemo(
-    () => nexusTargetLookup(targetVersions, requestedPeriodId),
-    [requestedPeriodId, targetVersions],
+    () => nexusTargetLookup(isAllCoe ? targetVersions : [], requestedPeriodId),
+    [isAllCoe, requestedPeriodId, targetVersions],
   );
   const input = useMemo(
     () => ({ period: requestedPeriodId, records, targets }),
