@@ -232,6 +232,7 @@ export function NexusMonitoringTargetDrawer({
 
   function submitTargets(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     setSubmitted(true);
     if (rowErrors.size > 0 || effectiveChanges.length === 0) return;
     if (!reason.trim()) return;
@@ -345,6 +346,7 @@ export function NexusMonitoringTargetDrawer({
               </span>
             </div>
             <NexusWorkspaceFormField
+              disabled={pending}
               error={submitted ? yearError : undefined}
               hint="Satu periode mewakili satu tahun evaluasi, Januari–Desember."
               id="monitoring-period-year"
@@ -358,6 +360,7 @@ export function NexusMonitoringTargetDrawer({
               wide
             />
             <NexusWorkspaceFormField
+              disabled={pending}
               hint="Target salinan dapat langsung disesuaikan setelah periode dibuat."
               id="monitoring-period-copy"
               label="Target awal"
@@ -377,6 +380,7 @@ export function NexusMonitoringTargetDrawer({
               wide
             />
             <NexusWorkspaceFormField
+              disabled={pending}
               error={
                 submitted && !periodReason.trim()
                   ? "Tuliskan dasar penambahan periode."
@@ -419,8 +423,9 @@ export function NexusMonitoringTargetDrawer({
               </span>
             </div>
             <p className={styles.targetHelp}>
-              Isi hanya target yang berubah. Kolom kosong tetap memakai target
-              yang berlaku.
+              Isi hanya target yang berubah. Kolom yang tidak disentuh tetap
+              memakai target berlaku. Menghapus isi kolom yang sudah Anda
+              sunting akan mengosongkan target indikator tersebut.
             </p>
             {focusIndicatorId ? null : (
               <div className={styles.targetToolbar}>
@@ -551,6 +556,7 @@ export function NexusMonitoringTargetDrawer({
                           }
                           aria-invalid={Boolean(error)}
                           aria-label={`Target baru ${id} ${evaluation.indicator.label}`}
+                          disabled={pending}
                           id={inputId}
                           inputMode={composite ? "text" : "numeric"}
                           min={composite ? undefined : "0"}
@@ -604,7 +610,8 @@ export function NexusMonitoringTargetDrawer({
                           {current
                             ? nexusTargetDisplay(current)
                             : "Belum ditetapkan"}{" "}
-                          → {change.literal ?? change.value}
+                          →{" "}
+                          {change.literal ?? change.value ?? "Belum ditetapkan"}
                         </span>
                       </li>
                     );
@@ -614,6 +621,7 @@ export function NexusMonitoringTargetDrawer({
             ) : null}
 
             <NexusWorkspaceFormField
+              disabled={pending}
               error={
                 submitted && effectiveChanges.length > 0 && !reason.trim()
                   ? "Tuliskan alasan perubahan target."

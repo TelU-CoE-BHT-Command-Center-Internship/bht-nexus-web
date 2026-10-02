@@ -5,6 +5,7 @@ import {
   type NexusMonitoringInput,
   summarizeCategory,
 } from "@/components/nexus-monitoring/nexus-monitoring-measurement";
+import { resolveRecordPeriod } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import { nexusMonitoringUpdates } from "@/components/nexus-monitoring/nexus-monitoring-updates";
 import {
   buildDomainView,
@@ -18,16 +19,19 @@ import type { NexusKmIndicatorCategory } from "@/content/nexus-km-indicators";
  * pembaruan selalu dibaca dari satu perhitungan yang sama.
  */
 export function getNexusMonitoringLandingData(input: NexusMonitoringInput) {
-  const { records } = input;
+  const records = input.records.filter(
+    (record) => resolveRecordPeriod(record, input.period).state === "in-period",
+  );
+  const periodInput = { ...input, records };
   const domainViews = Object.fromEntries(
     nexusMonitoredCategories.map((category) => [
       category,
-      buildDomainView(category, input),
+      buildDomainView(category, periodInput),
     ]),
   ) as Record<NexusKmIndicatorCategory, MonitoringDomainView | undefined>;
 
   const domainStatuses = nexusMonitoredCategories.map((category) => {
-    const summary = summarizeCategory(category, input);
+    const summary = summarizeCategory(category, periodInput);
     return {
       category,
       notComputable: summary.notComputable,
@@ -48,7 +52,7 @@ export function getNexusMonitoringLandingData(input: NexusMonitoringInput) {
   return {
     categories: getNexusMonitoringCategories(records),
     domainViews,
-    indicatorProgress: nexusMonitoringIndicatorProgress(input),
+    indicatorProgress: nexusMonitoringIndicatorProgress(periodInput),
     targetSummary: {
       domains: domainStatuses.map(({ category, notReached, reached }) => ({
         category,
