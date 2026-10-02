@@ -51,6 +51,7 @@ export type ContractProposalSummary = HouseSummary & {
   referenceNumber: string | null;
   scheme: string | null;
   submittedOn: string | null;
+  year?: number | null;
 };
 
 export type ContractProposalDetail = ContractProposalSummary & {
