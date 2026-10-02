@@ -101,6 +101,10 @@ export function nexusActivityFromServer(
   const metadata = summary.metadata ?? {};
   const text = (key: string) => metadataText(metadata, key);
   const evidenceUrl = text("evidenceUrl");
+  const team =
+    text("team") ??
+    (memberNames.length > 0 ? memberNames.join("; ") : undefined);
+  const teamLeader = team?.split(";")[0]?.trim();
   const kmLinks = (summary.kmIndicators ?? []).flatMap((id) => {
     const indicator = nexusKmIndicators.find((item) => item.id === id);
     return indicator ? [{ indicator, note: "" }] : [];
@@ -136,7 +140,8 @@ export function nexusActivityFromServer(
     organization: text("organization") ?? text("institution"),
     ownerUnit: "",
     periodLabel: periodLabel(summary),
-    primaryParty: text("primaryParty") ?? text("speakerName") ?? "",
+    primaryParty:
+      text("primaryParty") ?? text("speakerName") ?? teamLeader ?? "",
     provenance: [],
     publicId: summary.publicId,
     publicationFrequency: text("publicationFrequency"),
@@ -151,9 +156,7 @@ export function nexusActivityFromServer(
     scheme: text("scheme"),
     submittedOn: text("submissionDate")?.slice(0, 10),
     targetGroup: text("targetGroup"),
-    team:
-      text("team") ??
-      (memberNames.length > 0 ? memberNames.join("; ") : undefined),
+    team,
     title: summary.title,
     updatedAt: formatAuditTimestamp(summary.createdAt),
   };
