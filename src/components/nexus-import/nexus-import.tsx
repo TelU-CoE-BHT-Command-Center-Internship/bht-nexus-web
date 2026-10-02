@@ -42,7 +42,9 @@ type Notice = { message: string; tone: "danger" | "info" | "success" };
 
 function rowNote(row: ImportRow) {
   const issue = row.issues[0];
-  return issue ? `${issue.column}: ${issue.reason}` : "-";
+  if (!issue) return "-";
+  const note = `${issue.column}: ${issue.reason}`;
+  return issue.suggestion ? `${note}. ${issue.suggestion}` : note;
 }
 
 export function NexusImport({ canUpload }: { canUpload: boolean }) {
@@ -166,7 +168,7 @@ export function NexusImport({ canUpload }: { canUpload: boolean }) {
       ) : null}
 
       <NexusWorkspaceCard
-        description="Kolom wajib: title dan year. Kolom lain: doi, venue, authors, work_type. Batas 5 MB dan 2000 baris."
+        description="Kolom wajib: title dan year. Kolom lain: doi, venue, authors, work_type, evidence_url. Batas 5 MB dan 2000 baris."
         title="Unggah berkas"
       >
         {canUpload ? (
@@ -192,6 +194,11 @@ export function NexusImport({ canUpload }: { canUpload: boolean }) {
             Akun ini dapat melihat impor tetapi tidak dapat mengunggah.
           </NexusWorkspaceNotice>
         )}
+        <p className={styles.hint}>
+          Nilai work_type: journal_article, conference_paper, book_chapter,
+          book, patent, other. Baris tanpa doi dan evidence_url tidak dapat
+          disetujui di Tinjauan.
+        </p>
       </NexusWorkspaceCard>
 
       {batch && summary ? (
