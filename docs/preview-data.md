@@ -95,7 +95,7 @@ Hasil pelengkapan metadata memakai empat state bersama: `available`, `not-availa
 
 ## Kemampuan server yang dibutuhkan
 
-Impor Spreadsheet telah dihapus dari layanan server dan web. Tidak ada adapter impor, menu, templat, atau aksi unggah CSV/XLSX. Pengajuan manual dan kandidat hasil pengumpulan/ekstraksi tetap memakai jalur Tinjauan. Label asal spreadsheet pada rekam historis tetap menjadi catatan sumber; label tersebut tidak membuka kembali fitur impor.
+Impor Spreadsheet telah dihapus dari layanan server dan web. Tidak ada adapter impor, menu, templat, atau aksi unggah CSV/XLSX. Pengajuan manual dan kandidat hasil pengumpulan/ekstraksi tetap memakai jalur Tinjauan.
 
 Arah hubungannya satu jalur: halaman yang dibuka pengguna berada di `bht-nexus-web`, sedangkan login, aturan bisnis, pemrosesan, dan pengelolaan data berada di `bht-nexus-server` beserta basis data dan layanan pendukungnya.
 

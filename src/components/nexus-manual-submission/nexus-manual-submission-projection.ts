@@ -674,7 +674,6 @@ function projectionKpiStatus(projection: OfficialRecordDecisionProjection) {
 function officialSourceLabel(
   source: OfficialRecordDecisionProjection["candidate"]["source"],
 ) {
-  if (source === "spreadsheet") return "Workbook KM 2026" as const;
   if (source === "scholar") return "Google Scholar" as const;
   if (source === "sinta") return "SINTA" as const;
   if (source === "document") return "Dokumen" as const;

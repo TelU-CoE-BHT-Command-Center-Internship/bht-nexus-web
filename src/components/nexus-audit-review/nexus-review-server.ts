@@ -97,7 +97,6 @@ const sourceLabels: Record<AuditReviewSource, string> = {
   manual: "Manual",
   scholar: "Google Scholar",
   sinta: "SINTA",
-  spreadsheet: "Impor lembar kerja",
 };
 
 const sourceSubmitters: Record<AuditReviewSource, string> = {
@@ -105,7 +104,6 @@ const sourceSubmitters: Record<AuditReviewSource, string> = {
   manual: "Pengajuan manual",
   scholar: "Pengumpulan Google Scholar",
   sinta: "Pengumpulan SINTA",
-  spreadsheet: "Impor lembar kerja",
 };
 
 const statusFromServer: Record<ReviewCaseStatus, AuditReviewStatus> = {
@@ -261,7 +259,6 @@ function sourceOf(summary: ReviewCaseRecord, payload?: Payload) {
   }
   const source = text(payload?.source).toLowerCase();
   if (source === "manual") return "manual" as const;
-  if (source === "spreadsheet_import") return "spreadsheet" as const;
   if (source === "google_scholar" || source === "scholar") {
     return "scholar" as const;
   }
