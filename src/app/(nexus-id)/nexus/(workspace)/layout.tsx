@@ -1,20 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import {
-  getNexusRoleDirectory,
-  getNexusUserPermissionOverrides,
-} from "@/components/nexus-access-policy/nexus-access-policy";
-import { NexusAccessPolicySessionProvider } from "@/components/nexus-access-policy/nexus-access-policy-session";
-import { NexusAccountSessionProvider } from "@/components/nexus-account-session/nexus-account-session";
-import { getNexusAccountDirectory } from "@/components/nexus-accounts/nexus-account-directory";
 import { NEXUS_CLUSTER_COOKIE } from "@/components/nexus-cluster-scope/nexus-cluster-cookie";
 import { NexusClusterScopeProvider } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import { NexusDashboardShell } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell";
 import { getNexusDashboardShellPreviewContent } from "@/components/nexus-dashboard-shell/nexus-dashboard-shell-content";
 import { getNexusWorkspaceAccess } from "@/components/nexus-dashboard-shell/nexus-workspace-session";
 import { NexusWorkspaceUnavailable } from "@/components/nexus-dashboard-shell/nexus-workspace-unavailable";
-import { NexusMemberSessionProvider } from "@/components/nexus-member-session/nexus-member-session";
-import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
 import { NexusMonitoringSessionProvider } from "@/components/nexus-monitoring/nexus-monitoring-session";
 import { NexusCurrentUserReviewSessionProvider } from "@/components/nexus-review-session/nexus-review-session";
 import { NexusWorkerNotice } from "@/components/nexus-workspace-ui/nexus-worker-notice";
@@ -66,8 +57,6 @@ export default async function NexusWorkspaceLayout({
     name: content.viewer.name,
     roleLabel: content.viewer.roleLabel ?? "Pengguna BHT Nexus",
   };
-  const accounts = getNexusAccountDirectory();
-  const memberDirectory = getNexusMemberDirectory();
 
   return (
     <NexusClusterScopeProvider
@@ -76,32 +65,21 @@ export default async function NexusWorkspaceLayout({
       initialDivisionPublicId={initialDivisionPublicId}
       scope={session.dataScope}
     >
-      <NexusMemberSessionProvider initialRecords={memberDirectory}>
-        <NexusAccessPolicySessionProvider
-          initialOverrides={getNexusUserPermissionOverrides()}
-          initialRoles={getNexusRoleDirectory()}
+      <NexusCurrentUserReviewSessionProvider
+        actor={actor}
+        capabilities={content.reviewCapabilities}
+      >
+        <NexusMonitoringSessionProvider
+          canReadTargets={access.allowedNavigationIds.includes("monitoring")}
         >
-          <NexusAccountSessionProvider actor={actor} initialAccounts={accounts}>
-            <NexusCurrentUserReviewSessionProvider
-              actor={actor}
-              capabilities={content.reviewCapabilities}
-            >
-              <NexusMonitoringSessionProvider
-                canReadTargets={access.allowedNavigationIds.includes(
-                  "monitoring",
-                )}
-              >
-                <NexusWorkspaceUnsavedChangesProvider>
-                  <NexusDashboardShell content={content}>
-                    {children}
-                  </NexusDashboardShell>
-                  <NexusWorkerNotice />
-                </NexusWorkspaceUnsavedChangesProvider>
-              </NexusMonitoringSessionProvider>
-            </NexusCurrentUserReviewSessionProvider>
-          </NexusAccountSessionProvider>
-        </NexusAccessPolicySessionProvider>
-      </NexusMemberSessionProvider>
+          <NexusWorkspaceUnsavedChangesProvider>
+            <NexusDashboardShell content={content}>
+              {children}
+            </NexusDashboardShell>
+            <NexusWorkerNotice />
+          </NexusWorkspaceUnsavedChangesProvider>
+        </NexusMonitoringSessionProvider>
+      </NexusCurrentUserReviewSessionProvider>
     </NexusClusterScopeProvider>
   );
 }

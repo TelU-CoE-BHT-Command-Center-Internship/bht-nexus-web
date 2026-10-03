@@ -21,15 +21,7 @@ import type {
   NexusAccountPersonalProfile,
   NexusAccountStatus,
 } from "@/components/nexus-accounts/nexus-account-directory";
-import {
-  NEXUS_CURRENT_ACCOUNT_ID,
-  nexusAccountRelationshipMemberId,
-} from "@/components/nexus-accounts/nexus-account-directory";
-import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
-import {
-  type NexusProfileView,
-  resolveNexusProfile,
-} from "@/components/nexus-profile/nexus-profile-model";
+import { nexusAccountRelationshipMemberId } from "@/components/nexus-accounts/nexus-account-directory";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 /**
@@ -63,12 +55,8 @@ type NexusAccountSessionValue = {
   createInvitation: (
     input: NexusAccountInvitationInput,
   ) => Promise<NexusAccountDirectoryRecord>;
-  /** Akun yang sedang diwakili ruang kerja; tidak pernah baris pertama daftar. */
-  currentAccount?: NexusAccountDirectoryRecord;
   /** ID akun yang sedang masuk, bila diketahui. */
   currentAccountId?: string;
-  /** Proyeksi kanonis yang juga menjadi identitas aktor sesi saat ini. */
-  currentProfile?: NexusProfileView;
   refreshInvitation: (accountId: string) => void;
   restoreAccount: (accountId: string) => Promise<void>;
   suspendAccount: (accountId: string) => Promise<void>;
@@ -140,30 +128,9 @@ export function NexusAccountSessionProvider({
   const [accounts, setAccounts] = useState(initialAccounts);
   /* Peran dirujuk lewat ID dari satu kebijakan akses bersama, bukan disalin. */
   const { roles } = useNexusAccessPolicySession();
-  const { records: members } = useNexusMemberSession();
   const sequence = useRef(accountSequence(initialAccounts));
-  const currentAccount = useMemo(
-    () => accounts.find((account) => account.id === NEXUS_CURRENT_ACCOUNT_ID),
-    [accounts],
-  );
-  const currentProfile = useMemo(
-    () =>
-      currentAccount
-        ? resolveNexusProfile({
-            account: currentAccount,
-            accounts,
-            members,
-            roles,
-          })
-        : undefined,
-    [accounts, currentAccount, members, roles],
-  );
-  const currentActorName =
-    actor?.name ??
-    currentProfile?.displayName ??
-    currentAccount?.displayName ??
-    "Pengguna BHT Nexus";
-  const currentActorId = actor?.id ?? currentAccount?.id;
+  const currentActorName = actor?.name ?? "Pengguna BHT Nexus";
+  const currentActorId = actor?.id;
 
   /**
    * Menulis satu perubahan ke server lalu mengisi ulang direktori, juga ketika
@@ -391,9 +358,7 @@ export function NexusAccountSessionProvider({
       canManageInvitations: remote === undefined,
       cancelInvitation,
       createInvitation,
-      currentAccount,
       currentAccountId: currentActorId,
-      currentProfile,
       refreshInvitation,
       restoreAccount,
       suspendAccount,
@@ -405,9 +370,7 @@ export function NexusAccountSessionProvider({
       accounts,
       cancelInvitation,
       createInvitation,
-      currentAccount,
       currentActorId,
-      currentProfile,
       refreshInvitation,
       restoreAccount,
       suspendAccount,
