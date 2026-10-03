@@ -51,8 +51,10 @@ import {
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
-import { apiErrorMessage } from "@/lib/api-client";
-import { downloadDashboardExport } from "@/lib/api-dashboard-export";
+import {
+  dashboardExportErrorMessage,
+  downloadDashboardExport,
+} from "@/lib/api-dashboard-export";
 
 /**
  * Menyelaraskan alamat dengan periode dan domain yang sedang dilihat tanpa
@@ -315,24 +317,19 @@ function NexusMonitoringLandingContent({
       clusterScope
       actions={
         <NexusMonitoringHeaderActions
-          downloadLabel="Unduh CSV"
           manageLabel="Kelola target"
           onDownload={
             isKnownPeriod && capabilities.canExport
-              ? async () => {
+              ? async (format) => {
                   setExportError("");
                   try {
                     await downloadDashboardExport(
                       Number(period.year),
                       divisionPublicId,
+                      format,
                     );
                   } catch (error) {
-                    setExportError(
-                      apiErrorMessage(
-                        error,
-                        "Berkas CSV belum dapat dibuat. Silakan coba lagi.",
-                      ),
-                    );
+                    setExportError(dashboardExportErrorMessage(error));
                   }
                 }
               : undefined

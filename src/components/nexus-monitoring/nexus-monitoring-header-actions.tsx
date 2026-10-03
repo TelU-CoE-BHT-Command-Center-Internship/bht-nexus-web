@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styles from "@/components/nexus-monitoring/nexus-monitoring.module.css";
 import type { NexusMonitoringPeriod } from "@/components/nexus-monitoring/nexus-monitoring-period";
 import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
@@ -8,6 +8,7 @@ import {
   type NexusSelectConfig,
   NexusWorkspaceSelect,
 } from "@/components/nexus-workspace-ui/nexus-workspace-select";
+import type { DashboardExportFormat } from "@/lib/api-dashboard-export";
 
 function CalendarIcon() {
   return (
@@ -50,7 +51,6 @@ function periodSelectOption(option: NexusMonitoringPeriod) {
  * berpindah halaman untuk menyesuaikan target periode yang sedang dilihat.
  */
 export function NexusMonitoringHeaderActions({
-  downloadLabel,
   manageLabel,
   onDownload,
   onManageTargets,
@@ -58,10 +58,9 @@ export function NexusMonitoringHeaderActions({
   period,
   periodOptions,
 }: {
-  downloadLabel: string;
   manageLabel: string;
   /** Tidak diisi ketika periode belum terdaftar sehingga tidak ada yang diunduh. */
-  onDownload?: () => void;
+  onDownload?: (format: DashboardExportFormat) => Promise<void>;
   /** Tidak diisi ketika akun tidak berwenang mengelola target. */
   onManageTargets?: () => void;
   onPeriodChange: (periodId: string) => void;
@@ -69,6 +68,21 @@ export function NexusMonitoringHeaderActions({
   periodOptions: readonly NexusMonitoringPeriod[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isFormatOpen, setIsFormatOpen] = useState(false);
+  const [format, setFormat] = useState<DashboardExportFormat>("xlsx");
+  const [isDownloading, setIsDownloading] = useState(false);
+  const downloadingRef = useRef(false);
+  const download = async () => {
+    if (!onDownload || downloadingRef.current) return;
+    downloadingRef.current = true;
+    setIsDownloading(true);
+    try {
+      await onDownload(format);
+    } finally {
+      downloadingRef.current = false;
+      setIsDownloading(false);
+    }
+  };
   const options = periodOptions.some((option) => option.id === period.id)
     ? periodOptions
     : [period, ...periodOptions];
@@ -102,10 +116,51 @@ export function NexusMonitoringHeaderActions({
         </NexusWorkspaceButton>
       ) : null}
       {onDownload ? (
-        <NexusWorkspaceButton onClick={onDownload} type="button">
-          <DownloadIcon />
-          {downloadLabel}
-        </NexusWorkspaceButton>
+        <fieldset
+          aria-label="Unduh laporan Monitoring KM"
+          className={styles.exportActions}
+          disabled={isDownloading}
+        >
+          <NexusWorkspaceSelect
+            config={{
+              defaultValue: "xlsx",
+              id: "export-format",
+              label: "Format laporan",
+              options: [
+                {
+                  label: "Excel (.xlsx)",
+                  description: "Tabel rapi, format angka, dan filter",
+                  value: "xlsx",
+                },
+                {
+                  label: "CSV (.csv)",
+                  description: "Data untuk diolah di aplikasi lain",
+                  value: "csv",
+                },
+              ],
+            }}
+            isOpen={isFormatOpen}
+            name="monitoring-export-format"
+            onOpenChange={setIsFormatOpen}
+            onValueChange={(value) =>
+              setFormat(value === "csv" ? "csv" : "xlsx")
+            }
+            value={format}
+          />
+          <NexusWorkspaceButton
+            aria-busy={isDownloading}
+            title="Unduh laporan semua indikator pada tahun dan cakupan yang dipilih"
+            onClick={() => void download()}
+            type="button"
+          >
+            <DownloadIcon />
+            {isDownloading
+              ? "Menyiapkan berkas…"
+              : format === "xlsx"
+                ? "Unduh Excel"
+                : "Unduh CSV"}
+          </NexusWorkspaceButton>
+        </fieldset>
       ) : null}
     </div>
   );
