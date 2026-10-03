@@ -240,8 +240,16 @@ export function NexusMonitoringDomainOverview({
         >
           {view.gaps.length === 0 ? (
             <MonitoringUnavailable
-              description={`Seluruh indikator ${view.label} yang dapat dihitung sudah mencapai targetnya pada periode ini.`}
-              title="Tidak ada selisih terhadap target"
+              description={
+                view.computable === 0
+                  ? `Belum ada indikator ${view.label} dengan realisasi dan target yang dapat dibandingkan pada periode ini.`
+                  : `Tidak ada indikator ${view.label} dengan realisasi terukur di bawah targetnya pada periode ini. Indikator yang belum dapat dihitung tetap perlu diperiksa.`
+              }
+              title={
+                view.computable === 0
+                  ? "Selisih target belum dapat dihitung"
+                  : "Tidak ada selisih terhadap target"
+              }
             />
           ) : (
             <>
