@@ -214,7 +214,6 @@ const resourceOrder = [
   "dashboard",
   "kpi",
   "job",
-  "import",
   "review",
   "publication",
   "intellectual_property",
