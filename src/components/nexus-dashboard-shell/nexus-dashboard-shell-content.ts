@@ -37,7 +37,6 @@ export type DashboardShellIconName =
   | "monitoring"
   | "publications"
   | "reviews"
-  | "spreadsheet"
   | "search";
 
 export type DashboardNavigationItem = {
@@ -189,14 +188,6 @@ const navigationDefinitions: NavigationDefinition[] = [
     icon: "search",
     id: "collection",
     label: { en: "Collection", id: "Pengumpulan" },
-  },
-  {
-    implemented: { en: false, id: true },
-    group: "pipeline",
-    href: { en: "/en/nexus/import", id: "/nexus/impor" },
-    icon: "spreadsheet",
-    id: "import",
-    label: { en: "Spreadsheet Import", id: "Impor Spreadsheet" },
   },
   {
     activeHrefs: {

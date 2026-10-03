@@ -17,7 +17,7 @@ import {
   useNexusAcademicCatalog,
   useNexusAcademicDetail,
 } from "@/components/nexus-academic/nexus-academic-server";
-import { NexusHouseRecordActions } from "@/components/nexus-import/nexus-house-record-actions";
+import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import type { MetadataCompletionResolutions } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { toCompletionProposals } from "@/components/nexus-metadata-completion/nexus-metadata-completion-proposals";
@@ -477,7 +477,7 @@ export function NexusAcademic({
     <NexusWorkspacePage
       clusterScope
       actions={
-        <NexusHouseRecordActions
+        <NexusManualSubmissionLink
           domain="academic"
           label="Ajukan kegiatan akademik"
         />

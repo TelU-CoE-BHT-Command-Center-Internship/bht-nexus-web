@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useDeferredValue, useMemo, useState } from "react";
-import { NexusHouseRecordActions } from "@/components/nexus-import/nexus-house-record-actions";
 import styles from "@/components/nexus-intellectual-property/nexus-intellectual-property.module.css";
 import {
   intellectualPropertyCreatorNames,
@@ -15,6 +14,7 @@ import {
   useNexusIntellectualPropertyCatalog,
   useNexusIntellectualPropertyDetail,
 } from "@/components/nexus-intellectual-property/nexus-intellectual-property-server";
+import { NexusManualSubmissionLink } from "@/components/nexus-manual-submission/nexus-manual-submission-link";
 import { NexusMemberContextFilter } from "@/components/nexus-members/nexus-member-context";
 import {
   type MetadataCompletionResolutions,
@@ -465,7 +465,7 @@ export function NexusIntellectualProperty({
     <NexusWorkspacePage
       clusterScope
       actions={
-        <NexusHouseRecordActions
+        <NexusManualSubmissionLink
           domain="intellectual-property"
           label="Ajukan kekayaan intelektual"
         />

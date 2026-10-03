@@ -61,13 +61,6 @@ function IconPaths({ name }: DashboardShellIconProps) {
           <path d="M14 2v5h4M9.5 12h5M9.5 16h5" />
         </>
       );
-    case "spreadsheet":
-      return (
-        <>
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
-        </>
-      );
     case "intellectualProperty":
       return (
         <>

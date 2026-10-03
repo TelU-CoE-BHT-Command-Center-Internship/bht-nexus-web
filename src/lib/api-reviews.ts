@@ -1,7 +1,6 @@
 import { apiFetch, apiFetchPaginated } from "@/lib/api-client";
 
 export type ReviewCandidateType =
-  | "import_row"
   | "rag_extraction_candidate"
   | "staging_candidate";
 
