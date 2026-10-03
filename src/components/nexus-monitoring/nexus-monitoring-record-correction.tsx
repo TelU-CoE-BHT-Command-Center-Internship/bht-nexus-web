@@ -83,9 +83,9 @@ function sameIds(
 
 /**
  * Koreksi langsung atas bidang yang menentukan apakah dan kapan sebuah rekam
- * dihitung. Nilai baru ditulis ke rekam resmi yang sama sehingga rumah Data
- * Resmi dan seluruh angka Monitoring ikut berubah, dan setiap koreksi tercatat
- * beserta alasan, pelaku, dan waktunya.
+ * dihitung. Nilai baru disimpan server pada rekam resmi yang sama sehingga
+ * rumah Data Resmi dan seluruh angka Monitoring ikut berubah, dan setiap
+ * koreksi tercatat beserta alasan, pengoreksi, dan waktunya.
  */
 export function MonitoringRecordCorrection({
   onCancel,
@@ -99,7 +99,7 @@ export function MonitoringRecordCorrection({
     changes: readonly OfficialRecordCorrectionChange[];
     reason: string;
     values: OfficialRecordCorrectionValues;
-  }) => void;
+  }) => Promise<string | undefined>;
   record: MonitoringRecordView;
 }) {
   const { correction } = record;
@@ -110,6 +110,8 @@ export function MonitoringRecordCorrection({
   const [start] = useState(() => initialDraft(record));
   const [draft, setDraft] = useState(start);
   const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   const kmOptions = [
     ...nexusEvaluations
@@ -223,6 +225,33 @@ export function MonitoringRecordCorrection({
     Number(draft.businessDate.slice(0, 4)) !== yearNumber
       ? "Tahun pada tanggal berbeda dengan tahun rekam. Samakan keduanya."
       : "";
+  const clearedFields = [
+    correction.businessDateField && start.businessDate && !draft.businessDate
+      ? correction.businessDateField
+      : "",
+    supportsYear && start.year && !draft.year.trim() ? "Tahun" : "",
+    correction.family === "intellectual-property" &&
+    start.registrationNumber &&
+    !draft.registrationNumber.trim()
+      ? "Nomor pencatatan"
+      : "",
+    correction.family === "intellectual-property" &&
+    start.protection &&
+    start.protection !== "Belum diklasifikasikan" &&
+    draft.protection === "Belum diklasifikasikan"
+      ? "Bentuk perlindungan"
+      : "",
+    correction.family === "publications" &&
+    draft.publicationType === "Artikel Jurnal" &&
+    start.quartile &&
+    !draft.quartile
+      ? "Kuartil jurnal"
+      : "",
+  ].filter(Boolean);
+  const clearError =
+    clearedFields.length > 0
+      ? `${clearedFields.join(", ")} tidak dapat dikosongkan lewat koreksi. Isi nilai yang benar.`
+      : "";
   const reasonError = draft.reason.trim()
     ? ""
     : "Tuliskan alasan koreksi supaya tercatat pada riwayat.";
@@ -247,21 +276,36 @@ export function MonitoringRecordCorrection({
     setDraft((current) => ({ ...current, [field]: value }));
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
-    if (changes.length === 0 || yearError || dateYearConflict || reasonError) {
+    if (
+      isSending ||
+      changes.length === 0 ||
+      yearError ||
+      dateYearConflict ||
+      clearError ||
+      reasonError
+    ) {
       return;
     }
-    onSubmit({ changes, reason: draft.reason.trim(), values });
+    setIsSending(true);
+    setSendError("");
+    const error = await onSubmit({
+      changes,
+      reason: draft.reason.trim(),
+      values,
+    });
+    setIsSending(false);
+    if (error) setSendError(error);
   }
 
   return (
     <form className={styles.targetForm} noValidate onSubmit={submit}>
       <NexusWorkspaceNotice>
         Koreksi langsung mengubah rekam resmi ini pada {record.houseLabel} dan
-        menghitung ulang seluruh indikator yang tertaut. Riwayatnya tetap
-        tercatat.
+        menghitung ulang seluruh indikator yang tertaut. Pengoreksi, alasan, dan
+        nilai barunya tercatat pada Riwayat koreksi.
       </NexusWorkspaceNotice>
 
       {correction.businessDateField ? (
@@ -426,6 +470,14 @@ export function MonitoringRecordCorrection({
         wide
       />
 
+      {submitted && clearError ? (
+        <NexusWorkspaceNotice tone="danger">{clearError}</NexusWorkspaceNotice>
+      ) : null}
+
+      {sendError ? (
+        <NexusWorkspaceNotice tone="danger">{sendError}</NexusWorkspaceNotice>
+      ) : null}
+
       {submitted && changes.length === 0 ? (
         <NexusWorkspaceNotice>
           Belum ada bidang yang berbeda dari nilai rekam saat ini.
@@ -433,11 +485,15 @@ export function MonitoringRecordCorrection({
       ) : null}
 
       <footer className={styles.formFooter}>
-        <NexusWorkspaceButton onClick={onCancel} type="button">
+        <NexusWorkspaceButton
+          disabled={isSending}
+          onClick={onCancel}
+          type="button"
+        >
           Batal
         </NexusWorkspaceButton>
-        <NexusWorkspaceButton tone="primary" type="submit">
-          Simpan koreksi
+        <NexusWorkspaceButton disabled={isSending} tone="primary" type="submit">
+          {isSending ? "Menyimpan koreksi..." : "Simpan koreksi"}
         </NexusWorkspaceButton>
       </footer>
     </form>

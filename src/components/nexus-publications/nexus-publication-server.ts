@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
-import { publicationKmCodes } from "@/components/nexus-official-records/nexus-record-metadata";
 import type {
   NexusPublicationView,
   PublicationCompletionFieldKey,
@@ -30,6 +29,7 @@ import { useLoadEffect } from "@/lib/use-load-effect";
  */
 
 const publicationTypes: Record<WorkType, NexusPublicationView["type"]> = {
+  book: "Buku / Book Chapter",
   book_chapter: "Buku / Book Chapter",
   conference_paper: "Makalah Konferensi",
   journal_article: "Artikel Jurnal",
@@ -82,12 +82,7 @@ export function nexusPublicationFromServer(
     evaluationPeriod: summary.year > 0 ? String(summary.year) : "",
     id: summary.publicId,
     identifier: detail?.issnL ?? undefined,
-    kmLinks: kmLinks([
-      ...new Set([
-        ...(summary.kmIndicators ?? []),
-        ...publicationKmCodes(summary),
-      ]),
-    ]),
+    kmLinks: kmLinks(summary.kmIndicators),
     missingFields: missing,
     provenance: [],
     publicId: summary.publicId,
@@ -101,7 +96,7 @@ export function nexusPublicationFromServer(
     sourceReportedQuartile: summary.quartile ?? undefined,
     title: summary.title,
     type,
-    updatedAt: formatAuditTimestamp(summary.createdAt),
+    updatedAt: formatAuditTimestamp(summary.updatedAt ?? summary.createdAt),
     venue: summary.venue?.trim() ?? "",
     year: summary.year,
   };

@@ -3,6 +3,8 @@ import type { CompletionProposalItem } from "@/lib/api-publications";
 
 type HouseSummary = {
   createdAt: string;
+  /** Waktu pembaruan terakhir, termasuk pelengkapan dan koreksi. */
+  updatedAt?: string;
   evidenceUrl: string | null;
   kmIndicators: string[];
   publicId: string;

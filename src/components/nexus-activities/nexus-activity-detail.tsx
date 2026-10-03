@@ -24,10 +24,12 @@ import {
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import {
+  nexusRecordTrailCorrectionCount,
   nexusRecordTrailReviewMessage,
   nexusRecordTrailSourcesMessage,
   useNexusRecordTrail,
 } from "@/components/nexus-official-records/nexus-record-trail";
+import { NexusRecordTrailCorrections } from "@/components/nexus-official-records/nexus-record-trail-corrections";
 import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
@@ -485,6 +487,12 @@ export function NexusActivityDetail({
         ) : null}
       </section>
 
+      <NexusRecordTrailCorrections
+        sectionIndex="06"
+        titleId="activity-corrections-title"
+        trail={trail}
+      />
+
       {record.missingFields.length > 0 && onSubmitProposal ? (
         <NexusMetadataCompletionForm
           missingFields={record.missingFields}
@@ -492,7 +500,9 @@ export function NexusActivityDetail({
           onSubmitProposal={onSubmitProposal}
           proposal={proposal}
           recordId={record.id}
-          sectionIndex="06"
+          sectionIndex={
+            nexusRecordTrailCorrectionCount(trail) > 0 ? "07" : "06"
+          }
         />
       ) : null}
     </NexusWorkspaceDrawer>

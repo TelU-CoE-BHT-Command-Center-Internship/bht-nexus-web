@@ -210,6 +210,8 @@ export type AuditReviewRecord = {
   kpiLinks: AuditKpiLink[];
   /** Tautan KM yang dihasilkan sistem dan belum menjadi pilihan final pengaju. */
   kpiLinksSuggested?: boolean;
+  /** Alasan server bahwa kandidat belum dapat dijadikan rekam resmi. */
+  promotionBlockedReason?: string;
   /** Payload terstruktur dari form manual; dipakai adapter promosi tanpa membaca ulang label UI. */
   manualSubmission?: {
     comparisonCandidates?: Array<{

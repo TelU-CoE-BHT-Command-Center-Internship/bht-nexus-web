@@ -1,6 +1,7 @@
 import { apiFetch, apiFetchPaginated } from "@/lib/api-client";
 
 export type WorkType =
+  | "book"
   | "book_chapter"
   | "conference_paper"
   | "journal_article"
@@ -12,6 +13,8 @@ export type Quartile = "Q1" | "Q2" | "Q3" | "Q4";
 export type PublicationSummary = {
   citationCount: number;
   createdAt: string;
+  /** Waktu pembaruan terakhir, termasuk pelengkapan dan koreksi. */
+  updatedAt?: string;
   doi: string | null;
   evidenceUrl?: string | null;
   kmIndicators?: string[];

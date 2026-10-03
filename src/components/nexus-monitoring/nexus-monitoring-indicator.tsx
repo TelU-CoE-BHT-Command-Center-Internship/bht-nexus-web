@@ -18,10 +18,12 @@ import {
   MonitoringMetricCard,
   MonitoringUnavailable,
 } from "@/components/nexus-monitoring/nexus-monitoring-ui";
-import type { MonitoringIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
+import type {
+  MonitoringIndicatorView,
+  MonitoringRecordView,
+} from "@/components/nexus-monitoring/nexus-monitoring-view";
 import type {
   OfficialRecordCorrectionChange,
-  OfficialRecordCorrectionMap,
   OfficialRecordCorrectionValues,
 } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import { NexusTablePagination } from "@/components/nexus-workspace-ui/nexus-table-pagination";
@@ -30,6 +32,7 @@ import {
   NexusWorkspaceEmptyState,
   NexusWorkspaceLinkButton,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
   NexusWorkspaceMobileCard,
   NexusWorkspaceRecordTable,
@@ -95,21 +98,19 @@ function progressSentence(view: MonitoringIndicatorView) {
 
 export function NexusMonitoringIndicator({
   canCorrectRecords,
-  corrections,
   onCorrect,
   periodLabel,
   view,
 }: {
   canCorrectRecords: boolean;
-  corrections: OfficialRecordCorrectionMap;
   onCorrect: (
-    recordPublicId: string,
+    record: MonitoringRecordView,
     input: {
       changes: readonly OfficialRecordCorrectionChange[];
       reason: string;
       values: OfficialRecordCorrectionValues;
     },
-  ) => void;
+  ) => Promise<string | undefined>;
   periodLabel: string;
   view: MonitoringIndicatorView;
 }) {
@@ -534,7 +535,7 @@ export function NexusMonitoringIndicator({
                         record: (
                           <NexusWorkspaceTablePrimary
                             onClick={() => setSelectedRecordId(record.publicId)}
-                            subtitle={`${record.publicId} · ${record.subtitle}`}
+                            subtitle={`${displayRecordId(record.publicId)} · ${record.subtitle}`}
                             title={record.title}
                           />
                         ),
@@ -560,7 +561,7 @@ export function NexusMonitoringIndicator({
                                 {record.counting.label}
                               </NexusWorkspaceTableBadge>
                               <span className={styles.summaryUpdateTime}>
-                                {record.publicId}
+                                {displayRecordId(record.publicId)}
                               </span>
                             </>
                           }
@@ -664,10 +665,9 @@ export function NexusMonitoringIndicator({
         <MonitoringRecordDetail
           businessDateLabel={businessDateColumn}
           canCorrect={canCorrectRecords}
-          corrections={corrections[selectedRecord.publicId] ?? []}
           indicatorId={view.id}
           onClose={() => setSelectedRecordId(null)}
-          onCorrect={(input) => onCorrect(selectedRecord.publicId, input)}
+          onCorrect={(input) => onCorrect(selectedRecord, input)}
           record={selectedRecord}
         />
       ) : null}

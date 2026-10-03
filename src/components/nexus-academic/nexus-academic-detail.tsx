@@ -24,14 +24,17 @@ import {
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import {
+  nexusRecordTrailCorrectionCount,
   nexusRecordTrailReviewMessage,
   nexusRecordTrailSourcesMessage,
   useNexusRecordTrail,
 } from "@/components/nexus-official-records/nexus-record-trail";
+import { NexusRecordTrailCorrections } from "@/components/nexus-official-records/nexus-record-trail-corrections";
 import { officialKpiEmptyCopy } from "@/components/nexus-workspace-ui/nexus-official-kpi";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
 import { NexusWorkspaceDrawer } from "@/components/nexus-workspace-ui/nexus-workspace-drawer";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 type NexusAcademicDetailProps = {
   /** Keadaan pemuatan daftar pembimbing dari rincian rekam. */
@@ -196,7 +199,7 @@ export function NexusAcademicDetail({
     <NexusWorkspaceDrawer
       closeLabel="Tutup rincian kegiatan akademik"
       description="Telusuri metadata kegiatan, keterkaitan indikator KM, sumber pembentuk, dan keputusan tinjauannya."
-      eyebrow={record.publicId}
+      eyebrow={displayRecordId(record.publicId)}
       onClose={onClose}
       steps={[
         { active: true, complete: true, label: "Metadata", number: 1 },
@@ -464,6 +467,12 @@ export function NexusAcademicDetail({
         </Link>
       </section>
 
+      <NexusRecordTrailCorrections
+        sectionIndex="06"
+        titleId="academic-corrections-title"
+        trail={trail}
+      />
+
       {record.missingFields.length > 0 && onSubmitProposal ? (
         <NexusMetadataCompletionForm
           missingFields={record.missingFields}
@@ -471,7 +480,9 @@ export function NexusAcademicDetail({
           onSubmitProposal={onSubmitProposal}
           proposal={proposal}
           recordId={record.id}
-          sectionIndex="06"
+          sectionIndex={
+            nexusRecordTrailCorrectionCount(trail) > 0 ? "07" : "06"
+          }
         />
       ) : null}
     </NexusWorkspaceDrawer>

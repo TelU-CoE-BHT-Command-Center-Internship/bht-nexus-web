@@ -362,7 +362,7 @@ function accessFromPermissions(
       canGrantAccess: has("iam.manage"),
     },
     monitoringCapabilities: {
-      canCorrectRecords: has("kpi.read"),
+      canCorrectRecords: has("review.decide"),
       canExport: has("dashboard.export"),
       canManageTargets: has("kpi.target.manage"),
     },

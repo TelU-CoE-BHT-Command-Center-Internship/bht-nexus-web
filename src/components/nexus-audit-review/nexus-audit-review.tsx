@@ -5,6 +5,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import styles from "@/components/nexus-audit-review/nexus-audit-review.module.css";
 import type {
   AuditDecisionKind,
+  AuditKpiResolution,
   AuditReviewCategory,
   AuditReviewRecord,
   AuditReviewSource,
@@ -143,14 +144,6 @@ const sourceOrder: AuditReviewSource[] = [
   "spreadsheet",
   "manual",
 ];
-
-/**
- * Bagian keputusan yang belum dicatat server tetap tampil sebagai tindakan
- * yang segera tersedia dan tidak menjadi syarat keputusan.
- */
-const plannedReviewParts = {
-  kpiResolution: true,
-} as const;
 
 function ReviewIcon({ name }: { name: "completed" | "fix" | "waiting" }) {
   if (name === "completed")
@@ -402,6 +395,7 @@ export function NexusAuditReview({
     note: string,
     fieldIds: string[],
     targetRecordId?: string,
+    kpiResolution?: AuditKpiResolution,
   ) => {
     const currentState = stateFor(record);
     const recordCapabilities = serverReviewCapabilities(
@@ -429,6 +423,16 @@ export function NexusAuditReview({
       .map((field) => field.label);
     const error = await queue.decide(record.id, {
       ...decision,
+      kmResolution:
+        decision.decision === "approve" && kpiResolution
+          ? {
+              indicators:
+                kpiResolution.status === "changed"
+                  ? kpiResolution.indicatorIds
+                  : [],
+              status: kpiResolution.status,
+            }
+          : undefined,
       reason:
         kind === "changes_requested" ? revisionReason(note, fieldLabels) : note,
     });
@@ -823,13 +827,19 @@ export function NexusAuditReview({
             state: selectedComparison?.state ?? "loading",
           }}
           onClose={() => setChosenId(null)}
-          onDecide={(kind, note, fieldIds, targetRecordId) =>
-            decide(selected, kind, note, fieldIds, targetRecordId)
+          onDecide={(kind, note, fieldIds, targetRecordId, kpiResolution) =>
+            decide(
+              selected,
+              kind,
+              note,
+              fieldIds,
+              targetRecordId,
+              kpiResolution,
+            )
           }
           onResubmit={(values, evidenceNote) =>
             resubmit(selected, values, evidenceNote)
           }
-          planned={plannedReviewParts}
           record={selected}
           state={selectedState}
         />

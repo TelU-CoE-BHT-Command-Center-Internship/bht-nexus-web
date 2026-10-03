@@ -33,12 +33,26 @@ export type ReviewCaseEdit = {
   reason: string | null;
 };
 
+export type ReviewKmResolution = {
+  indicators: string[];
+  status: "changed" | "confirmed" | "removed" | "undetermined";
+};
+
 export type ReviewCaseDecisionEntry = {
   decidedAt: string;
   decidedByPublicId: string;
   decision: ReviewDecisionKind;
+  /** Keputusan indikator KM pemeriksa; null pada keputusan tanpa pilihan KM. */
+  kmResolution?: ReviewKmResolution | null;
   publicId: string;
   reason: string | null;
+};
+
+/** Kesiapan kandidat menjadi rekam resmi beserta saran indikator KM sistem. */
+export type ReviewCasePromotionPreview = {
+  promotable: boolean;
+  reason: string | null;
+  systemKmIndicators: string[] | null;
 };
 
 export type ReviewCaseDetail = {
@@ -47,6 +61,7 @@ export type ReviewCaseDetail = {
   duplicateOfPublicId?: string;
   edits: ReviewCaseEdit[];
   payload: Record<string, unknown>;
+  promotion?: ReviewCasePromotionPreview | null;
   publicId: string;
   status: ReviewCaseStatus;
   /** Rekam resmi yang dibentuk, ditautkan, atau dilengkapi kasus ini. */
@@ -144,6 +159,7 @@ export function decideReviewCase(
   publicId: string,
   input: {
     decision: ReviewDecisionKind;
+    kmResolution?: ReviewKmResolution;
     linkTargetPublicId?: string;
     reason?: string;
   },

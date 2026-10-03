@@ -27,13 +27,24 @@ export type RecordTrailDecision = {
   reviewerName: string;
 };
 
+/** Koreksi langsung oleh petugas; `changes` memakai kunci koreksi server. */
+export type RecordTrailCorrection = {
+  changes: Record<string, string>;
+  correctedAt: string;
+  correctionPublicId: string;
+  correctorName: string;
+  reason: string;
+};
+
 export type RecordTrail = {
+  /** Terbaru lebih dahulu. */
+  corrections: RecordTrailCorrection[];
   /** Terbaru lebih dahulu. */
   decisions: RecordTrailDecision[];
   sources: RecordTrailSource[];
 };
 
-/** Sumber pembentuk dan keputusan tinjauan satu rekam resmi. */
+/** Sumber pembentuk, keputusan tinjauan, dan koreksi langsung satu rekam resmi. */
 export function getRecordTrail(
   house: RecordTrailHouse,
   publicId: string,

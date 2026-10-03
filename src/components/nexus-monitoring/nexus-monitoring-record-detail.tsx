@@ -7,7 +7,6 @@ import { MonitoringRecordCorrection } from "@/components/nexus-monitoring/nexus-
 import { MonitoringIcon } from "@/components/nexus-monitoring/nexus-monitoring-ui";
 import type { MonitoringRecordView } from "@/components/nexus-monitoring/nexus-monitoring-view";
 import type {
-  OfficialRecordCorrection,
   OfficialRecordCorrectionChange,
   OfficialRecordCorrectionValues,
 } from "@/components/nexus-official-records/nexus-official-record-corrections";
@@ -17,6 +16,7 @@ import {
   nexusRecordTrailSourcesMessage,
   useNexusRecordTrail,
 } from "@/components/nexus-official-records/nexus-record-trail";
+import { NexusRecordTrailCorrections } from "@/components/nexus-official-records/nexus-record-trail-corrections";
 import badgeStyles from "@/components/nexus-workspace-ui/nexus-workspace-badges.module.css";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
 import detail from "@/components/nexus-workspace-ui/nexus-workspace-detail.module.css";
@@ -25,7 +25,7 @@ import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
-import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 
 function ArrowIcon() {
   return (
@@ -88,14 +88,14 @@ function evidenceExplanation(record: MonitoringRecordView) {
  * rincian ruang kerja yang sama dengan Publikasi dan Tinjauan: ringkasan,
  * bagian bernomor, kartu sumber, lalu keputusan tinjauan.
  *
- * Auditor yang berwenang dapat mengoreksi bidang penentu perhitungan langsung
- * dari sini tanpa berpindah halaman. Koreksi ditulis ke rekam resmi yang sama,
- * sehingga rumah Data Resmi dan angka Monitoring selalu sepakat.
+ * Petugas yang memegang izin keputusan tinjauan dapat mengoreksi bidang
+ * penentu perhitungan langsung dari sini. Koreksi disimpan server pada rekam
+ * resmi yang sama, sehingga rumah Data Resmi dan angka Monitoring selalu
+ * sepakat, dan setiap koreksi tampil pada Riwayat koreksi.
  */
 export function MonitoringRecordDetail({
   businessDateLabel,
   canCorrect,
-  corrections,
   indicatorId,
   onClose,
   onCorrect,
@@ -104,19 +104,20 @@ export function MonitoringRecordDetail({
   /** Nama tanggal yang menentukan triwulan, mengikuti aturan indikatornya. */
   businessDateLabel: string;
   canCorrect: boolean;
-  corrections: readonly OfficialRecordCorrection[];
   indicatorId: string;
   onClose: () => void;
   onCorrect: (input: {
     changes: readonly OfficialRecordCorrectionChange[];
     reason: string;
     values: OfficialRecordCorrectionValues;
-  }) => void;
+  }) => Promise<string | undefined>;
   record: MonitoringRecordView;
 }) {
+  const [correctionCount, setCorrectionCount] = useState(0);
   const trail = useNexusRecordTrail(
     nexusRecordTrailHouse(record.houseHref),
     record.publicId,
+    String(correctionCount),
   );
   const provenance: typeof record.provenance =
     trail.state === "ready" ? trail.provenance : record.provenance;
@@ -144,21 +145,24 @@ export function MonitoringRecordDetail({
       <>
         <NexusWorkspaceDrawer
           closeLabel="Tutup koreksi rekam"
-          description="Perbaiki bidang yang menentukan apakah dan kapan rekam ini dihitung."
-          eyebrow={`${record.publicId} · ${indicatorId}`}
+          description="Perbaiki bidang yang menentukan apakah dan kapan rekam ini dihitung. Koreksi langsung berlaku dan tercatat pada riwayat rekam."
+          eyebrow={`${displayRecordId(record.publicId)} · ${indicatorId}`}
           onClose={() => requestLeave("close")}
           title="Koreksi data rekam"
         >
           <MonitoringRecordCorrection
             onCancel={() => requestLeave("read")}
             onDirtyChange={setCorrectionDirty}
-            onSubmit={(input) => {
-              onCorrect(input);
+            onSubmit={async (input) => {
+              const error = await onCorrect(input);
+              if (error) return error;
+              setCorrectionCount((count) => count + 1);
               setCorrectionDirty(false);
               setMode("read");
               setSavedNotice(
-                "Koreksi tersimpan pada rekam resmi. Angka indikator sudah dihitung ulang.",
+                "Koreksi tersimpan pada rekam resmi dan tercatat pada Riwayat koreksi. Angka indikator dihitung ulang dari data terbaru.",
               );
+              return undefined;
             }}
             record={record}
           />
@@ -188,7 +192,7 @@ export function MonitoringRecordDetail({
     <NexusWorkspaceDrawer
       closeLabel="Tutup rincian rekam"
       description="Telusuri kaitan rekam dengan indikator, eviden, asal data, dan keputusan tinjauannya."
-      eyebrow={`${record.publicId} · ${indicatorId}`}
+      eyebrow={`${displayRecordId(record.publicId)} · ${indicatorId}`}
       onClose={onClose}
       title="Rekam pembentuk realisasi"
     >
@@ -245,8 +249,8 @@ export function MonitoringRecordDetail({
               Koreksi data
             </NexusWorkspaceButton>
             <span>
-              Perbaiki tanggal, triwulan, kaitan KM, atau bidang penentu lain
-              tanpa meninggalkan Monitoring.
+              Perbaiki tanggal, triwulan, kaitan KM, atau bidang penentu lain.
+              Koreksi langsung berlaku dan tercatat pada riwayat rekam.
             </span>
           </div>
         ) : null}
@@ -442,48 +446,13 @@ export function MonitoringRecordDetail({
         )}
       </section>
 
-      {corrections.length > 0 ? (
-        <section
-          aria-labelledby="monitoring-record-corrections-title"
-          className={detail.detailSection}
-        >
-          <div className={detail.sectionHeading}>
-            <div>
-              <span className={detail.sectionIndex}>05</span>
-              <h3 id="monitoring-record-corrections-title">Riwayat koreksi</h3>
-            </div>
-            <p>Koreksi langsung dari Monitoring KM</p>
-          </div>
-          <ol className={styles.correctionHistory}>
-            {[...corrections].reverse().map((correction) => (
-              <li key={correction.id}>
-                <strong>
-                  {correction.actorName} · {correction.actorRoleLabel}
-                </strong>
-                <span>{formatAuditTimestamp(correction.appliedAt)}</span>
-                <ul>
-                  {correction.changes.map((change) => (
-                    <li key={change.field}>
-                      {change.label}: {change.before} → {change.after}
-                    </li>
-                  ))}
-                </ul>
-                <p>{correction.reason}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
-
       <section
         aria-labelledby="monitoring-record-review-title"
         className={detail.reviewSection}
       >
         <div className={detail.sectionHeading}>
           <div>
-            <span className={detail.sectionIndex}>
-              {corrections.length > 0 ? "06" : "05"}
-            </span>
+            <span className={detail.sectionIndex}>05</span>
             <h3 id="monitoring-record-review-title">Keputusan tinjauan</h3>
           </div>
           <p>Riwayat keputusan tersimpan</p>
@@ -516,6 +485,12 @@ export function MonitoringRecordDetail({
           Buka antrean Tinjauan <ArrowIcon />
         </Link>
       </section>
+
+      <NexusRecordTrailCorrections
+        sectionIndex="06"
+        titleId="monitoring-record-corrections-title"
+        trail={trail}
+      />
     </NexusWorkspaceDrawer>
   );
 }
