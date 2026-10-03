@@ -16,7 +16,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function NexusBroadcastPage() {
+export default async function NexusBroadcastPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ broadcast?: string }>;
+}) {
   const access = await getNexusWorkspaceAccess();
 
   if (!nexusWorkspaceCanOpen(access, "broadcast")) {
@@ -37,5 +41,11 @@ export default async function NexusBroadcastPage() {
     );
   }
 
-  return <NexusBroadcast capabilities={access.broadcastCapabilities} />;
+  const params = await searchParams;
+  return (
+    <NexusBroadcast
+      capabilities={access.broadcastCapabilities}
+      initialPublicId={params.broadcast}
+    />
+  );
 }

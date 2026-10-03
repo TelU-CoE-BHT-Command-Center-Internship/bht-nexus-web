@@ -1,14 +1,26 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "@/components/nexus-broadcast/nexus-broadcast.module.css";
 import { NexusBroadcastIcon } from "@/components/nexus-broadcast/nexus-broadcast-icons";
-import { summarizeBroadcastRecipients } from "@/components/nexus-broadcast/nexus-broadcast-model";
 import { NexusBroadcastStudio } from "@/components/nexus-broadcast/nexus-broadcast-studio";
 import type { NexusBroadcastCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
-import { useNexusMemberSession } from "@/components/nexus-member-session/nexus-member-session";
+import {
+  NexusWorkspaceButton,
+  NexusWorkspaceEmptyState,
+  NexusWorkspaceLoadError,
+  NexusWorkspaceNotice,
+} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceMetrics } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
+import { useNexusWorkspaceNavigation } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
+import {
+  type BroadcastHistory as BroadcastHistoryEntry,
+  type BroadcastRecipients,
+  getBroadcastRecipients,
+  listBroadcasts,
+} from "@/lib/api-broadcasts";
+import { apiErrorMessage } from "@/lib/api-client";
 
 function BroadcastHeroIllustration() {
   return (
@@ -69,7 +81,8 @@ function BroadcastHeroIllustration() {
   );
 }
 
-function BroadcastHistory() {
+function BroadcastHistory({ entries }: { entries: BroadcastHistoryEntry[] }) {
+  const navigate = useNexusWorkspaceNavigation();
   return (
     <section
       aria-labelledby="broadcast-history-title"
@@ -81,20 +94,49 @@ function BroadcastHistory() {
         </span>
         <div>
           <h3 id="broadcast-history-title">Riwayat broadcast</h3>
-          <p>Broadcast yang dikirim dari BHT Nexus tercatat di sini.</p>
+          <p>Draf tersimpan dan hasil pengiriman dari BHT Nexus.</p>
         </div>
       </header>
-      <div className={styles.historyEmpty}>
-        <span aria-hidden="true" className={styles.historyEmptyIcon}>
-          <NexusBroadcastIcon name="mail" />
-        </span>
-        <strong>Belum ada riwayat broadcast</strong>
-        <p>
-          Belum ada broadcast yang dikirim dari BHT Nexus. Setiap pengiriman
-          akan tercatat di sini beserta judul, jumlah penerima, pengirim, waktu
-          kirim, dan hasilnya.
+      {entries.length === 0 ? (
+        <NexusWorkspaceEmptyState
+          title="Belum ada draf atau pengiriman"
+          description="Simpan draf pertama untuk melanjutkan penyusunan setelah halaman ditutup."
+        />
+      ) : (
+        <ul className={styles.historyList}>
+          {entries.map((entry) => (
+            <li key={entry.publicId}>
+              <div>
+                <strong>{entry.subject || "Draf tanpa judul"}</strong>
+                <span>
+                  {entry.createdByName} ·{" "}
+                  {new Date(entry.updatedAt).toLocaleString("id-ID")}
+                </span>
+                <small>
+                  {entry.status === "draft"
+                    ? "Draf tersimpan"
+                    : entry.summary.pendingCount > 0
+                      ? `${entry.summary.pendingCount} penerima masih diproses`
+                      : `${entry.summary.acceptedCount} diterima ${entry.deliveryMode === "capture" ? "penampung pemeriksaan" : "layanan email"} · ${entry.summary.failedCount} gagal · ${entry.summary.unconfirmedCount} belum pasti`}
+                </small>
+              </div>
+              <NexusWorkspaceButton
+                onClick={() =>
+                  navigate(`/nexus/broadcast?broadcast=${entry.publicId}`)
+                }
+                type="button"
+              >
+                {entry.status === "draft" ? "Buka draf" : "Lihat hasil"}
+              </NexusWorkspaceButton>
+            </li>
+          ))}
+        </ul>
+      )}
+      {entries.length === 50 ? (
+        <p className={styles.historyLimit}>
+          Menampilkan 50 draf dan pengiriman terbaru.
         </p>
-      </div>
+      ) : null}
     </section>
   );
 }
@@ -106,15 +148,41 @@ function BroadcastHistory() {
  */
 export function NexusBroadcast({
   capabilities,
+  initialPublicId,
 }: {
   capabilities: NexusBroadcastCapabilities;
+  initialPublicId?: string;
 }) {
-  const { records } = useNexusMemberSession();
-  const recipients = useMemo(
-    () => summarizeBroadcastRecipients(records),
-    [records],
-  );
-  const missingEmail = recipients.missingEmailMembers.length;
+  const [data, setData] = useState<{
+    recipients: BroadcastRecipients;
+    history: BroadcastHistoryEntry[];
+  } | null>(null);
+  const [error, setError] = useState("");
+  const loadSequence = useRef(0);
+  const refresh = useCallback(() => {
+    const sequence = ++loadSequence.current;
+    void Promise.all([getBroadcastRecipients(), listBroadcasts()])
+      .then(([recipients, history]) => {
+        if (sequence === loadSequence.current) {
+          setData({ recipients, history });
+          setError("");
+        }
+      })
+      .catch((error) => {
+        if (sequence === loadSequence.current)
+          setError(
+            apiErrorMessage(error, "Data broadcast belum dapat dimuat."),
+          );
+      });
+  }, []);
+  useEffect(() => {
+    refresh();
+    return () => {
+      loadSequence.current++;
+    };
+  }, [refresh]);
+  const recipients = data?.recipients;
+  const missingEmail = recipients?.missingEmailMembers.length ?? 0;
 
   return (
     <div className={styles.page}>
@@ -130,46 +198,86 @@ export function NexusBroadcast({
       </section>
 
       <div className={styles.content}>
-        <NexusWorkspaceMetrics
-          metrics={[
-            {
-              icon: <NexusBroadcastIcon name="people" />,
-              id: "active-members",
-              label: "Anggota aktif",
-              tone: "completed",
-              unit: `dari ${recipients.members} anggota tercatat`,
-              value: recipients.activeMembers,
-            },
-            {
-              icon: <NexusBroadcastIcon name="mail" />,
-              id: "email-recipients",
-              label: "Dapat menerima email",
-              tone: recipients.addresses.length > 0 ? "completed" : "waiting",
-              unit: "alamat email",
-              value: recipients.addresses.length,
-            },
-            {
-              icon: <NexusBroadcastIcon name="alert" />,
-              id: "missing-email",
-              label: "Belum memiliki email",
-              tone: missingEmail > 0 ? "needs-fix" : "completed",
-              unit: "anggota aktif",
-              value: missingEmail,
-            },
-          ]}
-        />
-
-        {capabilities.canCompose ? (
-          <NexusBroadcastStudio recipients={recipients} />
-        ) : (
-          <NexusWorkspaceState
-            description="Akun Anda dapat melihat ringkasan penerima dan riwayat broadcast. Menyusun dan meninjau pengiriman broadcast hanya tersedia bagi pengurus yang memegang izin mengelola Broadcast / Newsletter."
-            eyebrow="Akses terbatas"
-            title="Penyusunan broadcast tidak tersedia untuk akun Anda"
+        {error && !recipients ? (
+          <NexusWorkspaceLoadError
+            title="Broadcast belum dapat dimuat"
+            description={error}
+            onRetry={refresh}
           />
-        )}
+        ) : !recipients ? (
+          <NexusWorkspaceState
+            eyebrow="Memuat"
+            title="Mengambil data broadcast"
+            description="Daftar penerima dan draf tersimpan sedang dimuat."
+          />
+        ) : (
+          <>
+            {error ? (
+              <NexusWorkspaceNotice tone="danger">
+                Data belum dapat diperbarui. {error} Isian Anda tetap tersedia.
+              </NexusWorkspaceNotice>
+            ) : null}
+            <div className={styles.refreshRow}>
+              <p>
+                {recipients.delivery.mode === "capture"
+                  ? "Email masuk ke penampung pemeriksaan dan belum dikirim ke kotak email penerima."
+                  : recipients.delivery.configured
+                    ? `Pengirim: ${recipients.delivery.sender}`
+                    : "Pengirim email belum siap. Draf tetap dapat disimpan."}
+              </p>
+              <NexusWorkspaceButton onClick={refresh} type="button">
+                Perbarui daftar
+              </NexusWorkspaceButton>
+            </div>
+            <NexusWorkspaceMetrics
+              metrics={[
+                {
+                  icon: <NexusBroadcastIcon name="people" />,
+                  id: "active-members",
+                  label: "Anggota aktif",
+                  tone: "completed",
+                  unit: `dari ${recipients.members} anggota tercatat`,
+                  value: recipients.activeMembers,
+                },
+                {
+                  icon: <NexusBroadcastIcon name="mail" />,
+                  id: "email-recipients",
+                  label: "Dapat menerima email",
+                  tone:
+                    recipients.addresses.length > 0 ? "completed" : "waiting",
+                  unit: "alamat email",
+                  value: recipients.addresses.length,
+                },
+                {
+                  icon: <NexusBroadcastIcon name="alert" />,
+                  id: "missing-email",
+                  label: "Belum memiliki email",
+                  tone: missingEmail > 0 ? "needs-fix" : "completed",
+                  unit: "anggota aktif",
+                  value: missingEmail,
+                },
+              ]}
+            />
 
-        <BroadcastHistory />
+            {capabilities.canCompose || initialPublicId ? (
+              <NexusBroadcastStudio
+                key={initialPublicId ?? "new"}
+                initialPublicId={initialPublicId}
+                canCompose={capabilities.canCompose}
+                onSaved={refresh}
+                recipients={recipients}
+              />
+            ) : (
+              <NexusWorkspaceState
+                description="Akun Anda dapat melihat ringkasan penerima dan riwayat broadcast. Penyusunan dan pengiriman hanya tersedia bagi akun yang diberi akses mengirim broadcast."
+                eyebrow="Akses terbatas"
+                title="Penyusunan broadcast tidak tersedia untuk akun Anda"
+              />
+            )}
+
+            <BroadcastHistory entries={data?.history ?? []} />
+          </>
+        )}
       </div>
     </div>
   );

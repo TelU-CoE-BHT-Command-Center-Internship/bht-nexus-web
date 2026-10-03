@@ -235,7 +235,7 @@ function BroadcastImageNodeView({
         </div>
       )}
 
-      {image && !alt ? (
+      {editor.isEditable && image && !alt ? (
         <button
           className={styles.altChip}
           onClick={editAlt}
@@ -247,7 +247,7 @@ function BroadcastImageNodeView({
         </button>
       ) : null}
 
-      {image
+      {editor.isEditable && image
         ? resizeSides.map((side) => (
             <span
               aria-hidden="true"
@@ -267,7 +267,7 @@ function BroadcastImageNodeView({
         </span>
       ) : null}
 
-      {selected ? (
+      {editor.isEditable && selected ? (
         <div
           aria-label={`Pengaturan gambar ${imageName}`}
           className={styles.imageToolbar}
@@ -1144,6 +1144,8 @@ export type BroadcastEditorHandle = {
 };
 
 type NexusBroadcastEditorProps = {
+  initialContent?: JSONContent | null;
+  disabled?: boolean;
   describedBy: string;
   hasError: boolean;
   images: BroadcastImageRegistry;
@@ -1179,6 +1181,8 @@ function imageNodeContent(
 }
 
 export function NexusBroadcastEditor({
+  initialContent,
+  disabled = false,
   describedBy,
   hasError,
   images,
@@ -1188,6 +1192,7 @@ export function NexusBroadcastEditor({
   ref,
   subject,
 }: NexusBroadcastEditorProps) {
+  const [startingContent] = useState(initialContent);
   const technicalId = useId();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [activeToolIndex, setActiveToolIndex] = useState(0);
@@ -1237,6 +1242,8 @@ export function NexusBroadcastEditor({
   }));
 
   const editor = useEditor({
+    content: startingContent ?? undefined,
+    editable: !disabled,
     editorProps,
     enableInputRules: EDITOR_INPUT_RULES,
     enablePasteRules: EDITOR_PASTE_RULES,
@@ -1247,6 +1254,10 @@ export function NexusBroadcastEditor({
       onContentChangeRef.current(currentEditor.getJSON());
     },
   });
+
+  useEffect(() => {
+    editor?.setEditable(!disabled);
+  }, [disabled, editor]);
 
   /*
    * Cuplikan keadaan hanya diperbarui setelah transaksi pertama, sehingga
@@ -1264,7 +1275,8 @@ export function NexusBroadcastEditor({
     const element = editor.view.dom;
     element.setAttribute("aria-describedby", describedBy);
     element.setAttribute("aria-invalid", String(hasError));
-  }, [describedBy, editor, hasError]);
+    element.setAttribute("aria-readonly", String(disabled));
+  }, [describedBy, disabled, editor, hasError]);
 
   function openLinkDialog() {
     if (!editor) return;
@@ -1435,7 +1447,7 @@ export function NexusBroadcastEditor({
     items[next]?.focus();
   }
 
-  const isReady = Boolean(editor && toolbar);
+  const isReady = Boolean(editor && toolbar && !disabled);
   const run = (command: (current: Editor) => void) => () => {
     if (editor) command(editor);
   };

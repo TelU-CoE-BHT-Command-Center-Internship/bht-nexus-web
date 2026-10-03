@@ -146,6 +146,8 @@ export type NexusServerRoleName =
   | "officer";
 
 type NexusServerPermission =
+  | "broadcast.read"
+  | "broadcast.manage"
   | "academic.read"
   | "activity.read"
   | "audit.read"
@@ -232,6 +234,8 @@ const serverRolePermissions: Record<
     "dashboard.read",
   ],
   director: [
+    "broadcast.read",
+    "broadcast.manage",
     "review.read",
     "review.decide",
     "job.read",
@@ -282,9 +286,6 @@ const serverRoleLabels: Record<NexusServerRoleName, string> = {
   officer: "Pengurus",
 };
 
-/** Broadcast / Newsletter belum punya layanan server, sehingga tidak dibuka untuk peran mana pun. */
-const broadcastRoles: readonly NexusServerRoleName[] = [];
-
 function isServerRoleName(value: string): value is NexusServerRoleName {
   return Object.hasOwn(serverRolePermissions, value);
 }
@@ -294,16 +295,9 @@ export function nexusServerRoleLabel(roleName: string): string {
   return isServerRoleName(roleName) ? serverRoleLabels[roleName] : roleName;
 }
 
-function canBroadcastWith(roles: readonly string[]) {
-  return roles.some(
-    (role) => isServerRoleName(role) && broadcastRoles.includes(role),
-  );
-}
-
 /** Navigasi dan kemampuan yang dibuka oleh satu himpunan izin server. */
 function accessFromPermissions(
   permissions: ReadonlySet<string>,
-  canBroadcast: boolean,
 ): NexusWorkspaceAccess {
   const has = (permission: NexusServerPermission) =>
     permissions.has(permission);
@@ -311,7 +305,7 @@ function accessFromPermissions(
 
   if (has("dashboard.read")) navigation.add("dashboard");
   if (has("kpi.read")) navigation.add("monitoring");
-  if (canBroadcast) navigation.add("broadcast");
+  if (has("broadcast.read")) navigation.add("broadcast");
   if (has("job.read")) {
     navigation.add("collection");
     navigation.add("documents");
@@ -350,7 +344,7 @@ function accessFromPermissions(
       nexusPreviewWorkspaceAccess.allowedNavigationIds.filter((id) =>
         navigation.has(id),
       ),
-    broadcastCapabilities: { canCompose: canBroadcast },
+    broadcastCapabilities: { canCompose: has("broadcast.manage") },
     collectionCapabilities: {
       canCreateJob: has("job.create"),
       canSendToReview: has("review.edit"),
@@ -390,7 +384,6 @@ export function nexusWorkspaceAccessFromRoles(
         .filter(isServerRoleName)
         .flatMap((role) => serverRolePermissions[role]),
     ),
-    canBroadcastWith(roles),
   );
 }
 
@@ -405,10 +398,7 @@ export function nexusWorkspaceAccessFromSession(
 ): NexusWorkspaceAccess {
   if (permissions === null) return nexusWorkspaceAccessFromRoles(roles);
 
-  return accessFromPermissions(
-    new Set(permissions),
-    canBroadcastWith(roles ?? []),
-  );
+  return accessFromPermissions(new Set(permissions));
 }
 
 export function nexusWorkspaceCanOpen(

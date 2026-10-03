@@ -319,6 +319,58 @@ export function normalizeBroadcastDocument(
   return { blocks: blocksFrom(content?.content, "b") };
 }
 
+export function broadcastEditorContent(
+  document: BroadcastDocument,
+): JSONContent {
+  const inline = (value: BroadcastInline): JSONContent => {
+    if (value.kind === "break") return { type: "hardBreak" };
+    const marks: NonNullable<JSONContent["marks"]> = [];
+    if (value.bold) marks.push({ type: "bold" });
+    if (value.italic) marks.push({ type: "italic" });
+    if (value.link?.isValid)
+      marks.push({ type: "link", attrs: { href: value.link.href } });
+    return {
+      type: "text",
+      text: value.text,
+      ...(marks.length ? { marks } : {}),
+    };
+  };
+  const block = (value: BroadcastBlock): JSONContent => {
+    if (value.kind === "image")
+      return {
+        type: BROADCAST_IMAGE_NODE,
+        attrs: {
+          imageId: value.imageId,
+          alt: value.alt,
+          align: value.align,
+          width: value.width,
+        },
+      };
+    if (value.kind === "list")
+      return {
+        type: value.style === "numbered" ? "orderedList" : "bulletList",
+        attrs: { start: value.start },
+        content: value.items.map((item) => ({
+          type: "listItem",
+          content: item.blocks.map(block),
+        })),
+      };
+    return {
+      type: value.kind === "heading" ? "heading" : "paragraph",
+      ...(value.kind === "heading"
+        ? { attrs: { level: BROADCAST_HEADING_LEVELS[value.style] } }
+        : {}),
+      content: value.inlines.map(inline),
+    };
+  };
+  return {
+    type: "doc",
+    content: document.blocks.length
+      ? document.blocks.map(block)
+      : [{ type: "paragraph" }],
+  };
+}
+
 export function broadcastDocumentIsEmpty(document: BroadcastDocument) {
   return document.blocks.length === 0;
 }
