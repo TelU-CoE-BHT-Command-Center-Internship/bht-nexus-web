@@ -160,7 +160,7 @@ export function nexusActivityFromServer(
     targetGroup: text("targetGroup"),
     team,
     title: summary.title,
-    updatedAt: formatAuditTimestamp(summary.createdAt),
+    updatedAt: formatAuditTimestamp(summary.updatedAt ?? summary.createdAt),
   };
 }
 

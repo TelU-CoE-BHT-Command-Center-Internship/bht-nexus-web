@@ -90,7 +90,7 @@ export function nexusIntellectualPropertyFromServer(
     registrationNumber,
     registry: summary.registry || "Belum tercatat",
     title: summary.title,
-    updatedAt: formatAuditTimestamp(summary.createdAt),
+    updatedAt: formatAuditTimestamp(summary.updatedAt ?? summary.createdAt),
     year,
   });
 }

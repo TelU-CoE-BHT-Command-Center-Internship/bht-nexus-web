@@ -23,10 +23,6 @@ import type {
   MetadataCompletionResolutions,
 } from "@/components/nexus-metadata-completion/nexus-metadata-completion-model";
 import type {
-  OfficialRecordCorrection,
-  OfficialRecordCorrectionMap,
-} from "@/components/nexus-official-records/nexus-official-record-corrections";
-import type {
   OfficialMetadataProjection,
   OfficialMetadataProjectionMap,
   OfficialRecordDecisionProjection,
@@ -108,13 +104,6 @@ type NexusReviewSessionValue = {
   applyOfficialRecordDecision: (
     projection: OfficialRecordDecisionProjection,
   ) => void;
-  /** Menerapkan koreksi Monitoring KM langsung pada rekam resmi. */
-  applyOfficialRecordCorrection: (
-    correction: Omit<
-      OfficialRecordCorrection,
-      "actorId" | "actorName" | "actorRoleLabel" | "appliedAt" | "id"
-    >,
-  ) => OfficialRecordCorrection;
   clearCompletionProposal: (recordId: string) => void;
   completionProposals: Record<string, MetadataCompletionProposal>;
   createCompletionProposal: (
@@ -126,7 +115,6 @@ type NexusReviewSessionValue = {
   createSessionRecordId: (idPrefix: string) => string;
   records: AuditReviewRecord[];
   officialMetadataByRecordId: OfficialMetadataProjectionMap;
-  officialRecordCorrections: OfficialRecordCorrectionMap;
   officialRecordDecisions: OfficialRecordDecisionProjectionMap;
   runtimeByRecordId: Record<string, AuditRuntimeState>;
   submitRecord: (record: AuditReviewRecord) => void;
@@ -197,8 +185,6 @@ export function NexusReviewSessionProvider({
     useState<OfficialMetadataProjectionMap>({});
   const [officialRecordDecisions, setOfficialRecordDecisions] =
     useState<OfficialRecordDecisionProjectionMap>({});
-  const [officialRecordCorrections, setOfficialRecordCorrections] =
-    useState<OfficialRecordCorrectionMap>({});
   const [runtimeByRecordId, setRuntimeByRecordId] = useState<
     Record<string, AuditRuntimeState>
   >({});
@@ -270,32 +256,6 @@ export function NexusReviewSessionProvider({
     },
     [],
   );
-  const applyOfficialRecordCorrection = useCallback(
-    (
-      input: Omit<
-        OfficialRecordCorrection,
-        "actorId" | "actorName" | "actorRoleLabel" | "appliedAt" | "id"
-      >,
-    ) => {
-      const correction: OfficialRecordCorrection = {
-        ...input,
-        actorId: actor.id,
-        actorName: actor.name,
-        actorRoleLabel: actor.roleLabel,
-        appliedAt: new Date().toISOString(),
-        id: createSessionRecordId("KOR"),
-      };
-      setOfficialRecordCorrections((current) => ({
-        ...current,
-        [input.recordPublicId]: [
-          ...(current[input.recordPublicId] ?? []),
-          correction,
-        ],
-      }));
-      return correction;
-    },
-    [actor.id, actor.name, actor.roleLabel, createSessionRecordId],
-  );
   const applyOfficialRecordDecision = useCallback(
     (projection: OfficialRecordDecisionProjection) => {
       setOfficialRecordDecisions((current) => ({
@@ -361,7 +321,6 @@ export function NexusReviewSessionProvider({
     () => ({
       actor,
       applyOfficialMetadataCompletion,
-      applyOfficialRecordCorrection,
       applyOfficialRecordDecision,
       capabilities,
       capabilitiesFor,
@@ -371,7 +330,6 @@ export function NexusReviewSessionProvider({
       createSessionRecordId,
       records,
       officialMetadataByRecordId,
-      officialRecordCorrections,
       officialRecordDecisions,
       runtimeByRecordId,
       submitRecord,
@@ -381,7 +339,6 @@ export function NexusReviewSessionProvider({
     [
       actor,
       applyOfficialMetadataCompletion,
-      applyOfficialRecordCorrection,
       applyOfficialRecordDecision,
       capabilities,
       capabilitiesFor,
@@ -391,7 +348,6 @@ export function NexusReviewSessionProvider({
       createSessionRecordId,
       records,
       officialMetadataByRecordId,
-      officialRecordCorrections,
       officialRecordDecisions,
       runtimeByRecordId,
       submitRecord,

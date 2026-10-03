@@ -23,14 +23,6 @@ export type AuditReviewMatching = {
   state: "error" | "loading" | "ready";
 };
 
-/**
- * Bagian keputusan yang belum dicatat layanan. Bagian tersebut tetap tampil
- * sebagai tindakan yang segera tersedia dan tidak menjadi syarat keputusan.
- */
-export type AuditReviewPlannedParts = {
-  kpiResolution?: boolean;
-};
-
 export type AuditReviewDrawerProps = {
   capabilities: NexusRecordCapabilities;
   matching?: AuditReviewMatching;
@@ -52,7 +44,6 @@ export type AuditReviewDrawerProps = {
     evidenceNote: string,
     resolutions?: MetadataCompletionResolutions,
   ) => Promise<string | undefined>;
-  planned?: AuditReviewPlannedParts;
   record: AuditReviewRecord;
   state: AuditRuntimeState;
 };

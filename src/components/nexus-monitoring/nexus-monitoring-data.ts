@@ -23,11 +23,13 @@ export type NexusMonitoringData = {
   loadState: "error" | "loading" | "ready";
   period: NexusMonitoringPeriod;
   periodOptions: readonly NexusMonitoringPeriod[];
+  /** Membaca ulang rekam resmi tanpa keadaan memuat, misalnya setelah koreksi. */
+  refresh: () => Promise<void>;
   retry: () => void;
 };
 
 /**
- * Masukan pengukuran Monitoring untuk satu periode: rekam resmi sesi berjalan,
+ * Masukan pengukuran Monitoring untuk satu periode: rekam resmi dari server,
  * target versi terbaru periode itu, dan daftar periode terdaftar. Seluruh
  * halaman Monitoring membaca hook ini sehingga angkanya selalu sama.
  */
@@ -73,6 +75,7 @@ export function useNexusMonitoringData(
           : "ready",
     period,
     periodOptions,
+    refresh: official.refresh,
     retry: () => {
       official.retry();
       targetsSession.retry();

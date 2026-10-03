@@ -49,7 +49,6 @@ import { auditMatchingIsCurrent } from "@/components/nexus-review-session/nexus-
 import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
-  NexusWorkspacePlannedBadge,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { formatAuditTimestamp } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import {
@@ -102,24 +101,27 @@ type AuditReviewDecisionSectionProps = AuditReviewDrawerProps & {
 const newOfficialPersonValue = "__new_person__";
 
 export function AuditReviewDecisionSection({
-  capabilities,
+  capabilities: grantedCapabilities,
   decisionIndex,
   matching,
   onClose,
   onDecide,
   onResubmit,
-  planned,
   record,
   selectedMatch,
   state,
 }: AuditReviewDecisionSectionProps) {
+  /* Kandidat yang belum lengkap tidak dapat diterima; server menolak
+     persetujuannya, jadi pilihan menerima dikunci sejak awal. */
+  const capabilities = record.promotionBlockedReason
+    ? { ...grantedCapabilities, canApprove: false }
+    : grantedCapabilities;
   const exactIdentifier = state.matches.some(
     (match) => match.verdict === "same_identifier",
   );
   const matchingIsPending =
     matching !== undefined && matching.state !== "ready";
   const matchingIsStale = matchingIsPending || !auditMatchingIsCurrent(state);
-  const kpiResolutionIsPlanned = Boolean(planned?.kpiResolution);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string>();
   const [actionNotice, setActionNotice] = useState<string>();
@@ -549,24 +551,22 @@ export function AuditReviewDecisionSection({
   const kpiChoices = kpiChoicesFor(kpiFamily);
   const kpiResolutionReady =
     !resolvesKpi ||
-    kpiResolutionIsPlanned ||
     !approvalChoice ||
     kpiResolutionStatus === "removed" ||
     kpiResolutionStatus === "undetermined" ||
     (kpiResolutionStatus === "confirmed" && record.kpiLinks.length > 0) ||
     (kpiResolutionStatus === "changed" && selectedKpiIds.length > 0);
-  const kpiResolution: AuditKpiResolution | undefined =
-    resolvesKpi && !kpiResolutionIsPlanned
-      ? {
-          indicatorIds:
-            kpiResolutionStatus === "confirmed"
-              ? record.kpiLinks.map((link) => link.indicator.id)
-              : kpiResolutionStatus === "changed"
-                ? selectedKpiIds
-                : [],
-          status: kpiResolutionStatus || "undetermined",
-        }
-      : undefined;
+  const kpiResolution: AuditKpiResolution | undefined = resolvesKpi
+    ? {
+        indicatorIds:
+          kpiResolutionStatus === "confirmed"
+            ? record.kpiLinks.map((link) => link.indicator.id)
+            : kpiResolutionStatus === "changed"
+              ? selectedKpiIds
+              : [],
+        status: kpiResolutionStatus || "undetermined",
+      }
+    : undefined;
   const decisionReady = Boolean(
     decisionChoice &&
       selectedActionAllowed &&
@@ -1138,25 +1138,7 @@ export function AuditReviewDecisionSection({
         </NexusWorkspaceNotice>
       ) : null}
 
-      {resolvesKpi && kpiResolutionIsPlanned ? (
-        <div className={drawerStyles.reviewTextField}>
-          <span className={drawerStyles.reviewPlannedLabel}>
-            Keputusan keterkaitan indikator KM <NexusWorkspacePlannedBadge />
-          </span>
-          <select
-            aria-label="Keputusan keterkaitan indikator KM"
-            disabled
-            value=""
-          >
-            <option value="">Pilih hasil verifikasi indikator</option>
-          </select>
-          <small>
-            Verifikasi indikator KM akan disimpan bersama keputusan setelah
-            layanan tersedia. Untuk sementara keputusan tidak mengubah
-            keterkaitan indikator.
-          </small>
-        </div>
-      ) : resolvesKpi ? (
+      {resolvesKpi ? (
         <div className={drawerStyles.reviewTextField}>
           <span>Keputusan keterkaitan indikator KM · wajib saat menerima</span>
           <select
@@ -1387,6 +1369,13 @@ export function AuditReviewDecisionSection({
             data baru atau perbarui kontrak rekam tujuan terlebih dahulu.
           </NexusWorkspaceNotice>
         )
+      ) : null}
+
+      {record.promotionBlockedReason ? (
+        <NexusWorkspaceNotice tone="danger">
+          {record.promotionBlockedReason} Kandidat dapat dikoreksi pada bagian
+          perbaikan atau dikembalikan kepada pengaju dengan Minta perbaikan.
+        </NexusWorkspaceNotice>
       ) : null}
 
       <fieldset className={drawerStyles.reviewDecisionChoices}>

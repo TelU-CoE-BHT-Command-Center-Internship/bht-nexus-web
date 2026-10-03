@@ -46,6 +46,7 @@ import {
   type NexusMonitoringRecord,
 } from "@/components/nexus-monitoring/nexus-monitoring-sources";
 import type { MonitoringTone } from "@/components/nexus-monitoring/nexus-monitoring-ui";
+import { activityUsesSubmissionDate } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import {
   type NexusPublicationView,
   publicationAuthorNames,
@@ -482,6 +483,11 @@ export type MonitoringRecordCorrectionSnapshot = {
   /** Nama bidang tanggal milik rumah datanya; `null` bila rumah itu tidak punya tanggal. */
   businessDateField: string | null;
   businessDateIso: string;
+  /**
+   * Kunci tanggal pada koreksi server untuk rumah datanya, misalnya
+   * `publicationDate` atau `contractStart`; `null` bila tidak punya tanggal.
+   */
+  businessDateKey: string | null;
   /** Keterangan tanggal berpresisi bulan yang belum dapat dijadikan tanggal. */
   businessDateNote: string | null;
   family: NexusMonitoringSourceFamily;
@@ -766,6 +772,25 @@ function recordMetadata(
   }
 }
 
+function businessDateKey(record: NexusMonitoringRecord): string | null {
+  switch (record.family) {
+    case "publications":
+      return "publicationDate";
+    case "intellectual-property":
+      return "submissionDate";
+    case "contracts":
+      return record.contract.group === "Proposal"
+        ? "submissionDate"
+        : "contractStart";
+    case "activities":
+      return activityUsesSubmissionDate(record.activity)
+        ? "submissionDate"
+        : "eventDate";
+    default:
+      return null;
+  }
+}
+
 function correctionSnapshot(
   record: NexusMonitoringRecord,
 ): MonitoringRecordCorrectionSnapshot {
@@ -776,6 +801,7 @@ function correctionSnapshot(
       businessDate.available && businessDate.precision === "tanggal"
         ? businessDate.iso
         : "",
+    businessDateKey: businessDateKey(record),
     businessDateNote:
       businessDate.available && businessDate.precision === "bulan"
         ? `Sumber mencatat ${businessDate.label}; hari belum tercatat.`

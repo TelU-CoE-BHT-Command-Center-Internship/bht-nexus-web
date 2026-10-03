@@ -2459,37 +2459,3 @@
   font-size: 0.72rem;
   line-height: 1.5;
 }
-
-.correctionHistory {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.correctionHistory > li {
-  display: grid;
-  gap: 0.2rem;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--color-nexus-border);
-  border-radius: 0.6rem;
-  color: #233851;
-  font-size: 0.72rem;
-}
-
-.correctionHistory > li > span {
-  color: #6b7c91;
-  font-size: 0.66rem;
-}
-
-.correctionHistory ul {
-  margin: 0.3rem 0 0;
-  padding-left: 1.1rem;
-}
-
-.correctionHistory p {
-  margin: 0.3rem 0 0;
-  color: #52657d;
-  line-height: 1.45;
-}

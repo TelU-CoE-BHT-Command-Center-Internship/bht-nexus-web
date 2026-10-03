@@ -13,6 +13,8 @@ export type ActivityStatus = "cancelled" | "closed" | "ongoing" | "planned";
 export type ActivitySummary = {
   amount?: number | null;
   createdAt: string;
+  /** Waktu pembaruan terakhir, termasuk pelengkapan dan koreksi. */
+  updatedAt?: string;
   isPublic: boolean;
   kmIndicators?: string[];
   metadata?: Record<string, unknown>;

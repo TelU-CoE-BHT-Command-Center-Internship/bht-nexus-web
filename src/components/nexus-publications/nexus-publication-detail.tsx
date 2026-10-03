@@ -15,10 +15,12 @@ import {
 import { parseBusinessDate } from "@/components/nexus-monitoring/nexus-monitoring-quarter";
 import { officialReportedQuarterItems } from "@/components/nexus-official-records/nexus-official-record-corrections";
 import {
+  nexusRecordTrailCorrectionCount,
   nexusRecordTrailReviewMessage,
   nexusRecordTrailSourcesMessage,
   useNexusRecordTrail,
 } from "@/components/nexus-official-records/nexus-record-trail";
+import { NexusRecordTrailCorrections } from "@/components/nexus-official-records/nexus-record-trail-corrections";
 import styles from "@/components/nexus-publications/nexus-publication-detail.module.css";
 import {
   type NexusPublicationView,
@@ -715,6 +717,12 @@ export function NexusPublicationDetail({
         ) : null}
       </section>
 
+      <NexusRecordTrailCorrections
+        sectionIndex="07"
+        titleId="publication-corrections-title"
+        trail={trail}
+      />
+
       {publication.missingFields.length > 0 && onSubmitCompletionProposal ? (
         <NexusMetadataCompletionForm
           missingFields={publication.missingFields}
@@ -722,7 +730,9 @@ export function NexusPublicationDetail({
           onSubmitProposal={onSubmitCompletionProposal}
           proposal={proposal}
           recordId={publication.id}
-          sectionIndex="07"
+          sectionIndex={
+            nexusRecordTrailCorrectionCount(trail) > 0 ? "08" : "07"
+          }
         />
       ) : null}
     </NexusWorkspaceDrawer>

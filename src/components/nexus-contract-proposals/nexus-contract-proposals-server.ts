@@ -34,15 +34,6 @@ const kindLabels: Record<ContractProposalSummary["kind"], Kind> = {
   non_research_proposal: "Proposal Non-Riset",
 };
 
-const indicatorByKind: Record<ContractProposalSummary["kind"], string> = {
-  commercialization_business_contract: "KM-19",
-  international_research_contract: "KM-18",
-  international_research_proposal: "KM-38",
-  national_research_contract: "KM-17",
-  national_research_proposal: "KM-37",
-  non_research_proposal: "KM-39",
-};
-
 const groupLabels: Record<ContractProposalSummary["group"], Group> = {
   contract: "Kontrak",
   proposal: "Proposal",
@@ -103,11 +94,7 @@ export function nexusContractProposalFromServer(
     group,
     id: summary.publicId,
     kind,
-    kmLinks: kmLinksFromCodes(
-      summary.kmIndicators.length > 0
-        ? summary.kmIndicators
-        : [indicatorByKind[summary.kind]],
-    ),
+    kmLinks: kmLinksFromCodes(summary.kmIndicators),
     missingFields,
     ownerUnit: summary.ownerUnit,
     partner: summary.partner ?? undefined,
@@ -123,7 +110,7 @@ export function nexusContractProposalFromServer(
     scheme,
     submittedOn: summary.submittedOn ?? undefined,
     title: summary.title,
-    updatedAt: formatAuditTimestamp(summary.createdAt),
+    updatedAt: formatAuditTimestamp(summary.updatedAt ?? summary.createdAt),
   };
 }
 

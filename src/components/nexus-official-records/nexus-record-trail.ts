@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   displayRecordId,
   formatAuditTimestamp,
@@ -8,6 +8,7 @@ import {
 import {
   getRecordTrail,
   type RecordTrail,
+  type RecordTrailCorrection,
   type RecordTrailDecision,
   type RecordTrailHouse,
   type RecordTrailSource,
@@ -43,9 +44,19 @@ export type NexusRecordTrailReview = {
   reviewer: string;
 };
 
+/** Satu koreksi langsung, siap ditampilkan pada Riwayat koreksi. */
+export type NexusRecordTrailCorrection = {
+  changes: { label: string; value: string }[];
+  correctedAt: string;
+  corrector: string;
+  id: string;
+  reason: string;
+};
+
 export type NexusRecordTrailState =
   | { state: "error" | "idle" | "loading" }
   | {
+      corrections: NexusRecordTrailCorrection[];
       provenance: NexusRecordTrailProvenance[];
       review?: NexusRecordTrailReview;
       state: "ready";
@@ -75,7 +86,7 @@ function provenanceOf(source: RecordTrailSource): NexusRecordTrailProvenance {
     capturedAt: formatAuditTimestamp(source.capturedAt),
     identifier:
       label === "Manual" && reference
-        ? `Tanda terima ${reference}`
+        ? `Tanda terima ${displayRecordId(reference)}`
         : (source.sourceUrl ?? reference ?? "Tidak tercatat"),
     note: sourceNotes[label],
     source: label,
@@ -113,10 +124,65 @@ function reviewOf(
   };
 }
 
+const correctionLabels: Record<string, string> = {
+  contractStart: "Tanggal mulai kontrak",
+  eventDate: "Tanggal kegiatan",
+  kmIndicators: "Kaitan indikator KM",
+  protectionType: "Bentuk perlindungan",
+  publicationDate: "Tanggal terbit",
+  quartile: "Kuartil jurnal",
+  registrationNumber: "Nomor pencatatan",
+  reportedQuarter: "Triwulan dilaporkan",
+  submissionDate: "Tanggal pengajuan",
+  workType: "Bentuk karya",
+  year: "Tahun",
+};
+
+const workTypeLabels: Record<string, string> = {
+  book: "Buku",
+  book_chapter: "Book chapter",
+  conference_paper: "Makalah konferensi",
+  journal_article: "Artikel jurnal",
+  other: "Belum diklasifikasikan",
+};
+
+const dateFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+  year: "numeric",
+});
+
+function correctionValue(key: string, value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return dateFormatter.format(new Date(`${value}T00:00:00Z`));
+  }
+  if (key === "kmIndicators") return value || "Tidak terkait indikator KM";
+  if (key === "reportedQuarter") return value ? `TW${value}` : "Dikosongkan";
+  if (key === "workType") return workTypeLabels[value] ?? value;
+  return value;
+}
+
+function correctionOf(
+  correction: RecordTrailCorrection,
+): NexusRecordTrailCorrection {
+  return {
+    changes: Object.entries(correction.changes).map(([key, value]) => ({
+      label: correctionLabels[key] ?? key,
+      value: correctionValue(key, value),
+    })),
+    correctedAt: formatAuditTimestamp(correction.correctedAt),
+    corrector: correction.correctorName,
+    id: correction.correctionPublicId,
+    reason: correction.reason,
+  };
+}
+
 export function nexusRecordTrailView(
   trail: RecordTrail,
 ): NexusRecordTrailState {
   return {
+    corrections: trail.corrections.map(correctionOf),
     provenance: trail.sources.map(provenanceOf),
     review: reviewOf(trail.decisions),
     state: "ready",
@@ -138,23 +204,39 @@ export function nexusRecordTrailHouse(
   return housesByHref[houseHref.split(/[?#]/)[0] ?? ""];
 }
 
-/** Jejak rekam yang sedang dibuka; dibaca ulang setiap rincian dibuka. */
+/** Banyaknya koreksi langsung yang sudah dimuat untuk rekam ini. */
+export function nexusRecordTrailCorrectionCount(
+  trail: NexusRecordTrailState,
+): number {
+  return trail.state === "ready" ? trail.corrections.length : 0;
+}
+
+/**
+ * Jejak rekam yang sedang dibuka; dibaca ulang setiap rincian dibuka atau
+ * `revision` berubah, misalnya setelah rekam dikoreksi.
+ */
 export function useNexusRecordTrail(
   house: RecordTrailHouse | undefined,
   publicId: string | undefined,
+  revision?: string,
 ): NexusRecordTrailState {
   const [trail, setTrail] = useState<NexusRecordTrailState>({
     state: house && publicId ? "loading" : "idle",
   });
 
+  const request = useMemo(
+    () => (house && publicId ? { house, publicId, revision } : undefined),
+    [house, publicId, revision],
+  );
+
   useEffect(() => {
-    if (!house || !publicId) {
+    if (!request) {
       setTrail({ state: "idle" });
       return;
     }
     let cancelled = false;
     setTrail({ state: "loading" });
-    getRecordTrail(house, publicId)
+    getRecordTrail(request.house, request.publicId)
       .then((result) => {
         if (!cancelled) setTrail(nexusRecordTrailView(result));
       })
@@ -164,7 +246,7 @@ export function useNexusRecordTrail(
     return () => {
       cancelled = true;
     };
-  }, [house, publicId]);
+  }, [request]);
 
   return trail;
 }

@@ -3,6 +3,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type {
   AuditDecisionKind,
+  AuditKpiLink,
+  AuditKpiResolution,
   AuditOfficialMatch,
   AuditReviewCategory,
   AuditReviewDecision,
@@ -31,6 +33,7 @@ import {
   compareTimestamps,
   formatAuditTimestamp,
 } from "@/components/nexus-workspace-ui/nexus-workspace-format";
+import { nexusKmIndicators } from "@/content/nexus-km-indicators";
 import {
   ApiRequestError,
   apiErrorKind,
@@ -46,6 +49,7 @@ import {
   type ReviewCaseStatus,
   type ReviewComparison,
   type ReviewDecisionKind,
+  type ReviewKmResolution,
   type ReviewPromotionResult,
   submitReviewEdit,
 } from "@/lib/api-reviews";
@@ -530,6 +534,41 @@ function promotionNote(
     : "Kandidat ditautkan ke rekam resmi yang sudah ada tanpa membuat duplikat.";
 }
 
+/** Saran indikator KM server menjadi tautan KM yang dikenali kamus KM. */
+function kmLinksOf(
+  codes: readonly string[] | null | undefined,
+): AuditKpiLink[] {
+  return (codes ?? []).flatMap((code) => {
+    const indicator = nexusKmIndicators.find((item) => item.id === code);
+    return indicator
+      ? [
+          {
+            evidenceRule:
+              "Diturunkan sistem dari jenis rekam dan metadata kandidat; pemeriksa dapat mengubahnya.",
+            indicator,
+          },
+        ]
+      : [];
+  });
+}
+
+/** Keputusan KM yang tersimpan di server dalam bentuk ruang Tinjauan. */
+function kpiResolutionOf(
+  resolution: ReviewKmResolution | null | undefined,
+  systemLinks: readonly AuditKpiLink[],
+): AuditKpiResolution | undefined {
+  if (!resolution) return undefined;
+  return {
+    indicatorIds:
+      resolution.status === "confirmed"
+        ? systemLinks.map((link) => link.indicator.id)
+        : resolution.status === "changed"
+          ? kmLinksOf(resolution.indicators).map((link) => link.indicator.id)
+          : [],
+    status: resolution.status,
+  };
+}
+
 export function reviewRecordFromServer(
   summary: ReviewCaseRecord,
   detail: ReviewCaseDetail | undefined,
@@ -622,6 +661,7 @@ export function reviewRecordFromServer(
             (detail?.status === "rejected" ? "reject" : "approve"),
         )
       : undefined;
+  const systemKmLinks = kmLinksOf(detail?.promotion?.systemKmIndicators);
   const decision: AuditReviewDecision | undefined = finalDecision
     ? {
         actor: context.actorLabel(finalDecision.decidedByPublicId),
@@ -632,6 +672,10 @@ export function reviewRecordFromServer(
             : undefined,
         kind: decisionKinds[finalDecision.decision],
         label: decisionLabels[finalDecision.decision],
+        kpiResolution: kpiResolutionOf(
+          finalDecision.kmResolution,
+          systemKmLinks,
+        ),
         note: finalDecision.reason ?? "",
         occurredAt: finalDecision.decidedAt,
         targetRecordId:
@@ -673,12 +717,18 @@ export function reviewRecordFromServer(
       : undefined,
     history,
     id: summary.publicId,
-    kpiLinks: [],
+    kpiLinks: systemKmLinks,
+    kpiLinksSuggested: systemKmLinks.length > 0 || undefined,
     matches: matchesOf(context.comparison),
     matchingStatus: context.comparison ? "current" : "pending",
     matchingVersion: version,
     owner,
     primaryPerson: owner,
+    promotionBlockedReason:
+      detail?.promotion?.promotable === false
+        ? (detail.promotion.reason ??
+          "Kandidat belum lengkap untuk menjadi rekam resmi.")
+        : undefined,
     provenance: {
       sourceKey:
         text(payload.external_id) || text(payload.receipt_number) || undefined,
@@ -999,6 +1049,7 @@ export function useNexusReviewQueue(viewer: NexusReviewActor) {
       id: string,
       input: {
         decision: ReviewDecisionKind;
+        kmResolution?: ReviewKmResolution;
         linkTargetPublicId?: string;
         reason: string;
       },

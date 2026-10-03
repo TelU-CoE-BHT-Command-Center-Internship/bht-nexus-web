@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import { useMemo, useState } from "react";
 import { useNexusClusterScope } from "@/components/nexus-cluster-scope/nexus-cluster-scope";
 import type { NexusMonitoringCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
+import { applyMonitoringCorrection } from "@/components/nexus-monitoring/nexus-monitoring-correction";
 import { useNexusMonitoringData } from "@/components/nexus-monitoring/nexus-monitoring-data";
 import {
   nexusIndicatorEvaluation,
@@ -19,7 +20,6 @@ import { NexusMonitoringRecordsGate } from "@/components/nexus-monitoring/nexus-
 import { NexusMonitoringTargetDrawer } from "@/components/nexus-monitoring/nexus-monitoring-target-drawer";
 import { NexusMonitoringToast } from "@/components/nexus-monitoring/nexus-monitoring-toast";
 import { buildIndicatorView } from "@/components/nexus-monitoring/nexus-monitoring-view";
-import { useNexusReviewSession } from "@/components/nexus-review-session/nexus-review-session";
 import {
   NexusWorkspaceButton,
   NexusWorkspaceNotice,
@@ -46,13 +46,12 @@ function NexusMonitoringIndicatorScreenContent({
 }) {
   const { divisionPublicId } = useNexusClusterScope();
   const [exportError, setExportError] = useState("");
-  const reviewSession = useNexusReviewSession();
   const [periodId, setPeriodId] = useState(requestedPeriodId);
   const [targetDrawerOpen, setTargetDrawerOpen] = useState(false);
   const [notice, setNotice] = useState<{ id: number; message: string } | null>(
     null,
   );
-  const { input, isKnownPeriod, period, periodOptions } =
+  const { input, isKnownPeriod, period, periodOptions, refresh } =
     useNexusMonitoringData(periodId);
   const view = useMemo(
     () => buildIndicatorView(indicatorId, input),
@@ -129,20 +128,39 @@ function NexusMonitoringIndicatorScreenContent({
       {isKnownPeriod ? (
         <NexusMonitoringIndicator
           canCorrectRecords={capabilities.canCorrectRecords}
-          corrections={reviewSession.officialRecordCorrections}
           key={view.id}
-          onCorrect={(recordPublicId, correction) => {
-            const record = view.records.find(
-              (item) => item.publicId === recordPublicId,
-            );
-            if (!record) return;
-            reviewSession.applyOfficialRecordCorrection({
-              changes: correction.changes,
-              family: record.correction.family,
-              reason: correction.reason,
-              recordPublicId,
-              values: correction.values,
-            });
+          onCorrect={async (record, correction) => {
+            try {
+              await applyMonitoringCorrection(
+                record,
+                correction.values,
+                correction.reason,
+              );
+            } catch (error) {
+              return apiErrorMessage(
+                error,
+                "Koreksi belum dapat disimpan. Coba lagi beberapa saat lagi.",
+              );
+            }
+            const unlinked =
+              correction.values.kmIds !== undefined &&
+              !correction.values.kmIds.includes(view.id);
+            try {
+              await refresh();
+              if (unlinked) {
+                setNotice({
+                  id: Date.now(),
+                  message: `Koreksi tersimpan. Rekam tersebut tidak lagi tertaut ke ${view.id}, sehingga tidak tampil di daftar ini.`,
+                });
+              }
+            } catch {
+              setNotice({
+                id: Date.now(),
+                message:
+                  "Koreksi tersimpan pada rekam resmi, tetapi angka indikator belum dapat dimuat ulang. Muat ulang halaman untuk melihat angka terbaru.",
+              });
+            }
+            return undefined;
           }}
           periodLabel={period.label}
           view={view}

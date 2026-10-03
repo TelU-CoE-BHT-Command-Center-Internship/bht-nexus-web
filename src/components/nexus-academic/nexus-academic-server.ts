@@ -33,16 +33,6 @@ const activityLabels: Record<AcademicSummary["activityType"], Activity> = {
   thesis_research: "Riset Tugas Akhir",
 };
 
-const indicatorByActivity: Partial<
-  Record<AcademicSummary["activityType"], string>
-> = {
-  doctoral_supervision: "KM-28",
-  masters_supervision: "KM-29",
-  student_competition: "KM-32",
-  student_internship: "KM-30",
-  thesis_research: "KM-31",
-};
-
 const evidenceNotes = {
   public: "Dokumen sumber dapat dibuka melalui tautan yang tercatat.",
   unrecorded:
@@ -89,11 +79,7 @@ export function nexusAcademicFromServer(
     evidenceStatus,
     evidenceUrl,
     id: summary.publicId,
-    kmLinks: kmLinksFromCodes(
-      summary.kmIndicators.length > 0
-        ? summary.kmIndicators
-        : [indicatorByActivity[summary.activityType] ?? ""],
-    ),
+    kmLinks: kmLinksFromCodes(summary.kmIndicators),
     mentors,
     mentorsKnown: detail !== undefined,
     missingFields,
@@ -104,7 +90,7 @@ export function nexusAcademicFromServer(
     reportedQuarter: summary.reportedQuarter ?? undefined,
     quality: missingFields.length > 0 ? "Perlu dilengkapi" : "Lengkap",
     title: summary.title,
-    updatedAt: formatAuditTimestamp(summary.createdAt),
+    updatedAt: formatAuditTimestamp(summary.updatedAt ?? summary.createdAt),
     year,
   };
 }
