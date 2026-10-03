@@ -277,7 +277,7 @@ export function NexusScraperSearch({
   // biome-ignore lint/correctness/useExhaustiveDependencies: content is stable per locale; jobsRequest only changes when the user retries
   useEffect(() => {
     let cancelled = false;
-    listJobs({ limit: 50 })
+    listJobs({ kind: "scraper", limit: 50 })
       .then((result) => {
         if (cancelled) return;
         const fetched = result.data.map((record) =>

@@ -49,9 +49,10 @@ export function retryJob(publicId: string): Promise<JobRecord> {
 }
 
 export function listJobs(
-  params: { limit?: number; page?: number } = {},
+  params: { kind?: string; limit?: number; page?: number } = {},
 ): Promise<{ data: JobRecord[]; meta: { total: number } }> {
   const search = new URLSearchParams();
+  if (params.kind !== undefined) search.set("kind", params.kind);
   if (params.limit !== undefined) search.set("limit", String(params.limit));
   if (params.page !== undefined) search.set("page", String(params.page));
   search.set("sortBy", "createdAt");
