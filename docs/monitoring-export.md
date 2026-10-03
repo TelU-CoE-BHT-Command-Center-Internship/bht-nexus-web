@@ -9,6 +9,8 @@ Laporan mengikuti tahun dan klaster yang sedang dipilih. Unduhan dari rincian sa
 indikator tetap berupa laporan Monitoring lengkap pada tahun/cakupan tersebut.
 Excel mencantumkan cakupan dan periode, indikator berurutan, filter, format angka,
 serta keterangan untuk nol, target kosong, dan indikator yang belum dipantau.
+Lembar utama menampilkan domain sekali sebagai pemisah dan indikator di bawahnya.
+Lembar Data KM menyediakan tabel datar untuk filter dan pengurutan angka.
 CSV tetap tersedia untuk pengolahan di aplikasi lain.
 
 Jenis berkas dari server diperiksa sebelum unduhan. Jika server lama masih
