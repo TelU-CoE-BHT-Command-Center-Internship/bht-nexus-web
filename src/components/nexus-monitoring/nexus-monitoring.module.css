@@ -565,9 +565,24 @@
  * pemilih periode mengambil satu baris penuh dan kedua tombol berbagi baris
  * berikutnya.
  */
+.exportActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.exportActions > div {
+  min-width: 10.5rem;
+}
+
 .headerActions {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: stretch;
   justify-content: flex-end;
   gap: 0.6rem;
@@ -578,7 +593,8 @@
   width: 15.5rem;
 }
 
-.headerActions > button {
+.headerActions > button,
+.exportActions > button {
   white-space: nowrap;
 }
 
@@ -589,7 +605,8 @@
   }
 }
 
-.headerActions > button svg {
+.headerActions > button svg,
+.exportActions > button svg {
   width: 1.05rem;
   height: 1.05rem;
   flex: 0 0 auto;
@@ -613,6 +630,17 @@
 
   .headerActions > button:only-of-type {
     grid-column: 1 / -1;
+  }
+
+  .exportActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .exportActions > div {
+    min-width: 0;
   }
 }
 
