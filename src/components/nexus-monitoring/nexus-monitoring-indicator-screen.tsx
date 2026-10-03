@@ -28,7 +28,10 @@ import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-worksp
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import type { NexusKmIndicatorId } from "@/content/nexus-km-indicators";
 import { apiErrorMessage } from "@/lib/api-client";
-import { downloadDashboardExport } from "@/lib/api-dashboard-export";
+import {
+  dashboardExportErrorMessage,
+  downloadDashboardExport,
+} from "@/lib/api-dashboard-export";
 
 /**
  * Rincian satu indikator KM yang dihitung dari rekam resmi sesi berjalan dan
@@ -76,23 +79,18 @@ function NexusMonitoringIndicatorScreenContent({
       clusterScope
       actions={
         <NexusMonitoringHeaderActions
-          downloadLabel="Unduh CSV"
           onDownload={
             capabilities.canExport && isKnownPeriod
-              ? async () => {
+              ? async (format) => {
                   setExportError("");
                   try {
                     await downloadDashboardExport(
                       Number(period.year),
                       divisionPublicId,
+                      format,
                     );
                   } catch (error) {
-                    setExportError(
-                      apiErrorMessage(
-                        error,
-                        "Berkas CSV belum dapat dibuat. Silakan coba lagi.",
-                      ),
-                    );
+                    setExportError(dashboardExportErrorMessage(error));
                   }
                 }
               : undefined
