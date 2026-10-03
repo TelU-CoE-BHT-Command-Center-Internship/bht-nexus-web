@@ -153,6 +153,11 @@ function accountActionError(error: unknown, fallback: string): Error {
         "Peran lama belum dicabut karena akun ini pemegang terakhir kewenangan mengelola peran akun. Tetapkan kewenangan itu pada akun lain lebih dahulu.",
       );
     }
+    if (error.status === 409 && /sudah tertaut/i.test(error.message)) {
+      return new Error(
+        "Anggota yang dipilih sudah tertaut ke akun lain. Lepaskan tautan pada akun tersebut lebih dahulu.",
+      );
+    }
     if (error.status === 404 && /member/i.test(error.message)) {
       return new Error(
         "Anggota yang dipilih sudah tidak tersedia. Muat ulang halaman lalu pilih kembali.",
