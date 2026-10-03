@@ -2,7 +2,6 @@ import type { JSONContent } from "@tiptap/react";
 import {
   type BroadcastDocument,
   broadcastDocumentIsEmpty,
-  serializeBroadcastMarkdown,
   summarizeBroadcastDocument,
 } from "@/components/nexus-broadcast/nexus-broadcast-content";
 import type {
@@ -11,10 +10,6 @@ import type {
 } from "@/components/nexus-members/nexus-members-content";
 import { nexusValidEmail } from "@/components/nexus-members/nexus-members-model";
 
-/**
- * Batas presentasi judul email. Server belum menetapkan batasnya; 150
- * karakter cukup untuk subjek yang tetap terbaca di kotak masuk.
- */
 export const BROADCAST_SUBJECT_MAX_LENGTH = 150;
 
 export const BROADCAST_IMAGE_ALT_MAX_LENGTH = 250;
@@ -38,13 +33,8 @@ export const BROADCAST_IMAGE_ACCEPT = BROADCAST_IMAGE_TYPES.map(
 /** Satu-satunya mode penerima yang disepakati pada Meeting Minggu 12. */
 export type BroadcastRecipientMode = "ACTIVE_MEMBERS_WITH_EMAIL";
 
-/**
- * Berkas yang dipilih penulis dan hanya hidup di memori halaman. `objectUrl`
- * dipakai untuk menampilkan gambar di editor dan tampilan email, tidak pernah
- * disimpan, dan tidak sama dengan alamat gambar setelah diunggah.
- */
 export type BroadcastLocalImage = {
-  file: File;
+  file?: File;
   height: number;
   id: string;
   name: string;
@@ -118,7 +108,8 @@ export async function loadBroadcastImage(
 
 export function revokeBroadcastImages(images: BroadcastImageRegistry) {
   for (const image of Object.values(images)) {
-    URL.revokeObjectURL(image.objectUrl);
+    if (image.objectUrl.startsWith("blob:"))
+      URL.revokeObjectURL(image.objectUrl);
   }
 }
 
@@ -398,124 +389,5 @@ export function evaluateBroadcastReadiness({
     checks,
     completeCount,
     isReady: completeCount === checks.length,
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/* Kontrak pengiriman                                                  */
-/* ------------------------------------------------------------------ */
-
-/** Gambar yang harus diunggah lebih dahulu melalui layanan penyimpanan. */
-export type BroadcastImageUpload = {
-  alt: string;
-  file: File;
-  imageId: string;
-};
-
-/** Hasil unggah dari layanan penyimpanan; `url` adalah alamat publiknya. */
-export type BroadcastUploadedImage = {
-  alt: string;
-  imageId: string;
-  url: string;
-};
-
-/**
- * Permintaan kirim untuk layanan server. Penerima dikirim sebagai aturan,
- * bukan daftar alamat, karena server yang menentukan penerima sebenarnya.
- */
-export type BroadcastSendRequest = {
-  body: { format: "markdown"; markdown: string };
-  images: readonly BroadcastUploadedImage[];
-  recipients: { mode: BroadcastRecipientMode };
-  subject: string;
-};
-
-export type BroadcastSendStatus =
-  | "FAILED"
-  | "PARTIALLY_SENT"
-  | "SENDING"
-  | "SENT";
-
-/** Hanya ditampilkan bila berasal dari layanan pengiriman. */
-export type BroadcastSendResult = {
-  acceptedCount: number;
-  failedCount: number;
-  failureSummary?: string;
-  requestedRecipientCount: number;
-  /** Instant ISO dari server. */
-  sentAt?: string;
-  status: BroadcastSendStatus;
-};
-
-export type BroadcastHistoryEntry = {
-  id: string;
-  preparedBy: string;
-  recipientCount: number;
-  result: BroadcastSendResult;
-  subject: string;
-};
-
-/**
- * Titik sambung pengiriman. Selama layanan email belum tersedia, halaman hanya
- * sampai pada peninjauan dan tidak pernah menyatakan email telah terkirim.
- */
-export type BroadcastDeliveryAdapter =
-  | { status: "UNAVAILABLE" }
-  | {
-      send: (request: BroadcastSendRequest) => Promise<BroadcastSendResult>;
-      status: "AVAILABLE";
-      uploadImage: (
-        image: BroadcastImageUpload,
-      ) => Promise<BroadcastUploadedImage>;
-    };
-
-export const nexusBroadcastDelivery: BroadcastDeliveryAdapter = {
-  status: "UNAVAILABLE",
-};
-
-export function broadcastImagesToUpload(
-  document: BroadcastDocument,
-  images: BroadcastImageRegistry,
-): BroadcastImageUpload[] {
-  const seen = new Set<string>();
-  const uploads: BroadcastImageUpload[] = [];
-
-  for (const image of summarizeBroadcastDocument(document).images) {
-    const local = images[image.imageId];
-    if (!local || seen.has(image.imageId)) continue;
-    seen.add(image.imageId);
-    uploads.push({ alt: image.alt, file: local.file, imageId: image.imageId });
-  }
-
-  return uploads;
-}
-
-export function buildBroadcastSendRequest({
-  document,
-  recipientMode,
-  subject,
-  uploadedImages,
-}: {
-  document: BroadcastDocument;
-  recipientMode: BroadcastRecipientMode;
-  subject: string;
-  uploadedImages: readonly BroadcastUploadedImage[];
-}): BroadcastSendRequest {
-  const urlByImageId = new Map(
-    uploadedImages.map((image) => [image.imageId, image.url]),
-  );
-
-  return {
-    body: {
-      format: "markdown",
-      markdown: serializeBroadcastMarkdown(document, (imageId) => {
-        const url = urlByImageId.get(imageId);
-        if (!url) throw new Error(`Gambar ${imageId} belum diunggah.`);
-        return url;
-      }),
-    },
-    images: uploadedImages,
-    recipients: { mode: recipientMode },
-    subject: subject.trim(),
   };
 }

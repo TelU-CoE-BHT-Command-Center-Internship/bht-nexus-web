@@ -31,7 +31,7 @@ Bacaan pelengkap yang boleh ditolak server, misalnya direktori Anggota bagi akun
 
 ## Adapter data pratinjau
 
-Bagian yang sudah tersambung ke server tidak lagi mengambil datanya dari adapter di bawah ini. Bentuk data dan komponennya tetap dipakai bersama, sedangkan target periode Monitoring KM, Broadcast / Newsletter, dan Dokumen masih berjalan di atas adapter ini.
+Bagian yang sudah tersambung ke server tidak lagi mengambil datanya dari adapter di bawah ini. Bentuk data dan komponennya tetap dipakai bersama, sedangkan target periode Monitoring KM dan Dokumen masih berjalan di atas adapter ini. Broadcast memakai layanan server sebagaimana dijelaskan pada [alur broadcast](broadcast-email.md).
 
 | Area | Adapter frontend | Perilaku lokal |
 |---|---|---|
@@ -45,7 +45,7 @@ Bagian yang sudah tersambung ke server tidak lagi mengambil datanya dari adapter
 | Monitoring KM | `useNexusMonitoringData` yang menggabungkan `useNexusOfficialRecords`, `nexusMonitoringRecordsFrom`, dan versi target periode, lalu `getNexusMonitoringLandingData`, `buildIndicatorView`, serta `nexusMonitoringPeriodWorkbook` | menghitung realisasi di klien dari rekam resmi sesi yang sama dengan rumah Data Resmi, sehingga persetujuan Tinjauan dan koreksi langsung ikut membentuk angka; periode dibawa `?periode=`; target per periode berversi; unduhan XLSX per periode dan per indikator |
 | Periode dan target | `NexusMonitoringSessionProvider`, `nexusWorkbookPeriods`, dan `nexusWorkbookTargetVersions` | periode 2026 dan target versi 1 dari workbook; periode baru dan versi target berikutnya ditambahkan pengelola selama layout workspace aktif |
 | Rekam resmi kanonis | `nexus-official-records` (`projectNexusOfficialRecordSet`, `useNexusOfficialRecords`, `useNexusOfficialHomeRecords`) | satu jalur proyeksi untuk kelima rumah data dan Monitoring: pelengkapan metadata, keputusan Tinjauan, lalu koreksi Monitoring |
-| Broadcast / Newsletter | `NexusBroadcastStudio`, `summarizeBroadcastRecipients`, `serializeBroadcastMarkdown`, dan `nexusBroadcastDelivery` | draf judul, isi, dan gambar lokal hanya di memori halaman; penerima dihitung dari `NexusMemberSessionProvider`; checklist dan tampilan email dibentuk dari model dokumen yang sama dengan Markdown; pengiriman berstatus `UNAVAILABLE` sehingga alur berhenti pada peninjauan |
+| Broadcast / Newsletter | `NexusBroadcastStudio`, `api-broadcasts`, dan dokumen terstruktur | draf/gambar/penerima/antrean/hasil disimpan dan dibaca dari server; editor dibangun kembali dari isi tersimpan; checklist dan tampilan email memakai dokumen yang sama; pengiriman menampilkan hasil nyata per alamat |
 | Anggota | `getNexusMemberDirectory` dan `getNexusMembersContent` | direktori master–detail, tambah dan ubah profil, pencarian, filter status dan bidang, keanggotaan, identitas akademik, jalur data terkait, serta hubungan akun opsional |
 | Administrasi | `getNexusAdministrationContent` | daftar dan rincian akun, pencarian, filter status/role/hubungan anggota, satu alur undangan bertahap, editor hubungan, role tingkat tinggi, serta tindakan akses sesuai status |
 | Pengajuan manual Data Resmi | `manualSubmissionDefinitions`, `createManualSubmissionReviewRecord`, dan route `/nexus/ajukan/[domain]` | form penuh untuk lima domain, bidang subtype berdasarkan workbook, periode evaluasi yang terpisah dari tahun/tanggal entitas, validasi metadata/tanggal/angka/URL, saran KM berbasis aturan, pencocokan pengenal dan judul termasuk rekam yang telah disetujui, draft sesi browser otomatis, serta pengiriman kandidat manual ke Tinjauan |
@@ -114,9 +114,9 @@ Integrasi tidak boleh mengubah kontrak visual utama. Server perlu menyediakan ke
 11. promosi kandidat melalui transaksi server setelah keputusan yang sah;
 12. ekspor dan audit sesuai izin;
 13. direktori peran, katalog izin, hak akses bawaan tiap peran, dan penyesuaian izin per akun beserta efek memberi atau membatasi;
-14. pengiriman broadcast email: unggah gambar ke penyimpanan publik, penentuan penerima di server menurut aturan penerima, pengiriman ke banyak penerima beserta hasil per penerima, serta riwayat broadcast dan auditnya.
+14. pengiriman broadcast email sudah memakai unggah gambar, penerima, antrean, riwayat serta audit server; pengujian kotak masuk sungguhan membutuhkan konfigurasi penyedia/domain pengirim yang telah dimiliki.
 
-Per 1 Oktober 2026 web sudah memakai butir 1 sampai 7, 11, dan 13, ditambah catatan penolakan akses dari butir 12. Butir 8 sampai 10 sudah tersedia di server tetapi halaman Dokumen belum disambungkan. Butir 14 belum tersedia di server.
+Per 1 Oktober 2026 web sudah memakai butir 1 sampai 7, 11, dan 13, ditambah catatan penolakan akses dari butir 12. Integrasi broadcast kini memakai butir 14 dari layanan server pasangan; pengujian kotak masuk sungguhan masih memerlukan konfigurasi pengirim.
 
 ### Kontrak integrasi Anggota
 
@@ -148,38 +148,15 @@ Kelengkapan profil hanya mensyaratkan nama lengkap dan nomor HP. Hubungan akun d
 
 ### Kontrak integrasi Broadcast / Newsletter
 
-Meeting Minggu 12 menyepakati broadcast disusun pengurus melalui editor seperti LMS, dikirim ke seluruh anggota, berisi teks, tautan, judul, dan gambar opsional, disimpan sebagai Markdown, dan pemicunya ditambahkan pada server. Audit terhadap `bht-nexus-server` branch `dev` pada commit `6d93a20b35e352630211c46c308d3b85641a611d` (24 September 2026) menemukan batas berikut:
+`api-broadcasts` memanggil `GET /broadcasts`, `GET /broadcasts/recipients`, `GET /broadcasts/:public_id`, `POST /broadcasts`, `PATCH /broadcasts/:public_id`, serta endpoint gambar, percobaan, kirim dan coba lagi. Semua permintaan mengikuti cookie sesi, perlindungan CSRF dan izin efektif server. Menu memakai `broadcast.read`; perubahan serta pengiriman memakai `broadcast.manage`. Izin bawaan hanya diberikan kepada satu akun Pimpinan.
 
-- `EmailService` mengirim email transaksional ke satu penerima melalui Resend dengan alamat pengirim dari `SENDER_EMAIL`, paling banyak tiga percobaan dengan batas waktu 8 detik. Templatnya baru mencakup OTP, sambutan, status akun, dan keamanan;
-- belum ada modul, endpoint, antrean, atau tabel riwayat broadcast, dan belum ada pengiriman ke banyak penerima;
-- `baseEmailLayout` membungkus isi dengan pita BHT Nexus `#1e3a8a`, kartu 600 px, padding isi 32 px, Arial 14 px dengan tinggi baris 1,6, serta catatan kaki otomatis yang memakai `CONTACT_NAME`, `CONTACT_WHATSAPP`, dan `CONTACT_EMAIL`. Templat yang ada menaruh judul sebagai `<h1>` 20 px `#0f172a` dengan jarak bawah 16 px di awal isi;
-- aturan unggah `FILE_TYPE_LIMITS_MB` membatasi png, jpg, dan jpeg sampai 1 MB.
+Draf berisi judul, dokumen terstruktur kanonis dan daftar gambar. Server memvalidasi dokumen, menghasilkan Markdown, HTML serta teks polos, lalu menyimpannya dengan versi. Editor dibangun kembali dari dokumen tersimpan; HTML mentah maupun JSON editor alternatif tidak dikirim sebagai sumber isi. Gambar PNG/JPG sampai 1 MB diunggah melalui server dan harus memakai alamat storage publik yang dikonfigurasi.
 
-Kertas tulis dan Tampilan email di halaman meniru tata letak tersebut. Nama kontak pada catatan kakinya ditulis umum karena nilainya berasal dari konfigurasi server.
+Peninjauan menahan versi draf dan hash daftar penerima. Pengiriman memeriksa keduanya kembali serta menentukan alamat dari anggota aktif yang mempunyai email institusi sah atau email alternatif. Alamat duplikat dihilangkan; anggota cuti/nonaktif tidak menerima. Percobaan memakai satu atau dua alamat yang diisi pengguna dan UUID permintaan tetap untuk mencegah kiriman ganda ketika mencoba permintaan yang sama setelah gangguan jaringan.
 
-Permintaan kirim yang disiapkan frontend adalah `BroadcastSendRequest`:
+Server menyimpan salinan isi, pengirim, modus dan alamat penerima saat mengantre. Worker melanjutkan antrean pending setelah restart; hasil yang belum pasti tidak dikirim ulang otomatis. Riwayat serta hasil per alamat dibaca dari server. Konfirmasi layanan email memerlukan ID kiriman dan belum membuktikan pesan masuk ke kotak email; capture selalu ditampilkan sebagai penampung pemeriksaan lokal. Retry hanya mengantre ulang penolakan pasti.
 
-- `subject` berisi judul email yang sudah dipangkas; antarmuka membatasinya 150 karakter;
-- `body` berisi `{ format: "markdown", markdown }`;
-- `images` berisi gambar yang sudah diunggah, masing-masing dengan `imageId`, `alt`, dan `url` publik;
-- `recipients` berisi `{ mode: "ACTIVE_MEMBERS_WITH_EMAIL" }`. Frontend mengirim aturan, bukan daftar alamat, dan server menentukan penerimanya sendiri: anggota berstatus aktif, email institusi atau email alternatif bila email institusi kosong, serta satu email untuk setiap alamat yang sama.
-
-Gambar diunggah lebih dahulu melalui layanan penyimpanan server, lalu alamat publiknya dimasukkan ke Markdown. `nexusBroadcastDelivery` menjadi titik sambung `uploadImage` dan `send` ketika layanan tersedia; sampai saat itu statusnya `UNAVAILABLE` dan halaman tidak pernah menyatakan email terkirim.
-
-Markdown dihasilkan `serializeBroadcastMarkdown` dalam dialek CommonMark dengan batasan berikut: tebal dan miring ditulis sebagai `<strong>` dan `<em>`; tautan ditulis `[teks](<url>)` dan hanya untuk http atau https; Judul besar menjadi `##` dan Subjudul menjadi `###`; pindah baris di dalam paragraf memakai garis miring terbalik di akhir baris; tanda baca Markdown pada teks penulis di-escape; dan gambar ditulis sebagai `<img src alt width data-align>` dengan `width` dalam piksel email—persentase dari lebar isi 536 px—serta `data-align` bernilai `left`, `center`, atau `right`. Server perlu merender Markdown dengan renderer yang sesuai CommonMark dan meneruskan HTML mentah tersebut, misalnya commonmark.js. `marked` berbeda pada satu kasus tepi: paragraf setelah gambar di dalam butir daftar kehilangan pembungkus paragrafnya. Hasil render kemudian disaring sehingga hanya `p`, `h2`, `h3`, `strong`, `em`, `br`, `ul`, `ol` dengan `start`, `li`, `a` dengan `href` http atau https, dan `img` dengan `src`, `alt`, `width`, serta `data-align` yang tersisa.
-
-Aturan tampilan berikut dipakai kertas tulis dan Tampilan email, dan perlu diterapkan server agar hasil kirimnya sama:
-
-- judul email menjadi `<h1>` pertama pada isi, mengikuti templat lain;
-- `data-align="left"` atau `"right"` menjadi gambar mengapung dengan jarak `4px 16px 12px 0` atau `4px 0 12px 16px`. Atribut `align="left"` atau `"right"` sebaiknya ikut ditulis karena Outlook desktop tidak mengenal `float`; pada klien seperti itu gambar tampil di atas teks tanpa aliran di sampingnya dan isinya tetap terbaca;
-- `data-align="center"` menjadi gambar blok di tengah dengan jarak bawah 16 px;
-- `h2` dan `h3` memakai `clear: both`, sedangkan daftar memakai `overflow: hidden` agar tanda butirnya tidak menempel pada gambar;
-- media query untuk layar selebar 600 px atau kurang mengubah gambar kiri dan kanan menjadi selebar isi tanpa mengapung.
-
-Hasil pengiriman hanya ditampilkan bila berasal dari server: `SENDING`, `SENT`, `PARTIALLY_SENT`, atau `FAILED`, beserta jumlah penerima yang diminta, diterima, dan gagal, ringkasan kegagalan, serta instant ISO waktu kirim. Riwayat broadcast menampilkan judul, penyusun, jumlah penerima, waktu kirim, dan hasil dari data server yang sama.
-
-Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pemanggilan jaringan nantinya ditempatkan pada adapter server yang menggantikan fungsi konten tanpa mengubah kontrak visual utama.
-
+Kertas tulis dan Tampilan email mempertahankan tata letak BHT Nexus. Gambar di kiri/kanan mengalir bersama teks pada desktop dan memenuhi lebar isi pada layar kecil. Rincian alur, penyimpanan draf dan arti hasil ada pada [Broadcast / Newsletter](broadcast-email.md).
 
 ## Aturan keamanan
 
@@ -191,7 +168,7 @@ Karena endpoint tersebut belum ada, komponen tidak memuat URL API spekulatif. Pe
 - isi dokumen, data personal, catatan administratif, dan nilai sensitif tidak boleh dimasukkan sebagai data frontend publik;
 - identitas nyata hanya dipakai ketika baris sumbernya dapat diverifikasi; skenario sintetis wajib memakai identitas netral dan tidak memakai foto anggota;
 - karya nyata yang tautan buktinya tidak dapat diverifikasi tidak dipertahankan sebagai data pengembangan publik, dan tautan sumber yang terbukti menunjuk karya lain tidak dipakai sebagai bukti;
-- isi broadcast selalu disaring di server sebelum dikirim; frontend hanya menghasilkan kosakata Markdown yang tercantum pada kontrak Broadcast / Newsletter, dan kunci layanan email tetap berada di server;
+- isi broadcast tervalidasi sebagai dokumen terstruktur di server; Markdown, HTML dan teks polos dihasilkan server dari dokumen yang sama, dan kunci layanan email tetap berada di server;
 - audit permanen dibuat di server, bukan dipercaya dari state browser.
 
 ## Urutan migrasi
@@ -208,5 +185,5 @@ Langkah yang sudah selesai ditandai ✓.
 6. Hubungkan tanya jawab ke retriever yang mengembalikan kutipan terstruktur.
 7. Hubungkan ekstraksi ke profil berversi dan staging kandidat.
 8. ✓ Simpan keputusan Tinjauan melalui server; koreksi Monitoring KM menyusul bersama data Monitoring dari server.
-8b. Hubungkan Broadcast / Newsletter ke unggah gambar, pengiriman email, dan riwayat pengiriman server.
+8b. Verifikasi Broadcast / Newsletter pada kotak masuk sungguhan setelah pengirim yang telah dimiliki dikonfigurasi.
 9. Tambahkan pengujian kontrak serta pengujian end-to-end terhadap layanan nyata.

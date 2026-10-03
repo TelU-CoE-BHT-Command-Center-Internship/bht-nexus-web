@@ -26,7 +26,7 @@ Ringkasan sumber data per bagian ruang kerja. Rincian adapter dan endpoint-nya a
 | Profil Saya | Server | Informasi pribadi akun non-anggota dan pengenal SINTA, Scopus, serta Google Scholar anggota yang tertaut. |
 | Dashboard | Server | Kartu ringkasan, aktivitas terkini, dan pengumuman dari `GET /dashboard/overview` serta `GET /dashboard/announcements`. |
 | Monitoring KM | Server untuk rekam | Realisasi dihitung dari rekam resmi server. Target per periode masih mengikuti workbook KM 2026 karena server belum menyimpan target, sehingga Kelola target belum ditampilkan. |
-| Broadcast / Newsletter | Belum tersedia | Layanan pengirimannya belum ada di server, sehingga menunya tidak dibuka untuk peran mana pun. |
+| Broadcast / Newsletter | Data server | Draf, gambar, penerima, percobaan, antrean dan hasil per alamat; izin bawaan hanya satu akun Pimpinan. |
 | Dokumen, Tanya jawab, Ekstraksi | Data pratinjau | Tetap dapat ditinjau tampilannya; dokumen dan jawabannya belum berasal dari server. |
 
 ## Landing page dan halaman institusional
@@ -95,17 +95,17 @@ Landing page masih akan berkembang. Daftar mitra, berita, kegiatan, tautan, dan 
 
 ### Broadcast / Newsletter
 
-- `Broadcast / Newsletter` menjadi butir navigasi pada kelompok Utama setelah Monitoring KM. Sesuai Meeting Minggu 12, penyusunnya adalah pengurus dan Ketua Klaster belum termasuk. Server belum mempunyai izin untuk Broadcast, sehingga untuk sementara halaman ini dibuka bagi peran Admin dan Pengurus. Akun yang hanya dapat melihat menerima ringkasan penerima dan riwayat tanpa penyusun.
+- `Broadcast / Newsletter` menjadi butir navigasi pada kelompok Utama setelah Monitoring KM. Menu mengikuti `broadcast.read` dan penyusun mengikuti `broadcast.manage` dari izin efektif server. Keduanya hanya diberikan kepada Pimpinan secara bawaan; server membatasi peran sistem Pimpinan pada satu akun. Pengelola dapat mengubah izin secara sengaja melalui pengaturan yang tersedia.
 - Penyusun mengikuti pola menulis email: baris Dari, Kepada, dan Judul di atas, lalu editor isi pesan dengan perkakas bergrup seperti editor isi LMS—gaya teks (Teks biasa, Judul besar, Subjudul), tebal, miring, daftar berpoin dan bernomor, tautan, gambar, hapus format, urungkan, dan ulangi. Penulis tidak pernah melihat sintaks. Perkakas memakai satu urutan Tab dengan perpindahan panah, Home, dan End, serta pintasan Ctrl/⌘ + B, I, K, Z, dan Y.
 - Kertas tulis adalah kartu email itu sendiri: pita BHT Nexus, judul email, isi pesan, dan catatan kaki otomatis, dengan lebar 600 px, padding 32 px, dan huruf Arial 14 px seperti templat email server. Baris teks, ukuran gambar, dan posisi gambar di editor sama dengan email yang diterima.
 - Gambar dipilih atau diseret ke dialog maupun langsung ke editor. Formatnya JPG atau PNG, maksimal 1 MB, sesuai batas unggah server, dan deskripsinya wajib diisi sebelum disisipkan dari dialog. Gambar yang dilepas atau ditempel tanpa deskripsi diberi penanda **Tambahkan deskripsi**.
 - Gambar dapat diletakkan di kiri atau kanan dengan teks mengalir di sampingnya, atau di tengah. Ukurannya dipilih dari Kecil, Sedang, Besar, dan Penuh, atau ditarik lewat pegangan di sisinya. Gambar samping dibatasi 60% lebar isi agar kolom teksnya tetap terbaca; ukuran di atasnya memindahkan gambar ke tengah. Dua gambar kecil yang sama-sama di kiri berjajar. Pada layar selebar 600 px atau kurang gambar samping tampil selebar isi, dan editor menjelaskannya ketika kertasnya sempit.
 - Judul memulai bagian baru di bawah gambar samping, dan daftar di samping gambar menempati kolomnya sendiri agar tanda butirnya tidak tertutup gambar. Mengetik ketika gambar terpilih melanjutkan tulisan di bawah gambar, gambar baru disisipkan setelah gambar yang terpilih, dan gambar yang dilepas di tengah paragraf ditempatkan di batas paragraf terdekat, bukan memotong kalimat.
 - Tautan hanya menerima alamat web http atau https dengan nama host lengkap. Alamat tanpa skema dilengkapi `https://`, dan penulis melihat alamat yang akan dipakai sebelum menyimpan. Tempelan dari dokumen lain diselaraskan dengan dua gaya judul, sedangkan gambar dari tempelan halaman web tidak ikut masuk.
-- Penerima dihitung dari direktori Anggota kanonis melalui `NexusMemberSessionProvider`: anggota aktif dengan email institusi, atau email alternatif bila email institusi belum tercatat. Alamat yang sama hanya menerima satu email, sedangkan anggota cuti atau nonaktif tidak menerima. Data awal belum mencatat email anggota, sehingga halaman menyatakan 0 penerima dan menyediakan tautan **Lengkapi** ke profil anggota di halaman Anggota. Email yang dilengkapi di sana langsung mengubah jumlah penerima.
+- Penerima dihitung server dari anggota aktif dengan email institusi yang sah, atau email alternatif bila email institusi tidak sah. Alamat yang sama hanya menerima satu email, sedangkan anggota cuti atau nonaktif tidak menerima. Daftar anggota yang belum mempunyai email disediakan agar dapat dilengkapi; tombol perbarui membaca daftar terbaru. Alamat akun masuk bukan sumber penerima.
 - Checklist & Validasi memeriksa lima syarat: judul email, isi pesan, tautan, deskripsi gambar, dan ketersediaan penerima. Setiap syarat yang belum terpenuhi menyediakan tindakan langsung menuju bagian yang perlu diperbaiki. Tampilan email untuk Desktop dan Ponsel dirender dari model dokumen yang sama dengan Markdown yang akan dikirim. Tidak ada cuplikan email kedua di samping penyusun karena kertas tulis dan Tampilan email sudah memperlihatkan email yang sama.
-- Tinjau pengiriman membuka ringkasan judul, jumlah alamat penerima, pengirim, dan isi pesan. Layanan pengiriman email belum tersedia, sehingga tombol Kirim broadcast nonaktif dan halaman menyatakannya apa adanya; tidak ada pengiriman, status terkirim, maupun riwayat rekaan. Riwayat broadcast menampilkan keadaan kosong sampai layanan server mencatat pengiriman.
-- Draf hanya berada di memori halaman dan tidak disimpan ke penyimpanan browser. Meninggalkan halaman dengan draf memakai penjaga perubahan bersama, dan Kosongkan draf meminta konfirmasi.
+- Tinjau pengiriman membuka ringkasan judul, jumlah alamat penerima, pengirim dan isi pesan. Versi draf serta daftar penerima diperiksa lagi saat mengantre. Kirim percobaan menerima satu atau dua alamat. Hasil per alamat berasal dari server dan membedakan antrean, konfirmasi layanan, kegagalan pasti dan hasil yang belum pasti. Penampung lokal selalu dinyatakan sebagai pemeriksaan tanpa pengiriman sungguhan.
+- Draf disimpan di server secara eksplisit dan dapat dibuka kembali melalui riwayat atau tautan langsung setelah halaman dimuat ulang. Perubahan yang belum disimpan memakai penjaga perubahan bersama, dan Draf baru meminta konfirmasi bila ada perubahan. Broadcast yang sudah masuk antrean hanya dapat dibaca. [Alur dan arti status](broadcast-email.md) memuat rincian operasionalnya.
 
 ### Pengumpulan
 
@@ -320,10 +320,10 @@ Route workspace Inggris yang pernah tersedia tetap dipertahankan sebagai pengara
 
 Hal-hal berikut belum menjadi kemampuan produksi pada repository web:
 
-- target per periode Monitoring KM, serta data server untuk Broadcast / Newsletter dan Dokumen;
+- target per periode Monitoring KM, serta data server untuk Dokumen;
 - penyimpanan mandiri informasi pribadi, profil anggota, bidang keahlian, foto, ORCID iD, dan ResearcherID bagi anggota yang tertaut;
 - kirim ulang dan batalkan undangan akun;
-- pengiriman email broadcast, unggah gambarnya, dan riwayat pengiriman;
+- pemeriksaan kotak masuk sungguhan setelah penyedia/domain pengirim yang telah dimiliki dikonfigurasi;
 - penggantian kata sandi dari dalam ruang kerja;
 - ruang kerja berbahasa Inggris;
 - deployment produksi final.
@@ -336,7 +336,7 @@ Pada bagian yang masih memakai data pratinjau, memuat ulang penuh layout ruang k
 
 - melengkapi dan mengonfirmasi daftar mitra;
 - menyempurnakan berita, kegiatan, tautan, dan bagian landing page lanjutan;
-- menyambungkan target Monitoring KM, Dokumen, dan Broadcast ke layanan server masing-masing;
+- menyambungkan target Monitoring KM dan Dokumen ke layanan server masing-masing;
 - membuka penyuntingan anggota dan profil anggota setelah jalur penyimpanannya disepakati dengan server;
 - menjaga pemeriksaan aksesibilitas, responsivitas, kontras, dan regresi pada setiap pengembangan fitur.
 

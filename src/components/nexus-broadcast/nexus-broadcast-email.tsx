@@ -357,7 +357,12 @@ export function NexusBroadcastEmailPreview({
           </div>
         ) : (
           <div className={styles.phone}>
-            <div className={styles.phoneScreen}>
+            <section
+              aria-label="Pratinjau email pada ponsel"
+              className={styles.phoneScreen}
+              // biome-ignore lint/a11y/noNoninteractiveTabindex: area bergulir perlu fokus agar seluruh isi dapat dibaca dengan keyboard.
+              tabIndex={0}
+            >
               <div aria-hidden="true" className={styles.phoneStatus}>
                 <span />
               </div>
@@ -371,7 +376,7 @@ export function NexusBroadcastEmailPreview({
                 subject={subject}
                 variant="mobile"
               />
-            </div>
+            </section>
           </div>
         )}
       </div>
