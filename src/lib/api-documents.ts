@@ -12,7 +12,7 @@ export type DocumentQuarantineStatus = "passed" | "pending" | "rejected";
 
 export type DocumentIndexStatus =
   | "failed"
-  | "not_indexable"
+  | "not_indexed"
   | "queued"
   | "ready"
   | "running";
@@ -57,6 +57,13 @@ export async function listAllDocuments(): Promise<DocumentSummary[]> {
       return documents;
     }
   }
+}
+
+/** Mengantrekan ulang indeks dokumen yang indeksnya gagal. */
+export function reindexDocument(publicId: string): Promise<unknown> {
+  return apiFetch(`/documents/${encodeURIComponent(publicId)}/reindex`, {
+    method: "POST",
+  });
 }
 
 export function uploadDocument(file: File): Promise<UploadedDocument> {

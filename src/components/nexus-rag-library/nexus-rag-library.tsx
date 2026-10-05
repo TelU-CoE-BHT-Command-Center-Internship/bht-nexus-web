@@ -16,6 +16,7 @@ import {
   NexusWorkspaceToolbar,
 } from "@/components/nexus-workspace-ui/nexus-workspace-controls";
 import {
+  NexusWorkspaceButton,
   NexusWorkspaceEmptyState,
   NexusWorkspaceLinkButton,
   NexusWorkspaceLoadError,
@@ -42,6 +43,7 @@ import { NexusWorkspaceTableSection } from "@/components/nexus-workspace-ui/nexu
 import { apiErrorMessage } from "@/lib/api-client";
 import {
   DOCUMENT_UPLOAD_LIMIT_BYTES,
+  reindexDocument,
   uploadDocument,
 } from "@/lib/api-documents";
 
@@ -83,6 +85,7 @@ export function NexusRagLibrary({
   const catalog = useNexusDocumentCatalog(content.locale);
   const documents = catalog.documents;
   const [isUploading, setIsUploading] = useState(false);
+  const [reindexingId, setReindexingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
     message: string;
     tone: "danger" | "success";
@@ -153,7 +156,8 @@ export function NexusRagLibrary({
       .toLocaleLowerCase(content.locale === "id" ? "id-ID" : "en-US");
     return documents.filter(
       (document) =>
-        (status === "all" || document.processingJob.status === status) &&
+        (status === "all" ||
+          (document.processingJob.status === status && !document.notIndexed)) &&
         (!needle ||
           `${document.title} ${document.ownerUnit} ${document.fileLabel}`
             .toLocaleLowerCase()
@@ -218,10 +222,34 @@ export function NexusRagLibrary({
     }
   }
 
+  async function reindex(documentId: string) {
+    setReindexingId(documentId);
+    setFeedback(null);
+    try {
+      await reindexDocument(documentId);
+      catalog.refresh(true);
+    } catch (error) {
+      setFeedback({
+        message: apiErrorMessage(
+          error,
+          content.locale === "id"
+            ? "Dokumen belum dapat diindeks ulang."
+            : "The document could not be indexed again.",
+          content.locale,
+        ),
+        tone: "danger",
+      });
+    } finally {
+      setReindexingId(null);
+    }
+  }
+
   const rows = visibleDocuments.map((document) => {
     const processingStatus = document.processingJob.status;
     const failureReason = latestDocumentProcessingAttempt(document)?.reason;
-    const tone = statusTone(processingStatus);
+    const tone = document.notIndexed
+      ? ("waiting" as const)
+      : statusTone(processingStatus);
     const questionHref = `${
       content.locale === "id"
         ? "/nexus/tanya-dokumen"
@@ -244,6 +272,21 @@ export function NexusRagLibrary({
             </NexusWorkspaceLinkButton>
           ) : null}
         </span>
+      ) : processingStatus === "failed" && !document.notIndexed ? (
+        <NexusWorkspaceButton
+          disabled={reindexingId !== null}
+          key={`${document.id}-action`}
+          onClick={() => void reindex(document.id)}
+          type="button"
+        >
+          {reindexingId === document.id
+            ? content.locale === "id"
+              ? "Mengantrekan…"
+              : "Queueing…"
+            : content.locale === "id"
+              ? "Indeks ulang"
+              : "Index again"}
+        </NexusWorkspaceButton>
       ) : (
         <span className={styles.noAction} key={`${document.id}-action`}>
           —

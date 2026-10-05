@@ -23,6 +23,8 @@ export type NexusDocumentRecord = {
   capabilities: NexusDocumentCapability[];
   fileLabel: string;
   id: string;
+  /** Jenis berkas yang tidak dibaca pengindeks; tidak dapat diindeks ulang. */
+  notIndexed: boolean;
   ownerUnit: string;
   processingHistory: NexusDocumentProcessingJob[];
   processingJob: NexusDocumentProcessingJob;
