@@ -21,6 +21,13 @@
   background: #fff;
 }
 
+/* `position: sticky` membuat lapisan tumpukan sendiri. Selama panel dari
+   direktori (Kelola klaster) terbuka, lapisannya dinaikkan agar panel menutupi
+   rincian anggota, kepala halaman, dan navigasi seperti panel lain. */
+.directory:has([aria-modal="true"]) {
+  z-index: 100;
+}
+
 .directoryHeader {
   padding: 1.35rem 1.35rem 1.05rem;
 }
