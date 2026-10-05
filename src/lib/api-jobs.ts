@@ -8,6 +8,23 @@ export type JobStatus =
   | "running"
   | "succeeded";
 
+export type JobSummary = {
+  candidateCount: number | null;
+  outcome: string | null;
+  progressDetail: {
+    done: number;
+    etaSeconds: number | null;
+    step: string;
+    total: number;
+  } | null;
+  sources: Array<{
+    message: string | null;
+    source: string;
+    status: string;
+    workCount: number;
+  }>;
+};
+
 export type JobRecord = {
   availableAt: string;
   createdAt: string;
@@ -21,6 +38,7 @@ export type JobRecord = {
   publicId: string;
   retryCount: number;
   status: JobStatus;
+  summary: JobSummary;
 };
 
 export type CreateJobInput = {

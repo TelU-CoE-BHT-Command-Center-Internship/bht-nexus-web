@@ -142,10 +142,35 @@ type CollectionReviewSync = {
   firstReviewCaseId?: string;
 };
 
-/** Jeda pemantauan status: mulai 4 detik, melambat sampai 30 detik. */
-const pollDelayMs = (round: number) => Math.min(4000 * 1.5 ** round, 30000);
-/** Pemantauan berhenti setelah sekitar 15 menit; status terbaru tampil saat halaman dimuat ulang. */
-const maxPollRounds = 40;
+/** Jeda pemantauan status: rapat selama pekerjaan berjalan agar hitung mundur bergerak. */
+const pollDelayMs = (status: JobRecord["status"]) =>
+  status === "running" ? 5000 : 15000;
+const pollRetryDelayMs = 30000;
+const inProgressStatuses: ReadonlySet<string> = new Set([
+  "queued",
+  "retrying",
+  "running",
+]);
+
+/** Kendala per sumber dari worker; pesan pekerjaan dipakai bila sumber tidak menyebutnya. */
+function jobProgressFields(record: JobRecord) {
+  const failed =
+    record.status === "failed" || record.status === "failed_permanently";
+  const sourceIssues = record.summary.sources
+    .map((source) => source.message)
+    .filter((message): message is string => Boolean(message));
+  const running = inProgressStatuses.has(record.status);
+  return {
+    failureReason:
+      sourceIssues.length > 0
+        ? sourceIssues.join(". ")
+        : failed
+          ? record.progressMessage
+          : undefined,
+    progress: running ? record.progress : undefined,
+    progressNote: running ? record.progressMessage : undefined,
+  };
+}
 
 const attemptSourceLabels: Record<string, string> = {
   google_scholar: "Google Scholar",
@@ -211,10 +236,7 @@ function jobRecordToCollectionJob(
 
   return {
     candidates: [],
-    failureReason:
-      record.status === "failed" || record.status === "failed_permanently"
-        ? record.progressMessage
-        : undefined,
+    ...jobProgressFields(record),
     fullName:
       record.normalizedName ??
       parsedInput.name ??
@@ -265,6 +287,7 @@ export function NexusScraperSearch({
   );
   // Pemantauan status berhenti ketika halaman ditinggalkan.
   const isMounted = useRef(true);
+  const polledJobIds = useRef(new Set<string>());
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -288,6 +311,11 @@ export function NexusScraperSearch({
         ]);
         setJobsTotal(result.meta.total);
         setLoadJobsError(null);
+        for (const record of result.data) {
+          if (inProgressStatuses.has(record.status)) {
+            void pollJob(record.publicId);
+          }
+        }
       })
       .catch((error: unknown) => {
         if (cancelled) return;
@@ -517,11 +545,7 @@ export function NexusScraperSearch({
                 extra !== undefined
                   ? `${getAutomationStatusLabel(content.locale, record.status)} · ${extra}`
                   : getAutomationStatusLabel(content.locale, record.status),
-              failureReason:
-                record.status === "failed" ||
-                record.status === "failed_permanently"
-                  ? record.progressMessage
-                  : undefined,
+              ...jobProgressFields(record),
             }
           : job,
       ),
@@ -581,25 +605,32 @@ export function NexusScraperSearch({
   }
 
   async function pollJob(publicId: string) {
-    const terminal = new Set(["succeeded", "failed", "failed_permanently"]);
-    for (let round = 0; round < maxPollRounds; round += 1) {
-      if (!isMounted.current) return;
-      let record: JobRecord;
-      try {
-        record = await getJob(publicId);
-      } catch {
+    if (polledJobIds.current.has(publicId)) return;
+    polledJobIds.current.add(publicId);
+    const wait = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+    try {
+      while (isMounted.current) {
+        let record: JobRecord;
+        try {
+          record = await getJob(publicId);
+        } catch {
+          await wait(pollRetryDelayMs);
+          continue;
+        }
+        if (!isMounted.current) return;
+        applyJobUpdate(publicId, record);
+        if (inProgressStatuses.has(record.status)) {
+          await wait(pollDelayMs(record.status));
+          continue;
+        }
+        if (record.status === "succeeded" && capabilities.canSendToReview) {
+          await sendToReview(publicId, false);
+        }
         return;
       }
-      if (!isMounted.current) return;
-      applyJobUpdate(publicId, record);
-      if (!terminal.has(record.status)) {
-        await new Promise((resolve) => setTimeout(resolve, pollDelayMs(round)));
-        continue;
-      }
-      if (record.status === "succeeded" && capabilities.canSendToReview) {
-        await sendToReview(publicId, false);
-      }
-      return;
+    } finally {
+      polledJobIds.current.delete(publicId);
     }
   }
 
@@ -699,7 +730,7 @@ export function NexusScraperSearch({
     const isLocal = job.id.startsWith("local-");
     const isBusy = busyJobIds.has(job.id);
     const reviewSync = reviewSyncs[job.id];
-    const inProgress = ["queued", "retrying", "running"].includes(job.status);
+    const inProgress = inProgressStatuses.has(job.status);
     const failed =
       job.status === "failed" || job.status === "failed_permanently";
     const resultSignal =
@@ -726,11 +757,15 @@ export function NexusScraperSearch({
             }
           : inProgress
             ? {
-                primary: "—",
+                primary:
+                  job.status === "running" && job.progress !== undefined
+                    ? `${job.progress}%`
+                    : "—",
                 secondary:
-                  content.locale === "id"
+                  (job.status === "running" && job.progressNote) ||
+                  (content.locale === "id"
                     ? "Menunggu hasil"
-                    : "Waiting for results",
+                    : "Waiting for results"),
                 tone: "neutral" as const,
               }
             : {

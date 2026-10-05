@@ -41,6 +41,9 @@ export type CollectionJob = {
   memberBinding?: CollectionMemberBinding;
   /** Alias untuk profil utama (SINTA), dipakai bukti tinjauan dan pencocokan anggota. */
   profileUrl: string;
+  /** Persen dan keterangan langkah selama pekerjaan berjalan. */
+  progress?: number;
+  progressNote?: string;
   scholarUrl?: string;
   sintaUrl?: string;
   source: CollectionSource;
