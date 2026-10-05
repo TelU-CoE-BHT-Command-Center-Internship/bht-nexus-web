@@ -13,7 +13,6 @@ import styles from "@/components/nexus-profile/nexus-profile-modal.module.css";
 import type {
   NexusProfileDraft,
   NexusProfileErrors,
-  NexusProfileField,
 } from "@/components/nexus-profile/nexus-profile-model";
 import {
   NexusWorkspaceButton,
@@ -34,9 +33,6 @@ export type NexusProfilePhotoChange = {
   originalSrc?: ImageProps["src"];
   position: NexusMemberAvatarPosition;
 };
-
-/** Petunjuk untuk bidang yang tampil tetapi belum dapat disimpan dari halaman ini. */
-const UNAVAILABLE_FIELD_HINT = "Belum dapat diubah dari Profil Saya.";
 
 type SaveState = {
   /** Penyimpanan sedang berjalan; formulir menunggu jawaban layanan. */
@@ -72,33 +68,25 @@ function ModalActions({
 export function NexusProfilePersonalEditor({
   draft,
   errors,
-  includeInstitutionalEmail,
+  includeMemberFields,
   isSaving,
   loadOriginalImage,
   onChange,
   onClose,
   onPhotoChange,
   onSubmit,
-  photoAvailable = true,
   saveError,
-  unavailableFields,
 }: SaveState & {
   draft: NexusProfileDraft;
   errors: NexusProfileErrors;
-  includeInstitutionalEmail: boolean;
+  /** Nama panggilan dan email kontak disimpan pada profil anggota yang tertaut. */
+  includeMemberFields: boolean;
   loadOriginalImage?: () => Promise<string>;
   onChange: FormChangeHandler;
   onClose: () => void;
   onPhotoChange: (value: NexusProfilePhotoChange) => void;
   onSubmit: SubmitHandler;
-  /** Foto profil dapat diganti dan disimpan dari halaman ini. */
-  photoAvailable?: boolean;
-  /** Bidang yang tampil sebagai informasi karena belum dapat disimpan. */
-  unavailableFields?: ReadonlySet<NexusProfileField>;
 }) {
-  const unavailable = (field: NexusProfileField) =>
-    unavailableFields?.has(field) ?? false;
-
   return (
     <NexusProfileModal
       closeLabel="Tutup formulir informasi pribadi"
@@ -110,20 +98,14 @@ export function NexusProfilePersonalEditor({
         <div className={styles.body}>
           <section className={styles.section}>
             <h3>Foto profil</h3>
-            {photoAvailable ? (
-              <NexusMemberProfilePhoto
-                loadOriginalImage={loadOriginalImage}
-                onChange={onPhotoChange}
-                originalValue={draft.avatarOriginalSrc}
-                personName={draft.fullName}
-                position={draft.avatarPosition}
-                value={draft.avatarSrc}
-              />
-            ) : (
-              <p className={styles.sectionNote}>
-                Mengganti foto profil belum tersedia dari halaman ini.
-              </p>
-            )}
+            <NexusMemberProfilePhoto
+              loadOriginalImage={loadOriginalImage}
+              onChange={onPhotoChange}
+              originalValue={draft.avatarOriginalSrc}
+              personName={draft.fullName}
+              position={draft.avatarPosition}
+              value={draft.avatarSrc}
+            />
           </section>
 
           <section className={styles.section}>
@@ -139,20 +121,17 @@ export function NexusProfilePersonalEditor({
                 type="text"
                 value={draft.fullName}
               />
-              <NexusWorkspaceFormField
-                disabled={unavailable("preferredName")}
-                hint={
-                  unavailable("preferredName")
-                    ? UNAVAILABLE_FIELD_HINT
-                    : "Jika kosong, nama lengkap akan digunakan."
-                }
-                id="profile-preferred-name"
-                label="Nama panggilan"
-                name="preferredName"
-                onChange={onChange}
-                type="text"
-                value={draft.preferredName}
-              />
+              {includeMemberFields ? (
+                <NexusWorkspaceFormField
+                  hint="Jika kosong, nama lengkap akan digunakan."
+                  id="profile-preferred-name"
+                  label="Nama panggilan"
+                  name="preferredName"
+                  onChange={onChange}
+                  type="text"
+                  value={draft.preferredName}
+                />
+              ) : null}
               <NexusWorkspaceFormField
                 error={errors.phone}
                 id="profile-phone"
@@ -163,30 +142,21 @@ export function NexusProfilePersonalEditor({
                 type="text"
                 value={draft.phone}
               />
-              <NexusWorkspaceFormField
-                disabled={unavailable("alternateEmail")}
-                error={errors.alternateEmail}
-                hint={
-                  unavailable("alternateEmail")
-                    ? UNAVAILABLE_FIELD_HINT
-                    : "Kanal cadangan untuk dihubungi, bukan email masuk."
-                }
-                id="profile-alternate-email"
-                label="Email alternatif"
-                name="alternateEmail"
-                onChange={onChange}
-                type="email"
-                value={draft.alternateEmail}
-              />
-              {includeInstitutionalEmail ? (
+              {includeMemberFields ? (
                 <NexusWorkspaceFormField
-                  disabled={unavailable("institutionalEmail")}
+                  error={errors.alternateEmail}
+                  hint="Kanal cadangan untuk dihubungi, bukan email masuk."
+                  id="profile-alternate-email"
+                  label="Email alternatif"
+                  name="alternateEmail"
+                  onChange={onChange}
+                  type="email"
+                  value={draft.alternateEmail}
+                />
+              ) : null}
+              {includeMemberFields ? (
+                <NexusWorkspaceFormField
                   error={errors.institutionalEmail}
-                  hint={
-                    unavailable("institutionalEmail")
-                      ? UNAVAILABLE_FIELD_HINT
-                      : undefined
-                  }
                   id="profile-institutional-email"
                   label="Email institusi personal"
                   name="institutionalEmail"
@@ -341,19 +311,13 @@ export function NexusProfileAcademicEditor({
   onClose,
   onSubmit,
   saveError,
-  unavailableFields,
 }: SaveState & {
   draft: MemberProfileDraft;
   errors: MemberProfileErrors;
   onChange: FormChangeHandler;
   onClose: () => void;
   onSubmit: SubmitHandler;
-  /** Pengenal yang tampil sebagai informasi karena belum dapat disimpan. */
-  unavailableFields?: ReadonlySet<keyof MemberProfileDraft>;
 }) {
-  const unavailable = (field: keyof MemberProfileDraft) =>
-    unavailableFields?.has(field) ?? false;
-
   return (
     <NexusProfileModal
       closeLabel="Tutup formulir identitas akademik"
@@ -374,9 +338,7 @@ export function NexusProfileAcademicEditor({
               value={draft.sintaId}
             />
             <NexusWorkspaceFormField
-              disabled={unavailable("orcid")}
               error={errors.orcid}
-              hint={unavailable("orcid") ? UNAVAILABLE_FIELD_HINT : undefined}
               id="profile-orcid"
               label="ORCID iD"
               name="orcid"
@@ -404,17 +366,103 @@ export function NexusProfileAcademicEditor({
               value={draft.scopusAuthorId}
             />
             <NexusWorkspaceFormField
-              disabled={unavailable("researcherId")}
               error={errors.researcherId}
-              hint={
-                unavailable("researcherId") ? UNAVAILABLE_FIELD_HINT : undefined
-              }
               id="profile-researcher-id"
               label="ResearcherID"
               name="researcherId"
               onChange={onChange}
               type="text"
               value={draft.researcherId}
+            />
+          </div>
+        </div>
+        <ModalActions
+          isSaving={isSaving}
+          onClose={onClose}
+          saveError={saveError}
+        />
+      </form>
+    </NexusProfileModal>
+  );
+}
+
+export type NexusPasswordDraft = {
+  confirmPassword: string;
+  currentPassword: string;
+  newPassword: string;
+};
+
+export type NexusPasswordErrors = Partial<
+  Record<keyof NexusPasswordDraft, string>
+>;
+
+export function NexusProfilePasswordEditor({
+  draft,
+  errors,
+  isSaving,
+  onChange,
+  onClose,
+  onSubmit,
+  saveError,
+}: SaveState & {
+  draft: NexusPasswordDraft;
+  errors: NexusPasswordErrors;
+  onChange: FormChangeHandler;
+  onClose: () => void;
+  onSubmit: SubmitHandler;
+}) {
+  return (
+    <NexusProfileModal
+      closeLabel="Tutup formulir ganti kata sandi"
+      description="Setelah kata sandi diganti, sesi di perangkat lain diakhiri dan Anda tetap masuk di perangkat ini."
+      onClose={onClose}
+      title="Ganti kata sandi"
+    >
+      <form className={styles.form} noValidate onSubmit={onSubmit}>
+        <div className={styles.body}>
+          <input
+            autoComplete="username"
+            hidden
+            name="username"
+            readOnly
+            type="email"
+            value=""
+          />
+          <div className={styles.grid}>
+            <NexusWorkspaceFormField
+              autoComplete="current-password"
+              error={errors.currentPassword}
+              id="profile-current-password"
+              label="Kata sandi saat ini"
+              name="currentPassword"
+              onChange={onChange}
+              required
+              type="password"
+              value={draft.currentPassword}
+              wide
+            />
+            <NexusWorkspaceFormField
+              autoComplete="new-password"
+              error={errors.newPassword}
+              hint="Minimal 8 karakter."
+              id="profile-new-password"
+              label="Kata sandi baru"
+              name="newPassword"
+              onChange={onChange}
+              required
+              type="password"
+              value={draft.newPassword}
+            />
+            <NexusWorkspaceFormField
+              autoComplete="new-password"
+              error={errors.confirmPassword}
+              id="profile-confirm-password"
+              label="Ulangi kata sandi baru"
+              name="confirmPassword"
+              onChange={onChange}
+              required
+              type="password"
+              value={draft.confirmPassword}
             />
           </div>
         </div>

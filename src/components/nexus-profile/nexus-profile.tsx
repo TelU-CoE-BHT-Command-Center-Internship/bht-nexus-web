@@ -20,9 +20,12 @@ import {
 } from "@/components/nexus-members/nexus-members-model";
 import styles from "@/components/nexus-profile/nexus-profile.module.css";
 import {
+  type NexusPasswordDraft,
+  type NexusPasswordErrors,
   NexusProfileAcademicEditor,
   NexusProfileExpertiseEditor,
   NexusProfileMemberEditor,
+  NexusProfilePasswordEditor,
   NexusProfilePersonalEditor,
   type NexusProfilePhotoChange,
 } from "@/components/nexus-profile/nexus-profile-editors";
@@ -43,16 +46,13 @@ import {
   useNexusSessionProfile,
 } from "@/components/nexus-profile/nexus-profile-server";
 import { NexusWorkspaceConfirmDialog } from "@/components/nexus-workspace-ui/nexus-workspace-confirm-dialog";
-import {
-  NexusWorkspaceButton,
-  NexusWorkspacePlannedButton,
-  nexusWorkspaceElementStyles,
-} from "@/components/nexus-workspace-ui/nexus-workspace-elements";
+import { NexusWorkspaceButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-workspace-page";
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
-import { COE_BHT_LINKS } from "@/content/coe-bht";
+import { changePassword } from "@/lib/api-auth";
+import { ApiRequestError, apiErrorKind } from "@/lib/api-client";
 import { getMyOriginalPhoto } from "@/lib/api-profile";
 
 export type NexusProfileContent = {
@@ -100,19 +100,12 @@ const memberEditorFields: Record<
  * Google Scholar pada anggota yang tertaut. Bidang lain tetap tampil sebagai
  * informasi sampai layanan menyediakan penyimpanannya.
  */
-const personalUnavailableFields: ReadonlySet<NexusProfileField> = new Set([
+/** Bidang informasi pribadi yang disimpan pada profil anggota. */
+const memberOnlyPersonalFields: ReadonlySet<NexusProfileField> = new Set([
   "alternateEmail",
   "institutionalEmail",
   "preferredName",
 ]);
-
-const academicUnavailableFields: ReadonlySet<keyof MemberProfileDraft> =
-  new Set(
-    memberEditorFields.academic.filter(
-      (field) =>
-        !(nexusSelfAcademicFields as readonly string[]).includes(field),
-    ),
-  );
 
 /**
  * Memindahkan fokus ke kontrol pertama yang bermasalah. Kontrolnya sudah ada
@@ -124,7 +117,50 @@ function focusInvalidField(field?: string) {
   document.querySelector<HTMLElement>(`[name="${field}"]`)?.focus();
 }
 
-const passwordHelpHref = `${COE_BHT_LINKS.email}?subject=${encodeURIComponent("Bantuan kata sandi BHT Nexus")}`;
+const emptyPasswordDraft: NexusPasswordDraft = {
+  confirmPassword: "",
+  currentPassword: "",
+  newPassword: "",
+};
+
+/** Pesan galat ganti kata sandi dari kode jawaban layanan masuk. */
+function passwordChangeError(error: unknown): {
+  field?: keyof NexusPasswordDraft;
+  message: string;
+} {
+  const code = error instanceof ApiRequestError ? error.code : "";
+  if (code === "INVALID_PASSWORD") {
+    return { field: "currentPassword", message: "Kata sandi saat ini salah." };
+  }
+  if (code === "PASSWORD_TOO_SHORT") {
+    return {
+      field: "newPassword",
+      message: "Kata sandi baru minimal 8 karakter.",
+    };
+  }
+  if (code === "CREDENTIAL_ACCOUNT_NOT_FOUND") {
+    return {
+      message:
+        "Akun ini belum memiliki kata sandi. Keluar, lalu pilih Lupa kata sandi di halaman masuk untuk membuatnya.",
+    };
+  }
+  const kind = apiErrorKind(error);
+  if (kind === "rate-limited") {
+    return {
+      message: "Terlalu banyak percobaan. Tunggu beberapa saat lalu coba lagi.",
+    };
+  }
+  if (kind === "unauthenticated") {
+    return { message: "Sesi Anda berakhir. Masuk kembali lalu coba lagi." };
+  }
+  if (kind === "unavailable") {
+    return {
+      message:
+        "Layanan BHT Nexus belum dapat dihubungi. Coba lagi beberapa saat lagi.",
+    };
+  }
+  return { message: "Kata sandi belum dapat diganti. Coba lagi." };
+}
 
 function displayValue(value: string) {
   return value.trim() || "Belum tercatat";
@@ -174,29 +210,12 @@ function InfoItem({
  * aksesibelnya harus menyebut bagian yang disunting agar tetap dapat dibedakan.
  */
 function EditAction({
-  available,
   onClick,
   section,
 }: {
-  available: boolean;
   onClick: () => void;
   section: string;
 }) {
-  if (!available) {
-    return (
-      <NexusWorkspacePlannedButton
-        badgeClassName={styles.editActionLabel}
-        className={styles.editAction}
-      >
-        <NexusProfileIcon name="pencil" />
-        <span className={styles.editActionLabel}>Ubah</span>
-        <span className={nexusWorkspaceElementStyles.visuallyHidden}>
-          {section}
-        </span>
-      </NexusWorkspacePlannedButton>
-    );
-  }
-
   return (
     <NexusWorkspaceButton
       aria-label={`Ubah ${section}`}
@@ -225,6 +244,10 @@ export function NexusProfile({ content }: NexusProfileProps) {
   const [announcement, setAnnouncement] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [passwordDraft, setPasswordDraft] = useState<NexusPasswordDraft | null>(
+    null,
+  );
+  const [passwordErrors, setPasswordErrors] = useState<NexusPasswordErrors>({});
 
   const isPersonalDirty = personalEditor
     ? nexusProfileDraftIsDirty(
@@ -236,12 +259,15 @@ export function NexusProfile({ content }: NexusProfileProps) {
     ? JSON.stringify(memberEditor.value) !==
       JSON.stringify(memberEditor.initialValue)
     : false;
+  const isPasswordDirty = passwordDraft
+    ? Object.values(passwordDraft).some((value) => value.length > 0)
+    : false;
 
   useNexusWorkspaceUnsavedChanges({
     confirmLabel: "Buang perubahan",
     description:
       "Perubahan pada profil belum disimpan dan akan hilang jika Anda berpindah halaman.",
-    isDirty: isPersonalDirty || isMemberDirty,
+    isDirty: isPersonalDirty || isMemberDirty || isPasswordDirty,
     title: "Buang perubahan profil?",
   });
 
@@ -303,14 +329,6 @@ export function NexusProfile({ content }: NexusProfileProps) {
   const linkedMember =
     relationship.kind === "LINKED" ? relationship.member : undefined;
   const roleHealth = nexusRoleHealth(currentProfile.role);
-  /* Server menyimpan informasi pribadi akun dan anggota yang tertaut milik
-     pemilik sesi; perubahan jabatan dan hak akses tidak tersedia di sini. */
-  const personalEditable = true;
-  const memberEditorAvailable: Record<MemberEditorKind, boolean> = {
-    academic: Boolean(linkedMember),
-    expertise: Boolean(linkedMember),
-    member: Boolean(linkedMember),
-  };
 
   function openPersonalEditor() {
     const value = createNexusProfileDraft(currentProfile);
@@ -342,12 +360,87 @@ export function NexusProfile({ content }: NexusProfileProps) {
   }
 
   function requestCloseEditors() {
-    if (isPersonalDirty || isMemberDirty) {
+    if (isPersonalDirty || isMemberDirty || isPasswordDirty) {
       setDiscardConfirmationOpen(true);
       return;
     }
     if (personalEditor) closePersonalEditor();
     if (memberEditor) closeMemberEditor();
+    if (passwordDraft) closePasswordEditor();
+  }
+
+  function openPasswordEditor() {
+    setPasswordErrors({});
+    setSaveError("");
+    setPasswordDraft(emptyPasswordDraft);
+  }
+
+  function closePasswordEditor() {
+    setDiscardConfirmationOpen(false);
+    setPasswordErrors({});
+    setSaveError("");
+    setPasswordDraft(null);
+  }
+
+  function changePasswordDraft(
+    event: ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) {
+    const field = event.currentTarget.name as keyof NexusPasswordDraft;
+    const value = event.currentTarget.value;
+    setPasswordDraft((current) =>
+      current ? { ...current, [field]: value } : current,
+    );
+    setPasswordErrors((current) => ({ ...current, [field]: undefined }));
+  }
+
+  async function submitPasswordEditor(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!passwordDraft || isSaving) return;
+    const errors: NexusPasswordErrors = {};
+    if (!passwordDraft.currentPassword) {
+      errors.currentPassword = "Isi kata sandi saat ini.";
+    }
+    if (passwordDraft.newPassword.length < 8) {
+      errors.newPassword = "Kata sandi baru minimal 8 karakter.";
+    } else if (passwordDraft.newPassword === passwordDraft.currentPassword) {
+      errors.newPassword =
+        "Kata sandi baru harus berbeda dari kata sandi saat ini.";
+    }
+    if (passwordDraft.confirmPassword !== passwordDraft.newPassword) {
+      errors.confirmPassword = "Kedua kata sandi baru belum sama.";
+    }
+    const firstInvalid = (
+      Object.keys(errors) as (keyof NexusPasswordDraft)[]
+    )[0];
+    if (firstInvalid) {
+      setPasswordErrors(errors);
+      focusInvalidField(firstInvalid);
+      return;
+    }
+    setIsSaving(true);
+    setSaveError("");
+    try {
+      await changePassword({
+        currentPassword: passwordDraft.currentPassword,
+        newPassword: passwordDraft.newPassword,
+      });
+      setIsSaving(false);
+      setPasswordDraft(null);
+      setPasswordErrors({});
+      setAnnouncement(
+        "Kata sandi berhasil diganti. Sesi di perangkat lain sudah diakhiri.",
+      );
+    } catch (error) {
+      setIsSaving(false);
+      const failure = passwordChangeError(error);
+      if (failure.field) {
+        setPasswordErrors({ [failure.field]: failure.message });
+      } else {
+        setSaveError(failure.message);
+      }
+    }
   }
 
   function changePersonalDraft(
@@ -387,14 +480,14 @@ export function NexusProfile({ content }: NexusProfileProps) {
 
   async function submitPersonalEditor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!personalEditor || !personalEditable || isSaving) return;
+    if (!personalEditor || isSaving) return;
     const errors: NexusProfileErrors = {};
     for (const [field, message] of Object.entries(
       validateNexusProfileDraft(personalEditor.value, {
         includeInstitutionalEmail: Boolean(linkedMember),
       }),
     ) as [NexusProfileField, string | undefined][]) {
-      if (message && (linkedMember || !personalUnavailableFields.has(field))) {
+      if (message && (linkedMember || !memberOnlyPersonalFields.has(field))) {
         errors[field] = message;
       }
     }
@@ -441,12 +534,7 @@ export function NexusProfile({ content }: NexusProfileProps) {
 
   async function submitMemberEditor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (
-      !memberEditor ||
-      !linkedMember ||
-      !memberEditorAvailable[memberEditor.kind] ||
-      isSaving
-    ) {
+    if (!memberEditor || !linkedMember || isSaving) {
       return;
     }
     const allErrors = validateMemberProfile(
@@ -454,9 +542,12 @@ export function NexusProfile({ content }: NexusProfileProps) {
       [],
       linkedMember.id,
     );
-    const ownedFields = memberEditorFields[memberEditor.kind].filter(
-      (field) => !academicUnavailableFields.has(field),
-    );
+    const ownedFields =
+      memberEditor.kind === "academic"
+        ? memberEditorFields.academic.filter((field) =>
+            (nexusSelfAcademicFields as readonly string[]).includes(field),
+          )
+        : memberEditorFields[memberEditor.kind];
     const errors: MemberProfileErrors = {};
     for (const field of ownedFields) {
       const message = allErrors[field];
@@ -523,23 +614,14 @@ export function NexusProfile({ content }: NexusProfileProps) {
                 Lengkapi agar rekan CoE dapat menghubungi Anda.
               </p>
             </div>
-            {personalEditable ? (
-              <NexusWorkspaceButton
-                className={styles.cardAction}
-                onClick={openPersonalEditor}
-                tone="primary"
-                type="button"
-              >
-                Lengkapi profil
-              </NexusWorkspaceButton>
-            ) : (
-              <NexusWorkspacePlannedButton
-                className={styles.cardAction}
-                tone="primary"
-              >
-                Lengkapi profil
-              </NexusWorkspacePlannedButton>
-            )}
+            <NexusWorkspaceButton
+              className={styles.cardAction}
+              onClick={openPersonalEditor}
+              tone="primary"
+              type="button"
+            >
+              Lengkapi profil
+            </NexusWorkspaceButton>
           </section>
         ) : null}
 
@@ -577,7 +659,6 @@ export function NexusProfile({ content }: NexusProfileProps) {
                   </div>
                 </div>
                 <EditAction
-                  available={personalEditable}
                   onClick={openPersonalEditor}
                   section="informasi pribadi"
                 />
@@ -587,19 +668,23 @@ export function NexusProfile({ content }: NexusProfileProps) {
                 <InfoItem label="Nama lengkap">
                   {displayValue(profile.fullName)}
                 </InfoItem>
-                <InfoItem label="Nama panggilan">
-                  {displayValue(profile.preferredName)}
-                </InfoItem>
+                {linkedMember ? (
+                  <InfoItem label="Nama panggilan">
+                    {displayValue(profile.preferredName)}
+                  </InfoItem>
+                ) : null}
                 <InfoItem label="Nomor HP">
                   {displayValue(profile.phone)}
                 </InfoItem>
-                <InfoItem label="Email alternatif">
-                  {displayValue(profile.alternateEmail)}
-                </InfoItem>
                 {linkedMember ? (
-                  <InfoItem label="Email institusi personal">
-                    {displayValue(profile.institutionalEmail)}
-                  </InfoItem>
+                  <>
+                    <InfoItem label="Email alternatif">
+                      {displayValue(profile.alternateEmail)}
+                    </InfoItem>
+                    <InfoItem label="Email institusi personal">
+                      {displayValue(profile.institutionalEmail)}
+                    </InfoItem>
+                  </>
                 ) : null}
                 <InfoItem label="Ringkasan profil" wide>
                   {displayValue(profile.biography)}
@@ -708,7 +793,6 @@ export function NexusProfile({ content }: NexusProfileProps) {
                       </p>
                     </div>
                     <EditAction
-                      available={memberEditorAvailable.member}
                       onClick={() => openMemberEditor("member")}
                       section="profil anggota"
                     />
@@ -744,7 +828,6 @@ export function NexusProfile({ content }: NexusProfileProps) {
                       </p>
                     </div>
                     <EditAction
-                      available={memberEditorAvailable.expertise}
                       onClick={() => openMemberEditor("expertise")}
                       section="bidang keahlian"
                     />
@@ -779,7 +862,6 @@ export function NexusProfile({ content }: NexusProfileProps) {
                       </p>
                     </div>
                     <EditAction
-                      available={memberEditorAvailable.academic}
                       onClick={() => openMemberEditor("academic")}
                       section="identitas akademik"
                     />
@@ -832,18 +914,17 @@ export function NexusProfile({ content }: NexusProfileProps) {
                   <div className={styles.securityCopy}>
                     <strong>Kata sandi</strong>
                     <p>
-                      Penggantian kata sandi belum dapat dilakukan dari halaman
-                      ini. Ajukan permintaan ke Dukungan BHT Nexus, lalu ikuti
-                      petunjuk yang diberikan.
+                      Ganti kata sandi akun ini. Sesi di perangkat lain akan
+                      diakhiri setelah kata sandi berubah.
                     </p>
                   </div>
-                  <a
-                    className={`${nexusWorkspaceElementStyles.button} ${styles.cardAction}`}
-                    data-tone="secondary"
-                    href={passwordHelpHref}
+                  <NexusWorkspaceButton
+                    className={styles.cardAction}
+                    onClick={openPasswordEditor}
+                    type="button"
                   >
-                    Hubungi Dukungan
-                  </a>
+                    Ganti kata sandi
+                  </NexusWorkspaceButton>
                 </div>
               </div>
             </section>
@@ -859,7 +940,6 @@ export function NexusProfile({ content }: NexusProfileProps) {
         <NexusProfilePersonalEditor
           draft={personalEditor.value}
           errors={personalErrors}
-          includeInstitutionalEmail={Boolean(linkedMember)}
           isSaving={isSaving}
           onChange={changePersonalDraft}
           onClose={requestCloseEditors}
@@ -869,9 +949,7 @@ export function NexusProfile({ content }: NexusProfileProps) {
             getMyOriginalPhoto().then((photo) => photo.image)
           }
           saveError={saveError}
-          unavailableFields={
-            linkedMember ? undefined : personalUnavailableFields
-          }
+          includeMemberFields={Boolean(linkedMember)}
         />
       ) : null}
 
@@ -913,7 +991,18 @@ export function NexusProfile({ content }: NexusProfileProps) {
           onClose={requestCloseEditors}
           onSubmit={submitMemberEditor}
           saveError={saveError}
-          unavailableFields={academicUnavailableFields}
+        />
+      ) : null}
+
+      {passwordDraft ? (
+        <NexusProfilePasswordEditor
+          draft={passwordDraft}
+          errors={passwordErrors}
+          isSaving={isSaving}
+          onChange={changePasswordDraft}
+          onClose={requestCloseEditors}
+          onSubmit={submitPasswordEditor}
+          saveError={saveError}
         />
       ) : null}
 
@@ -926,6 +1015,7 @@ export function NexusProfile({ content }: NexusProfileProps) {
           onConfirm={() => {
             if (personalEditor) closePersonalEditor();
             if (memberEditor) closeMemberEditor();
+            if (passwordDraft) closePasswordEditor();
           }}
           title="Buang perubahan profil?"
         />

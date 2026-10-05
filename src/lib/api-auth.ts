@@ -119,3 +119,17 @@ export function verifyEmailWithOtp(input: {
     method: "POST",
   });
 }
+
+/**
+ * Mengganti kata sandi akun yang sedang masuk. Sesi di perangkat lain diakhiri
+ * dan sesi saat ini diperbarui oleh server.
+ */
+export function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  return apiFetch("/auth/change-password", {
+    body: JSON.stringify({ ...input, revokeOtherSessions: true }),
+    method: "POST",
+  });
+}
