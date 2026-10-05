@@ -54,7 +54,10 @@ export function nexusAccountFromServer(
     displayName: account.name,
     email: account.email,
     id: account.publicId,
-    personalProfile: { fullName: account.name },
+    personalProfile: {
+      avatarSrc: account.image ?? undefined,
+      fullName: account.name,
+    },
     /* Rincian profil hanya diketahui untuk akun yang rekam anggotanya terbaca. */
     personalProfileKnown: membersKnown && account.linkedMember !== null,
     /* Server hanya mengenal akun yang tertaut ke anggota atau tidak; akun

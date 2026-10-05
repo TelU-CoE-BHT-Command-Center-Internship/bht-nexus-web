@@ -74,6 +74,7 @@ export function NexusProfilePersonalEditor({
   errors,
   includeInstitutionalEmail,
   isSaving,
+  loadOriginalImage,
   onChange,
   onClose,
   onPhotoChange,
@@ -85,6 +86,7 @@ export function NexusProfilePersonalEditor({
   draft: NexusProfileDraft;
   errors: NexusProfileErrors;
   includeInstitutionalEmail: boolean;
+  loadOriginalImage?: () => Promise<string>;
   onChange: FormChangeHandler;
   onClose: () => void;
   onPhotoChange: (value: NexusProfilePhotoChange) => void;
@@ -110,6 +112,7 @@ export function NexusProfilePersonalEditor({
             <h3>Foto profil</h3>
             {photoAvailable ? (
               <NexusMemberProfilePhoto
+                loadOriginalImage={loadOriginalImage}
                 onChange={onPhotoChange}
                 originalValue={draft.avatarOriginalSrc}
                 personName={draft.fullName}
@@ -153,10 +156,10 @@ export function NexusProfilePersonalEditor({
               <NexusWorkspaceFormField
                 error={errors.phone}
                 id="profile-phone"
+                hint="Boleh dilengkapi nanti."
                 label="Nomor HP"
                 name="phone"
                 onChange={onChange}
-                required
                 type="text"
                 value={draft.phone}
               />
@@ -222,7 +225,9 @@ export function NexusProfileMemberEditor({
   onClose,
   onPublicProfileChange,
   onSubmit,
-}: {
+  isSaving,
+  saveError,
+}: SaveState & {
   draft: MemberProfileDraft;
   onChange: FormChangeHandler;
   onClose: () => void;
@@ -266,7 +271,11 @@ export function NexusProfileMemberEditor({
             </label>
           </div>
         </div>
-        <ModalActions onClose={onClose} />
+        <ModalActions
+          isSaving={isSaving}
+          onClose={onClose}
+          saveError={saveError}
+        />
       </form>
     </NexusProfileModal>
   );
@@ -277,7 +286,9 @@ export function NexusProfileExpertiseEditor({
   onChange,
   onClose,
   onSubmit,
-}: {
+  isSaving,
+  saveError,
+}: SaveState & {
   draft: MemberProfileDraft;
   onChange: FormChangeHandler;
   onClose: () => void;
@@ -312,7 +323,11 @@ export function NexusProfileExpertiseEditor({
             />
           </div>
         </div>
-        <ModalActions onClose={onClose} />
+        <ModalActions
+          isSaving={isSaving}
+          onClose={onClose}
+          saveError={saveError}
+        />
       </form>
     </NexusProfileModal>
   );

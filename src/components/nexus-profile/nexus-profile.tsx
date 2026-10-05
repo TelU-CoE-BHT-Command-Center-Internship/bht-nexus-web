@@ -53,6 +53,7 @@ import { NexusWorkspacePage } from "@/components/nexus-workspace-ui/nexus-worksp
 import { NexusWorkspaceState } from "@/components/nexus-workspace-ui/nexus-workspace-state";
 import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
+import { getMyOriginalPhoto } from "@/lib/api-profile";
 
 export type NexusProfileContent = {
   description: string;
@@ -302,14 +303,13 @@ export function NexusProfile({ content }: NexusProfileProps) {
   const linkedMember =
     relationship.kind === "LINKED" ? relationship.member : undefined;
   const roleHealth = nexusRoleHealth(currentProfile.role);
-  /* Informasi pribadi yang tampil berasal dari akun sendiri, sehingga dapat
-     disimpan ke akun itu. Bila berasal dari rekam anggota, penyimpanannya
-     belum tersedia bagi pemilik akun. */
-  const personalEditable = currentProfile.source === "ACCOUNT";
+  /* Server menyimpan informasi pribadi akun dan anggota yang tertaut milik
+     pemilik sesi; perubahan jabatan dan hak akses tidak tersedia di sini. */
+  const personalEditable = true;
   const memberEditorAvailable: Record<MemberEditorKind, boolean> = {
     academic: Boolean(linkedMember),
-    expertise: false,
-    member: false,
+    expertise: Boolean(linkedMember),
+    member: Boolean(linkedMember),
   };
 
   function openPersonalEditor() {
@@ -394,7 +394,7 @@ export function NexusProfile({ content }: NexusProfileProps) {
         includeInstitutionalEmail: Boolean(linkedMember),
       }),
     ) as [NexusProfileField, string | undefined][]) {
-      if (message && !personalUnavailableFields.has(field)) {
+      if (message && (linkedMember || !personalUnavailableFields.has(field))) {
         errors[field] = message;
       }
     }
@@ -470,10 +470,16 @@ export function NexusProfile({ content }: NexusProfileProps) {
 
     setIsSaving(true);
     setSaveError("");
-    const result = await session.saveAcademicIdentifiers(
-      memberEditor.value,
-      linkedMember.id,
-    );
+    const result =
+      memberEditor.kind === "academic"
+        ? await session.saveAcademicIdentifiers(
+            memberEditor.value,
+            linkedMember.id,
+          )
+        : await session.saveMemberProfile(
+            memberEditor.value,
+            memberEditor.kind,
+          );
     setIsSaving(false);
     if (result?.fieldErrors && Object.keys(result.fieldErrors).length > 0) {
       const fieldErrors = result.fieldErrors;
@@ -487,7 +493,8 @@ export function NexusProfile({ content }: NexusProfileProps) {
     }
     setMemberEditor(null);
     setMemberErrors({});
-    setAnnouncement("Identitas akademik berhasil diperbarui.");
+    setAnnouncement("Profil berhasil diperbarui.");
+    router.refresh();
   }
 
   const missingLabels = profile.missingRequiredFields.map(
@@ -552,10 +559,7 @@ export function NexusProfile({ content }: NexusProfileProps) {
                         style={{
                           objectPosition: `${profile.avatarPosition.x}% ${profile.avatarPosition.y}%`,
                         }}
-                        unoptimized={
-                          typeof profile.avatarSrc === "string" &&
-                          profile.avatarSrc.startsWith("data:")
-                        }
+                        unoptimized={typeof profile.avatarSrc === "string"}
                       />
                     ) : (
                       profile.initials
@@ -861,14 +865,20 @@ export function NexusProfile({ content }: NexusProfileProps) {
           onClose={requestCloseEditors}
           onPhotoChange={changePersonalPhoto}
           onSubmit={submitPersonalEditor}
-          photoAvailable={false}
+          loadOriginalImage={() =>
+            getMyOriginalPhoto().then((photo) => photo.image)
+          }
           saveError={saveError}
-          unavailableFields={personalUnavailableFields}
+          unavailableFields={
+            linkedMember ? undefined : personalUnavailableFields
+          }
         />
       ) : null}
 
       {memberEditor?.kind === "member" ? (
         <NexusProfileMemberEditor
+          isSaving={isSaving}
+          saveError={saveError}
           draft={memberEditor.value}
           onChange={changeMemberDraft}
           onClose={requestCloseEditors}
@@ -885,6 +895,8 @@ export function NexusProfile({ content }: NexusProfileProps) {
 
       {memberEditor?.kind === "expertise" ? (
         <NexusProfileExpertiseEditor
+          isSaving={isSaving}
+          saveError={saveError}
           draft={memberEditor.value}
           onChange={changeMemberDraft}
           onClose={requestCloseEditors}
