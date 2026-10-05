@@ -11,7 +11,6 @@ import {
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { NexusCollectionCapabilities } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { NexusMemberContext } from "@/components/nexus-members/nexus-member-context";
-import { knownMemberName } from "@/components/nexus-members/nexus-member-identity";
 import {
   collectionMemberBindingMatches,
   collectionProfileMatchesSource,
@@ -321,7 +320,7 @@ export function NexusScraperSearch({
   };
   const requestedMemberName = initialRequest?.memberName?.trim() || undefined;
   const initialMemberName = initialRequest?.memberId
-    ? (knownMemberName(initialRequest.memberId) ?? requestedMemberName)
+    ? requestedMemberName
     : undefined;
   const [name, setName] = useState(initialMemberName ?? "");
   const [sintaUrl, setSintaUrl] = useState(initialRequest?.sintaUrl ?? "");

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import styles from "@/components/nexus-members/nexus-member-context.module.css";
-import { knownMemberName } from "@/components/nexus-members/nexus-member-identity";
 import { NexusWorkspaceLinkButton } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 
 type NexusMemberContextProps = {
@@ -90,7 +89,7 @@ export function NexusMemberContextFilter({
           ? "Filter anggota belum tersedia"
           : "Filter anggota aktif"
       }
-      memberName={memberName ?? knownMemberName(memberId) ?? "Anggota terpilih"}
+      memberName={memberName ?? "Anggota terpilih"}
     />
   );
 }
