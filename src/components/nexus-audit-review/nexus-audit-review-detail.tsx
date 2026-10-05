@@ -720,7 +720,8 @@ function SourceEvidenceSection({
               ? "Reviewer menetapkan bahwa rekam ini tidak terkait indikator KM."
               : kpiResolution?.status === "undetermined"
                 ? "Reviewer belum dapat menentukan keterkaitan indikator KM dari bukti yang tersedia."
-                : "Belum dikaitkan dengan indikator evaluasi. Kandidat tetap dapat ditinjau tanpa menebak klasifikasi KM yang belum didukung bukti."}
+                : (record.kpiUnresolvedHint ??
+                  "Belum dikaitkan dengan indikator evaluasi. Kandidat tetap dapat ditinjau tanpa menebak klasifikasi KM yang belum didukung bukti.")}
           </NexusWorkspaceNotice>
         )}
       </div>

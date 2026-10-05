@@ -250,6 +250,60 @@ function people(value: unknown) {
 }
 
 /**
+ * Kuartil kandidat. Kuartil dari tabel Scimago lebih dulu; bila kosong, chip
+ * kuartil yang ditampilkan SINTA pada daftar Scopus dipakai dengan menyebut
+ * sumbernya. "no-Q" berarti SINTA menyatakan venue itu tanpa kuartil.
+ */
+function quartileOf(payload: Payload) {
+  const quartile = text(payload.quartile);
+  if (quartile) return quartile;
+  const reported = text(payload.sinta_reported_quartile);
+  if (/^Q[1-4]$/.test(reported)) return `${reported} (dilaporkan SINTA)`;
+  if (reported === "no-Q") return "Tanpa kuartil (dilaporkan SINTA)";
+  return "";
+}
+
+/**
+ * Tautan bukti: isian pengaju lebih dulu, lalu halaman resmi karya yang
+ * ditemukan sumber pengumpulan (misalnya alamat DOI).
+ */
+function evidenceUrlOf(payload: Payload) {
+  return (
+    text(payload.evidence_url) ||
+    text(payload.official_url) ||
+    text(payload.landing_url)
+  );
+}
+
+/**
+ * Catatan pengaju dan periode evaluasi hanya diisi pada pengajuan manual.
+ * Kandidat hasil pengumpulan otomatis tidak memilikinya, dan periodenya
+ * mengikuti tahun atau tanggal bisnis rekam.
+ */
+const manualOnlyFieldIds: ReadonlySet<string> = new Set([
+  "evaluation_period",
+  "note",
+]);
+
+/**
+ * Saran KM artikel jurnal bergantung pada jenis jurnal dan kuartilnya. Bila
+ * sumber tidak menyebut keduanya, sistem tidak menebak; pemeriksa memilih.
+ */
+function kpiUnresolvedHintOf(
+  target: string,
+  payload: Payload,
+  systemKmIndicators: readonly string[] | null | undefined,
+) {
+  if (target !== "publication" || (systemKmIndicators?.length ?? 0) > 0) {
+    return undefined;
+  }
+  if (text(payload.work_type) !== "journal_article" || quartileOf(payload)) {
+    return undefined;
+  }
+  return "Sistem belum dapat menyarankan KM karena sumber tidak menyebut kuartil maupun status akreditasi jurnal. Periksa jurnalnya, lalu pilih KM-12 untuk jurnal nasional terakreditasi SINTA, KM-14 untuk jurnal internasional Q1–Q2, atau KM-13 untuk Q3–Q4.";
+}
+
+/**
  * Sumber kandidat. Kandidat hasil pengumpulan yang belum dibaca rinciannya
  * mengikuti bawaan server (SINTA) sampai rinciannya terbaca.
  */
@@ -367,6 +421,26 @@ function evidenceOf(
       id: "evidence-url",
       label: "Tautan bukti pengaju",
       reference: evidenceUrl,
+      sourceLabel,
+    });
+  }
+  const officialUrl = text(payload.official_url) || text(payload.landing_url);
+  if (officialUrl && officialUrl !== evidenceUrl) {
+    evidence.push({
+      href: webUrl(officialUrl),
+      id: "official-url",
+      label: "Halaman resmi karya",
+      reference: officialUrl,
+      sourceLabel,
+    });
+  }
+  const pdfUrl = text(payload.pdf_url);
+  if (pdfUrl) {
+    evidence.push({
+      href: webUrl(pdfUrl),
+      id: "pdf-url",
+      label: "Berkas PDF karya",
+      reference: pdfUrl,
       sourceLabel,
     });
   }
@@ -577,12 +651,19 @@ export function reviewRecordFromServer(
   const source = sourceOf(summary, knownPayload);
   const sourceLabel = sourceLabels[source];
   const category = categoryOf(target, knownPayload);
-  const specs = target === "publication" ? publicationFields : activityFields;
+  const specs = (
+    target === "publication" ? publicationFields : activityFields
+  ).filter((spec) => source === "manual" || !manualOnlyFieldIds.has(spec.id));
   const sharedFields: AuditReviewField[] = specs.map((spec) => ({
     ...spec,
-    value: text(
-      spec.id === "title" ? (payload.title ?? payload.name) : payload[spec.id],
-    ),
+    value:
+      spec.id === "title"
+        ? text(payload.title ?? payload.name)
+        : spec.id === "quartile"
+          ? quartileOf(payload)
+          : spec.id === "evidence_url"
+            ? evidenceUrlOf(payload)
+            : text(payload[spec.id]),
   }));
   const fields = [
     ...sharedFields,
@@ -701,7 +782,11 @@ export function reviewRecordFromServer(
     decision,
     discoveredAt: summary.createdAt,
     discoveredAtLabel: formatAuditTimestamp(summary.createdAt),
-    evaluationPeriodLabel: text(payload.evaluation_period) || undefined,
+    evaluationPeriodLabel:
+      text(payload.evaluation_period) ||
+      (source !== "manual" && text(payload.year)
+        ? `${text(payload.year)} (mengikuti tahun ${target === "publication" ? "terbit" : "kegiatan"})`
+        : undefined),
     evidence,
     fields,
     fixRequest: revisionRequest
@@ -716,6 +801,13 @@ export function reviewRecordFromServer(
     id: summary.publicId,
     kpiLinks: systemKmLinks,
     kpiLinksSuggested: systemKmLinks.length > 0 || undefined,
+    kpiUnresolvedHint: detail
+      ? kpiUnresolvedHintOf(
+          target,
+          payload,
+          detail.promotion?.systemKmIndicators,
+        )
+      : undefined,
     matches: matchesOf(context.comparison),
     matchingStatus: context.comparison ? "current" : "pending",
     matchingVersion: version,
