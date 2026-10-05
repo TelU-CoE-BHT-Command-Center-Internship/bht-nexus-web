@@ -19,6 +19,7 @@ import {
   NexusWorkspaceNotice,
 } from "@/components/nexus-workspace-ui/nexus-workspace-elements";
 import { NexusWorkspaceFormField } from "@/components/nexus-workspace-ui/nexus-workspace-form-field";
+import { displayRecordId } from "@/components/nexus-workspace-ui/nexus-workspace-format";
 import { useNexusWorkspaceUnsavedChanges } from "@/components/nexus-workspace-ui/nexus-workspace-unsaved-changes";
 
 type NexusAdministrationInviteDrawerProps = {
@@ -261,7 +262,7 @@ export function NexusAdministrationInviteDrawer({
                 <small>Hubungan anggota</small>
                 <strong>
                   {createdSummary?.member
-                    ? `${createdSummary.member.name} · ${createdSummary.member.id}`
+                    ? `${createdSummary.member.name} · ${displayRecordId(createdSummary.member.id)}`
                     : "Tidak dihubungkan ke anggota"}
                 </strong>
               </span>
@@ -415,7 +416,7 @@ export function NexusAdministrationInviteDrawer({
                       updateDraft("memberId", event.currentTarget.value)
                     }
                     options={availableMembers.map((member) => ({
-                      label: `${member.name} — ${member.id}`,
+                      label: `${member.name} — ${displayRecordId(member.id)}`,
                       value: member.id,
                     }))}
                     required
@@ -482,8 +483,8 @@ export function NexusAdministrationInviteDrawer({
                   <div>
                     <h3>Tinjau undangan</h3>
                     <p>
-                      Pastikan identitas, hubungan anggota, dan role sudah tepat
-                      sebelum undangan dibuat.
+                      Pastikan identitas, hubungan anggota, dan peran sudah
+                      tepat sebelum undangan dibuat.
                     </p>
                   </div>
                 </header>
@@ -500,7 +501,7 @@ export function NexusAdministrationInviteDrawer({
                     <dt>Hubungan anggota</dt>
                     <dd>
                       {selectedMember
-                        ? `${selectedMember.id} · ${selectedMember.name}`
+                        ? `${selectedMember.name} · ${displayRecordId(selectedMember.id)}`
                         : "Tidak dihubungkan ke anggota"}
                     </dd>
                   </div>
@@ -510,7 +511,9 @@ export function NexusAdministrationInviteDrawer({
                   </div>
                 </dl>
                 <NexusWorkspaceNotice>
-                  Admin tidak menetapkan kata sandi pada langkah ini.
+                  Admin tidak menetapkan kata sandi. Penerima membuat kata
+                  sandinya sendiri saat pertama masuk dengan kode verifikasi
+                  dari email; email undangan menjelaskan caranya.
                 </NexusWorkspaceNotice>
                 {errors.submit ? (
                   <NexusWorkspaceNotice tone="danger">

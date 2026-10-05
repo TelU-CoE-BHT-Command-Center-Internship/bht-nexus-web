@@ -4,7 +4,6 @@ import blackLogo from "@/assets/coe-bht-logo-black.png";
 import indonesiaFlag from "@/assets/Flag_of_Indonesia.svg";
 import unitedKingdomFlag from "@/assets/Flag_of_the_United_Kingdom_(3-5).svg";
 import telkomUniversityLogo from "@/assets/telkom-university-logo.webp";
-import whatsappIcon from "@/assets/whatsapp-svgrepo-com.svg";
 import styles from "@/components/nexus-login/nexus-login.module.css";
 import { getNexusLoginContent } from "@/components/nexus-login/nexus-login-content";
 import { NexusLoginForm } from "@/components/nexus-login/nexus-login-form";
@@ -20,15 +19,6 @@ function ArrowBackIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
       <path d="M19 12H5M10 7l-5 5 5 5" />
-    </svg>
-  );
-}
-
-function LockIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <rect x="5" y="10" width="14" height="10" rx="2" />
-      <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" />
     </svg>
   );
 }
@@ -98,23 +88,6 @@ export function NexusLogin({ locale, returnPath }: NexusLoginProps) {
           </div>
 
           <NexusLoginForm content={content} returnPath={returnPath} />
-
-          <div className={styles.supportLinks}>
-            <a href={content.forgotPasswordHref}>
-              <LockIcon />
-              <span>{content.forgotPasswordLabel}</span>
-            </a>
-            <a href={content.helpHref} rel="noreferrer" target="_blank">
-              <Image
-                alt=""
-                aria-hidden="true"
-                className={styles.whatsappIcon}
-                src={whatsappIcon}
-                unoptimized
-              />
-              <span>{content.helpLabel}</span>
-            </a>
-          </div>
 
           <p className={styles.invitationNote}>{content.invitationNote}</p>
         </div>
