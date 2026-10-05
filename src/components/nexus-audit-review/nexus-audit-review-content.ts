@@ -256,5 +256,7 @@ export type AuditReviewRecord = {
   subtitle: string;
   title: string;
   typeLabel: string;
+  /** Alasan sistem belum dapat menyarankan KM dan pilihan yang sesuai. */
+  kpiUnresolvedHint?: string;
   version: number;
 };
