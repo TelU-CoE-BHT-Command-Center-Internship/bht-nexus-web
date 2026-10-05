@@ -23,7 +23,6 @@ import {
   manualSubtype,
   validateManualSubmissionFields,
 } from "@/components/nexus-manual-submission/nexus-manual-submission-model";
-import { knownMemberName } from "@/components/nexus-members/nexus-member-identity";
 import {
   areMetadataCompletionResolutionsEqual,
   createEmptyMetadataCompletionResolution,
@@ -475,9 +474,7 @@ export function AuditReviewDecisionSection({
           fieldId: personField.id,
           memberId: record.memberId,
           memberName:
-            record.memberPersonBinding?.memberName ??
-            knownMemberName(record.memberId) ??
-            record.primaryPerson,
+            record.memberPersonBinding?.memberName ?? record.primaryPerson,
           personId: selectedMemberPerson.id,
           personName: selectedMemberPerson.name,
           sourcePersonId: record.memberPersonBinding?.sourcePersonId,

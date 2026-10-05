@@ -376,41 +376,6 @@ export const nexusDefaultRolePermissions: Readonly<
   systemRoleBlueprints.map((role) => [role.id, role.permissions]),
 );
 
-export function getNexusRoleDirectory(): NexusRoleRecord[] {
-  return systemRoleBlueprints.map((role) => ({
-    description: role.description,
-    id: role.id,
-    kind: "SYSTEM",
-    label: role.label,
-    permissions: [...role.permissions],
-    status: "ACTIVE",
-  }));
-}
-
-/**
- * Penyesuaian akses khusus awal. Penyesuaian melekat pada akun, bukan pada
- * profil anggota, sehingga akun non-anggota pun dapat memilikinya.
- */
-export function getNexusUserPermissionOverrides(): NexusUserPermissionOverride[] {
-  return [
-    {
-      accountId: "ACC-BHT-0024",
-      mode: "GRANT",
-      permissionId: "members.update",
-    },
-    {
-      accountId: "ACC-BHT-0024",
-      mode: "DENY",
-      permissionId: "contracts.update",
-    },
-    {
-      accountId: "ACC-BHT-0038",
-      mode: "GRANT",
-      permissionId: "documents.create",
-    },
-  ];
-}
-
 export function resolveNexusRole(
   roleId: string | undefined,
   roles: readonly NexusRoleRecord[],

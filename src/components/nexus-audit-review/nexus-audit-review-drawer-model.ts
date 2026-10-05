@@ -75,7 +75,6 @@ export function auditSourceTone(source: AuditReviewRecord["source"]) {
   if (source === "sinta") return "success" as const;
   if (source === "scholar") return "info" as const;
   if (source === "document") return "waiting" as const;
-  if (source === "spreadsheet") return "info" as const;
   return "neutral" as const;
 }
 

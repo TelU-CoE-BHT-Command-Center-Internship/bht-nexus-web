@@ -78,3 +78,18 @@ export function startExtraction(input: {
     method: "POST",
   });
 }
+
+export type ExtractionResult = {
+  fields: unknown[];
+  jobPublicId: string;
+  records: unknown[];
+  reviewCasePublicIds: string[];
+  status: string;
+};
+
+/** Hasil pekerjaan ekstraksi; bidang dan baris kosong bila tidak ada data yang cocok. */
+export function getExtractionResult(
+  jobPublicId: string,
+): Promise<ExtractionResult> {
+  return apiFetch(`/rag/extract/${encodeURIComponent(jobPublicId)}`);
+}

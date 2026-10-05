@@ -11,12 +11,7 @@ export type AuditReviewCategory =
   | "publication_conference"
   | "research_business";
 
-export type AuditReviewSource =
-  | "document"
-  | "manual"
-  | "scholar"
-  | "sinta"
-  | "spreadsheet";
+export type AuditReviewSource = "document" | "manual" | "scholar" | "sinta";
 
 export type AuditCandidateKind =
   | "metadata_completion"

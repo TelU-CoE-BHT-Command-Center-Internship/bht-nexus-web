@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getAutomationStatusLabel } from "@/components/nexus-automation-status/nexus-automation-status-content";
 import type { AutomationJobStatus } from "@/components/nexus-automation-status/nexus-automation-status-types";
 import type { NexusDocumentRecord } from "@/components/nexus-document-workspace/nexus-document-content";
@@ -17,7 +17,7 @@ function processingStatus(document: DocumentSummary): AutomationJobStatus {
   if (document.indexStatus === "running") return "running";
   if (
     document.indexStatus === "failed" ||
-    document.indexStatus === "not_indexable"
+    document.indexStatus === "not_indexed"
   ) {
     return "failed";
   }
@@ -36,10 +36,12 @@ export function nexusDocumentFromServer(
   locale: Locale,
 ): NexusDocumentRecord {
   const status = processingStatus(document);
+  const notIndexed = document.indexStatus === "not_indexed";
   return {
     capabilities: status === "succeeded" ? ["qa", "extraction"] : [],
     fileLabel: fileLabel(document),
     id: document.publicId,
+    notIndexed,
     ownerUnit: document.ownerEmail ?? "-",
     processingHistory: [],
     processingJob: {
@@ -51,12 +53,18 @@ export function nexusDocumentFromServer(
       requestedByActorId: "",
       status,
     },
-    statusLabel: getAutomationStatusLabel(locale, status),
+    statusLabel: notIndexed
+      ? locale === "id"
+        ? "Tidak diindeks"
+        : "Not indexed"
+      : getAutomationStatusLabel(locale, status),
     title: document.title,
     updatedAt: document.createdAt,
     updatedLabel: formatTimestamp(document.createdAt),
   };
 }
+
+const indexRefreshMs = 5000;
 
 export type NexusDocumentLoadState = "error" | "loading" | "ready";
 
@@ -67,34 +75,50 @@ export function useNexusDocumentCatalog(locale: Locale) {
   const [errorMessage, setErrorMessage] = useState<string>();
   const latestRequest = useRef(0);
 
-  const load = useCallback(() => {
-    const request = ++latestRequest.current;
-    setState("loading");
-    listAllDocuments()
-      .then((items) => {
-        if (request !== latestRequest.current) return;
-        setDocuments(
-          items.map((item) => nexusDocumentFromServer(item, locale)),
-        );
-        setErrorMessage(undefined);
-        setState("ready");
-      })
-      .catch((error: unknown) => {
-        if (request !== latestRequest.current) return;
-        setErrorMessage(
-          apiErrorMessage(
-            error,
-            locale === "id"
-              ? "Dokumen belum dapat dimuat."
-              : "Documents could not be loaded.",
-            locale,
-          ),
-        );
-        setState("error");
-      });
-  }, [locale]);
+  const load = useCallback(
+    (silent = false) => {
+      const request = ++latestRequest.current;
+      if (!silent) setState("loading");
+      listAllDocuments()
+        .then((items) => {
+          if (request !== latestRequest.current) return;
+          setDocuments(
+            items.map((item) => nexusDocumentFromServer(item, locale)),
+          );
+          setErrorMessage(undefined);
+          setState("ready");
+        })
+        .catch((error: unknown) => {
+          if (request !== latestRequest.current || silent) return;
+          setErrorMessage(
+            apiErrorMessage(
+              error,
+              locale === "id"
+                ? "Dokumen belum dapat dimuat."
+                : "Documents could not be loaded.",
+              locale,
+            ),
+          );
+          setState("error");
+        });
+    },
+    [locale],
+  );
+  const reload = useCallback(() => load(), [load]);
 
-  useLoadEffect(load);
+  useLoadEffect(reload);
 
-  return { documents, errorMessage, reload: load, state };
+  // Status indeks dibaca ulang selama masih ada dokumen yang diproses.
+  const isIndexing = documents.some(
+    (document) =>
+      document.processingJob.status === "queued" ||
+      document.processingJob.status === "running",
+  );
+  useEffect(() => {
+    if (!isIndexing) return;
+    const timer = setInterval(() => load(true), indexRefreshMs);
+    return () => clearInterval(timer);
+  }, [isIndexing, load]);
+
+  return { documents, errorMessage, reload, refresh: load, state };
 }

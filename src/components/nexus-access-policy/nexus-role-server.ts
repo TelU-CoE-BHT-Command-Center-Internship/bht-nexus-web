@@ -148,11 +148,6 @@ const resourceCopy: Record<
     icon: "administration",
     label: "Identitas & akses",
   },
-  import: {
-    description: "Impor berkas data yang hasilnya masuk ke antrean Tinjauan.",
-    icon: "documents",
-    label: "Impor data",
-  },
   intellectual_property: {
     description: "Hak cipta, paten, dan pencatatan kekayaan intelektual.",
     icon: "intellectualProperty",

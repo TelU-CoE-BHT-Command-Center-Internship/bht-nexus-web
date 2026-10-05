@@ -1,25 +1,12 @@
 import type { ImageProps } from "next/image";
 import {
-  getNexusRoleDirectory,
-  nexusRoleHealth,
-} from "@/components/nexus-access-policy/nexus-access-policy";
-import {
-  getNexusAccountDirectory,
-  NEXUS_CURRENT_ACCOUNT_ID,
-} from "@/components/nexus-accounts/nexus-account-directory";
-import {
   type NexusWorkspaceAccess,
   type NexusWorkspaceNavigationId,
   nexusPreviewWorkspaceAccess,
   nexusWorkspaceCanOpen,
 } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
-import { getNexusMemberDirectory } from "@/components/nexus-members/nexus-members-content";
 import { nexusMonitoringRoutes } from "@/components/nexus-monitoring/nexus-monitoring-evaluation";
-import {
-  type NexusProfileView,
-  resolveNexusProfile,
-} from "@/components/nexus-profile/nexus-profile-model";
 import type { NexusReviewCapabilities } from "@/components/nexus-review-session/nexus-review-session";
 import { COE_BHT_LINKS } from "@/content/coe-bht";
 import type { Locale } from "@/i18n/locales";
@@ -349,54 +336,17 @@ const groupLabels = {
 } satisfies Record<Locale, Record<NavigationGroupId, string>>;
 
 /**
- * Identitas pengguna pada header berasal dari profil akun yang sedang diwakili,
- * bukan dari nilai tersendiri. Halaman Profil Saya dan proyeksi Administrasi
- * memakai penyelesai yang sama sehingga ketiganya tidak pernah berbeda.
+ * Identitas awal pada header. Layout ruang kerja selalu menggantinya dengan
+ * akun yang sedang masuk dari sesi server.
  */
-export function nexusDashboardViewerFromProfile(
-  profile: NexusProfileView,
-): DashboardViewer {
-  return {
-    avatarPosition: profile.avatarPosition,
-    avatarSrc: profile.avatarSrc,
-    email: profile.account.email,
-    fullName: profile.fullName || profile.account.displayName,
-    id: profile.account.id,
-    initials: profile.initials,
-    name: profile.displayName,
-    roleLabel: nexusRoleHealth(profile.role).label,
-  };
-}
-
-function nexusPreviewViewer(): DashboardViewer {
-  const accounts = getNexusAccountDirectory();
-  const account = accounts.find(
-    (candidate) => candidate.id === NEXUS_CURRENT_ACCOUNT_ID,
-  );
-
-  if (!account) {
-    return {
-      email: "",
-      fullName: "Pengguna BHT Nexus",
-      id: NEXUS_CURRENT_ACCOUNT_ID,
-      initials: "—",
-      name: "Pengguna BHT Nexus",
-      roleLabel: "Belum ditetapkan",
-    };
-  }
-
-  return nexusDashboardViewerFromProfile(
-    resolveNexusProfile({
-      account,
-      accounts,
-      members: getNexusMemberDirectory(),
-      roles: getNexusRoleDirectory(),
-    }),
-  );
-}
-
-export const nexusDashboardPreviewViewer: DashboardViewer =
-  nexusPreviewViewer();
+const signedOutViewer: DashboardViewer = {
+  email: "",
+  fullName: "Pengguna BHT Nexus",
+  id: "",
+  initials: "—",
+  name: "Pengguna BHT Nexus",
+  roleLabel: "Belum ditetapkan",
+};
 
 export function getNexusDashboardShellPreviewContent(
   locale: Locale = "id",
@@ -531,6 +481,6 @@ export function getNexusDashboardShellPreviewContent(
       : "Contact BHT Nexus Support",
     supportHref: `${COE_BHT_LINKS.whatsapp}?text=${encodeURIComponent(supportMessage)}`,
     supportTitle: isId ? "Butuh bantuan?" : "Need help?",
-    viewer: nexusDashboardPreviewViewer,
+    viewer: { ...signedOutViewer },
   };
 }

@@ -22,11 +22,12 @@ import { getJob, type JobStatus } from "@/lib/api-jobs";
 import {
   type ExtractionJob,
   type ExtractionProfile,
+  getExtractionResult,
   listExtractionProfiles,
   startExtraction,
 } from "@/lib/api-rag";
 
-const POLL_MS = 20000;
+const POLL_MS = 5000;
 const TERMINAL: readonly JobStatus[] = [
   "succeeded",
   "failed",
@@ -60,6 +61,7 @@ export function NexusRagExtractionPicker({
     id: string;
     status: JobStatus;
   } | null>(null);
+  const [candidateCount, setCandidateCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +101,23 @@ export function NexusRagExtractionPicker({
     }, POLL_MS);
     return () => window.clearInterval(timer);
   }, [job]);
+
+  const succeededJobId = job?.status === "succeeded" ? job.id : null;
+  useEffect(() => {
+    if (!succeededJobId) return;
+    let cancelled = false;
+    getExtractionResult(succeededJobId)
+      .then((result) => {
+        if (cancelled) return;
+        // Hasil tanpa bidang dan tanpa baris tetap membawa satu kasus tinjauan kosong.
+        const hasData = result.fields.length > 0 || result.records.length > 0;
+        setCandidateCount(hasData ? result.reviewCasePublicIds.length : 0);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [succeededJobId]);
 
   const documents = useMemo(
     () =>
@@ -160,6 +179,7 @@ export function NexusRagExtractionPicker({
       return;
     }
     setError("");
+    setCandidateCount(null);
     setIsStarting(true);
     try {
       const created: ExtractionJob = await startExtraction({
@@ -265,14 +285,18 @@ export function NexusRagExtractionPicker({
               {isId ? "Ekstraksi" : "Extraction"}{" "}
               {getAutomationStatusLabel(locale, job.status).toLocaleLowerCase()}
               .
-              {job.status === "succeeded"
-                ? isId
-                  ? " Kandidat sudah ada di Tinjauan."
-                  : " The candidate is now in Review."
-                : ""}
+              {job.status !== "succeeded" || candidateCount === null
+                ? ""
+                : candidateCount === 0
+                  ? isId
+                    ? " Tidak ada data yang cocok dengan profil ini pada dokumen."
+                    : " The document holds no data matching this profile."
+                  : isId
+                    ? ` ${candidateCount} kandidat masuk ke Tinjauan.`
+                    : ` ${candidateCount} candidates were sent to Review.`}
             </NexusWorkspaceNotice>
           ) : null}
-          {job?.status === "succeeded" ? (
+          {job?.status === "succeeded" && candidateCount ? (
             <NexusWorkspaceLinkButton href={reviewHref}>
               {isId ? "Buka Tinjauan" : "Open Review"}
             </NexusWorkspaceLinkButton>

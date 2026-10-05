@@ -65,7 +65,6 @@ export type NexusRecordTrailState =
 const sourceLabels: Record<string, NexusRecordTrailProvenance["source"]> = {
   document: "Dokumen",
   google_scholar: "Google Scholar",
-  import: "Workbook KM 2026",
   manual: "Manual",
   rag: "Dokumen",
   sinta: "SINTA",

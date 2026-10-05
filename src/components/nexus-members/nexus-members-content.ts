@@ -1,17 +1,6 @@
 import type { ImageProps } from "next/image";
-import ditaPuspitasariPhoto from "@/assets/members/dita-puspitasari.webp";
-import fathurRahmanPhoto from "@/assets/members/fathur-rahman.webp";
-import hestySusantiPhoto from "@/assets/members/hesty-susanti.png";
-import lailyAdeOktavianaPhoto from "@/assets/members/laily-ade-oktaviana.webp";
-import miftadiSudjaiPhoto from "@/assets/members/miftadi-sudjai.webp";
-import muhammadAmmarAsyrafPhoto from "@/assets/members/muhammad-ammar-asyraf.webp";
-import salsabilaAurelliaPhoto from "@/assets/members/salsabila-aurellia.webp";
-import suksmandhiraHarimurtiPhoto from "@/assets/members/suksmandhira-harimurti.webp";
-import { getMembersContent } from "@/components/members/members-content";
 import type { NexusAccountStatus } from "@/components/nexus-accounts/nexus-account-directory";
 import type { NexusMemberAvatarPosition } from "@/components/nexus-members/nexus-member-avatar";
-import { getKnownMemberIdentity } from "@/components/nexus-members/nexus-member-identity";
-import { COE_BHT_RESEARCH_SPACE } from "@/content/coe-bht";
 
 export type NexusMemberStatus = "active" | "inactive" | "on_leave";
 
@@ -80,80 +69,8 @@ export type NexusMembersContent = {
   title: string;
 };
 
-const publicContent = getMembersContent("id");
-
-const portraits = {
-  ammar: muhammadAmmarAsyrafPhoto,
-  dita: ditaPuspitasariPhoto,
-  fathur: fathurRahmanPhoto,
-  hesty: hestySusantiPhoto,
-  laily: lailyAdeOktavianaPhoto,
-  miftadi: miftadiSudjaiPhoto,
-  salsabila: salsabilaAurelliaPhoto,
-  suksmandhira: suksmandhiraHarimurtiPhoto,
-} satisfies Record<string, ImageProps["src"]>;
-
-const sharedAffiliation = {
-  institution: "Telkom University",
-  office: COE_BHT_RESEARCH_SPACE.name,
-  primaryUnit: "CoE Biomedical & Healthcare Technology",
-} as const;
-
-const chair: NexusMemberRecord = {
-  academic: {},
-  affiliation: sharedAffiliation,
-  avatarSrc: portraits.hesty,
-  biography: publicContent.chair.description,
-  coeAssignment: publicContent.leadershipTitle,
-  contact: {},
-  expertise: {
-    primary: publicContent.chair.discipline,
-    secondary: publicContent.chair.expertise
-      .split(/\s*,\s*|\s*&\s*/)
-      .filter(Boolean),
-  },
-  id: getKnownMemberIdentity(publicContent.chair.identityKey).id,
-  identity: {
-    preferredName: "Hesty Susanti",
-  },
-  membership: {
-    publicProfile: true,
-    status: "active",
-  },
-  name: publicContent.chair.name,
-};
-
-const managementProfiles = publicContent.managementMembers.map(
-  (member): NexusMemberRecord => {
-    const id = getKnownMemberIdentity(member.identityKey).id;
-
-    return {
-      academic: {},
-      affiliation: sharedAffiliation,
-      avatarSrc: portraits[member.portrait],
-      biography: member.description,
-      coeAssignment: member.field,
-      contact: {},
-      expertise: {
-        secondary: [],
-      },
-      id,
-      identity: {
-        preferredName: member.name.split(",")[0] ?? member.name,
-      },
-      membership: {
-        publicProfile: true,
-        status: "active",
-      },
-      name: member.name,
-    };
-  },
-);
-
 /**
- * Adapter presentasi halaman Anggota. Data yang telah dipublikasikan pada
- * halaman institusional dipakai kembali; atribut privat atau yang belum
- * tersedia dari layanan anggota sengaja dibiarkan kosong.
+ * Judul dan keterangan halaman Anggota. Direktori anggotanya dibaca dari server.
  */
 export function getNexusMembersContent(): NexusMembersContent {
   return {
@@ -161,8 +78,4 @@ export function getNexusMembersContent(): NexusMembersContent {
       "Kelola identitas dan keanggotaan CoE BHT yang menghubungkan orang dengan data organisasi.",
     title: "Anggota",
   };
-}
-
-export function getNexusMemberDirectory(): NexusMemberRecord[] {
-  return [chair, ...managementProfiles];
 }
