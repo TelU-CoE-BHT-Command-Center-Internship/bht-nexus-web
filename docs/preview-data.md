@@ -9,7 +9,7 @@ Setiap adapter menerjemahkan jawaban API ke bentuk data yang sudah dipakai kompo
 | Area | Adapter | Endpoint server |
 |---|---|---|
 | Sesi dan identitas | `src/lib/api-server.ts`, `nexus-workspace-session.ts` | `GET /profile/me` (identitas, peran, izin efektif), cadangan `GET /auth/me` bila profil belum boleh dibaca |
-| Masuk dan keluar | `src/lib/api-auth.ts` | `POST /auth/sign-in/email`, `POST /auth/sign-in/email-otp`, `POST /auth/two-factor/verify-totp/challenge`, `POST /auth/sign-out` |
+| Masuk dan keluar | `src/lib/api-auth.ts` | `POST /auth/sign-in/email`, `POST /auth/sign-in/email-otp`, `POST /auth/two-factor/verify-totp/challenge`, `POST /auth/email-otp/request-password-reset`, `POST /auth/email-otp/reset-password`, `POST /auth/sign-out` |
 | Menu dan kemampuan | `nexus-workspace-access.ts` | izin efektif dari `GET /profile/me`. Bila izin belum dijawab, web memakai cermin izin bawaan tiap peran; bila peran pun belum terbaca, seluruh menu tampil dan setiap halaman mengikuti jawaban server |
 | Anggota | `nexus-member-server.ts` | `GET /members`, `GET /members/:id` |
 | Publikasi | `nexus-publication-server.ts` | `GET /publications`, `GET /publications/:id` |

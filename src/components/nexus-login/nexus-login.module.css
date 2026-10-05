@@ -60,7 +60,9 @@
 .languageSwitcher a:hover,
 .languageSwitcher a:focus-visible,
 .supportLinks a:hover,
-.supportLinks a:focus-visible {
+.supportLinks a:focus-visible,
+.supportLinks button:hover,
+.supportLinks button:focus-visible {
   color: var(--color-brand-red);
 }
 
@@ -298,6 +300,14 @@
   opacity: 0.75;
 }
 
+.fieldHint {
+  margin: 0;
+  color: #667181;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
 .formNotice {
   margin: -0.4rem 0 0;
   color: var(--color-nexus-success);
@@ -355,7 +365,8 @@
   margin-top: 1.25rem;
 }
 
-.supportLinks a {
+.supportLinks a,
+.supportLinks button {
   display: inline-flex;
   width: fit-content;
   min-height: 1.9rem;
@@ -365,6 +376,14 @@
   font-size: 0.9375rem;
   font-weight: 640;
   transition: color 160ms ease;
+}
+
+.supportLinks button {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .whatsappIcon {
