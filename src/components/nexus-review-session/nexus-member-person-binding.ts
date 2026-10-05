@@ -1,8 +1,4 @@
-import type {
-  AuditMemberPersonBinding,
-  AuditReviewField,
-  AuditReviewRecord,
-} from "@/components/nexus-audit-review/nexus-audit-review-content";
+import type { AuditReviewField } from "@/components/nexus-audit-review/nexus-audit-review-content";
 
 export const memberPersonFieldIds = ["authors", "creators", "mentors"] as const;
 
@@ -28,30 +24,4 @@ export function memberPersonField(
   return fields.find((field) =>
     memberPersonFieldIds.includes(field.id as MemberPersonFieldId),
   );
-}
-
-export function bindingMatchesFields(
-  binding: AuditMemberPersonBinding | undefined,
-  fields: readonly AuditReviewField[],
-) {
-  if (!binding) return false;
-  const field = fields.find((item) => item.id === binding.fieldId);
-  return reviewPeople(binding.fieldId, field?.rawValue ?? field?.value).some(
-    (person) =>
-      person.id === binding.personId && person.name === binding.personName,
-  );
-}
-
-export function reconcileMemberPersonBinding(
-  record: AuditReviewRecord,
-): AuditReviewRecord {
-  if (!record.memberPersonBinding) return record;
-  if (bindingMatchesFields(record.memberPersonBinding, record.fields)) {
-    return record;
-  }
-
-  return {
-    ...record,
-    memberPersonBinding: undefined,
-  };
 }
