@@ -11,6 +11,8 @@ export type NexusWorkspaceFormOption = {
 };
 
 type NexusWorkspaceFormFieldProps = {
+  /** Petunjuk isi otomatis peramban, misalnya `current-password`. */
+  autoComplete?: InputHTMLAttributes<HTMLInputElement>["autoComplete"];
   /** Bidang tampil sebagai informasi tetapi tidak dapat diubah. */
   disabled?: boolean;
   error?: string;
@@ -25,7 +27,15 @@ type NexusWorkspaceFormFieldProps = {
   options?: readonly NexusWorkspaceFormOption[];
   placeholder?: string;
   required?: boolean;
-  type: "date" | "email" | "number" | "select" | "text" | "textarea" | "url";
+  type:
+    | "date"
+    | "email"
+    | "number"
+    | "password"
+    | "select"
+    | "text"
+    | "textarea"
+    | "url";
   value: string;
   wide?: boolean;
 };
@@ -39,6 +49,7 @@ function ChevronDownIcon() {
 }
 
 export function NexusWorkspaceFormField({
+  autoComplete,
   disabled = false,
   error,
   hint,
@@ -108,6 +119,7 @@ export function NexusWorkspaceFormField({
       ) : (
         <input
           {...controlProps}
+          autoComplete={autoComplete}
           className={styles.control}
           min={min}
           placeholder={placeholder}

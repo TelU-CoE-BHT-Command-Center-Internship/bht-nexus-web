@@ -38,6 +38,7 @@ type NexusMemberProfilePhotoProps = {
     position: NexusMemberAvatarPosition;
   }) => void;
   originalValue?: ImageProps["src"];
+  loadOriginalImage?: () => Promise<string>;
   /** Sebutan orang pada nama aksesibel, misalnya "anggota" atau "pengguna". */
   personLabel?: string;
   personName: string;
@@ -79,6 +80,7 @@ function imageSourceValue(value: ImageProps["src"]) {
 export function NexusMemberProfilePhoto({
   onChange,
   originalValue,
+  loadOriginalImage,
   personLabel = "pengguna",
   personName,
   position,
@@ -87,6 +89,7 @@ export function NexusMemberProfilePhoto({
   const [editorImage, setEditorImage] = useState("");
   const [error, setError] = useState("");
   const [isFileDragging, setIsFileDragging] = useState(false);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
   const technicalId = useId();
   const helpId = `${technicalId}-photo-help`;
   const errorId = `${technicalId}-photo-error`;
@@ -96,10 +99,22 @@ export function NexusMemberProfilePhoto({
     setEditorImage("");
   }
 
-  function openCurrentPhoto() {
+  async function openCurrentPhoto() {
     if (!value) return;
     setError("");
-    setEditorImage(imageSourceValue(originalValue ?? value));
+    const source = imageSourceValue(originalValue ?? value);
+    setIsLoadingImage(true);
+    try {
+      setEditorImage(
+        !source.startsWith("data:") && loadOriginalImage
+          ? await loadOriginalImage()
+          : source,
+      );
+    } catch {
+      setError("Foto asli belum dapat dimuat. Coba lagi atau pilih foto baru.");
+    } finally {
+      setIsLoadingImage(false);
+    }
   }
 
   function openPhotoFile(file?: File) {
@@ -178,10 +193,7 @@ export function NexusMemberProfilePhoto({
               sizes="72px"
               src={value}
               style={{ objectPosition: `${position.x}% ${position.y}%` }}
-              unoptimized={
-                typeof value === "string" &&
-                (value.startsWith("data:") || value.startsWith("blob:"))
-              }
+              unoptimized={typeof value === "string"}
             />
           ) : (
             <span aria-label={`Inisial ${personDisplayName}`} role="img">
@@ -205,9 +217,13 @@ export function NexusMemberProfilePhoto({
 
         <div className={styles.actions}>
           {value ? (
-            <NexusWorkspaceButton onClick={openCurrentPhoto} type="button">
+            <NexusWorkspaceButton
+              disabled={isLoadingImage}
+              onClick={openCurrentPhoto}
+              type="button"
+            >
               <AdjustIcon />
-              Atur foto
+              {isLoadingImage ? "Memuat foto…" : "Atur foto"}
             </NexusWorkspaceButton>
           ) : null}
           <label className={styles.uploadButton}>

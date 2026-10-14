@@ -5,14 +5,12 @@ import type { NexusRoleResolution } from "@/components/nexus-access-policy/nexus
 import type { NexusAccountStatus } from "@/components/nexus-accounts/nexus-account-directory";
 import { nexusServerRoleLabel } from "@/components/nexus-dashboard-shell/nexus-workspace-access";
 import { DEFAULT_MEMBER_AVATAR_POSITION } from "@/components/nexus-members/nexus-member-avatar";
-import {
-  nexusMemberFromDetail,
-  nexusMemberFromSummary,
-} from "@/components/nexus-members/nexus-member-server";
+import { nexusMemberFromSummary } from "@/components/nexus-members/nexus-member-server";
 import type { NexusMemberRecord } from "@/components/nexus-members/nexus-members-content";
 import {
   type MemberProfileDraft,
   type MemberProfileErrors,
+  normalizeOrcid,
   validateMemberProfile,
 } from "@/components/nexus-members/nexus-members-model";
 import type {
@@ -22,12 +20,15 @@ import type {
   NexusProfileView,
 } from "@/components/nexus-profile/nexus-profile-model";
 import { personInitials } from "@/components/nexus-workspace-ui/nexus-workspace-format";
-import { apiErrorKind, apiErrorMessage, whenForbidden } from "@/lib/api-client";
-import { getMember, listAllMembers } from "@/lib/api-members";
+import { apiErrorKind, apiErrorMessage } from "@/lib/api-client";
+import { listAllMembers } from "@/lib/api-members";
 import {
   getMyProfile,
   type MyProfile,
+  removeMyPhoto,
   updateMyAcademicIdentifiers,
+  updateMyMemberProfile,
+  updateMyPhoto,
   updateMyProfile,
 } from "@/lib/api-profile";
 import { useLoadEffect } from "@/lib/use-load-effect";
@@ -73,8 +74,7 @@ function roleResolution(profile: MyProfile): NexusRoleResolution {
 }
 
 /**
- * Rekam anggota dari ringkasan pada profil akun, dipakai ketika rincian
- * anggotanya tidak boleh dibaca oleh peran akun ini.
+ * Rekam milik pemilik sesi; tidak membutuhkan izin membaca anggota lain.
  */
 function memberFromProfile(profile: MyProfile): NexusMemberRecord | undefined {
   const member = profile.member;
@@ -84,20 +84,38 @@ function memberFromProfile(profile: MyProfile): NexusMemberRecord | undefined {
       googleScholar: googleScholarUrl(member.googleScholarId),
       scopusAuthorId: optional(member.scopusId) || undefined,
       sintaId: optional(member.sintaId) || undefined,
+      orcid: optional(member.orcid) || undefined,
+      researcherId: optional(member.researcherId) || undefined,
     },
-    affiliation: { institution: "", primaryUnit: "" },
-    biography: "",
-    coeAssignment: "",
-    contact: {},
-    expertise: { secondary: [] },
+    affiliation: {
+      institution: "Telkom University",
+      primaryUnit: member.primaryUnit,
+      office: optional(member.office),
+    },
+    biography: optional(member.biography),
+    coeAssignment: optional(member.coeAssignment),
+    contact: {
+      phone: optional(member.phone),
+      institutionalEmail: optional(member.institutionalEmail),
+      alternateEmail: optional(member.alternateEmail),
+    },
+    expertise: {
+      primary: optional(member.primaryExpertise),
+      secondary: member.secondaryExpertise,
+    },
+    avatarSrc: member.avatarSrc ?? profile.image ?? undefined,
+    avatarOriginalSrc: member.avatarOriginalSrc ?? undefined,
+    avatarPosition: member.avatarPosition ?? {
+      ...DEFAULT_MEMBER_AVATAR_POSITION,
+    },
     id: member.publicId,
-    identity: { preferredName: "" },
+    identity: { preferredName: optional(member.preferredName) },
     membership: {
       joinedAt: optional(member.joinedAt) || undefined,
       publicProfile: member.isPublic,
       status: member.status,
     },
-    name: profile.name,
+    name: member.name,
   };
 }
 
@@ -115,14 +133,12 @@ export function nexusProfileFromServer(
   const member = linkedMember ?? memberFromProfile(profile);
   /* Akun yang terhubung ke anggota membaca informasi pribadinya dari rekam
      anggota bila rekam itu berhasil dibaca; selain itu dari akun sendiri. */
-  const fullName = linkedMember ? linkedMember.name : profile.name;
-  const preferredName = linkedMember?.identity.preferredName ?? "";
-  const phone = linkedMember
-    ? optional(linkedMember.contact.phone)
+  const fullName = member ? member.name : profile.name;
+  const preferredName = member?.identity.preferredName ?? "";
+  const phone = member
+    ? optional(member.contact.phone)
     : optional(profile.phone);
-  const biography = linkedMember
-    ? linkedMember.biography
-    : optional(profile.bio);
+  const biography = member ? member.biography : optional(profile.bio);
   const missing = missingRequiredFields(fullName, phone);
 
   return {
@@ -141,14 +157,12 @@ export function nexusProfileFromServer(
       status: accountStatuses[profile.status],
       updatedAt: "",
     },
-    alternateEmail: optional(linkedMember?.contact.alternateEmail),
-    avatarOriginalSrc: linkedMember?.avatarOriginalSrc,
-    avatarPosition: linkedMember?.avatarPosition
-      ? { ...linkedMember.avatarPosition }
+    alternateEmail: optional(member?.contact.alternateEmail),
+    avatarOriginalSrc: member?.avatarOriginalSrc,
+    avatarPosition: member?.avatarPosition
+      ? { ...member.avatarPosition }
       : { ...DEFAULT_MEMBER_AVATAR_POSITION },
-    avatarSrc: linkedMember
-      ? linkedMember.avatarSrc
-      : optional(profile.image) || undefined,
+    avatarSrc: member ? member.avatarSrc : optional(profile.image) || undefined,
     biography,
     displayName:
       preferredName.trim() || fullName.trim() || profile.name || profile.email,
@@ -157,14 +171,14 @@ export function nexusProfileFromServer(
       (value) => value.trim() !== "",
     ),
     initials: personInitials(fullName || profile.name),
-    institutionalEmail: optional(linkedMember?.contact.institutionalEmail),
+    institutionalEmail: optional(member?.contact.institutionalEmail),
     isComplete: missing.length === 0,
     missingRequiredFields: missing,
     phone,
     preferredName,
     relationship: member ? { kind: "LINKED", member } : { kind: "NON_MEMBER" },
     role: roleResolution(profile),
-    source: linkedMember ? "MEMBER" : "ACCOUNT",
+    source: member ? "MEMBER" : "ACCOUNT",
   };
 }
 
@@ -206,6 +220,8 @@ export const nexusSelfAcademicFields = [
   "sintaId",
   "googleScholar",
   "scopusAuthorId",
+  "orcid",
+  "researcherId",
 ] as const satisfies readonly (keyof MemberProfileDraft)[];
 
 /** Profil akun yang sedang masuk, dibaca dari server setiap halaman dibuka. */
@@ -214,25 +230,18 @@ export function useNexusSessionProfile() {
   const [state, setState] = useState<NexusProfileLoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>();
   const latestRequest = useRef(0);
-  /* Profil akun sebagaimana terakhir dijawab server; nilai yang tidak
-     disunting dikirim ulang apa adanya saat menyimpan. */
+  /* Foto terakhir dijawab server dipakai untuk membedakan ganti/hapus dan
+     penyimpanan informasi pribadi tanpa perubahan foto. */
   const latestProfile = useRef<MyProfile>(undefined);
 
   const load = useCallback(() => {
     const request = ++latestRequest.current;
     setState("loading");
     getMyProfile()
-      .then(async (me) => {
-        /* Rincian anggota hanya dapat dibaca peran yang berwenang; tanpa itu
-           profil tetap tampil dari ringkasan keanggotaan pada akun. */
-        const member = me.member
-          ? await getMember(me.member.publicId)
-              .then(nexusMemberFromDetail)
-              .catch(whenForbidden(undefined))
-          : undefined;
+      .then((me) => {
         if (request !== latestRequest.current) return;
         latestProfile.current = me;
-        setProfile(nexusProfileFromServer(me, member));
+        setProfile(nexusProfileFromServer(me));
         setState("ready");
       })
       .catch((error: unknown) => {
@@ -247,8 +256,7 @@ export function useNexusSessionProfile() {
   useLoadEffect(load);
 
   /**
-   * Menyimpan nama lengkap, nomor HP, dan ringkasan profil pada akun. Foto
-   * akun tidak disunting dari halaman ini, sehingga nilainya dikirim ulang.
+   * Menyimpan informasi pribadi dan, bila berubah, foto milik pemilik sesi.
    */
   const saveAccountProfile = useCallback(
     async (
@@ -264,11 +272,17 @@ export function useNexusSessionProfile() {
       const fieldErrors = accountProfileLimitErrors(draft);
       if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
       try {
-        await updateMyProfile({
+        latestProfile.current = await updateMyProfile({
           bio: draft.biography.trim() || null,
-          image: current.image,
           name: draft.fullName.trim(),
           phone: draft.phone.trim() || null,
+          ...(current.member
+            ? {
+                preferredName: draft.preferredName.trim() || null,
+                institutionalEmail: draft.institutionalEmail.trim() || null,
+                alternateEmail: draft.alternateEmail.trim() || null,
+              }
+            : {}),
         });
       } catch (error) {
         return {
@@ -278,6 +292,26 @@ export function useNexusSessionProfile() {
           ),
         };
       }
+      const initialPhoto =
+        current.member?.avatarSrc ?? current.image ?? undefined;
+      if (draft.avatarSrc !== initialPhoto) {
+        try {
+          latestProfile.current =
+            typeof draft.avatarSrc === "string" && draft.avatarSrc
+              ? await updateMyPhoto(
+                  draft.avatarSrc,
+                  typeof draft.avatarOriginalSrc === "string"
+                    ? draft.avatarOriginalSrc
+                    : draft.avatarSrc,
+                )
+              : await removeMyPhoto();
+        } catch (error) {
+          load();
+          return {
+            message: `Informasi pribadi tersimpan. ${apiErrorMessage(error, "Foto belum dapat disimpan. Coba lagi.")}`,
+          };
+        }
+      }
       load();
       return undefined;
     },
@@ -285,7 +319,7 @@ export function useNexusSessionProfile() {
   );
 
   /**
-   * Menyimpan SINTA, Scopus, dan Google Scholar anggota yang tertaut ke akun
+   * Menyimpan lima pengenal akademik anggota yang tertaut ke akun
    * ini. Keunikannya diperiksa terhadap direktori Anggota bila boleh dibaca,
    * supaya bentrok tampil pada bidangnya; server tetap menolak bentrok.
    */
@@ -311,16 +345,56 @@ export function useNexusSessionProfile() {
           googleScholarId: googleScholarId(draft.googleScholar),
           scopusId: draft.scopusAuthorId.trim() || null,
           sintaId: draft.sintaId.trim() || null,
+          orcid: normalizeOrcid(draft.orcid) || null,
+          researcherId: draft.researcherId.trim() || null,
         });
       } catch (error) {
         return {
           message:
             apiErrorKind(error) === "conflict"
-              ? "SINTA ID, Scopus Author ID, atau Google Scholar ini sudah dipakai anggota lain."
+              ? "Salah satu identitas akademik ini sudah dipakai anggota lain."
               : apiErrorMessage(
                   error,
                   "Identitas akademik belum dapat disimpan.",
                 ),
+        };
+      }
+      load();
+      return undefined;
+    },
+    [load],
+  );
+
+  const saveMemberProfile = useCallback(
+    async (
+      draft: MemberProfileDraft,
+      kind: "expertise" | "member",
+    ): Promise<NexusProfileSaveResult<MemberProfileErrors>> => {
+      try {
+        await updateMyMemberProfile(
+          kind === "member"
+            ? {
+                office: draft.office.trim() || null,
+                isPublic: draft.publicProfile,
+              }
+            : {
+                primaryExpertise: draft.primaryExpertise.trim() || null,
+                secondaryExpertise: [
+                  ...new Set(
+                    draft.secondaryExpertise
+                      .split(",")
+                      .map((value) => value.trim())
+                      .filter(Boolean),
+                  ),
+                ],
+              },
+        );
+      } catch (error) {
+        return {
+          message: apiErrorMessage(
+            error,
+            "Profil anggota belum dapat disimpan.",
+          ),
         };
       }
       load();
@@ -335,6 +409,7 @@ export function useNexusSessionProfile() {
     retry: load,
     saveAcademicIdentifiers,
     saveAccountProfile,
+    saveMemberProfile,
     state,
   };
 }

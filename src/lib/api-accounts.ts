@@ -6,6 +6,7 @@ export type AccountSummary = {
   createdAt: string;
   email: string;
   emailVerified: boolean;
+  image?: string | null;
   linkedMember: { publicId: string } | null;
   name: string;
   publicId: string;

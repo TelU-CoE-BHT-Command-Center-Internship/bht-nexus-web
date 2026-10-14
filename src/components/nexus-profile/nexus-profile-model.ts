@@ -280,7 +280,6 @@ export function validateNexusProfileDraft(
   const errors: NexusProfileErrors = {};
 
   if (!draft.fullName.trim()) errors.fullName = "Nama lengkap wajib diisi.";
-  if (!draft.phone.trim()) errors.phone = "Nomor HP wajib diisi.";
   if (draft.alternateEmail.trim() && !nexusValidEmail(draft.alternateEmail)) {
     errors.alternateEmail = "Gunakan alamat email yang valid.";
   }

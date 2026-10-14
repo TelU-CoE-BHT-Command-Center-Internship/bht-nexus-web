@@ -25,7 +25,7 @@ Setiap adapter menerjemahkan jawaban API ke bentuk data yang sudah dipakai kompo
 | Akses khusus | `nexus-user-access-server.tsx`, `nexus-account-special-access.ts` | `GET /admin/accounts/:id/permissions`, `PUT /admin/accounts/:id/permissions/override` |
 | Peran & Hak Akses | `nexus-role-server.ts` | `GET/POST /roles`, `PATCH/DELETE /roles/:id`, `GET/POST /roles/:id/permissions`, `DELETE /roles/:id/permissions/:permissionId`, `POST /roles/:id/reset`, `GET /permissions` |
 | Penolakan Akses | `nexus-audit-denials.tsx` | `GET /audit/permission-denials` |
-| Profil Saya | `nexus-profile-server.ts` | `GET /profile/me`, `PATCH /profile/me`, `PATCH /profile/me/academic-identifiers` |
+| Profil Saya | `nexus-profile-server.ts` | `GET /profile/me`, `PATCH /profile/me`, `PATCH /profile/me/academic-identifiers`, `PATCH /profile/me/member-profile`, `POST`/`DELETE /profile/me/photo`, `GET /profile/me/photo/original`, `POST /auth/change-password` |
 
 Bacaan pelengkap yang boleh ditolak server, misalnya direktori Anggota bagi akun yang tidak berwenang membacanya, diperlakukan sebagai tidak tersedia alih-alih kosong: nama anggota diambil dari akun yang tertaut dan jumlah yang tidak dapat dibaca tidak ditampilkan sebagai nol.
 
@@ -129,10 +129,10 @@ Kontrak yang dipakai web pada `bht-nexus-server` branch `dev` (commit `4f10226`,
 
 Profil pribadi tidak mempunyai sumber data tersendiri di web; halaman membaca `GET /profile/me` untuk akun yang sedang masuk. Jawabannya memuat identitas akun, peran, izin efektif, serta ringkasan anggota yang tertaut beserta pengenal akademiknya. Endpoint ini perlu dapat dibaca setiap pengguna yang masuk; pembukaan akses dan penambahan izin efektif diajukan sebagai perbaikan server yang menyertai integrasi ini.
 
-- `PATCH /profile/me` menyimpan nama, nomor HP, ringkasan, dan gambar pada akun. Server menulis ulang keempat bidang sekaligus dan mengosongkan bidang yang tidak dikirim, sehingga web selalu mengirim ulang nilai yang tidak disunting.
-- `PATCH /profile/me/academic-identifiers` menyimpan SINTA, Scopus, dan Google Scholar pada anggota yang tertaut, dengan aturan tulis ulang yang sama. Google Scholar disimpan sebagai pengenalnya saja, bukan tautan profil.
-- Informasi pribadi pada rekam anggota, profil anggota, bidang keahlian, foto, ORCID, dan ResearcherID belum mempunyai jalur simpan mandiri. Bagian itu tetap tampil dengan penanda **Segera** atau sebagai bidang nonaktif beserta keterangannya.
-- Penggantian kata sandi dari dalam ruang kerja, pencabutan sesi, dan penghapusan akun mandiri belum tersedia; kartu Keamanan mengarahkan pengguna ke Dukungan BHT Nexus.
+- `PATCH /profile/me` menyimpan nama, nomor HP, dan ringkasan pada akun serta anggota yang tertaut dalam satu transaksi; untuk anggota juga nama panggilan, email alternatif, dan email institusi personal. Bidang yang tidak dikirim tetap tersimpan.
+- `PATCH /profile/me/academic-identifiers` menyimpan SINTA, Scopus, Google Scholar, ORCID iD, dan ResearcherID anggota yang tertaut; `null` menghapus pengenal, dan pengenal yang sudah dipakai anggota lain ditolak. Google Scholar disimpan sebagai pengenalnya saja, bukan tautan profil. `PATCH /profile/me/member-profile` menyimpan lokasi kerja, profil publik, dan bidang keahlian.
+- `POST /profile/me/photo` menerima dua berkas (`cropped` dan `original`, JPG/PNG/WEBP, maksimal 2 MB); `DELETE /profile/me/photo` menghapus foto; `GET /profile/me/photo/original` membaca versi asli milik pemilik sesi untuk diatur ulang.
+- `POST /auth/change-password` (rute layanan masuk) mengganti kata sandi dengan `revokeOtherSessions: true`. Pencabutan sesi per perangkat dan penghapusan akun mandiri tidak tersedia di web.
 
 Kelengkapan profil hanya mensyaratkan nama lengkap dan nomor HP. Hubungan akun dan anggota bersifat lossless: menautkan atau melepas tautan tidak menyalin, menggabungkan, atau menghapus data pada entitas lain.
 

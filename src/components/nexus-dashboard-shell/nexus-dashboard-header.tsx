@@ -365,10 +365,7 @@ export function NexusDashboardHeader({
                         }
                       : undefined
                   }
-                  unoptimized={
-                    typeof viewer.avatarSrc === "string" &&
-                    viewer.avatarSrc.startsWith("data:")
-                  }
+                  unoptimized={typeof viewer.avatarSrc === "string"}
                 />
               ) : (
                 viewer.initials
